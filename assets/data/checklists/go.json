@@ -1,0 +1,3291 @@
+{
+  "meta": {
+    "id": "go",
+    "mode": "review",
+    "title": "Go",
+    "shortTitle": "Go",
+    "description": "Review checklist for Go services and libraries",
+    "icon": "🐹",
+    "totalItems": 176,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "go.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "go.general-code-quality.does-the-pr-have-a-clear-description-of-what-it-does-and-why",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.general-code-quality.is-the-change-scoped-appropriately-or-should-it-be-split-int",
+          "text": "Is the change scoped appropriately, or should it be split into smaller PRs?",
+          "severity": "minor",
+          "tags": [
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.general-code-quality.are-there-any-unrelated-changes-bundled-in",
+          "text": "Are there any unrelated changes bundled in?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.general-code-quality.is-dead-code-removed-rather-than-commented-out",
+          "text": "Is dead code removed rather than commented out?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.general-code-quality.are-todofixme-comments-accompanied-by-a-tracking-ticket",
+          "text": "Are TODO/FIXME comments accompanied by a tracking ticket?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.general-code-quality.does-the-commit-history-tell-a-coherent-story",
+          "text": "Does the commit history tell a coherent story?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "go.go-idioms-style",
+      "title": "Go Idioms & Style",
+      "subsections": [
+        {
+          "id": "go.go-idioms-style.naming",
+          "title": "Naming",
+          "items": [
+            {
+              "id": "go.go-idioms-style.naming.are-package-names-short-lowercase-singular-nouns-not-utils-c",
+              "text": "Are package names short, lowercase, singular nouns (not `utils`, `common`, `helpers`)?",
+              "severity": "nit",
+              "tags": [
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.naming.are-exported-names-clear-without-the-package-prefix-httpclie",
+              "text": "Are exported names clear without the package prefix (`http.Client`, not `http.HTTPClient`)?",
+              "severity": "nit",
+              "tags": [
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.naming.are-interfaces-named-with-er-suffix-when-they-have-a-single-",
+              "text": "Are interfaces named with `-er` suffix when they have a single method (`Reader`, `Writer`, `Closer`)?",
+              "severity": "nit",
+              "tags": [
+                "types",
+                "naming",
+                "resource-management"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.naming.are-acronyms-consistently-cased-id-http-url-not-id-http-url",
+              "text": "Are acronyms consistently cased (`ID`, `HTTP`, `URL`, not `Id`, `Http`, `Url`)?",
+              "severity": "nit",
+              "tags": [
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.naming.are-local-variables-short-but-descriptive-i-for-index-ctx-fo",
+              "text": "Are local variables short but descriptive (`i` for index, `ctx` for context, `err` for error)?",
+              "severity": "nit",
+              "tags": [
+                "error-handling",
+                "performance",
+                "naming",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.naming.are-receiver-names-short-1-2-chars-and-consistent-across-met",
+              "text": "Are receiver names short (1-2 chars) and consistent across methods of the same type?",
+              "severity": "nit",
+              "tags": [
+                "types",
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.naming.are-unexported-names-used-for-package-internal-types-and-fun",
+              "text": "Are unexported names used for package-internal types and functions?",
+              "severity": "nit",
+              "tags": [
+                "types",
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.naming.is-mixedcaps-used-not-snakecase-or-screamingsnake",
+              "text": "Is `MixedCaps` used (not `snake_case` or `SCREAMING_SNAKE`)?",
+              "severity": "nit",
+              "tags": [
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.go-idioms-style.code-organization",
+          "title": "Code Organization",
+          "items": [
+            {
+              "id": "go.go-idioms-style.code-organization.does-each-package-have-a-clear-single-purpose",
+              "text": "Does each package have a clear, single purpose?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.code-organization.are-files-within-a-package-organized-logically-not-one-giant",
+              "text": "Are files within a package organized logically (not one giant file)?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.code-organization.is-the-internal-directory-used-to-prevent-external-packages-",
+              "text": "Is the `internal/` directory used to prevent external packages from importing internal code?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.code-organization.are-cmd-packages-used-for-binaries-and-kept-thin-parse-flags",
+              "text": "Are `cmd/` packages used for binaries and kept thin (parse flags, call into libraries)?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.code-organization.is-the-project-layout-consistent-with-the-teams-conventions",
+              "text": "Is the project layout consistent with the team's conventions?",
+              "severity": "nit",
+              "tags": [
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.code-organization.are-init-functions-avoided-unless-absolutely-necessary",
+              "text": "Are init() functions avoided unless absolutely necessary?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.go-idioms-style.go-proverbs-principles",
+          "title": "Go Proverbs & Principles",
+          "items": [
+            {
+              "id": "go.go-idioms-style.go-proverbs-principles.is-the-code-straightforward-and-readable-clear-is-better-tha",
+              "text": "Is the code straightforward and readable (\"Clear is better than clever\")?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.go-proverbs-principles.are-small-interfaces-preferred-over-large-ones-the-bigger-th",
+              "text": "Are small interfaces preferred over large ones (\"The bigger the interface, the weaker the abstraction\")?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.go-proverbs-principles.is-interface-any-usage-minimized-in-favor-of-concrete-types-",
+              "text": "Is `interface{}` / `any` usage minimized in favor of concrete types or constrained generics?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.go-proverbs-principles.are-interfaces-defined-by-the-consumer-not-the-implementer",
+              "text": "Are interfaces defined by the consumer, not the implementer?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.go-proverbs-principles.is-the-zero-value-of-types-useful-and-safe",
+              "text": "Is the zero value of types useful and safe?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.go-idioms-style.go-proverbs-principles.is-reflection-avoided-unless-truly-necessary",
+              "text": "Is reflection avoided unless truly necessary?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "go.error-handling",
+      "title": "Error Handling",
+      "subsections": [
+        {
+          "id": "go.error-handling.error-basics",
+          "title": "Error Basics",
+          "items": [
+            {
+              "id": "go.error-handling.error-basics.are-all-errors-checked-err-not-silently-discarded-with",
+              "text": "Are all errors checked? (`err` not silently discarded with `_`)",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.are-errors-returned-not-panicked-on-panic-only-for-truly-unr",
+              "text": "Are errors returned, not panicked on? (`panic` only for truly unrecoverable situations)",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.are-errors-wrapped-with-context-using-fmterrorfdoing-x-w-err",
+              "text": "Are errors wrapped with context using `fmt.Errorf(\"doing X: %w\", err)`?",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.is-the-w-verb-used-not-v-or-s-when-the-caller-needs-to-unwra",
+              "text": "Is the `%w` verb used (not `%v` or `%s`) when the caller needs to unwrap the error?",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.are-error-messages-lowercase-and-without-trailing-punctuatio",
+              "text": "Are error messages lowercase and without trailing punctuation (Go convention)?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "naming",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.are-error-messages-specific-enough-to-locate-the-problem-ope",
+              "text": "Are error messages specific enough to locate the problem (\"open config file /etc/app.conf: permission denied\")?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.are-sentinel-errors-var-errnotfound-errorsnew-used-for-expec",
+              "text": "Are sentinel errors (`var ErrNotFound = errors.New(...)`) used for expected, matchable conditions?",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.are-custom-error-types-used-when-callers-need-to-extract-str",
+              "text": "Are custom error types used when callers need to extract structured information?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.is-errorsis-and-errorsas-used-instead-of-direct-comparison-o",
+              "text": "Is `errors.Is()` and `errors.As()` used instead of direct comparison or type assertion?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "testing",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-basics.are-errors-handled-once-either-logged-or-returned-not-both",
+              "text": "Are errors handled once (either logged or returned, not both)?",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.error-handling.error-patterns",
+          "title": "Error Patterns",
+          "items": [
+            {
+              "id": "go.error-handling.error-patterns.is-the-happy-path-left-aligned-guard-clauses-return-early-on",
+              "text": "Is the happy path left-aligned (guard clauses return early on error)?",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-patterns.are-multi-return-values-result-error-never-error-result",
+              "text": "Are multi-return values `(result, error)` — never `(error, result)`?",
+              "severity": "major",
+              "tags": [
+                "error-handling"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-patterns.are-errors-from-deferred-calls-handled-defer-fclose-does-clo",
+              "text": "Are errors from deferred calls handled (`defer f.Close()` — does `Close` return an error that matters)?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "resource-management"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.error-handling.error-patterns.are-cleanup-operations-in-defer-statements-idempotent",
+              "text": "Are cleanup operations in `defer` statements idempotent?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "resource-management",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "go.concurrency",
+      "title": "Concurrency",
+      "subsections": [
+        {
+          "id": "go.concurrency.goroutines",
+          "title": "Goroutines",
+          "items": [
+            {
+              "id": "go.concurrency.goroutines.is-every-goroutine-launched-with-a-clear-shutdown-path",
+              "text": "Is every goroutine launched with a clear shutdown path?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.goroutines.are-goroutine-leaks-avoided-is-there-a-mechanism-to-stop-eve",
+              "text": "Are goroutine leaks avoided? Is there a mechanism to stop every goroutine (`context.Context`, `done` channel, `sync.WaitGroup`)?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.goroutines.are-goroutines-not-launched-in-library-code-without-the-call",
+              "text": "Are goroutines not launched in library code without the caller's knowledge?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.goroutines.is-go-func-capturing-loop-variables-correctly-go-122-pitfall",
+              "text": "Is `go func()` capturing loop variables correctly (Go < 1.22 pitfall)?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.goroutines.are-syncwaitgroup-counters-incremented-before-go-statements-",
+              "text": "Are `sync.WaitGroup` counters incremented before `go` statements, not inside goroutines?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.goroutines.is-the-number-of-goroutines-bounded-worker-pool-pattern-sema",
+              "text": "Is the number of goroutines bounded (worker pool pattern, semaphore)?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.concurrency.channels",
+          "title": "Channels",
+          "items": [
+            {
+              "id": "go.concurrency.channels.are-channels-used-for-communication-mutexes-for-state-protec",
+              "text": "Are channels used for communication, mutexes for state protection?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.channels.is-the-channel-direction-specified-in-function-signatures-ch",
+              "text": "Is the channel direction specified in function signatures (`chan<-`, `<-chan`)?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.channels.are-channels-closed-by-the-sender-never-the-receiver",
+              "text": "Are channels closed by the sender, never the receiver?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "resource-management"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.channels.are-channels-not-closed-more-than-once",
+              "text": "Are channels not closed more than once?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "resource-management"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.channels.are-buffered-channels-used-only-when-the-buffer-size-is-just",
+              "text": "Are buffered channels used only when the buffer size is justified?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.channels.is-select-with-default-used-intentionally-non-blocking-opera",
+              "text": "Is `select` with `default` used intentionally (non-blocking operations)?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.channels.is-select-with-contextdone-used-for-cancellation",
+              "text": "Is `select` with `context.Done()` used for cancellation?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.concurrency.synchronization",
+          "title": "Synchronization",
+          "items": [
+            {
+              "id": "go.concurrency.synchronization.is-syncmutex-preferred-over-syncrwmutex-unless-read-heavy-ac",
+              "text": "Is `sync.Mutex` preferred over `sync.RWMutex` unless read-heavy access is proven?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.synchronization.are-mutexes-not-copied-embed-a-pointer-or-use-pointer-receiv",
+              "text": "Are mutexes not copied (embed a pointer or use pointer receivers)?",
+              "severity": "major",
+              "tags": [
+                "concurrency"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.synchronization.is-synconce-used-for-one-time-initialization",
+              "text": "Is `sync.Once` used for one-time initialization?",
+              "severity": "major",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.synchronization.is-syncmap-only-used-for-its-intended-use-cases-append-only-",
+              "text": "Is `sync.Map` only used for its intended use cases (append-only, disjoint keys)?",
+              "severity": "major",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.synchronization.are-race-conditions-tested-with-race-flag",
+              "text": "Are race conditions tested with `-race` flag?",
+              "severity": "blocker",
+              "tags": [
+                "concurrency",
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.synchronization.is-syncpool-used-correctly-objects-may-be-garbage-collected-",
+              "text": "Is `sync.Pool` used correctly (objects may be garbage collected, not for connection pooling)?",
+              "severity": "major",
+              "tags": [
+                "performance",
+                "resource-management"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.concurrency.context",
+          "title": "Context",
+          "items": [
+            {
+              "id": "go.concurrency.context.is-contextcontext-the-first-parameter-of-functions-that-acce",
+              "text": "Is `context.Context` the first parameter of functions that accept it?",
+              "severity": "major",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.context.are-contexts-not-stored-in-structs",
+              "text": "Are contexts not stored in structs?",
+              "severity": "major",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.context.is-contextbackground-used-only-at-the-top-level-main-init-te",
+              "text": "Is `context.Background()` used only at the top level (main, init, tests)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.context.is-contexttodo-not-left-in-production-code",
+              "text": "Is `context.TODO()` not left in production code?",
+              "severity": "major",
+              "tags": [
+                "code-quality"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.context.are-context-cancellation-functions-called-typically-with-def",
+              "text": "Are context cancellation functions called (typically with `defer cancel()`)?",
+              "severity": "major",
+              "tags": [
+                "resource-management"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.concurrency.context.are-context-values-used-sparingly-and-only-for-request-scope",
+              "text": "Are context values used sparingly and only for request-scoped data (not for function parameters)?",
+              "severity": "major",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "go.resource-management",
+      "title": "Resource Management",
+      "items": [
+        {
+          "id": "go.resource-management.are-defer-statements-used-for-cleanup-closing-files-releasin",
+          "text": "Are `defer` statements used for cleanup (closing files, releasing locks, closing response bodies)?",
+          "severity": "minor",
+          "tags": [
+            "concurrency",
+            "resource-management",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.resource-management.is-defer-not-used-in-long-running-loops-resources-wont-be-re",
+          "text": "Is `defer` not used in long-running loops (resources won't be released until function returns)?",
+          "severity": "minor",
+          "tags": [
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.resource-management.are-httpresponsebody-always-closed-even-when-the-response-is",
+          "text": "Are `http.Response.Body` always closed, even when the response is an error?",
+          "severity": "minor",
+          "tags": [
+            "error-handling",
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.resource-management.are-database-connections-returned-to-the-pool-rows-closed-tr",
+          "text": "Are database connections returned to the pool (rows closed, transactions committed/rolled back)?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.resource-management.are-file-handles-closed-after-use",
+          "text": "Are file handles closed after use?",
+          "severity": "minor",
+          "tags": [
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.resource-management.are-temporary-files-cleaned-up",
+          "text": "Are temporary files cleaned up?",
+          "severity": "minor",
+          "tags": [
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.resource-management.is-iocopy-or-ioreadall-used-with-appropriate-size-limits-to-",
+          "text": "Is `io.Copy` or `io.ReadAll` used with appropriate size limits to prevent memory exhaustion?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "resource-management",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "go.data-structures-types",
+      "title": "Data Structures & Types",
+      "subsections": [
+        {
+          "id": "go.data-structures-types.structs",
+          "title": "Structs",
+          "items": [
+            {
+              "id": "go.data-structures-types.structs.are-struct-fields-ordered-to-minimize-padding-largest-to-sma",
+              "text": "Are struct fields ordered to minimize padding (largest to smallest alignment)?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.structs.are-struct-literals-using-field-names-not-positional",
+              "text": "Are struct literals using field names (not positional)?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "naming",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.structs.are-pointer-vs-value-receivers-chosen-consistently-and-corre",
+              "text": "Are pointer vs value receivers chosen consistently and correctly for a given type?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.structs.are-value-receivers-used-for-small-immutable-types-pointer-r",
+              "text": "Are value receivers used for small, immutable types; pointer receivers for large or mutable types?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.structs.are-exported-struct-fields-intentionally-public",
+              "text": "Are exported struct fields intentionally public?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.structs.are-struct-tags-correct-and-consistent-jsonfieldname-dbcolum",
+              "text": "Are struct tags correct and consistent (`json:\"fieldName\"`, `db:\"column_name\"`)?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "naming",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.data-structures-types.slices-maps",
+          "title": "Slices & Maps",
+          "items": [
+            {
+              "id": "go.data-structures-types.slices-maps.are-slices-pre-allocated-with-maket-0-expectedcap-when-the-s",
+              "text": "Are slices pre-allocated with `make([]T, 0, expectedCap)` when the size is known or estimable?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.slices-maps.are-nil-slices-preferred-over-empty-slices-for-no-data-var-s",
+              "text": "Are nil slices preferred over empty slices for \"no data\" (`var s []int` not `s := []int{}`)?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "null-safety"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.slices-maps.are-maps-initialized-with-makemapkv-expectedsize-when-size-i",
+              "text": "Are maps initialized with `make(map[K]V, expectedSize)` when size is known?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.slices-maps.are-map-reads-not-assumed-to-be-safe-for-concurrent-access-u",
+              "text": "Are map reads not assumed to be safe for concurrent access (use `sync.RWMutex` or `sync.Map`)?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.slices-maps.are-slice-append-side-effects-understood-shared-underlying-a",
+              "text": "Are slice append side effects understood (shared underlying arrays)?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.slices-maps.are-copy-used-when-a-true-copy-is-needed-not-just-reassignme",
+              "text": "Are `copy()` used when a true copy is needed, not just reassignment?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.slices-maps.is-map-iteration-order-not-relied-upon-its-randomized",
+              "text": "Is map iteration order not relied upon (it's randomized)?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.data-structures-types.generics-go-118",
+          "title": "Generics (Go 1.18+)",
+          "items": [
+            {
+              "id": "go.data-structures-types.generics-go-118.are-generics-used-only-when-they-reduce-duplication-without-",
+              "text": "Are generics used only when they reduce duplication without sacrificing readability?",
+              "severity": "nit",
+              "tags": [
+                "types",
+                "code-quality"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.generics-go-118.are-type-constraints-as-narrow-as-possible-comparable-constr",
+              "text": "Are type constraints as narrow as possible (`comparable`, `constraints.Ordered`, custom interfaces)?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.generics-go-118.are-generic-functions-preferred-over-generic-types-when-poss",
+              "text": "Are generic functions preferred over generic types when possible?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.data-structures-types.generics-go-118.is-the-generic-code-not-overengineered-a-concrete-implementa",
+              "text": "Is the generic code not overengineered (a concrete implementation may be clearer)?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "go.standard-library-usage",
+      "title": "Standard Library Usage",
+      "items": [
+        {
+          "id": "go.standard-library-usage.is-stringsbuilder-used-for-building-strings-in-loops-not-con",
+          "text": "Is `strings.Builder` used for building strings in loops, not `+` concatenation?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.is-strconv-used-instead-of-fmtsprintf-for-simple-number-to-s",
+          "text": "Is `strconv` used instead of `fmt.Sprintf` for simple number-to-string conversions?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.are-timeduration-values-used-not-raw-integers-for-time-relat",
+          "text": "Are `time.Duration` values used (not raw integers) for time-related parameters?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.is-timesincestart-used-instead-of-timenowsubstart",
+          "text": "Is `time.Since(start)` used instead of `time.Now().Sub(start)`?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.are-filepath-functions-used-for-file-paths-not-path-or-strin",
+          "text": "Are `filepath` functions used for file paths (not `path` or string manipulation)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.is-ioreaderiowriter-used-for-streaming-data-rather-than-load",
+          "text": "Is `io.Reader`/`io.Writer` used for streaming data rather than loading everything into memory?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.are-bytesbuffer-or-stringsreader-used-to-adapt-between-strin",
+          "text": "Are `bytes.Buffer` or `strings.Reader` used to adapt between string/byte and io interfaces?",
+          "severity": "minor",
+          "tags": [
+            "types"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.is-encodingjson-using-struct-tags-correctly-are-omitempty-an",
+          "text": "Is `encoding/json` using struct tags correctly? Are `omitempty` and `-` used where appropriate?",
+          "severity": "minor",
+          "tags": [
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.is-nethttp-client-using-a-custom-transport-with-timeouts-not",
+          "text": "Is `net/http` client using a custom `Transport` with timeouts, not the `DefaultClient`?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.standard-library-usage.are-sortslice-slicessort-used-for-sorting",
+          "text": "Are `sort.Slice` / `slices.Sort` used for sorting?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "go.testing",
+      "title": "Testing",
+      "subsections": [
+        {
+          "id": "go.testing.test-basics",
+          "title": "Test Basics",
+          "items": [
+            {
+              "id": "go.testing.test-basics.are-there-tests-for-new-logic",
+              "text": "Are there tests for new logic?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-basics.are-test-function-names-descriptive-testcreateuserduplicatee",
+              "text": "Are test function names descriptive (`TestCreateUser_DuplicateEmail_ReturnsError`)?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "testing",
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-basics.are-table-driven-tests-used-for-multiple-inputoutput-scenari",
+              "text": "Are table-driven tests used for multiple input/output scenarios?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-basics.are-test-helpers-using-thelper-for-clear-error-reporting",
+              "text": "Are test helpers using `t.Helper()` for clear error reporting?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-basics.are-subtests-used-trunname-funct-testingt-for-organization",
+              "text": "Are subtests used (`t.Run(name, func(t *testing.T) {...})`) for organization?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-basics.are-tests-parallel-where-possible-tparallel",
+              "text": "Are tests parallel where possible (`t.Parallel()`)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-basics.are-test-fixtures-in-testdata-directory",
+              "text": "Are test fixtures in `testdata/` directory?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-basics.are-golden-files-used-for-complex-output-comparisons",
+              "text": "Are golden files used for complex output comparisons?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.testing.test-quality",
+          "title": "Test Quality",
+          "items": [
+            {
+              "id": "go.testing.test-quality.are-tests-testing-behavior-not-implementation",
+              "text": "Are tests testing behavior, not implementation?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-quality.are-assertions-clear-and-specific-use-testify-or-go-cmp-for-",
+              "text": "Are assertions clear and specific (use `testify` or `go-cmp` for readable diffs)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-quality.are-tests-independent-no-reliance-on-execution-order-or-glob",
+              "text": "Are tests independent (no reliance on execution order or global state)?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-quality.is-tcleanup-used-for-test-resource-cleanup",
+              "text": "Is `t.Cleanup()` used for test resource cleanup?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "resource-management"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-quality.are-timeouts-or-deadlines-set-for-tests-that-could-hang",
+              "text": "Are timeouts or deadlines set for tests that could hang?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-quality.are-mockfakestub-interfaces-used-not-concrete-types",
+              "text": "Are mock/fake/stub interfaces used, not concrete types?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.test-quality.are-integration-tests-tagged-with-build-tags-or-in-separate-",
+              "text": "Are integration tests tagged with build tags or in separate packages?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.testing.benchmarks-fuzzing",
+          "title": "Benchmarks & Fuzzing",
+          "items": [
+            {
+              "id": "go.testing.benchmarks-fuzzing.are-benchmarks-added-for-performance-critical-code-func-benc",
+              "text": "Are benchmarks added for performance-critical code (`func BenchmarkXxx(b *testing.B)`)?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.benchmarks-fuzzing.are-benchmark-results-stable-and-meaningful-use-bresettimer-",
+              "text": "Are benchmark results stable and meaningful (use `b.ResetTimer()`, `b.ReportAllocs()`)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.benchmarks-fuzzing.are-fuzz-tests-added-for-parsers-and-validators-func-fuzzxxx",
+              "text": "Are fuzz tests added for parsers and validators (`func FuzzXxx(f *testing.F)`)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.testing.race-detection",
+          "title": "Race Detection",
+          "items": [
+            {
+              "id": "go.testing.race-detection.are-tests-run-with-race-in-ci",
+              "text": "Are tests run with `-race` in CI?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.testing.race-detection.are-data-races-fixed-not-worked-around",
+              "text": "Are data races fixed, not worked around?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "go.api-interface-design",
+      "title": "API & Interface Design",
+      "subsections": [
+        {
+          "id": "go.api-interface-design.http-apis",
+          "title": "HTTP APIs",
+          "items": [
+            {
+              "id": "go.api-interface-design.http-apis.are-handlers-using-httphandlerfunc-or-implementing-httphandl",
+              "text": "Are handlers using `http.HandlerFunc` or implementing `http.Handler`?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.http-apis.are-middleware-functions-composable-and-focused",
+              "text": "Are middleware functions composable and focused?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.http-apis.is-request-validation-done-early-before-business-logic",
+              "text": "Is request validation done early (before business logic)?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.http-apis.are-response-types-consistent-json-structure-error-shapes",
+              "text": "Are response types consistent (JSON structure, error shapes)?",
+              "severity": "minor",
+              "tags": [
+                "error-handling",
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.http-apis.are-http-status-codes-correct-and-specific",
+              "text": "Are HTTP status codes correct and specific?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.http-apis.are-request-timeouts-set-via-httpserverreadtimeout-writetime",
+              "text": "Are request timeouts set via `http.Server.ReadTimeout`, `WriteTimeout`?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.http-apis.are-graceful-shutdown-patterns-implemented-servershutdownctx",
+              "text": "Are graceful shutdown patterns implemented (`server.Shutdown(ctx)`)?",
+              "severity": "minor",
+              "tags": [
+                "concurrency",
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.api-interface-design.grpc-apis",
+          "title": "gRPC APIs",
+          "items": [
+            {
+              "id": "go.api-interface-design.grpc-apis.are-protobuf-best-practices-followed-see-javaprotobuf-checkl",
+              "text": "Are protobuf best practices followed (see Java+Protobuf checklist for proto schema review)?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.grpc-apis.are-interceptors-used-for-cross-cutting-concerns-logging-aut",
+              "text": "Are interceptors used for cross-cutting concerns (logging, auth, metrics)?",
+              "severity": "minor",
+              "tags": [
+                "security",
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.grpc-apis.are-streaming-rpcs-used-appropriately-not-for-simple-request",
+              "text": "Are streaming RPCs used appropriately (not for simple request/response)?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.grpc-apis.are-deadlines-propagated-through-context",
+              "text": "Are deadlines propagated through context?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "go.api-interface-design.library-apis",
+          "title": "Library APIs",
+          "items": [
+            {
+              "id": "go.api-interface-design.library-apis.do-functions-accept-interfaces-and-return-structs",
+              "text": "Do functions accept interfaces and return structs?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.library-apis.are-functional-options-used-for-configurable-constructors-wi",
+              "text": "Are functional options used for configurable constructors (`WithTimeout(d time.Duration)`)?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.library-apis.are-exported-apis-minimal-and-intentional",
+              "text": "Are exported APIs minimal and intentional?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "go.api-interface-design.library-apis.are-breaking-changes-avoided-or-clearly-documented",
+              "text": "Are breaking changes avoided or clearly documented?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "types",
+                "documentation"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "go.performance",
+      "title": "Performance",
+      "items": [
+        {
+          "id": "go.performance.are-allocations-minimized-in-hot-paths-reuse-buffers-avoid-u",
+          "text": "Are allocations minimized in hot paths (reuse buffers, avoid unnecessary copies)?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.are-stringbyte-conversions-minimized-bytes-allocates",
+          "text": "Are string/byte conversions minimized (`[]byte(s)` allocates)?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.is-syncpool-used-for-frequently-allocated-short-lived-object",
+          "text": "Is `sync.Pool` used for frequently allocated, short-lived objects?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.are-database-queries-efficient-with-proper-indexes",
+          "text": "Are database queries efficient with proper indexes?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.are-http-response-bodies-fully-read-and-closed-prevent-conne",
+          "text": "Are HTTP response bodies fully read and closed (prevent connection reuse issues)?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.are-large-payloads-streamed-not-buffered-entirely-in-memory",
+          "text": "Are large payloads streamed, not buffered entirely in memory?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.is-pprof-profiling-data-considered-for-performance-sensitive",
+          "text": "Is `pprof` profiling data considered for performance-sensitive changes?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.are-connection-pools-tuned-sqldbsetmaxopenconns-setmaxidleco",
+          "text": "Are connection pools tuned (`sql.DB.SetMaxOpenConns`, `SetMaxIdleConns`)?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.performance.is-batch-processing-used-for-bulk-operations",
+          "text": "Is batch processing used for bulk operations?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "go.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "go.security.is-user-input-validated-and-sanitized",
+          "text": "Is user input validated and sanitized?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-sql-queries-parameterized-using-1-placeholders-not-fmtsp",
+          "text": "Are SQL queries parameterized (using `$1`, `?` placeholders, not `fmt.Sprintf`)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-secrets-not-hardcoded-or-logged",
+          "text": "Are secrets not hardcoded or logged?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-tls-configurations-secure-min-tls-12-no-weak-ciphers",
+          "text": "Are TLS configurations secure (min TLS 1.2, no weak ciphers)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-file-paths-sanitized-to-prevent-directory-traversal-file",
+          "text": "Are file paths sanitized to prevent directory traversal (`filepath.Clean`, `filepath.Rel`)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-crypto-operations-using-cryptorand-not-mathrand",
+          "text": "Are crypto operations using `crypto/rand`, not `math/rand`?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-dependencies-scanned-for-vulnerabilities-govulncheck",
+          "text": "Are dependencies scanned for vulnerabilities (`govulncheck`)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-input-size-limits-enforced-to-prevent-denial-of-service",
+          "text": "Are input size limits enforced to prevent denial of service?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-authentication-and-authorization-checked-for-every-endpo",
+          "text": "Are authentication and authorization checked for every endpoint?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.security.are-http-clients-not-following-redirects-to-untrusted-hosts",
+          "text": "Are HTTP clients not following redirects to untrusted hosts?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "go.build-modules-dependencies",
+      "title": "Build, Modules & Dependencies",
+      "items": [
+        {
+          "id": "go.build-modules-dependencies.is-gomod-tidy-go-mod-tidy-leaves-no-diff",
+          "text": "Is `go.mod` tidy (`go mod tidy` leaves no diff)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.are-new-dependencies-justified-and-reviewed-for-quality-and-",
+          "text": "Are new dependencies justified and reviewed for quality and maintenance?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.are-indirect-dependencies-understood-no-unexpected-transitiv",
+          "text": "Are indirect dependencies understood (no unexpected transitive deps)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.is-the-go-version-in-gomod-appropriate-for-the-project",
+          "text": "Is the Go version in `go.mod` appropriate for the project?",
+          "severity": "minor",
+          "tags": [
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.are-build-tags-used-correctly-for-platform-specific-code",
+          "text": "Are build tags used correctly for platform-specific code?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.is-go-vet-clean",
+          "text": "Is `go vet` clean?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.are-linter-warnings-addressed-golangci-lint-staticcheck",
+          "text": "Are linter warnings addressed (`golangci-lint`, `staticcheck`)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.are-gogenerate-commands-documented-and-reproducible",
+          "text": "Are `//go:generate` commands documented and reproducible?",
+          "severity": "minor",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.build-modules-dependencies.is-the-binary-size-reasonable-no-unnecessary-dependencies-li",
+          "text": "Is the binary size reasonable (no unnecessary dependencies linked)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "go.observability-operations",
+      "title": "Observability & Operations",
+      "items": [
+        {
+          "id": "go.observability-operations.are-structured-logs-used-slog-zap-or-zerolog-instead-of-logp",
+          "text": "Are structured logs used (`slog`, `zap`, or `zerolog`) instead of `log.Printf`?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.observability-operations.are-log-levels-used-appropriately-debug-for-verbose-info-for",
+          "text": "Are log levels used appropriately (debug for verbose, info for operational, error for failures)?",
+          "severity": "minor",
+          "tags": [
+            "error-handling",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.observability-operations.are-metrics-exposed-prometheus-counters-gauges-histograms-fo",
+          "text": "Are metrics exposed (Prometheus counters, gauges, histograms) for new features?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.observability-operations.are-traces-propagated-through-context-opentelemetry",
+          "text": "Are traces propagated through context (OpenTelemetry)?",
+          "severity": "minor",
+          "tags": [
+            "concurrency",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.observability-operations.are-health-check-endpoints-healthz-readyz-updated",
+          "text": "Are health check endpoints (`/healthz`, `/readyz`) updated?",
+          "severity": "minor",
+          "tags": [
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.observability-operations.are-feature-flags-used-for-gradual-rollout",
+          "text": "Are feature flags used for gradual rollout?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.observability-operations.are-configuration-values-validated-at-startup-fail-fast",
+          "text": "Are configuration values validated at startup (fail fast)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.observability-operations.are-graceful-shutdown-and-drain-patterns-implemented",
+          "text": "Are graceful shutdown and drain patterns implemented?",
+          "severity": "minor",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "go.documentation",
+      "title": "Documentation",
+      "items": [
+        {
+          "id": "go.documentation.are-exported-functions-and-types-documented-with-godoc-style",
+          "text": "Are exported functions and types documented with godoc-style comments?",
+          "severity": "nit",
+          "tags": [
+            "types",
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.documentation.are-package-level-comments-present-in-a-docgo-file-for-impor",
+          "text": "Are package-level comments present in a `doc.go` file for important packages?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.documentation.are-complex-algorithms-or-business-rules-explained-in-commen",
+          "text": "Are complex algorithms or business rules explained in comments?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.documentation.are-examples-provided-for-non-obvious-apis-func-examplefoo",
+          "text": "Are examples provided for non-obvious APIs (`func ExampleFoo() {...}`)?",
+          "severity": "nit",
+          "tags": [
+            "api-design",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.documentation.are-breaking-changes-called-out-in-the-pr-description",
+          "text": "Are breaking changes called out in the PR description?",
+          "severity": "nit",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "go.documentation.is-the-readme-updated-for-new-setup-steps-environment-variab",
+          "text": "Is the README updated for new setup steps, environment variables, or CLI flags?",
+          "severity": "nit",
+          "tags": [
+            "accessibility",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2401 @@
+{
+  "meta": {
+    "id": "java-protobuf",
+    "mode": "review",
+    "title": "Java/Kotlin + Protobuf Monorepo",
+    "shortTitle": "Java/Kotlin",
+    "description": "Review checklist for Java, Kotlin, and Protobuf monorepo projects",
+    "icon": "☕",
+    "totalItems": 129,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "java-protobuf.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "java-protobuf.general-code-quality.does-the-pr-have-a-clear-description-of-what-it-does-and-why",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.general-code-quality.is-the-change-scoped-appropriately-or-should-it-be-split-int",
+          "text": "Is the change scoped appropriately, or should it be split into smaller PRs?",
+          "severity": "minor",
+          "tags": [
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.general-code-quality.are-there-any-unrelated-changes-bundled-in-drive-by-fixes-fo",
+          "text": "Are there any unrelated changes bundled in (drive-by fixes, formatting-only diffs)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.general-code-quality.does-the-commit-history-tell-a-coherent-story-are-commits-at",
+          "text": "Does the commit history tell a coherent story? Are commits atomic and well-messaged?",
+          "severity": "minor",
+          "tags": [
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.general-code-quality.is-dead-code-removed-rather-than-commented-out",
+          "text": "Is dead code removed rather than commented out?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.general-code-quality.are-todofixme-comments-accompanied-by-a-tracking-ticket",
+          "text": "Are TODO/FIXME comments accompanied by a tracking ticket?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.java-language-style",
+      "title": "Java Language & Style",
+      "subsections": [
+        {
+          "id": "java-protobuf.java-language-style.naming-readability",
+          "title": "Naming & Readability",
+          "items": [
+            {
+              "id": "java-protobuf.java-language-style.naming-readability.are-class-method-and-variable-names-descriptive-and-consiste",
+              "text": "Are class, method, and variable names descriptive and consistent with project conventions?",
+              "severity": "nit",
+              "tags": [
+                "naming",
+                "code-quality",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.naming-readability.do-method-names-clearly-describe-their-behavior-eg-finduserb",
+              "text": "Do method names clearly describe their behavior (e.g., `findUserById` vs `getUser`)?",
+              "severity": "nit",
+              "tags": [
+                "naming",
+                "code-quality"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.naming-readability.are-boolean-variablesmethods-named-with-is-has-should-can-pr",
+              "text": "Are boolean variables/methods named with `is`, `has`, `should`, `can` prefixes?",
+              "severity": "nit",
+              "tags": [
+                "naming",
+                "code-quality",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.naming-readability.are-constants-in-uppersnakecase-and-class-names-in-pascalcas",
+              "text": "Are constants in `UPPER_SNAKE_CASE` and class names in `PascalCase`?",
+              "severity": "nit",
+              "tags": [
+                "naming",
+                "code-quality"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.naming-readability.are-abbreviations-avoided-in-names-unless-they-are-universal",
+              "text": "Are abbreviations avoided in names unless they are universally understood?",
+              "severity": "nit",
+              "tags": [
+                "naming",
+                "code-quality"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "java-protobuf.java-language-style.object-oriented-design",
+          "title": "Object-Oriented Design",
+          "items": [
+            {
+              "id": "java-protobuf.java-language-style.object-oriented-design.is-the-class-doing-too-much-does-it-violate-the-single-respo",
+              "text": "Is the class doing too much? Does it violate the Single Responsibility Principle?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.object-oriented-design.are-fields-and-methods-using-the-narrowest-possible-access-m",
+              "text": "Are fields and methods using the narrowest possible access modifier (`private` > `package-private` > `protected` > `public`)?",
+              "severity": "nit",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.object-oriented-design.is-inheritance-used-appropriately-or-would-composition-be-a-",
+              "text": "Is inheritance used appropriately, or would composition be a better fit?",
+              "severity": "nit",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.object-oriented-design.are-abstract-classes-and-interfaces-used-to-define-contracts",
+              "text": "Are abstract classes and interfaces used to define contracts, not just to share code?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.object-oriented-design.are-utilityhelper-classes-kept-to-a-minimum-and-well-justifi",
+              "text": "Are utility/helper classes kept to a minimum and well-justified?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "java-protobuf.java-language-style.java-specific-patterns",
+          "title": "Java-Specific Patterns",
+          "items": [
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.are-optional-return-types-used-instead-of-returning-null-fro",
+              "text": "Are `Optional` return types used instead of returning `null` from methods?",
+              "severity": "nit",
+              "tags": [
+                "types",
+                "null-safety"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.is-optionalget-avoided-in-favor-of-orelse-orelsethrow-ifpres",
+              "text": "Is `Optional.get()` avoided in favor of `orElse()`, `orElseThrow()`, `ifPresent()`, `map()`?",
+              "severity": "nit",
+              "tags": [
+                "error-handling",
+                "types",
+                "null-safety"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.are-streams-used-appropriately-not-overly-complex-not-replac",
+              "text": "Are streams used appropriately (not overly complex, not replacing simple loops unnecessarily)?",
+              "severity": "nit",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.are-var-declarations-used-only-where-the-type-is-obvious-fro",
+              "text": "Are `var` declarations used only where the type is obvious from the right-hand side?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.is-equals-and-hashcode-overridden-together-when-either-is-ov",
+              "text": "Is `equals()` and `hashCode()` overridden together when either is overridden?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.are-immutable-objects-preferred-are-fields-final-where-possi",
+              "text": "Are immutable objects preferred? Are fields `final` where possible?",
+              "severity": "nit",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.are-builder-patterns-used-for-objects-with-many-constructor-",
+              "text": "Are builder patterns used for objects with many constructor parameters?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.java-specific-patterns.is-stringbuilder-used-for-string-concatenation-in-loops",
+              "text": "Is `StringBuilder` used for string concatenation in loops?",
+              "severity": "nit",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "java-protobuf.java-language-style.collections-generics",
+          "title": "Collections & Generics",
+          "items": [
+            {
+              "id": "java-protobuf.java-language-style.collections-generics.are-the-correct-collection-types-chosen-list-vs-set-vs-map-a",
+              "text": "Are the correct collection types chosen (`List` vs `Set` vs `Map`, `ArrayList` vs `LinkedList`)?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.collections-generics.are-collections-returned-as-unmodifiable-views-when-callers-",
+              "text": "Are collections returned as unmodifiable views when callers shouldn't modify them?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.collections-generics.are-raw-types-avoided-always-use-liststring-never-just-list",
+              "text": "Are raw types avoided (always use `List<String>`, never just `List`)?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.collections-generics.are-wildcard-generics-extends-super-used-correctly",
+              "text": "Are wildcard generics (`? extends`, `? super`) used correctly?",
+              "severity": "nit",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.java-language-style.collections-generics.are-empty-collections-returned-instead-of-null-eg-collection",
+              "text": "Are empty collections returned instead of `null` (e.g., `Collections.emptyList()`)?",
+              "severity": "nit",
+              "tags": [
+                "types",
+                "null-safety"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.error-handling-resilience",
+      "title": "Error Handling & Resilience",
+      "items": [
+        {
+          "id": "java-protobuf.error-handling-resilience.are-checked-exceptions-used-for-recoverable-conditions-and-u",
+          "text": "Are checked exceptions used for recoverable conditions and unchecked for programming errors?",
+          "severity": "major",
+          "tags": [
+            "error-handling"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.are-exceptions-caught-at-the-appropriate-level-not-too-broad",
+          "text": "Are exceptions caught at the appropriate level (not too broad, not swallowed)?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.are-catch-blocks-doing-something-meaningful-logging-wrapping",
+          "text": "Are catch blocks doing something meaningful (logging, wrapping, rethrowing), not just `e.printStackTrace()`?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.are-custom-exception-classes-used-where-they-add-semantic-va",
+          "text": "Are custom exception classes used where they add semantic value?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "accessibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.is-finally-or-try-with-resources-used-for-resource-cleanup-s",
+          "text": "Is `finally` or try-with-resources used for resource cleanup (streams, connections, locks)?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "concurrency",
+            "resource-management"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.are-catch-exception-e-or-catch-throwable-t-blocks-justified-",
+          "text": "Are `catch (Exception e)` or `catch (Throwable t)` blocks justified and documented?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "concurrency",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.are-error-messages-descriptive-enough-for-debugging-include-",
+          "text": "Are error messages descriptive enough for debugging (include relevant IDs, state)?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "protobuf",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.are-retries-implemented-with-backoff-and-bounded-attempts",
+          "text": "Are retries implemented with backoff and bounded attempts?",
+          "severity": "major",
+          "tags": [
+            "error-handling"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.error-handling-resilience.is-nullable-nonnull-annotated-consistently",
+          "text": "Is `@Nullable` / `@NonNull` annotated consistently?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "null-safety"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.concurrency-threading",
+      "title": "Concurrency & Threading",
+      "items": [
+        {
+          "id": "java-protobuf.concurrency-threading.are-shared-mutable-state-accesses-properly-synchronized",
+          "text": "Are shared mutable state accesses properly synchronized?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.is-concurrenthashmap-used-instead-of-synchronizedmap-where-a",
+          "text": "Is `ConcurrentHashMap` used instead of `synchronizedMap` where appropriate?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.are-volatile-fields-used-correctly-for-visibility-guarantees",
+          "text": "Are `volatile` fields used correctly for visibility guarantees?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.are-atomicinteger-atomicreference-etc-preferred-over-synchro",
+          "text": "Are `AtomicInteger`, `AtomicReference`, etc. preferred over `synchronized` for simple counters?",
+          "severity": "major",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.are-thread-pools-properly-sized-and-named-for-debugging",
+          "text": "Are thread pools properly sized and named (for debugging)?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "performance",
+            "naming",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.are-executorservice-instances-shut-down-properly",
+          "text": "Are `ExecutorService` instances shut down properly?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.is-there-risk-of-deadlock-lock-ordering-issues",
+          "text": "Is there risk of deadlock (lock ordering issues)?",
+          "severity": "blocker",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.are-completablefuture-chains-handling-exceptions-with-except",
+          "text": "Are `CompletableFuture` chains handling exceptions with `exceptionally()` or `handle()`?",
+          "severity": "major",
+          "tags": [
+            "error-handling",
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.concurrency-threading.are-race-conditions-possible-in-read-modify-write-sequences",
+          "text": "Are race conditions possible in read-modify-write sequences?",
+          "severity": "blocker",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.protobuf-specific",
+      "title": "Protobuf-Specific",
+      "subsections": [
+        {
+          "id": "java-protobuf.protobuf-specific.schema-design",
+          "title": "Schema Design",
+          "items": [
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-field-numbers-stable-and-never-reused-for-different-sema",
+              "text": "Are field numbers stable and never reused for different semantics?",
+              "severity": "minor",
+              "tags": [
+                "protobuf",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-deprecated-fields-marked-with-reserved-to-prevent-reuse",
+              "text": "Are deprecated fields marked with `reserved` to prevent reuse?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-field-names-in-snakecase-as-per-protobuf-convention",
+              "text": "Are field names in `snake_case` as per protobuf convention?",
+              "severity": "minor",
+              "tags": [
+                "naming",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-enums-used-with-an-unspecified-0-default-value",
+              "text": "Are enums used with an `UNSPECIFIED = 0` default value?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-oneof-fields-used-where-exactly-one-of-several-fields-sh",
+              "text": "Are `oneof` fields used where exactly one of several fields should be set?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-nested-message-types-used-to-scope-closely-related-messa",
+              "text": "Are nested message types used to scope closely related messages?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "resource-management",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-repeated-fields-used-instead-of-separate-count-values-pa",
+              "text": "Are `repeated` fields used instead of separate count + values patterns?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-googleprotobuftimestamp-and-googleprotobufduration-used-",
+              "text": "Are `google.protobuf.Timestamp` and `google.protobuf.Duration` used instead of raw integers for time?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-googleprotobuffieldmask-used-for-partial-update-apis",
+              "text": "Are `google.protobuf.FieldMask` used for partial update APIs?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.schema-design.are-bytes-fields-used-for-opaque-binary-data-not-string",
+              "text": "Are `bytes` fields used for opaque binary data, not `string`?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution",
+          "title": "Wire Compatibility & Evolution",
+          "items": [
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.is-the-change-backward-compatible-can-old-readers-still-pars",
+              "text": "Is the change backward compatible? Can old readers still parse new messages?",
+              "severity": "major",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.is-the-change-forward-compatible-can-new-readers-still-parse",
+              "text": "Is the change forward compatible? Can new readers still parse old messages?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.are-required-fields-avoided-proto3-doesnt-support-them-proto",
+              "text": "Are required fields avoided (proto3 doesn't support them, proto2 they're dangerous)?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.are-field-numbers-not-changed-for-existing-fields",
+              "text": "Are field numbers not changed for existing fields?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.are-field-types-not-changed-in-incompatible-ways-eg-int32-to",
+              "text": "Are field types not changed in incompatible ways (e.g., `int32` to `string`)?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.if-a-field-is-removed-is-the-field-number-reserved",
+              "text": "If a field is removed, is the field number `reserved`?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.is-the-proto-files-package-declaration-correct-and-consisten",
+              "text": "Is the `.proto` file's `package` declaration correct and consistent?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.wire-compatibility-evolution.are-import-statements-using-the-correct-paths",
+              "text": "Are `import` statements using the correct paths?",
+              "severity": "minor",
+              "tags": [
+                "protobuf",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "java-protobuf.protobuf-specific.generated-code-usage",
+          "title": "Generated Code Usage",
+          "items": [
+            {
+              "id": "java-protobuf.protobuf-specific.generated-code-usage.is-the-generated-java-code-used-correctly-using-builders-not",
+              "text": "Is the generated Java code used correctly (using builders, not constructing with `new`)?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.generated-code-usage.are-tobuilder-and-build-patterns-used-for-modifications",
+              "text": "Are `.toBuilder()` and `.build()` patterns used for modifications?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.generated-code-usage.are-hasfield-checks-used-before-accessing-optional-fields",
+              "text": "Are `hasField()` checks used before accessing optional fields?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "null-safety",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.generated-code-usage.is-getdefaultinstance-used-instead-of-null-for-absent-messag",
+              "text": "Is `.getDefaultInstance()` used instead of `null` for absent messages?",
+              "severity": "minor",
+              "tags": [
+                "null-safety",
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.generated-code-usage.are-proto-messages-not-used-as-map-keys-theyre-mutable",
+              "text": "Are proto messages not used as map keys (they're mutable)?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "java-protobuf.protobuf-specific.generated-code-usage.is-serializationdeserialization-done-with-the-correct-method",
+              "text": "Is serialization/deserialization done with the correct methods (`toByteArray()`, `parseFrom()`)?",
+              "severity": "minor",
+              "tags": [
+                "protobuf"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.api-design-grpc-rest",
+      "title": "API Design (gRPC / REST)",
+      "items": [
+        {
+          "id": "java-protobuf.api-design-grpc-rest.are-rpc-methods-named-with-verbs-describing-the-action-creat",
+          "text": "Are RPC methods named with verbs describing the action (`CreateUser`, `ListOrders`)?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "naming"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.api-design-grpc-rest.are-requestresponse-messages-appropriately-structured-and-no",
+          "text": "Are request/response messages appropriately structured and not overly generic?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "types",
+            "protobuf",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.api-design-grpc-rest.are-pagination-fields-included-for-list-endpoints-pagetoken-",
+          "text": "Are pagination fields included for list endpoints (`page_token`, `page_size`)?",
+          "severity": "minor",
+          "tags": [
+            "security",
+            "api-design",
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.api-design-grpc-rest.are-idempotency-keys-used-for-mutating-operations-where-appr",
+          "text": "Are idempotency keys used for mutating operations where appropriate?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.api-design-grpc-rest.are-error-codesstatus-codes-used-correctly-grpc-status-codes",
+          "text": "Are error codes/status codes used correctly (gRPC status codes, HTTP status codes)?",
+          "severity": "minor",
+          "tags": [
+            "error-handling",
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.api-design-grpc-rest.are-api-changes-documented-in-relevant-api-docs-or-changelog",
+          "text": "Are API changes documented in relevant API docs or changelogs?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.api-design-grpc-rest.are-timeouts-and-deadlines-set-appropriately",
+          "text": "Are timeouts and deadlines set appropriately?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.api-design-grpc-rest.is-input-validation-done-early-and-comprehensively",
+          "text": "Is input validation done early and comprehensively?",
+          "severity": "minor",
+          "tags": [
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.monorepo-specific-concerns",
+      "title": "Monorepo-Specific Concerns",
+      "items": [
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.does-the-change-respect-modulepackage-boundaries",
+          "text": "Does the change respect module/package boundaries?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.are-cross-module-dependencies-introduced-intentionally-and-r",
+          "text": "Are cross-module dependencies introduced intentionally and reviewed by owning teams?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.is-the-build-still-fast-are-unnecessary-dependencies-added-t",
+          "text": "Is the build still fast? Are unnecessary dependencies added to the build graph?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.are-shared-libraries-versioned-or-pinned-appropriately",
+          "text": "Are shared libraries versioned or pinned appropriately?",
+          "severity": "minor",
+          "tags": [
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.does-the-change-affect-other-modules-builds-or-tests-unexpec",
+          "text": "Does the change affect other modules' builds or tests unexpectedly?",
+          "severity": "major",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.are-internal-vs-public-apis-clearly-separated-internal-packa",
+          "text": "Are internal vs. public APIs clearly separated (`internal` packages, `@VisibleForTesting`)?",
+          "severity": "major",
+          "tags": [
+            "testing",
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.is-the-change-in-the-correct-module-or-should-it-be-in-a-sha",
+          "text": "Is the change in the correct module, or should it be in a shared library?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.monorepo-specific-concerns.are-generated-files-checked-in-or-generated-at-build-time-co",
+          "text": "Are generated files checked in or generated at build time consistently with repo conventions?",
+          "severity": "minor",
+          "tags": [
+            "naming"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "java-protobuf.testing.are-there-unit-tests-for-new-logic",
+          "text": "Are there unit tests for new logic?",
+          "severity": "major",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-tests-testing-behavior-not-implementation-details",
+          "text": "Are tests testing behavior, not implementation details?",
+          "severity": "major",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-edge-cases-covered-null-inputs-empty-collections-boundar",
+          "text": "Are edge cases covered (null inputs, empty collections, boundary values)?",
+          "severity": "major",
+          "tags": [
+            "testing",
+            "null-safety"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-test-names-descriptive-shouldreturnemptylistwhennouserse",
+          "text": "Are test names descriptive (`shouldReturnEmptyListWhenNoUsersExist`)?",
+          "severity": "major",
+          "tags": [
+            "testing",
+            "naming"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-mocks-used-appropriately-not-over-mocking-not-mocking-va",
+          "text": "Are mocks used appropriately (not over-mocking, not mocking value objects)?",
+          "severity": "major",
+          "tags": [
+            "testing",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-integration-tests-added-for-cross-module-or-database-int",
+          "text": "Are integration tests added for cross-module or database interactions?",
+          "severity": "major",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-proto-serialization-round-trip-tests-included-for-schema",
+          "text": "Are proto serialization round-trip tests included for schema changes?",
+          "severity": "major",
+          "tags": [
+            "testing",
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-flaky-test-patterns-avoided-no-threadsleep-no-reliance-o",
+          "text": "Are flaky test patterns avoided (no `Thread.sleep()`, no reliance on ordering)?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.is-test-data-constructed-with-buildersfactories-not-long-con",
+          "text": "Is test data constructed with builders/factories, not long constructors?",
+          "severity": "major",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-assertions-specific-assertequals-asserttrue-assertj-hamc",
+          "text": "Are assertions specific (`assertEquals` > `assertTrue`, AssertJ > Hamcrest)?",
+          "severity": "major",
+          "tags": [
+            "testing",
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-parameterizedtest-or-data-driven-tests-used-for-repetiti",
+          "text": "Are `@ParameterizedTest` or data-driven tests used for repetitive test cases?",
+          "severity": "major",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.testing.are-test-fixtures-and-shared-setup-in-beforeeach-not-in-each",
+          "text": "Are test fixtures and shared setup in `@BeforeEach`, not in each test method?",
+          "severity": "major",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.performance-scalability",
+      "title": "Performance & Scalability",
+      "items": [
+        {
+          "id": "java-protobuf.performance-scalability.are-database-queries-efficient-are-n1-query-patterns-avoided",
+          "text": "Are database queries efficient? Are N+1 query patterns avoided?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.are-appropriate-indexes-in-place-for-new-queries",
+          "text": "Are appropriate indexes in place for new queries?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.is-pagination-used-for-large-result-sets",
+          "text": "Is pagination used for large result sets?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.are-caches-used-where-appropriate-with-proper-invalidation",
+          "text": "Are caches used where appropriate, with proper invalidation?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.are-large-proto-messages-avoided-in-hot-paths-serialization-",
+          "text": "Are large proto messages avoided in hot paths (serialization cost)?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.are-repeated-proto-fields-bounded-in-practice-max-list-sizes",
+          "text": "Are `repeated` proto fields bounded in practice (max list sizes)?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.is-lazy-initialization-used-for-expensive-objects",
+          "text": "Is lazy initialization used for expensive objects?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.are-connection-pools-thread-pools-and-resource-pools-properl",
+          "text": "Are connection pools, thread pools, and resource pools properly configured?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "performance",
+            "resource-management",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.are-logging-levels-appropriate-debug-for-verbose-info-for-op",
+          "text": "Are logging levels appropriate (`DEBUG` for verbose, `INFO` for operational, `WARN`/`ERROR` for problems)?",
+          "severity": "minor",
+          "tags": [
+            "error-handling",
+            "performance",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.performance-scalability.is-logging-not-done-inside-tight-loops",
+          "text": "Is logging not done inside tight loops?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "java-protobuf.security.is-user-input-validated-and-sanitized",
+          "text": "Is user input validated and sanitized?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.security.are-sql-queries-parameterized-no-string-concatenation",
+          "text": "Are SQL queries parameterized (no string concatenation)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.security.are-sensitive-fields-passwords-tokens-pii-not-logged",
+          "text": "Are sensitive fields (passwords, tokens, PII) not logged?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.security.are-authentication-and-authorization-checks-in-place-for-new",
+          "text": "Are authentication and authorization checks in place for new endpoints?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.security.are-secrets-not-hardcoded-use-environment-variables-or-secre",
+          "text": "Are secrets not hardcoded (use environment variables or secret managers)?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "accessibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.security.are-dependency-versions-free-of-known-vulnerabilities",
+          "text": "Are dependency versions free of known vulnerabilities?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.security.are-proto-fields-containing-sensitive-data-annotated-or-docu",
+          "text": "Are proto fields containing sensitive data annotated or documented?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "protobuf",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.security.is-data-encrypted-in-transit-tls-and-at-rest-where-required",
+          "text": "Is data encrypted in transit (TLS) and at rest where required?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.observability-operations",
+      "title": "Observability & Operations",
+      "items": [
+        {
+          "id": "java-protobuf.observability-operations.are-new-metrics-traces-or-logs-added-for-new-features",
+          "text": "Are new metrics, traces, or logs added for new features?",
+          "severity": "minor",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.observability-operations.are-structured-logging-fields-used-not-string-interpolation-",
+          "text": "Are structured logging fields used (not string interpolation in log messages)?",
+          "severity": "minor",
+          "tags": [
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.observability-operations.are-alerts-or-dashboards-updated-for-new-failure-modes",
+          "text": "Are alerts or dashboards updated for new failure modes?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.observability-operations.are-feature-flags-used-for-gradual-rollout-of-risky-changes",
+          "text": "Are feature flags used for gradual rollout of risky changes?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.observability-operations.are-migration-scripts-idempotent-and-backward-compatible",
+          "text": "Are migration scripts idempotent and backward compatible?",
+          "severity": "major",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.observability-operations.is-there-a-rollback-plan-for-the-change",
+          "text": "Is there a rollback plan for the change?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.observability-operations.are-health-checks-updated-if-dependencies-change",
+          "text": "Are health checks updated if dependencies change?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "java-protobuf.documentation",
+      "title": "Documentation",
+      "items": [
+        {
+          "id": "java-protobuf.documentation.are-javadoc-comments-added-for-public-apis",
+          "text": "Are Javadoc comments added for public APIs?",
+          "severity": "nit",
+          "tags": [
+            "api-design",
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.documentation.are-proto-field-comments-clear-about-semantics-units-and-con",
+          "text": "Are proto field comments clear about semantics, units, and constraints?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "protobuf",
+            "accessibility",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.documentation.are-complex-algorithms-or-business-rules-explained-in-commen",
+          "text": "Are complex algorithms or business rules explained in comments?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.documentation.is-the-readme-or-internal-wiki-updated-for-architectural-cha",
+          "text": "Is the README or internal wiki updated for architectural changes?",
+          "severity": "nit",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "java-protobuf.documentation.are-breaking-changes-called-out-in-the-pr-description",
+          "text": "Are breaking changes called out in the PR description?",
+          "severity": "nit",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

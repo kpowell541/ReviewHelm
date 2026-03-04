@@ -1,0 +1,3208 @@
+{
+  "meta": {
+    "id": "js-ts-react-node",
+    "mode": "review",
+    "title": "JavaScript/TypeScript + React + Node",
+    "shortTitle": "JS/TS",
+    "description": "Review checklist for JS/TS projects with React and Node.js",
+    "icon": "⚛️",
+    "totalItems": 171,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "js-ts-react-node.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "js-ts-react-node.general-code-quality.does-the-pr-have-a-clear-description-of-what-it-does-and-why",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.general-code-quality.is-the-change-scoped-appropriately-or-should-it-be-split-int",
+          "text": "Is the change scoped appropriately, or should it be split into smaller PRs?",
+          "severity": "minor",
+          "tags": [
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.general-code-quality.are-there-any-unrelated-changes-bundled-in",
+          "text": "Are there any unrelated changes bundled in?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.general-code-quality.is-dead-code-removed-rather-than-commented-out",
+          "text": "Is dead code removed rather than commented out?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.general-code-quality.are-todofixme-comments-accompanied-by-a-tracking-ticket",
+          "text": "Are TODO/FIXME comments accompanied by a tracking ticket?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.general-code-quality.does-the-commit-history-tell-a-coherent-story",
+          "text": "Does the commit history tell a coherent story?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.typescript-type-safety",
+      "title": "TypeScript & Type Safety",
+      "subsections": [
+        {
+          "id": "js-ts-react-node.typescript-type-safety.type-definitions",
+          "title": "Type Definitions",
+          "items": [
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-types-defined-for-all-function-parameters-and-return-val",
+              "text": "Are types defined for all function parameters and return values?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-any-and-unknown-avoided-unless-absolutely-necessary-and-",
+              "text": "Are `any` and `unknown` avoided unless absolutely necessary and documented?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "documentation"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-type-assertions-as-minimized-and-justified",
+              "text": "Are type assertions (`as`) minimized and justified?",
+              "severity": "minor",
+              "tags": [
+                "testing",
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-union-types-and-discriminated-unions-used-instead-of-any",
+              "text": "Are union types and discriminated unions used instead of `any` for flexible data?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-interface-vs-type-used-consistently-with-project-convent",
+              "text": "Are `interface` vs `type` used consistently with project conventions?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-generic-types-used-where-they-add-value-reusable-functio",
+              "text": "Are generic types used where they add value (reusable functions, data structures)?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-optional-properties-distinguished-from-nullable-properti",
+              "text": "Are optional properties (`?`) distinguished from nullable properties (`| null`)?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "null-safety",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-partialt-pickt-omitt-recordkv-used-instead-of-duplicatin",
+              "text": "Are `Partial<T>`, `Pick<T>`, `Omit<T>`, `Record<K,V>` used instead of duplicating types?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-enums-used-appropriately-or-would-as-const-objects-be-mo",
+              "text": "Are enums used appropriately, or would `as const` objects be more idiomatic?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.are-shared-types-in-a-central-location-not-duplicated-across",
+              "text": "Are shared types in a central location, not duplicated across files?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-definitions.is-strict-true-being-honored-no-ts-ignore-without-explanatio",
+              "text": "Is `strict: true` being honored (no `@ts-ignore` without explanation)?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.typescript-type-safety.type-guards-narrowing",
+          "title": "Type Guards & Narrowing",
+          "items": [
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-guards-narrowing.are-custom-type-guards-is-return-type-used-for-complex-type-",
+              "text": "Are custom type guards (`is` return type) used for complex type narrowing?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-guards-narrowing.are-typeof-instanceof-and-in-checks-used-correctly-for-narro",
+              "text": "Are `typeof`, `instanceof`, and `in` checks used correctly for narrowing?",
+              "severity": "minor",
+              "tags": [
+                "types"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.typescript-type-safety.type-guards-narrowing.are-exhaustiveness-checks-never-used-in-switch-statements-on",
+              "text": "Are exhaustiveness checks (`never`) used in switch statements on union types?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.javascript-fundamentals",
+      "title": "JavaScript Fundamentals",
+      "items": [
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.is-const-preferred-over-let-and-let-over-var",
+          "text": "Is `const` preferred over `let`, and `let` over `var`?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-strict-equality-used-instead-of-loose-equality",
+          "text": "Are strict equality (`===`, `!==`) used instead of loose equality?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-template-literals-used-instead-of-string-concatenation",
+          "text": "Are template literals used instead of string concatenation?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-destructuring-and-spread-operators-used-appropriately-no",
+          "text": "Are destructuring and spread operators used appropriately (not overused)?",
+          "severity": "minor",
+          "tags": [
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-asyncawait-patterns-used-instead-of-raw-then-chains",
+          "text": "Are `async/await` patterns used instead of raw `.then()` chains?",
+          "severity": "minor",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-promiseall-promiseallsettled-used-for-concurrent-async-o",
+          "text": "Are `Promise.all()` / `Promise.allSettled()` used for concurrent async operations?",
+          "severity": "major",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-unhandled-promise-rejections-avoided-missing-catch-missi",
+          "text": "Are unhandled promise rejections avoided (missing `catch`, missing `await`)?",
+          "severity": "minor",
+          "tags": [
+            "error-handling"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-forof-loops-used-instead-of-forin-for-arrays",
+          "text": "Are `for...of` loops used instead of `for...in` for arrays?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-array-methods-map-filter-reduce-used-where-clearer-than-",
+          "text": "Are array methods (`map`, `filter`, `reduce`) used where clearer than loops?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.is-reduce-avoided-when-it-hurts-readability-prefer-map-filte",
+          "text": "Is `reduce` avoided when it hurts readability (prefer `map` + `filter`)?",
+          "severity": "nit",
+          "tags": [
+            "code-quality"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-nullish-coalescing-and-optional-chaining-used-instead-of",
+          "text": "Are nullish coalescing (`??`) and optional chaining (`?.`) used instead of `||` and `&&` checks?",
+          "severity": "minor",
+          "tags": [
+            "types",
+            "null-safety"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-map-and-set-used-instead-of-plain-objects-where-semantic",
+          "text": "Are `Map` and `Set` used instead of plain objects where semantically appropriate?",
+          "severity": "minor",
+          "tags": [
+            "react",
+            "accessibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.javascript-fundamentals.are-closures-and-variable-scoping-correct-no-stale-closure-b",
+          "text": "Are closures and variable scoping correct (no stale closure bugs)?",
+          "severity": "minor",
+          "tags": [
+            "accessibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.react-components",
+      "title": "React Components",
+      "subsections": [
+        {
+          "id": "js-ts-react-node.react-components.component-design",
+          "title": "Component Design",
+          "items": [
+            {
+              "id": "js-ts-react-node.react-components.component-design.are-components-small-and-focused-on-a-single-responsibility",
+              "text": "Are components small and focused on a single responsibility?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.component-design.is-the-component-tree-structured-to-minimize-unnecessary-re-",
+              "text": "Is the component tree structured to minimize unnecessary re-renders?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.component-design.are-presentational-and-container-concerns-separated-appropri",
+              "text": "Are presentational and container concerns separated appropriately?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.component-design.are-compound-components-or-render-props-used-instead-of-over",
+              "text": "Are compound components or render props used instead of overly complex prop drilling?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.component-design.are-component-files-co-located-with-their-styles-tests-and-t",
+              "text": "Are component files co-located with their styles, tests, and types?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "types",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.component-design.are-default-exports-avoided-in-favor-of-named-exports-for-be",
+              "text": "Are default exports avoided in favor of named exports for better refactoring support?",
+              "severity": "minor",
+              "tags": [
+                "naming",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.react-components.props-state",
+          "title": "Props & State",
+          "items": [
+            {
+              "id": "js-ts-react-node.react-components.props-state.are-prop-types-well-defined-with-typescript-interfaces",
+              "text": "Are prop types well-defined with TypeScript interfaces?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.props-state.are-required-vs-optional-props-distinguished-correctly",
+              "text": "Are required vs optional props distinguished correctly?",
+              "severity": "minor",
+              "tags": [
+                "types",
+                "null-safety",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.props-state.are-callback-props-named-with-on-prefix-onclick-onsubmit",
+              "text": "Are callback props named with `on` prefix (`onClick`, `onSubmit`)?",
+              "severity": "minor",
+              "tags": [
+                "naming",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.props-state.is-state-kept-as-local-as-possible-lifted-only-when-necessar",
+              "text": "Is state kept as local as possible (lifted only when necessary)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.props-state.is-derived-state-computed-during-render-not-stored-in-state",
+              "text": "Is derived state computed during render, not stored in state?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.props-state.are-controlled-vs-uncontrolled-components-chosen-intentional",
+              "text": "Are controlled vs uncontrolled components chosen intentionally?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.props-state.is-state-shape-flat-and-normalized-no-deeply-nested-state-ob",
+              "text": "Is state shape flat and normalized (no deeply nested state objects)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.react-components.hooks",
+          "title": "Hooks",
+          "items": [
+            {
+              "id": "js-ts-react-node.react-components.hooks.are-hooks-called-at-the-top-level-only-not-inside-conditions",
+              "text": "Are hooks called at the top level only (not inside conditions, loops, or nested functions)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.are-useeffect-dependency-arrays-correct-and-complete",
+              "text": "Are `useEffect` dependency arrays correct and complete?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.are-cleanup-functions-returned-from-useeffect-where-needed-s",
+              "text": "Are cleanup functions returned from `useEffect` where needed (subscriptions, timers, event listeners)?",
+              "severity": "minor",
+              "tags": [
+                "resource-management",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.is-useeffect-not-used-for-things-computable-from-stateprops-",
+              "text": "Is `useEffect` not used for things computable from state/props (use `useMemo` or compute inline)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.are-usememo-and-usecallback-used-appropriately-not-premature",
+              "text": "Are `useMemo` and `useCallback` used appropriately (not prematurely, but where re-renders are costly)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.are-useref-values-not-used-in-dependency-arrays-they-dont-tr",
+              "text": "Are `useRef` values not used in dependency arrays (they don't trigger re-renders)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.are-custom-hooks-extracted-for-reusable-stateful-logic",
+              "text": "Are custom hooks extracted for reusable stateful logic?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.are-custom-hooks-prefixed-with-use",
+              "text": "Are custom hooks prefixed with `use`?",
+              "severity": "minor",
+              "tags": [
+                "naming",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.hooks.is-usestate-used-for-values-that-should-trigger-a-re-render-",
+              "text": "Is `useState` used for values that should trigger a re-render, `useRef` for values that shouldn't?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.react-components.rendering",
+          "title": "Rendering",
+          "items": [
+            {
+              "id": "js-ts-react-node.react-components.rendering.are-key-props-stable-unique-and-not-using-array-indices-unle",
+              "text": "Are `key` props stable, unique, and not using array indices (unless list is static)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.rendering.are-conditional-renders-clean-ternary-for-simple-early-retur",
+              "text": "Are conditional renders clean (ternary for simple, early return for complex)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.rendering.is-rendering-guarded-against-falsy-values-rendering-0-or-cou",
+              "text": "Is `&&` rendering guarded against falsy values rendering `0` or `\"\"` (`count && <X/>` bug)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.rendering.are-fragments-used-instead-of-unnecessary-wrapper-divs",
+              "text": "Are fragments (`<>...</>`) used instead of unnecessary wrapper `<div>`s?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.rendering.are-large-lists-virtualized-react-window-react-virtuoso-when",
+              "text": "Are large lists virtualized (react-window, react-virtuoso) when rendering 100+ items?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.rendering.are-inline-objectarray-literals-avoided-in-jsx-props-creates",
+              "text": "Are inline object/array literals avoided in JSX props (creates new references each render)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.rendering.is-dangerouslysetinnerhtml-avoided-or-sanitized-if-used",
+              "text": "Is `dangerouslySetInnerHTML` avoided or sanitized if used?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.react-components.context-state-management",
+          "title": "Context & State Management",
+          "items": [
+            {
+              "id": "js-ts-react-node.react-components.context-state-management.is-react-context-used-for-truly-global-state-not-for-prop-dr",
+              "text": "Is React Context used for truly global state, not for prop drilling avoidance in shallow trees?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.context-state-management.are-context-values-memoized-to-prevent-unnecessary-re-render",
+              "text": "Are context values memoized to prevent unnecessary re-renders?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.context-state-management.are-context-providers-placed-as-low-in-the-tree-as-possible",
+              "text": "Are context providers placed as low in the tree as possible?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.context-state-management.is-the-state-management-library-redux-zustand-jotai-etc-used",
+              "text": "Is the state management library (Redux, Zustand, Jotai, etc.) used consistently with project patterns?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.context-state-management.are-selectors-used-to-read-only-necessary-slices-of-state",
+              "text": "Are selectors used to read only necessary slices of state?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.react-components.context-state-management.are-actionsmutations-named-clearly-and-consistently",
+              "text": "Are actions/mutations named clearly and consistently?",
+              "severity": "minor",
+              "tags": [
+                "naming",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.nodejs-backend",
+      "title": "Node.js Backend",
+      "subsections": [
+        {
+          "id": "js-ts-react-node.nodejs-backend.server-routing",
+          "title": "Server & Routing",
+          "items": [
+            {
+              "id": "js-ts-react-node.nodejs-backend.server-routing.are-routes-organized-logically-by-resource-not-by-http-metho",
+              "text": "Are routes organized logically (by resource, not by HTTP method)?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "resource-management",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.server-routing.are-route-handlers-thin-delegate-to-servicescontrollers",
+              "text": "Are route handlers thin (delegate to services/controllers)?",
+              "severity": "minor",
+              "tags": [
+                "api-design",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.server-routing.are-middleware-functions-ordered-correctly-auth-before-busin",
+              "text": "Are middleware functions ordered correctly (auth before business logic)?",
+              "severity": "minor",
+              "tags": [
+                "security",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.server-routing.are-request-bodies-validated-and-parsed-with-a-schema-valida",
+              "text": "Are request bodies validated and parsed with a schema validator (Zod, Joi, Yup)?",
+              "severity": "minor",
+              "tags": [
+                "protobuf",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.server-routing.are-http-status-codes-used-correctly-201-for-creation-204-fo",
+              "text": "Are HTTP status codes used correctly (201 for creation, 204 for no content, 404 for not found)?",
+              "severity": "minor",
+              "tags": [
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.server-routing.are-consistent-error-response-shapes-used-across-all-endpoin",
+              "text": "Are consistent error response shapes used across all endpoints?",
+              "severity": "minor",
+              "tags": [
+                "error-handling",
+                "api-design",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.nodejs-backend.async-patterns",
+          "title": "Async Patterns",
+          "items": [
+            {
+              "id": "js-ts-react-node.nodejs-backend.async-patterns.are-all-async-operations-properly-awaited",
+              "text": "Are all async operations properly awaited?",
+              "severity": "minor",
+              "tags": [
+                "concurrency",
+                "react",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.async-patterns.are-errors-in-async-middleware-caught-express-async-errors-o",
+              "text": "Are errors in async middleware caught (express-async-errors or try/catch)?",
+              "severity": "minor",
+              "tags": [
+                "error-handling",
+                "concurrency",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.async-patterns.are-database-transactions-used-for-multi-step-mutations",
+              "text": "Are database transactions used for multi-step mutations?",
+              "severity": "minor",
+              "tags": [
+                "concurrency",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.async-patterns.are-long-running-operations-offloaded-to-background-jobsqueu",
+              "text": "Are long-running operations offloaded to background jobs/queues?",
+              "severity": "minor",
+              "tags": [
+                "concurrency",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.async-patterns.are-connection-pools-used-for-databases-and-external-service",
+              "text": "Are connection pools used for databases and external services?",
+              "severity": "minor",
+              "tags": [
+                "concurrency",
+                "performance",
+                "resource-management",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.async-patterns.are-timeouts-set-on-external-http-calls",
+              "text": "Are timeouts set on external HTTP calls?",
+              "severity": "minor",
+              "tags": [
+                "concurrency",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.nodejs-backend.error-handling",
+          "title": "Error Handling",
+          "items": [
+            {
+              "id": "js-ts-react-node.nodejs-backend.error-handling.is-there-a-global-error-handler-middleware",
+              "text": "Is there a global error handler middleware?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "api-design",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.error-handling.are-operational-errors-expected-distinguished-from-programme",
+              "text": "Are operational errors (expected) distinguished from programmer errors (bugs)?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.error-handling.are-error-responses-not-leaking-stack-traces-or-internal-det",
+              "text": "Are error responses not leaking stack traces or internal details to clients?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "concurrency",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.error-handling.are-errors-logged-with-sufficient-context-request-id-user-id",
+              "text": "Are errors logged with sufficient context (request ID, user ID, operation)?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.error-handling.are-unhandled-rejections-and-uncaught-exceptions-handled-at-",
+              "text": "Are unhandled rejections and uncaught exceptions handled at the process level?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.nodejs-backend.security-node-specific",
+          "title": "Security (Node-specific)",
+          "items": [
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.are-environment-variables-used-for-secrets-not-hardcoded",
+              "text": "Are environment variables used for secrets (not hardcoded)?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "node",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.is-cors-configured-correctly-not-in-production",
+              "text": "Is CORS configured correctly (not `*` in production)?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.are-rate-limiters-in-place-for-public-endpoints",
+              "text": "Are rate limiters in place for public endpoints?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "api-design",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.are-request-body-size-limits-set",
+              "text": "Are request body size limits set?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.is-input-sanitized-to-prevent-nosql-injection-xss-and-path-t",
+              "text": "Is input sanitized to prevent NoSQL injection, XSS, and path traversal?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.are-authentication-tokens-validated-on-every-request-jwt-exp",
+              "text": "Are authentication tokens validated on every request (JWT expiry, signature)?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.are-passwords-hashed-with-bcryptscryptargon2-not-md5sha",
+              "text": "Are passwords hashed with bcrypt/scrypt/argon2 (not MD5/SHA)?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.are-http-security-headers-set-helmetjs-or-equivalent",
+              "text": "Are HTTP security headers set (Helmet.js or equivalent)?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.nodejs-backend.security-node-specific.are-file-uploads-validated-type-size-filename-sanitization",
+              "text": "Are file uploads validated (type, size, filename sanitization)?",
+              "severity": "blocker",
+              "tags": [
+                "security",
+                "types",
+                "naming",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.frontend-specific-concerns",
+      "title": "Frontend-Specific Concerns",
+      "subsections": [
+        {
+          "id": "js-ts-react-node.frontend-specific-concerns.styling",
+          "title": "Styling",
+          "items": [
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.styling.are-styles-scoped-to-components-css-modules-styled-component",
+              "text": "Are styles scoped to components (CSS modules, styled-components, Tailwind)?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.styling.are-magic-numbers-in-css-extracted-to-design-tokens-or-varia",
+              "text": "Are magic numbers in CSS extracted to design tokens or variables?",
+              "severity": "minor",
+              "tags": [
+                "security",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.styling.is-responsive-design-considered-mobile-first-breakpoints",
+              "text": "Is responsive design considered (mobile-first, breakpoints)?",
+              "severity": "minor",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.styling.are-dark-mode-theme-tokens-used-instead-of-hardcoded-colors",
+              "text": "Are dark mode / theme tokens used instead of hardcoded colors?",
+              "severity": "minor",
+              "tags": [
+                "security"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.styling.are-css-animations-using-transform-and-opacity-for-performan",
+              "text": "Are CSS animations using `transform` and `opacity` for performance?",
+              "severity": "minor",
+              "tags": [
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y",
+          "title": "Accessibility (a11y)",
+          "items": [
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.do-interactive-elements-have-accessible-names-labels-aria-la",
+              "text": "Do interactive elements have accessible names (labels, aria-label)?",
+              "severity": "minor",
+              "tags": [
+                "naming",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.are-semantic-html-elements-used-button-nav-main-not-div-oncl",
+              "text": "Are semantic HTML elements used (`<button>`, `<nav>`, `<main>`, not `<div onClick>`)?",
+              "severity": "minor",
+              "tags": [
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.is-keyboard-navigation-supported-focus-management-tab-order",
+              "text": "Is keyboard navigation supported (focus management, tab order)?",
+              "severity": "minor",
+              "tags": [
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.are-aria-roles-and-attributes-used-correctly-not-redundant-w",
+              "text": "Are ARIA roles and attributes used correctly (not redundant with semantic HTML)?",
+              "severity": "minor",
+              "tags": [
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.are-color-contrast-ratios-sufficient-wcag-aa-minimum",
+              "text": "Are color contrast ratios sufficient (WCAG AA minimum)?",
+              "severity": "minor",
+              "tags": [
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.are-loading-and-error-states-announced-to-screen-readers-ari",
+              "text": "Are loading and error states announced to screen readers (aria-live regions)?",
+              "severity": "minor",
+              "tags": [
+                "error-handling",
+                "react",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.are-form-inputs-associated-with-labels-htmlfor-id",
+              "text": "Are form inputs associated with labels (`htmlFor` / `id`)?",
+              "severity": "minor",
+              "tags": [
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.accessibility-a11y.are-images-with-content-meaning-given-alt-text-are-decorativ",
+              "text": "Are images with content meaning given `alt` text? Are decorative images `alt=\"\"`?",
+              "severity": "minor",
+              "tags": [
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.frontend-specific-concerns.performance",
+          "title": "Performance",
+          "items": [
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.performance.are-images-optimized-webpavif-lazy-loading-responsive-srcset",
+              "text": "Are images optimized (WebP/AVIF, lazy loading, responsive `srcSet`)?",
+              "severity": "minor",
+              "tags": [
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.performance.are-large-dependencies-evaluated-for-bundle-size-impact",
+              "text": "Are large dependencies evaluated for bundle size impact?",
+              "severity": "minor",
+              "tags": [
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.performance.is-code-splitting-used-for-routes-and-heavy-components-react",
+              "text": "Is code splitting used for routes and heavy components (`React.lazy`, dynamic `import()`)?",
+              "severity": "minor",
+              "tags": [
+                "performance",
+                "api-design",
+                "react",
+                "node"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.performance.are-network-requests-deduplicated-and-cached-react-query-swr",
+              "text": "Are network requests deduplicated and cached (React Query, SWR, Apollo)?",
+              "severity": "minor",
+              "tags": [
+                "performance",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.performance.are-web-vitals-considered-lcp-fidinp-cls",
+              "text": "Are web vitals considered (LCP, FID/INP, CLS)?",
+              "severity": "minor",
+              "tags": [
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.performance.are-expensive-computations-moved-to-web-workers-or-debounced",
+              "text": "Are expensive computations moved to web workers or debounced/throttled?",
+              "severity": "minor",
+              "tags": [
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.performance.are-fonts-loaded-efficiently-preload-font-display-swap",
+              "text": "Are fonts loaded efficiently (preload, `font-display: swap`)?",
+              "severity": "minor",
+              "tags": [
+                "performance"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.frontend-specific-concerns.browser-network",
+          "title": "Browser & Network",
+          "items": [
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.browser-network.are-api-calls-handled-with-loading-error-and-empty-states",
+              "text": "Are API calls handled with loading, error, and empty states?",
+              "severity": "minor",
+              "tags": [
+                "error-handling",
+                "api-design",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.browser-network.is-optimistic-ui-used-for-instant-feeling-mutations-where-ap",
+              "text": "Is optimistic UI used for instant-feeling mutations where appropriate?",
+              "severity": "minor",
+              "tags": [
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.browser-network.are-network-errors-handled-gracefully-retry-offline-state",
+              "text": "Are network errors handled gracefully (retry, offline state)?",
+              "severity": "minor",
+              "tags": [
+                "error-handling",
+                "concurrency",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.browser-network.are-stale-while-revalidate-patterns-used-for-frequently-acce",
+              "text": "Are stale-while-revalidate patterns used for frequently accessed data?",
+              "severity": "minor",
+              "tags": [
+                "general"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.frontend-specific-concerns.browser-network.are-local-storage-session-storage-values-namespaced-and-size",
+              "text": "Are local storage / session storage values namespaced and size-bounded?",
+              "severity": "minor",
+              "tags": [
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.testing",
+      "title": "Testing",
+      "subsections": [
+        {
+          "id": "js-ts-react-node.testing.unit-tests",
+          "title": "Unit Tests",
+          "items": [
+            {
+              "id": "js-ts-react-node.testing.unit-tests.are-there-unit-tests-for-new-utility-functions-and-hooks",
+              "text": "Are there unit tests for new utility functions and hooks?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.unit-tests.are-tests-testing-behavior-not-implementation",
+              "text": "Are tests testing behavior, not implementation?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.unit-tests.are-edge-cases-covered-empty-arrays-null-undefined-boundary-",
+              "text": "Are edge cases covered (empty arrays, null, undefined, boundary values)?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "null-safety"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.unit-tests.are-test-names-descriptive-itshould-show-error-when-email-is",
+              "text": "Are test names descriptive (`it(\"should show error when email is invalid\")`)?",
+              "severity": "major",
+              "tags": [
+                "error-handling",
+                "testing",
+                "naming"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.unit-tests.are-mocks-scoped-to-the-test-and-cleaned-up-jestrestoreallmo",
+              "text": "Are mocks scoped to the test and cleaned up (`jest.restoreAllMocks()`)?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "api-design"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.testing.component-tests",
+          "title": "Component Tests",
+          "items": [
+            {
+              "id": "js-ts-react-node.testing.component-tests.are-react-components-tested-with-testing-library-not-enzyme",
+              "text": "Are React components tested with Testing Library (not Enzyme)?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.component-tests.are-queries-using-accessible-selectors-getbyrole-getbylabelt",
+              "text": "Are queries using accessible selectors (`getByRole`, `getByLabelText`) not `getByTestId`?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "react",
+                "accessibility"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.component-tests.are-user-interactions-simulated-with-userevent-not-fireevent",
+              "text": "Are user interactions simulated with `userEvent`, not `fireEvent`?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.component-tests.are-async-state-changes-awaited-with-waitfor-or-findby",
+              "text": "Are async state changes awaited with `waitFor` or `findBy`?",
+              "severity": "major",
+              "tags": [
+                "concurrency",
+                "testing",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.component-tests.are-snapshot-tests-avoided-or-used-sparingly-and-intentional",
+              "text": "Are snapshot tests avoided or used sparingly and intentionally?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.testing.integration-e2e-tests",
+          "title": "Integration & E2E Tests",
+          "items": [
+            {
+              "id": "js-ts-react-node.testing.integration-e2e-tests.are-api-endpoints-tested-with-supertest-or-similar",
+              "text": "Are API endpoints tested with supertest or similar?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "api-design"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.integration-e2e-tests.are-critical-user-flows-covered-by-e2e-tests-playwright-cypr",
+              "text": "Are critical user flows covered by E2E tests (Playwright, Cypress)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.integration-e2e-tests.are-e2e-tests-not-brittle-no-hardcoded-waits-stable-selector",
+              "text": "Are E2E tests not brittle (no hardcoded waits, stable selectors)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.integration-e2e-tests.are-test-database-fixtures-managed-properly-seeding-cleanup",
+              "text": "Are test database fixtures managed properly (seeding, cleanup)?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "resource-management",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "js-ts-react-node.testing.test-quality",
+          "title": "Test Quality",
+          "items": [
+            {
+              "id": "js-ts-react-node.testing.test-quality.are-tests-independent-no-reliance-on-execution-order",
+              "text": "Are tests independent (no reliance on execution order)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.test-quality.are-test-utilities-and-custom-render-functions-used-to-reduc",
+              "text": "Are test utilities and custom render functions used to reduce boilerplate?",
+              "severity": "major",
+              "tags": [
+                "testing",
+                "react"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.test-quality.are-beforeeachaftereach-used-for-setupteardown-not-repeated-",
+              "text": "Are `beforeEach`/`afterEach` used for setup/teardown, not repeated in each test?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            },
+            {
+              "id": "js-ts-react-node.testing.test-quality.is-test-coverage-adequate-for-the-change-not-chasing-100-but",
+              "text": "Is test coverage adequate for the change (not chasing 100%, but covering important paths)?",
+              "severity": "major",
+              "tags": [
+                "testing"
+              ],
+              "baseContent": {
+                "whatItMeans": "",
+                "whyItMatters": "",
+                "howToVerify": "",
+                "exampleComment": "",
+                "codeExamples": [],
+                "keyTakeaway": "",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.module-dependency-management",
+      "title": "Module & Dependency Management",
+      "items": [
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-new-dependencies-justified-and-vetted-maintained-small-s",
+          "text": "Are new dependencies justified and vetted (maintained, small, secure)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-dependency-versions-pinned-or-using-lockfiles-package-lo",
+          "text": "Are dependency versions pinned or using lockfiles (`package-lock.json`, `yarn.lock`)?",
+          "severity": "minor",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-peer-dependency-warnings-resolved",
+          "text": "Are peer dependency warnings resolved?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-circular-dependencies-avoided",
+          "text": "Are circular dependencies avoided?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-barrel-files-indexts-not-causing-excessive-bundling",
+          "text": "Are barrel files (`index.ts`) not causing excessive bundling?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-imports-organized-consistently-external-internal-relativ",
+          "text": "Are imports organized consistently (external, internal, relative)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-unused-dependencies-removed",
+          "text": "Are unused dependencies removed?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.module-dependency-management.are-dev-dependencies-vs-production-dependencies-classified-c",
+          "text": "Are dev dependencies vs production dependencies classified correctly?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.api-design-data-flow",
+      "title": "API Design & Data Flow",
+      "items": [
+        {
+          "id": "js-ts-react-node.api-design-data-flow.are-rest-conventions-followed-resource-nouns-http-verbs-prop",
+          "text": "Are REST conventions followed (resource nouns, HTTP verbs, proper status codes)?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "naming",
+            "resource-management",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.api-design-data-flow.are-requestresponse-schemas-versioned-or-backward-compatible",
+          "text": "Are request/response schemas versioned or backward compatible?",
+          "severity": "major",
+          "tags": [
+            "api-design",
+            "protobuf"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.api-design-data-flow.are-api-types-shared-between-frontend-and-backend-monorepo-o",
+          "text": "Are API types shared between frontend and backend (monorepo) or generated from OpenAPI/GraphQL?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "types"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.api-design-data-flow.are-pagination-filtering-and-sorting-implemented-for-list-en",
+          "text": "Are pagination, filtering, and sorting implemented for list endpoints?",
+          "severity": "minor",
+          "tags": [
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.api-design-data-flow.are-n1-query-patterns-avoided-in-graphql-resolvers-use-datal",
+          "text": "Are N+1 query patterns avoided in GraphQL resolvers (use DataLoader)?",
+          "severity": "minor",
+          "tags": [
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.api-design-data-flow.is-data-normalized-on-the-client-or-server-as-appropriate",
+          "text": "Is data normalized on the client or server as appropriate?",
+          "severity": "minor",
+          "tags": [
+            "api-design",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.security-general",
+      "title": "Security (General)",
+      "items": [
+        {
+          "id": "js-ts-react-node.security-general.is-user-input-validated-on-both-client-and-server",
+          "text": "Is user input validated on both client and server?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.security-general.are-xss-vectors-mitigated-no-dangerouslysetinnerhtml-with-us",
+          "text": "Are XSS vectors mitigated (no `dangerouslySetInnerHTML` with user content)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.security-general.are-csrf-protections-in-place-for-state-changing-requests",
+          "text": "Are CSRF protections in place for state-changing requests?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "react"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.security-general.are-authentication-and-authorization-checked-for-every-prote",
+          "text": "Are authentication and authorization checked for every protected route (both frontend guards and backend middleware)?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "api-design",
+            "node"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.security-general.are-secrets-absent-from-client-side-code-and-git-history",
+          "text": "Are secrets absent from client-side code and git history?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.security-general.are-third-party-scripts-evaluated-for-security-cdn-integrity",
+          "text": "Are third-party scripts evaluated for security (CDN integrity hashes)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.security-general.are-content-security-policy-headers-configured",
+          "text": "Are Content Security Policy headers configured?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.security-general.are-file-paths-sanitized-to-prevent-directory-traversal",
+          "text": "Are file paths sanitized to prevent directory traversal?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.observability-operations",
+      "title": "Observability & Operations",
+      "items": [
+        {
+          "id": "js-ts-react-node.observability-operations.are-structured-logs-used-json-format-correlation-ids",
+          "text": "Are structured logs used (JSON format, correlation IDs)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.observability-operations.are-new-features-behind-feature-flags-for-safe-rollout",
+          "text": "Are new features behind feature flags for safe rollout?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.observability-operations.are-health-check-endpoints-updated-if-dependencies-change",
+          "text": "Are health check endpoints updated if dependencies change?",
+          "severity": "minor",
+          "tags": [
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.observability-operations.are-metrics-tracked-for-new-api-endpoints-latency-error-rate",
+          "text": "Are metrics tracked for new API endpoints (latency, error rate)?",
+          "severity": "minor",
+          "tags": [
+            "error-handling",
+            "api-design"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.observability-operations.are-sentryerror-tracking-breadcrumbs-meaningful",
+          "text": "Are Sentry/error tracking breadcrumbs meaningful?",
+          "severity": "minor",
+          "tags": [
+            "error-handling"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.observability-operations.are-database-migrations-reversible",
+          "text": "Are database migrations reversible?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.observability-operations.are-environment-specific-configurations-handled-correctly-de",
+          "text": "Are environment-specific configurations handled correctly (dev/staging/prod)?",
+          "severity": "minor",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "js-ts-react-node.documentation",
+      "title": "Documentation",
+      "items": [
+        {
+          "id": "js-ts-react-node.documentation.are-jsdoc-comments-added-for-exported-functions-and-complex-",
+          "text": "Are JSDoc comments added for exported functions and complex logic?",
+          "severity": "nit",
+          "tags": [
+            "code-quality",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.documentation.are-readme-files-updated-for-new-setup-steps-or-environment-",
+          "text": "Are README files updated for new setup steps or environment variables?",
+          "severity": "nit",
+          "tags": [
+            "accessibility",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.documentation.are-api-endpoints-documented-openapiswagger-graphql-schema",
+          "text": "Are API endpoints documented (OpenAPI/Swagger, GraphQL schema)?",
+          "severity": "nit",
+          "tags": [
+            "api-design",
+            "protobuf",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.documentation.are-breaking-changes-called-out-in-the-pr-description",
+          "text": "Are breaking changes called out in the PR description?",
+          "severity": "nit",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        },
+        {
+          "id": "js-ts-react-node.documentation.are-storybook-stories-added-for-new-ui-components",
+          "text": "Are Storybook stories added for new UI components?",
+          "severity": "nit",
+          "tags": [
+            "react",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "",
+            "whyItMatters": "",
+            "howToVerify": "",
+            "exampleComment": "",
+            "codeExamples": [],
+            "keyTakeaway": "",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}
