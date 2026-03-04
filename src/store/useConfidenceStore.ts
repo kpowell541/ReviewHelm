@@ -14,10 +14,15 @@ import { SEVERITY_WEIGHTS } from '../data/types';
 
 interface ConfidenceState {
   histories: Record<string, ItemConfidenceHistory>;
+  hasHydrated: boolean;
+  setHasHydrated: (hydrated: boolean) => void;
 
   recordSessionResults: (
     session: Session,
     itemSeverities: Record<string, { severity: Severity; sectionId: string }>
+  ) => void;
+  replaceHistories: (
+    histories: Record<string, ItemConfidenceHistory>
   ) => void;
   getItemHistory: (itemId: string) => ItemConfidenceHistory | undefined;
   getWeakestItems: (limit: number, stackId?: string) => ItemConfidenceHistory[];
@@ -61,6 +66,8 @@ export const useConfidenceStore = create<ConfidenceState>()(
   persist(
     (set, get) => ({
       histories: {},
+      hasHydrated: false,
+      setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
       recordSessionResults: (session, itemSeverities) => {
         set((state) => {
@@ -118,6 +125,8 @@ export const useConfidenceStore = create<ConfidenceState>()(
         });
       },
 
+      replaceHistories: (histories) => set({ histories }),
+
       getItemHistory: (itemId) => {
         return get().histories[itemId];
       },
@@ -157,6 +166,9 @@ export const useConfidenceStore = create<ConfidenceState>()(
     {
       name: 'confidence-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

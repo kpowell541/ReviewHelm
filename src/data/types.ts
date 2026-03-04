@@ -165,6 +165,30 @@ export interface LearningPath {
 // AI Tutor
 // ============================================
 
+export type ClaudeModel = 'sonnet' | 'opus';
+
+export const CLAUDE_MODEL_IDS: Record<ClaudeModel, string> = {
+  sonnet: 'claude-sonnet-4-6',
+  opus: 'claude-opus-4-6',
+};
+
+export const CLAUDE_MODEL_LABELS: Record<ClaudeModel, string> = {
+  sonnet: 'Sonnet 4.6',
+  opus: 'Opus 4.6',
+};
+
+export const CLAUDE_MODEL_DESCRIPTIONS: Record<ClaudeModel, string> = {
+  sonnet: 'Great for daily learning, explanations, and comment drafting',
+  opus: 'Best for complex topics like concurrency, architecture, and type systems',
+};
+
+export type TutorRole =
+  | 'concept-explainer'
+  | 'qa'
+  | 'comment-drafter'
+  | 'exercise-generator'
+  | 'anti-bias-challenger';
+
 export interface TutorMessage {
   role: 'user' | 'assistant';
   content: string;

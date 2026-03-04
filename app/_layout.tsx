@@ -47,12 +47,23 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="comment-drafter/[itemId]"
+          options={{
+            title: 'Draft Comment',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
           name="session-summary/[sessionId]"
           options={{ title: 'Session Summary' }}
         />
         <Stack.Screen
           name="learn/stack-select"
           options={{ title: 'Learn — Select Stack' }}
+        />
+        <Stack.Screen
+          name="learn/[stackId]"
+          options={{ title: 'Learning Session' }}
         />
         <Stack.Screen
           name="gaps"

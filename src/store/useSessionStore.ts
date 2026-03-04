@@ -13,6 +13,8 @@ import type {
 
 interface SessionState {
   sessions: Record<string, Session>;
+  hasHydrated: boolean;
+  setHasHydrated: (hydrated: boolean) => void;
 
   createSession: (
     mode: ChecklistMode,
@@ -28,6 +30,7 @@ interface SessionState {
   renameSession: (sessionId: string, title: string) => void;
   completeSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
+  replaceSessions: (sessions: Record<string, Session>) => void;
   getSession: (sessionId: string) => Session | undefined;
   getSessionsByMode: (mode: ChecklistMode, stackId?: StackId) => Session[];
   getRecentSessions: (limit: number) => Session[];
@@ -37,6 +40,8 @@ export const useSessionStore = create<SessionState>()(
   persist(
     (set, get) => ({
       sessions: {},
+      hasHydrated: false,
+      setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
       createSession: (mode, stackId, title) => {
         const id = uuidv4();
@@ -124,6 +129,7 @@ export const useSessionStore = create<SessionState>()(
         set((state) => {
           const session = state.sessions[sessionId];
           if (!session) return state;
+          if (session.completedAt || session.isComplete) return state;
           return {
             sessions: {
               ...state.sessions,
@@ -144,6 +150,8 @@ export const useSessionStore = create<SessionState>()(
           return { sessions: rest };
         });
       },
+
+      replaceSessions: (sessions) => set({ sessions }),
 
       getSession: (sessionId) => {
         return get().sessions[sessionId];
@@ -174,6 +182,9 @@ export const useSessionStore = create<SessionState>()(
     {
       name: 'session-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

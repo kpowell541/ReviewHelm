@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0f0f1a"/>
+    </linearGradient>
+    <linearGradient id="wheelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9b93ff"/>
+      <stop offset="50%" style="stop-color:#6c63ff"/>
+      <stop offset="100%" style="stop-color:#5a52dd"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bgGrad4)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="none" stroke="#2a2a4a" stroke-width="2"/>
+
+  <!-- Subtle glow behind wheel -->
+  <circle cx="256" cy="232" r="160" fill="#6c63ff" opacity="0.04"/>
+  <circle cx="256" cy="232" r="120" fill="#6c63ff" opacity="0.03"/>
+
+  <!-- Outer wheel ring - thick and bold -->
+  <circle cx="256" cy="232" r="130" fill="none" stroke="url(#wheelGrad)" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- Inner hub ring -->
+  <circle cx="256" cy="232" r="40" fill="#6c63ff" opacity="0.15"/>
+  <circle cx="256" cy="232" r="40" fill="none" stroke="url(#wheelGrad)" stroke-width="10"/>
+
+  <!-- 6 spokes only - cleaner look -->
+  <!-- Top -->
+  <line x1="256" y1="102" x2="256" y2="192" stroke="url(#wheelGrad)" stroke-width="12" stroke-linecap="round"/>
+  <!-- Bottom -->
+  <line x1="256" y1="272" x2="256" y2="362" stroke="url(#wheelGrad)" stroke-width="12" stroke-linecap="round"/>
+  <!-- Upper-left -->
+  <line x1="143" y1="167" x2="222" y2="210" stroke="url(#wheelGrad)" stroke-width="12" stroke-linecap="round"/>
+  <!-- Upper-right -->
+  <line x1="369" y1="167" x2="290" y2="210" stroke="url(#wheelGrad)" stroke-width="12" stroke-linecap="round"/>
+  <!-- Lower-left -->
+  <line x1="143" y1="297" x2="222" y2="254" stroke="url(#wheelGrad)" stroke-width="12" stroke-linecap="round"/>
+  <!-- Lower-right -->
+  <line x1="369" y1="297" x2="290" y2="254" stroke="url(#wheelGrad)" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- Handle knobs - larger, glowing -->
+  <circle cx="256" cy="94" r="14" fill="url(#wheelGrad)"/>
+  <circle cx="256" cy="370" r="14" fill="url(#wheelGrad)"/>
+  <circle cx="136" cy="162" r="14" fill="url(#wheelGrad)"/>
+  <circle cx="376" cy="162" r="14" fill="url(#wheelGrad)"/>
+  <circle cx="136" cy="302" r="14" fill="url(#wheelGrad)"/>
+  <circle cx="376" cy="302" r="14" fill="url(#wheelGrad)"/>
+
+  <!-- Center dot -->
+  <circle cx="256" cy="232" r="8" fill="#ffffff"/>
+
+  <!-- App name - bolder treatment -->
+  <text x="256" y="455" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="38" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="3">REVIEWHELM</text>
+</svg>

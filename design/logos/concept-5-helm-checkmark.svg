@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0f0f1a"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b83ff"/>
+      <stop offset="100%" style="stop-color:#6c63ff"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ade80"/>
+      <stop offset="100%" style="stop-color:#22c55e"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bgGrad5)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="none" stroke="#2a2a4a" stroke-width="2"/>
+
+  <!-- Outer wheel ring -->
+  <circle cx="256" cy="232" r="135" fill="none" stroke="url(#purpleGrad5)" stroke-width="14"/>
+
+  <!-- Inner hub -->
+  <circle cx="256" cy="232" r="48" fill="none" stroke="url(#purpleGrad5)" stroke-width="10"/>
+
+  <!-- 8 spokes -->
+  <line x1="256" y1="97" x2="256" y2="184" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="256" y1="280" x2="256" y2="367" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="121" y1="232" x2="208" y2="232" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="304" y1="232" x2="391" y2="232" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="160" y1="136" x2="222" y2="198" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="352" y1="136" x2="290" y2="198" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="160" y1="328" x2="222" y2="266" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+  <line x1="352" y1="328" x2="290" y2="266" stroke="url(#purpleGrad5)" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Handle knobs -->
+  <circle cx="256" cy="90" r="11" fill="url(#purpleGrad5)"/>
+  <circle cx="256" cy="374" r="11" fill="url(#purpleGrad5)"/>
+  <circle cx="114" cy="232" r="11" fill="url(#purpleGrad5)"/>
+  <circle cx="398" cy="232" r="11" fill="url(#purpleGrad5)"/>
+  <circle cx="154" cy="130" r="9" fill="url(#purpleGrad5)"/>
+  <circle cx="358" cy="130" r="9" fill="url(#purpleGrad5)"/>
+  <circle cx="154" cy="334" r="9" fill="url(#purpleGrad5)"/>
+  <circle cx="358" cy="334" r="9" fill="url(#purpleGrad5)"/>
+
+  <!-- Large checkmark in center - the "review approved" mark -->
+  <path d="M228 232 L248 252 L284 212" fill="none" stroke="url(#greenGrad)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Subtle green glow behind checkmark -->
+  <circle cx="256" cy="232" r="38" fill="#22c55e" opacity="0.08"/>
+
+  <!-- App name with split coloring -->
+  <text x="198" y="452" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="36" font-weight="700" fill="#ffffff" text-anchor="middle">Review</text>
+  <text x="330" y="452" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="36" font-weight="700" fill="#6c63ff" text-anchor="middle">Helm</text>
+</svg>

@@ -1,5 +1,12 @@
-import { useState, memo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useState, memo, useEffect, useMemo } from 'react';
+import * as Haptics from 'expo-haptics';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  TextInput,
+} from 'react-native';
 import type {
   ChecklistItem,
   ItemResponse,
@@ -42,22 +49,51 @@ const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
 interface Props {
   item: ChecklistItem;
   response?: ItemResponse;
+  textSize: 'small' | 'medium' | 'large';
   onSetVerdict: (itemId: string, verdict: Verdict) => void;
   onSetConfidence: (itemId: string, confidence: ConfidenceLevel) => void;
+  onSetNotes: (itemId: string, notes: string) => void;
   onDeepDive: (itemId: string) => void;
+  onDraftComment: (itemId: string) => void;
 }
 
 export const ChecklistItemRow = memo(function ChecklistItemRow({
   item,
   response,
+  textSize,
   onSetVerdict,
   onSetConfidence,
+  onSetNotes,
   onDeepDive,
+  onDraftComment,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(response?.notes ?? '');
   const currentVerdict = response?.verdict || 'skipped';
   const currentConfidence = response?.confidence || 3;
   const sevColor = SEVERITY_COLORS[item.severity];
+  const hasNotes = notesDraft.trim().length > 0;
+
+  const itemTextSize = useMemo(() => {
+    if (textSize === 'small') return { fontSize: fontSizes.sm, lineHeight: 20 };
+    if (textSize === 'large') return { fontSize: fontSizes.lg, lineHeight: 24 };
+    return { fontSize: fontSizes.md, lineHeight: 22 };
+  }, [textSize]);
+
+  useEffect(() => {
+    setNotesDraft(response?.notes ?? '');
+  }, [response?.notes]);
+
+  const handleSetVerdict = (verdict: Verdict) => {
+    void Haptics.selectionAsync();
+    onSetVerdict(item.id, verdict);
+  };
+
+  const handleSetConfidence = (confidence: ConfidenceLevel) => {
+    void Haptics.selectionAsync();
+    onSetConfidence(item.id, confidence);
+  };
 
   return (
     <View style={styles.container}>
@@ -71,7 +107,10 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
             {SEVERITY_SHORT[item.severity]}
           </Text>
         </View>
-        <Text style={styles.itemText} numberOfLines={expanded ? undefined : 2}>
+        <Text
+          style={[styles.itemText, itemTextSize]}
+          numberOfLines={expanded ? undefined : 2}
+        >
           {item.text}
         </Text>
         <Pressable
@@ -88,7 +127,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         {VERDICT_OPTIONS.map((opt) => (
           <Pressable
             key={opt.value}
-            onPress={() => onSetVerdict(item.id, opt.value)}
+            onPress={() => handleSetVerdict(opt.value)}
             style={[
               styles.verdictButton,
               currentVerdict === opt.value && {
@@ -116,7 +155,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           {CONFIDENCE_LEVELS.map((level) => (
             <Pressable
               key={level}
-              onPress={() => onSetConfidence(item.id, level)}
+              onPress={() => handleSetConfidence(level)}
               style={[
                 styles.confidenceButton,
                 currentConfidence === level && {
@@ -148,6 +187,28 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         {CONFIDENCE_LABELS[currentConfidence]}
       </Text>
 
+      <Pressable
+        onPress={() => setNotesExpanded((prev) => !prev)}
+        style={styles.notesToggle}
+      >
+        <Text style={styles.notesToggleText}>
+          {hasNotes ? '📝 Notes (saved)' : '📝 Add per-item notes'}
+        </Text>
+      </Pressable>
+
+      {notesExpanded && (
+        <TextInput
+          style={styles.notesInput}
+          value={notesDraft}
+          onChangeText={setNotesDraft}
+          onBlur={() => onSetNotes(item.id, notesDraft)}
+          placeholder="Capture specifics for this checklist item..."
+          placeholderTextColor={colors.textMuted}
+          multiline
+          textAlignVertical="top"
+        />
+      )}
+
       {/* AI tutor nudge for low confidence */}
       {currentConfidence <= 2 && (
         <Pressable
@@ -164,11 +225,14 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
 
       {/* Comment draft nudge for needs-attention */}
       {currentVerdict === 'needs-attention' && (
-        <View style={styles.attentionHint}>
+        <Pressable
+          onPress={() => onDraftComment(item.id)}
+          style={styles.attentionHint}
+        >
           <Text style={styles.attentionHintText}>
-            ✍️ Found an issue — tap 📚 to draft a comment
+            ✍️ Found an issue — tap to draft a comment
           </Text>
-        </View>
+        </Pressable>
       )}
     </View>
   );
@@ -200,9 +264,7 @@ const styles = StyleSheet.create({
   },
   itemText: {
     flex: 1,
-    fontSize: fontSizes.md,
     color: colors.textPrimary,
-    lineHeight: 22,
   },
   deepDiveButton: {
     marginLeft: spacing.sm,
@@ -264,6 +326,25 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     textAlign: 'right',
+    marginBottom: spacing.xs,
+  },
+  notesToggle: {
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  notesToggleText: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+  },
+  notesInput: {
+    backgroundColor: colors.bg,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    minHeight: 76,
+    padding: spacing.sm,
     marginBottom: spacing.xs,
   },
   tutorNudge: {
