@@ -7,9 +7,11 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { usePreferencesStore } from '../../src/store/usePreferencesStore';
+import { useUsageStore } from '../../src/store/useUsageStore';
 import { findItemById } from '../../src/data/checklistFinder';
 import { sendTutorMessage, AiClientError } from '../../src/ai';
 import type {
@@ -27,8 +29,10 @@ import { colors, spacing, fontSizes, radius } from '../../src/theme';
 export default function LearnSessionScreen() {
   const { stackId } = useLocalSearchParams<{ stackId: string }>();
   const router = useRouter();
-  const apiKey = usePreferencesStore((s) => s.apiKey);
+  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
+  const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
   const aiModel = usePreferencesStore((s) => s.aiModel);
+  const recordUsage = useUsageStore((s) => s.recordUsage);
 
   const weakestItems = useConfidenceStore((s) =>
     stackId === 'all'
@@ -46,6 +50,7 @@ export default function LearnSessionScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
+  const [wasAutoDowngraded, setWasAutoDowngraded] = useState(false);
 
   const currentGap = gaps[currentIndex];
   const found = useMemo(
@@ -68,6 +73,7 @@ export default function LearnSessionScreen() {
     setMessages([userMsg]);
 
     try {
+      const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
         apiKey,
         model: aiModel,
@@ -77,6 +83,12 @@ export default function LearnSessionScreen() {
         confidence: currentGap.currentConfidence as ConfidenceLevel,
         messages: [userMsg],
       });
+      if (!response.cached) {
+        recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
+          feature: 'learn',
+        });
+      }
+      setWasAutoDowngraded(response.autoDowngraded);
 
       setMessages((prev) => [
         ...prev,
@@ -93,7 +105,7 @@ export default function LearnSessionScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [found, currentGap, apiKey, aiModel]);
+  }, [found, currentGap, aiModel, recordUsage, resolveApiKey]);
 
   const requestExercise = useCallback(async () => {
     if (!found || !currentGap) return;
@@ -109,6 +121,7 @@ export default function LearnSessionScreen() {
     setMessages(updatedMessages);
 
     try {
+      const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
         apiKey,
         model: aiModel,
@@ -118,6 +131,12 @@ export default function LearnSessionScreen() {
         confidence: currentGap.currentConfidence as ConfidenceLevel,
         messages: updatedMessages,
       });
+      if (!response.cached) {
+        recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
+          feature: 'learn',
+        });
+      }
+      setWasAutoDowngraded(response.autoDowngraded);
 
       setMessages((prev) => [
         ...prev,
@@ -134,7 +153,7 @@ export default function LearnSessionScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [found, currentGap, messages, apiKey, aiModel]);
+  }, [found, currentGap, messages, aiModel, recordUsage, resolveApiKey]);
 
   const nextItem = useCallback(() => {
     if (currentIndex < gaps.length - 1) {
@@ -142,6 +161,7 @@ export default function LearnSessionScreen() {
       setMessages([]);
       setStarted(false);
       setError(null);
+      setWasAutoDowngraded(false);
     }
   }, [currentIndex, gaps.length]);
 
@@ -213,7 +233,7 @@ export default function LearnSessionScreen() {
       {/* Not started state */}
       {!started && (
         <View style={styles.startSection}>
-          {!apiKey ? (
+          {!hasApiKey ? (
             <View style={styles.noKeyCard}>
               <Text style={styles.noKeyText}>
                 Add your Claude API key in Settings to use AI-powered learning.
@@ -251,6 +271,14 @@ export default function LearnSessionScreen() {
         </View>
       )}
 
+      {wasAutoDowngraded && (
+        <View style={styles.downgradeBadge}>
+          <Text style={styles.downgradeBadgeText}>
+            Budget mode: request auto-downgraded to Sonnet.
+          </Text>
+        </View>
+      )}
+
       {/* Chat Messages */}
       {started && messages.length > 0 && (
         <View style={styles.chatSection}>
@@ -258,7 +286,7 @@ export default function LearnSessionScreen() {
             .filter((m) => m.role === 'assistant')
             .map((msg, i) => (
               <View key={i} style={styles.lessonCard}>
-                <Text style={styles.lessonText}>{msg.content}</Text>
+                <Markdown style={markdownStyles}>{msg.content}</Markdown>
               </View>
             ))}
 
@@ -424,6 +452,20 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: spacing.md,
   },
+  downgradeBadge: {
+    backgroundColor: `${colors.warning}22`,
+    borderWidth: 1,
+    borderColor: `${colors.warning}66`,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  downgradeBadgeText: {
+    color: colors.warning,
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+  },
   settingsLink: {
     backgroundColor: colors.primary,
     borderRadius: radius.md,
@@ -541,3 +583,30 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
+
+const markdownStyles = {
+  body: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    lineHeight: 24,
+  },
+  code_inline: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  code_block: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+  },
+  fence: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+  },
+};

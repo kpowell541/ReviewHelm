@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useSessionStore } from '../../src/store/useSessionStore';
+import { useUsageStore } from '../../src/store/useUsageStore';
 import {
   getChecklist,
   getPolishChecklist,
@@ -19,6 +20,7 @@ import {
   getAllChecklistItems,
   CONFIDENCE_LABELS,
   CONFIDENCE_EMOJI,
+  AI_FEATURE_LABELS,
 } from '../../src/data/types';
 import type { ConfidenceLevel } from '../../src/data/types';
 import { computeSessionScores } from '../../src/utils/scoring';
@@ -26,10 +28,19 @@ import { generateReportCardHtml } from '../../src/pdf/generateReportCard';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function SessionSummaryScreen() {
-  const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
+  const { sessionId, autoExport } = useLocalSearchParams<{
+    sessionId: string;
+    autoExport?: string;
+  }>();
   const router = useRouter();
   const session = useSessionStore((s) => s.getSession(sessionId));
+  const getSessionUsageSummary = useUsageStore((s) => s.getSessionUsageSummary);
   const [exporting, setExporting] = useState(false);
+  const [didAutoExport, setDidAutoExport] = useState(false);
+  const sessionUsage = useMemo(
+    () => getSessionUsageSummary(sessionId),
+    [getSessionUsageSummary, sessionId],
+  );
 
   const checklist = useMemo(() => {
     if (!session) return null;
@@ -97,6 +108,12 @@ export default function SessionSummaryScreen() {
     }
   }, [session, scores, allItems, checklist]);
 
+  useEffect(() => {
+    if (autoExport !== '1' || didAutoExport || exporting) return;
+    setDidAutoExport(true);
+    void handleExportPdf();
+  }, [autoExport, didAutoExport, exporting, handleExportPdf]);
+
   if (!session || !scores) {
     return (
       <View style={styles.container}>
@@ -160,10 +177,10 @@ export default function SessionSummaryScreen() {
       {/* Issues Breakdown */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>Issues by Severity</Text>
-        <IssueRow emoji="🔴" label="Blockers" count={scores.issuesByServerity.blocker} color={colors.blocker} />
-        <IssueRow emoji="🟠" label="Majors" count={scores.issuesByServerity.major} color={colors.major} />
-        <IssueRow emoji="🟡" label="Minors" count={scores.issuesByServerity.minor} color={colors.minor} />
-        <IssueRow emoji="⚪" label="Nits" count={scores.issuesByServerity.nit} color={colors.nit} />
+        <IssueRow emoji="🔴" label="Blockers" count={scores.issuesBySeverity.blocker} color={colors.blocker} />
+        <IssueRow emoji="🟠" label="Majors" count={scores.issuesBySeverity.major} color={colors.major} />
+        <IssueRow emoji="🟡" label="Minors" count={scores.issuesBySeverity.minor} color={colors.minor} />
+        <IssueRow emoji="⚪" label="Nits" count={scores.issuesBySeverity.nit} color={colors.nit} />
       </View>
 
       {/* Items Needing Attention */}
@@ -178,7 +195,7 @@ export default function SessionSummaryScreen() {
               style={styles.itemRow}
               onPress={() =>
                 router.push(
-                  `/deep-dive/${encodeURIComponent(item.id)}`,
+                  `/deep-dive/${encodeURIComponent(item.id)}?sessionId=${encodeURIComponent(sessionId)}`,
                 )
               }
             >
@@ -214,7 +231,7 @@ export default function SessionSummaryScreen() {
                 style={styles.itemRow}
                 onPress={() =>
                   router.push(
-                    `/deep-dive/${encodeURIComponent(item.id)}`,
+                    `/deep-dive/${encodeURIComponent(item.id)}?sessionId=${encodeURIComponent(sessionId)}`,
                   )
                 }
               >
@@ -234,6 +251,31 @@ export default function SessionSummaryScreen() {
           })}
         </View>
       )}
+
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>AI Usage This Session</Text>
+        <Text style={styles.usageStat}>
+          Calls: {sessionUsage.calls} · Tokens:{' '}
+          {(sessionUsage.inputTokens + sessionUsage.outputTokens).toLocaleString()}
+        </Text>
+        <Text style={styles.usageStat}>
+          Estimated spend: ${sessionUsage.costUsd.toFixed(2)}
+        </Text>
+        {sessionUsage.byFeature.length > 0 ? (
+          <View style={styles.featureUsageList}>
+            {sessionUsage.byFeature.map((entry) => (
+              <Text key={entry.feature} style={styles.featureUsageText}>
+                {AI_FEATURE_LABELS[entry.feature]}: ${entry.costUsd.toFixed(2)} ·{' '}
+                {entry.calls} call{entry.calls === 1 ? '' : 's'}
+              </Text>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.sectionHint}>
+            No session-linked AI usage recorded yet for this session.
+          </Text>
+        )}
+      </View>
 
       {/* Export Button */}
       <Pressable
@@ -438,6 +480,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  usageStat: {
+    fontSize: fontSizes.md,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  featureUsageList: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  featureUsageText: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
   },
   exportButton: {
     backgroundColor: colors.primary,

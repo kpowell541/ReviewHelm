@@ -10,10 +10,13 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { useLocalSearchParams } from 'expo-router';
 import { findItemById } from '../../src/data/checklistFinder';
 import { usePreferencesStore } from '../../src/store/usePreferencesStore';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
+import { useTutorStore } from '../../src/store/useTutorStore';
+import { useUsageStore } from '../../src/store/useUsageStore';
 import { sendTutorMessage, AiClientError } from '../../src/ai';
 import type {
   TutorMessage,
@@ -38,20 +41,31 @@ const QUICK_ACTIONS: { role: TutorRole; label: string; icon: string }[] = [
 ];
 
 export default function DeepDiveScreen() {
-  const { itemId: rawItemId } = useLocalSearchParams<{ itemId: string }>();
+  const { itemId: rawItemId, sessionId } = useLocalSearchParams<{
+    itemId: string;
+    sessionId?: string;
+  }>();
   const itemId = decodeURIComponent(rawItemId);
+  const decodedSessionId = sessionId ? decodeURIComponent(sessionId) : undefined;
 
   const found = useMemo(() => findItemById(itemId), [itemId]);
   const history = useConfidenceStore((s) => s.getItemHistory(itemId));
-  const apiKey = usePreferencesStore((s) => s.apiKey);
+  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
+  const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
   const aiModel = usePreferencesStore((s) => s.aiModel);
+  const recordUsage = useUsageStore((s) => s.recordUsage);
+  const persistedMessages = useTutorStore(
+    (s) => s.conversations[itemId]?.messages ?? [],
+  );
+  const setConversationMessages = useTutorStore((s) => s.setMessages);
+  const clearConversation = useTutorStore((s) => s.clearConversation);
 
   const [activeTab, setActiveTab] = useState<Tab>('content');
-  const [messages, setMessages] = useState<TutorMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeRole, setActiveRole] = useState<TutorRole>('qa');
+  const [wasAutoDowngraded, setWasAutoDowngraded] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   const confidence: ConfidenceLevel = history?.currentConfidence ?? 3;
@@ -66,13 +80,14 @@ export default function DeepDiveScreen() {
         timestamp: new Date().toISOString(),
       };
 
-      const updatedMessages = [...messages, userMsg];
-      setMessages(updatedMessages);
+      const updatedMessages = [...persistedMessages, userMsg];
+      setConversationMessages(itemId, updatedMessages);
       setInputText('');
       setError(null);
       setIsLoading(true);
 
       try {
+        const apiKey = await resolveApiKey();
         const response = await sendTutorMessage({
           apiKey,
           model: aiModel,
@@ -88,7 +103,17 @@ export default function DeepDiveScreen() {
           content: response.content,
           timestamp: new Date().toISOString(),
         };
-        setMessages((prev) => [...prev, assistantMsg]);
+        setConversationMessages(itemId, [
+          ...updatedMessages,
+          assistantMsg,
+        ]);
+        if (!response.cached) {
+          recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
+            feature: 'deep-dive',
+            sessionId: decodedSessionId,
+          });
+        }
+        setWasAutoDowngraded(response.autoDowngraded);
       } catch (err) {
         if (err instanceof AiClientError) {
           setError(err.message);
@@ -100,7 +125,17 @@ export default function DeepDiveScreen() {
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
       }
     },
-    [found, messages, apiKey, aiModel, confidence],
+    [
+      found,
+      persistedMessages,
+      aiModel,
+      confidence,
+      itemId,
+      setConversationMessages,
+      recordUsage,
+      resolveApiKey,
+      decodedSessionId,
+    ],
   );
 
   const handleQuickAction = useCallback(
@@ -254,7 +289,7 @@ export default function DeepDiveScreen() {
               scrollRef.current?.scrollToEnd({ animated: true })
             }
           >
-            {messages.length === 0 && (
+            {persistedMessages.length === 0 && (
               <View style={styles.chatEmpty}>
                 <Text style={styles.chatEmptyTitle}>
                   🎓 Your AI Tutor
@@ -282,7 +317,16 @@ export default function DeepDiveScreen() {
               </View>
             )}
 
-            {messages.map((msg, i) => (
+            {persistedMessages.length > 0 && (
+              <Pressable
+                style={styles.clearChatButton}
+                onPress={() => clearConversation(itemId)}
+              >
+                <Text style={styles.clearChatButtonText}>Clear saved chat</Text>
+              </Pressable>
+            )}
+
+            {persistedMessages.map((msg, i) => (
               <View
                 key={i}
                 style={[
@@ -292,16 +336,13 @@ export default function DeepDiveScreen() {
                     : styles.assistantBubble,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.messageText,
-                    msg.role === 'user'
-                      ? styles.userMessageText
-                      : styles.assistantMessageText,
-                  ]}
-                >
-                  {msg.content}
-                </Text>
+                {msg.role === 'assistant' ? (
+                  <Markdown style={markdownStyles}>{msg.content}</Markdown>
+                ) : (
+                  <Text style={[styles.messageText, styles.userMessageText]}>
+                    {msg.content}
+                  </Text>
+                )}
               </View>
             ))}
 
@@ -317,11 +358,19 @@ export default function DeepDiveScreen() {
                 <Text style={styles.errorBubbleText}>{error}</Text>
               </View>
             )}
+
+            {wasAutoDowngraded && (
+              <View style={styles.downgradeBadge}>
+                <Text style={styles.downgradeBadgeText}>
+                  Budget mode: request auto-downgraded to Sonnet.
+                </Text>
+              </View>
+            )}
           </ScrollView>
 
           {/* Chat Input */}
           <View style={styles.inputBar}>
-            {!apiKey ? (
+            {!hasApiKey ? (
               <Text style={styles.noKeyText}>
                 Add your Claude API key in Settings to use the AI tutor
               </Text>
@@ -740,6 +789,16 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textPrimary,
   },
+  clearChatButton: {
+    alignSelf: 'flex-end',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  clearChatButtonText: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+  },
 
   // Messages
   messageBubble: {
@@ -794,6 +853,21 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.error,
   },
+  downgradeBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: `${colors.warning}22`,
+    borderWidth: 1,
+    borderColor: `${colors.warning}66`,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  downgradeBadgeText: {
+    color: colors.warning,
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+  },
 
   // Input Bar
   inputBar: {
@@ -841,3 +915,36 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+const markdownStyles = {
+  body: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    lineHeight: 22,
+  },
+  code_inline: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  code_block: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+  },
+  fence: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+  },
+  bullet_list: {
+    marginVertical: 0,
+  },
+  ordered_list: {
+    marginVertical: 0,
+  },
+};

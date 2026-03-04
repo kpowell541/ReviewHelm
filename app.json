@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "PR Review Center",
-    "slug": "pr-review-center",
+    "name": "ReviewHelm",
+    "slug": "reviewhelm",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "pr-review-center",
+    "scheme": "reviewhelm",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -19,12 +19,13 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.kpowell541.prreviewcenter"
+      "package": "com.kpowell541.reviewhelm"
     },
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-secure-store"
     ]
   }
 }

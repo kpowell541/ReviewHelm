@@ -1,4 +1,4 @@
-# ReviewHelm Logo Exploration
+ch # ReviewHelm Logo Exploration
 
 ## Concept 1 — Helm + Code Brackets
 Ship's wheel with `< >` code brackets in the center. 8 spokes, handle knobs on cardinal points. Purple gradient on dark background.

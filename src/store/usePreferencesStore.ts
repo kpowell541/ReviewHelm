@@ -2,12 +2,62 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { v4 as uuidv4 } from 'uuid';
 import type { Severity, ClaudeModel } from '../data/types';
 
-const API_KEY_STORAGE_KEY = 'reviewhelm-api-key';
+const KEY_SLOT_PREFIX = 'reviewhelm-key-slot:';
+const USER_KEY_INDEX = 'reviewhelm-key-index:user';
+const ADMIN_KEY_INDEX = 'reviewhelm-key-index:admin';
+
+function tokenSlotKey(token: string): string {
+  return `${KEY_SLOT_PREFIX}${token}`;
+}
+
+async function clearToken(indexKey: string): Promise<void> {
+  const token = await SecureStore.getItemAsync(indexKey);
+  if (!token) return;
+  await SecureStore.deleteItemAsync(tokenSlotKey(token));
+  await SecureStore.deleteItemAsync(indexKey);
+}
+
+async function saveTokenizedKey(indexKey: string, value: string): Promise<string> {
+  await clearToken(indexKey);
+  const token = `atk_${uuidv4().replace(/-/g, '')}`;
+  await SecureStore.setItemAsync(tokenSlotKey(token), value);
+  await SecureStore.setItemAsync(indexKey, token);
+  return token;
+}
+
+async function resolveTokenizedKey(indexKey: string): Promise<string> {
+  const token = await SecureStore.getItemAsync(indexKey);
+  if (!token) {
+    throw new Error('No key configured.');
+  }
+  const value = await SecureStore.getItemAsync(tokenSlotKey(token));
+  if (!value) {
+    throw new Error('Stored key is missing. Re-enter it in Settings.');
+  }
+  return value;
+}
+
+async function loadTokenState(
+  indexKey: string,
+): Promise<{ token: string | null; has: boolean }> {
+  const token = await SecureStore.getItemAsync(indexKey);
+  if (!token) return { token: null, has: false };
+  const value = await SecureStore.getItemAsync(tokenSlotKey(token));
+  if (!value) {
+    await SecureStore.deleteItemAsync(indexKey);
+    return { token: null, has: false };
+  }
+  return { token, has: true };
+}
 
 interface PreferencesState {
-  apiKey: string;
+  apiKeyToken: string | null;
+  hasApiKey: boolean;
+  adminApiKeyToken: string | null;
+  hasAdminApiKey: boolean;
   isApiKeyLoaded: boolean;
   hasHydrated: boolean;
   aiModel: ClaudeModel;
@@ -20,6 +70,22 @@ interface PreferencesState {
   setHasHydrated: (hydrated: boolean) => void;
   loadApiKey: () => Promise<void>;
   setApiKey: (key: string) => Promise<void>;
+  clearApiKey: () => Promise<void>;
+  resolveApiKey: () => Promise<string>;
+
+  loadAdminApiKey: () => Promise<void>;
+  setAdminApiKey: (key: string) => Promise<void>;
+  clearAdminApiKey: () => Promise<void>;
+  resolveAdminApiKey: () => Promise<string>;
+
+  replacePreferences: (preferences: Partial<{
+    aiModel: ClaudeModel;
+    defaultSeverityFilter: Severity[];
+    antiBiasMode: boolean;
+    fontSize: 'small' | 'medium' | 'large';
+    codeBlockTheme: 'dark' | 'light';
+    autoExportPdf: boolean;
+  }>) => void;
   setAiModel: (model: ClaudeModel) => void;
   setSeverityFilter: (filter: Severity[]) => void;
   setAntiBiasMode: (enabled: boolean) => void;
@@ -31,7 +97,10 @@ interface PreferencesState {
 export const usePreferencesStore = create<PreferencesState>()(
   persist(
     (set) => ({
-      apiKey: '',
+      apiKeyToken: null,
+      hasApiKey: false,
+      adminApiKeyToken: null,
+      hasAdminApiKey: false,
       isApiKeyLoaded: false,
       hasHydrated: false,
       aiModel: 'sonnet' as ClaudeModel,
@@ -45,26 +114,101 @@ export const usePreferencesStore = create<PreferencesState>()(
 
       loadApiKey: async () => {
         try {
-          const savedKey =
-            (await SecureStore.getItemAsync(API_KEY_STORAGE_KEY)) ?? '';
-          set({ apiKey: savedKey, isApiKeyLoaded: true });
+          const [userState, adminState] = await Promise.all([
+            loadTokenState(USER_KEY_INDEX),
+            loadTokenState(ADMIN_KEY_INDEX),
+          ]);
+          set({
+            apiKeyToken: userState.token,
+            hasApiKey: userState.has,
+            adminApiKeyToken: adminState.token,
+            hasAdminApiKey: adminState.has,
+            isApiKeyLoaded: true,
+          });
         } catch {
-          set({ isApiKeyLoaded: true });
+          set({
+            apiKeyToken: null,
+            hasApiKey: false,
+            adminApiKeyToken: null,
+            hasAdminApiKey: false,
+            isApiKeyLoaded: true,
+          });
         }
       },
 
       setApiKey: async (key) => {
         const trimmed = key.trim();
-        set({ apiKey: key });
-        try {
-          if (trimmed === '') {
-            await SecureStore.deleteItemAsync(API_KEY_STORAGE_KEY);
-          } else {
-            await SecureStore.setItemAsync(API_KEY_STORAGE_KEY, trimmed);
-          }
-        } catch {
-          // Keep in-memory value even if secure persistence fails.
+        if (!trimmed) {
+          await clearToken(USER_KEY_INDEX);
+          set({ apiKeyToken: null, hasApiKey: false });
+          return;
         }
+        try {
+          const token = await saveTokenizedKey(USER_KEY_INDEX, trimmed);
+          set({ apiKeyToken: token, hasApiKey: true });
+        } catch {
+          set({ apiKeyToken: null, hasApiKey: false });
+        }
+      },
+
+      clearApiKey: async () => {
+        await clearToken(USER_KEY_INDEX);
+        set({ apiKeyToken: null, hasApiKey: false });
+      },
+
+      resolveApiKey: async () => {
+        try {
+          return await resolveTokenizedKey(USER_KEY_INDEX);
+        } catch {
+          throw new Error(
+            'No Claude API key configured. Add one in Settings.',
+          );
+        }
+      },
+
+      loadAdminApiKey: async () => {
+        const adminState = await loadTokenState(ADMIN_KEY_INDEX);
+        set({
+          adminApiKeyToken: adminState.token,
+          hasAdminApiKey: adminState.has,
+        });
+      },
+
+      setAdminApiKey: async (key) => {
+        const trimmed = key.trim();
+        if (!trimmed) {
+          await clearToken(ADMIN_KEY_INDEX);
+          set({ adminApiKeyToken: null, hasAdminApiKey: false });
+          return;
+        }
+        try {
+          const token = await saveTokenizedKey(ADMIN_KEY_INDEX, trimmed);
+          set({ adminApiKeyToken: token, hasAdminApiKey: true });
+        } catch {
+          set({ adminApiKeyToken: null, hasAdminApiKey: false });
+        }
+      },
+
+      clearAdminApiKey: async () => {
+        await clearToken(ADMIN_KEY_INDEX);
+        set({ adminApiKeyToken: null, hasAdminApiKey: false });
+      },
+
+      resolveAdminApiKey: async () => {
+        try {
+          return await resolveTokenizedKey(ADMIN_KEY_INDEX);
+        } catch {
+          throw new Error(
+            'No Admin API key configured. Add one in Settings.',
+          );
+        }
+      },
+
+      replacePreferences: (preferences) => {
+        set((state) => ({
+          ...state,
+          ...preferences,
+        }));
       },
 
       setAiModel: (model) => set({ aiModel: model }),
@@ -89,6 +233,6 @@ export const usePreferencesStore = create<PreferencesState>()(
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );

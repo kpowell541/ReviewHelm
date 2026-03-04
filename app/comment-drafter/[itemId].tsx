@@ -10,33 +10,55 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import * as Clipboard from 'expo-clipboard';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { findItemById } from '../../src/data/checklistFinder';
 import { usePreferencesStore } from '../../src/store/usePreferencesStore';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
+import { useSessionStore } from '../../src/store/useSessionStore';
+import { useUsageStore } from '../../src/store/useUsageStore';
 import { sendTutorMessage, AiClientError } from '../../src/ai';
 import type { TutorMessage, ConfidenceLevel } from '../../src/data/types';
 import { CLAUDE_MODEL_LABELS } from '../../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function CommentDrafterScreen() {
-  const { itemId: rawItemId } = useLocalSearchParams<{ itemId: string }>();
-  const router = useRouter();
+  const { itemId: rawItemId, sessionId } = useLocalSearchParams<{
+    itemId: string;
+    sessionId?: string;
+  }>();
   const itemId = decodeURIComponent(rawItemId);
+  const decodedSessionId = sessionId ? decodeURIComponent(sessionId) : undefined;
 
   const found = findItemById(itemId);
   const history = useConfidenceStore((s) => s.getItemHistory(itemId));
-  const apiKey = usePreferencesStore((s) => s.apiKey);
+  const session = useSessionStore((s) =>
+    decodedSessionId ? s.getSession(decodedSessionId) : undefined,
+  );
+  const setItemResponse = useSessionStore((s) => s.setItemResponse);
+  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
+  const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
   const aiModel = usePreferencesStore((s) => s.aiModel);
+  const recordUsage = useUsageStore((s) => s.recordUsage);
 
   const [context, setContext] = useState('');
-  const [draftedComment, setDraftedComment] = useState('');
+  const [draftedComment, setDraftedComment] = useState(
+    session?.itemResponses[itemId]?.draftedComment ?? '',
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [wasAutoDowngraded, setWasAutoDowngraded] = useState(false);
 
   const confidence: ConfidenceLevel = history?.currentConfidence ?? 3;
+
+  const saveDraftToSession = useCallback(() => {
+    if (!decodedSessionId || !draftedComment.trim()) return;
+    setItemResponse(decodedSessionId, itemId, {
+      draftedComment: draftedComment.trim(),
+    });
+  }, [decodedSessionId, draftedComment, setItemResponse, itemId]);
 
   const generateDraft = useCallback(async () => {
     if (!found) return;
@@ -53,6 +75,7 @@ export default function CommentDrafterScreen() {
     ];
 
     try {
+      const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
         apiKey,
         model: aiModel,
@@ -61,8 +84,16 @@ export default function CommentDrafterScreen() {
         stackLabel: found.stackTitle,
         confidence,
         messages,
+        allowResponseCache: false,
       });
       setDraftedComment(response.content);
+      if (!response.cached) {
+        recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
+          feature: 'comment-drafter',
+          sessionId: decodedSessionId,
+        });
+      }
+      setWasAutoDowngraded(response.autoDowngraded);
     } catch (err) {
       if (err instanceof AiClientError) {
         setError(err.message);
@@ -72,7 +103,15 @@ export default function CommentDrafterScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [found, context, apiKey, aiModel, confidence]);
+  }, [
+    found,
+    context,
+    aiModel,
+    confidence,
+    recordUsage,
+    resolveApiKey,
+    decodedSessionId,
+  ]);
 
   const refineDraft = useCallback(
     async (instruction: string) => {
@@ -100,6 +139,7 @@ export default function CommentDrafterScreen() {
       ];
 
       try {
+        const apiKey = await resolveApiKey();
         const response = await sendTutorMessage({
           apiKey,
           model: aiModel,
@@ -108,8 +148,16 @@ export default function CommentDrafterScreen() {
           stackLabel: found.stackTitle,
           confidence,
           messages,
+          allowResponseCache: false,
         });
         setDraftedComment(response.content);
+        if (!response.cached) {
+          recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
+            feature: 'comment-drafter',
+            sessionId: decodedSessionId,
+          });
+        }
+        setWasAutoDowngraded(response.autoDowngraded);
       } catch (err) {
         if (err instanceof AiClientError) {
           setError(err.message);
@@ -120,15 +168,24 @@ export default function CommentDrafterScreen() {
         setIsLoading(false);
       }
     },
-    [found, draftedComment, apiKey, aiModel, confidence],
+    [
+      found,
+      draftedComment,
+      aiModel,
+      confidence,
+      recordUsage,
+      resolveApiKey,
+      decodedSessionId,
+    ],
   );
 
   const copyToClipboard = useCallback(async () => {
     if (!draftedComment) return;
     await Clipboard.setStringAsync(draftedComment);
+    saveDraftToSession();
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [draftedComment]);
+  }, [draftedComment, saveDraftToSession]);
 
   if (!found) {
     return (
@@ -150,7 +207,6 @@ export default function CommentDrafterScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
       >
-        {/* Item Context */}
         <View style={styles.itemCard}>
           <Text style={styles.itemLabel}>Drafting comment for:</Text>
           <Text style={styles.itemText}>{item.text}</Text>
@@ -159,7 +215,6 @@ export default function CommentDrafterScreen() {
           </Text>
         </View>
 
-        {/* Context Input */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>What did you find?</Text>
           <Text style={styles.sectionHint}>
@@ -177,12 +232,11 @@ export default function CommentDrafterScreen() {
           />
         </View>
 
-        {/* Generate Button */}
         {!draftedComment && (
           <Pressable
-            style={[styles.generateButton, (!apiKey || isLoading) && styles.buttonDisabled]}
+            style={[styles.generateButton, (!hasApiKey || isLoading) && styles.buttonDisabled]}
             onPress={generateDraft}
-            disabled={!apiKey || isLoading}
+            disabled={!hasApiKey || isLoading}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -194,7 +248,7 @@ export default function CommentDrafterScreen() {
           </Pressable>
         )}
 
-        {!apiKey && !draftedComment && (
+        {!hasApiKey && !draftedComment && (
           <Text style={styles.noKeyHint}>
             Add your Claude API key in Settings first
           </Text>
@@ -206,7 +260,14 @@ export default function CommentDrafterScreen() {
           </View>
         )}
 
-        {/* Drafted Comment */}
+        {wasAutoDowngraded && (
+          <View style={styles.downgradeBadge}>
+            <Text style={styles.downgradeBadgeText}>
+              Budget mode: request auto-downgraded to Sonnet.
+            </Text>
+          </View>
+        )}
+
         {draftedComment !== '' && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Drafted Comment</Text>
@@ -220,7 +281,6 @@ export default function CommentDrafterScreen() {
               />
             </View>
 
-            {/* Action Buttons */}
             <View style={styles.actions}>
               <Pressable style={styles.actionButton} onPress={copyToClipboard}>
                 <Text style={styles.actionButtonText}>
@@ -248,6 +308,11 @@ export default function CommentDrafterScreen() {
               >
                 <Text style={styles.actionButtonText}>🤝 Softer tone</Text>
               </Pressable>
+              {decodedSessionId && (
+                <Pressable style={styles.actionButton} onPress={saveDraftToSession}>
+                  <Text style={styles.actionButtonText}>💾 Save to session</Text>
+                </Pressable>
+              )}
             </View>
 
             {isLoading && (
@@ -266,6 +331,11 @@ export default function CommentDrafterScreen() {
                 🔄 Regenerate from scratch
               </Text>
             </Pressable>
+
+            <View style={styles.previewCard}>
+              <Text style={styles.previewTitle}>Rendered preview</Text>
+              <Markdown style={markdownStyles}>{draftedComment}</Markdown>
+            </View>
           </View>
         )}
       </ScrollView>
@@ -284,7 +354,6 @@ const styles = StyleSheet.create({
     marginTop: spacing['4xl'],
   },
 
-  // Item Card
   itemCard: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
@@ -312,7 +381,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
-  // Sections
   section: {
     marginBottom: spacing.xl,
   },
@@ -341,7 +409,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Generate Button
   generateButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.md,
@@ -364,7 +431,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
 
-  // Error
   errorCard: {
     backgroundColor: colors.error + '20',
     borderRadius: radius.md,
@@ -377,8 +443,20 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.error,
   },
+  downgradeBadge: {
+    backgroundColor: `${colors.warning}22`,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: `${colors.warning}66`,
+    marginBottom: spacing.md,
+  },
+  downgradeBadgeText: {
+    fontSize: fontSizes.xs,
+    color: colors.warning,
+    fontWeight: '600',
+  },
 
-  // Draft
   draftCard: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
@@ -393,7 +471,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
 
-  // Actions
   actions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -431,4 +508,47 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
   },
+  previewCard: {
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    backgroundColor: colors.bgCard,
+  },
+  previewTitle: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
 });
+
+const markdownStyles = {
+  body: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    lineHeight: 22,
+  },
+  code_inline: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  code_block: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+  },
+  fence: {
+    backgroundColor: colors.codeBg,
+    color: colors.textPrimary,
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+  },
+};

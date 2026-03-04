@@ -385,9 +385,15 @@ export function ChecklistScreen({ sessionId }: Props) {
             onSetVerdict={handleSetVerdict}
             onSetConfidence={handleSetConfidence}
             onSetNotes={handleSetNotes}
-            onDeepDive={(itemId) => router.push(`/deep-dive/${encodeURIComponent(itemId)}`)}
+            onDeepDive={(itemId) =>
+              router.push(
+                `/deep-dive/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
+              )
+            }
             onDraftComment={(itemId) =>
-              router.push(`/comment-drafter/${encodeURIComponent(itemId)}`)
+              router.push(
+                `/comment-drafter/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
+              )
             }
           />
         )}

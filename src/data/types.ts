@@ -166,6 +166,7 @@ export interface LearningPath {
 // ============================================
 
 export type ClaudeModel = 'sonnet' | 'opus';
+export type AiFeature = 'learn' | 'deep-dive' | 'comment-drafter';
 
 export const CLAUDE_MODEL_IDS: Record<ClaudeModel, string> = {
   sonnet: 'claude-sonnet-4-6',
@@ -180,6 +181,12 @@ export const CLAUDE_MODEL_LABELS: Record<ClaudeModel, string> = {
 export const CLAUDE_MODEL_DESCRIPTIONS: Record<ClaudeModel, string> = {
   sonnet: 'Great for daily learning, explanations, and comment drafting',
   opus: 'Best for complex topics like concurrency, architecture, and type systems',
+};
+
+export const AI_FEATURE_LABELS: Record<AiFeature, string> = {
+  learn: 'Learn',
+  'deep-dive': 'Deep Dive Tutor',
+  'comment-drafter': 'Comment Drafter',
 };
 
 export type TutorRole =
@@ -208,7 +215,7 @@ export interface TutorConversation {
 export interface SessionScores {
   coverage: number;
   confidence: number;
-  issuesByServerity: Record<Severity, number>;
+  issuesBySeverity: Record<Severity, number>;
   totalIssues: number;
   itemsResponded: number;
   applicableItems: number;

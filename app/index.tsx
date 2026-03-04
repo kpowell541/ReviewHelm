@@ -72,7 +72,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.appTitle}>PR Review Center</Text>
+        <Text style={styles.appTitle}>ReviewHelm</Text>
         <Text style={styles.appSubtitle}>
           Review with confidence. Learn as you go.
         </Text>
