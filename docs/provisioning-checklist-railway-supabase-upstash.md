@@ -107,6 +107,12 @@ DIRECT_URL=postgresql://postgres.YOUR_REF:YOUR_PASSWORD@db.YOUR_REF.supabase.co:
 
 UPSTASH_REDIS_REST_URL=https://YOUR_INSTANCE.upstash.io
 UPSTASH_REDIS_REST_TOKEN=REPLACE_ME
+HAIKU_INPUT_COST_PER_MILLION_USD=1
+HAIKU_OUTPUT_COST_PER_MILLION_USD=5
+SONNET_INPUT_COST_PER_MILLION_USD=3
+SONNET_OUTPUT_COST_PER_MILLION_USD=15
+OPUS_INPUT_COST_PER_MILLION_USD=15
+OPUS_OUTPUT_COST_PER_MILLION_USD=75
 
 KEY_ENCRYPTION_MASTER_KEY=REPLACE_ME
 ALLOWED_ORIGINS=reviewhelm://auth/callback,exp://127.0.0.1:19000
@@ -116,8 +122,9 @@ ALLOWED_ORIGINS=reviewhelm://auth/callback,exp://127.0.0.1:19000
 
 After deploy:
 
-1. `GET https://YOUR_RAILWAY_DOMAIN/api/v1/health` should return `ok: true`
-2. `GET https://YOUR_RAILWAY_DOMAIN/docs` should show Swagger UI
+1. `GET https://YOUR_RAILWAY_DOMAIN/api/v1/health` with `Authorization: Bearer <supabase_jwt>` should return `ok: true`
+2. `GET https://YOUR_RAILWAY_DOMAIN/api/v1/health/ready` with JWT should return DB/Redis readiness
+3. Keep `ENABLE_SWAGGER_DOCS=false` in production
 
 ## 7. Prisma Setup and Migrations
 
@@ -171,7 +178,7 @@ Authorization: Bearer <supabase_access_token>
 
 ## 11. Post-Provisioning Next Steps
 
-1. Implement auth guard and user context middleware in backend.
-2. Implement `POST /api/v1/ai/tutor` with budget/cooldown guard.
-3. Implement sessions/checklists/usage endpoints from `docs/openapi.yaml`.
-4. Add CI: schema drift check against `docs/openapi.yaml`.
+1. Run `npm run prisma:migrate:deploy` in production.
+2. Configure app with Supabase OAuth PKCE and API base URL.
+3. Validate OpenAPI drift check and security workflow in CI on PR.
+4. Add uptime monitoring that includes OAuth token injection for health checks.

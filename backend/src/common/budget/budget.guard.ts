@@ -16,6 +16,11 @@ interface RequestLike {
   user?: AuthenticatedUser;
   body?: Record<string, unknown>;
   path?: string;
+  aiBudget?: {
+    requestedModel: ClaudeModel;
+    resolvedModel: ClaudeModel;
+    autoDowngraded: boolean;
+  };
 }
 
 interface ResponseLike {
@@ -52,7 +57,7 @@ export class BudgetGuard implements CanActivate {
     }
 
     const response = context.switchToHttp().getResponse<ResponseLike>();
-    const requestedModel = this.resolveRequestedModel(req.body?.model);
+    const requestedModel = this.resolveRequestedModel(req.body);
     const decision = await this.budgetService.enforceAiBudgetPolicy(req.user, requestedModel);
 
     response.setHeader('x-budget-spend-percent', String(decision.budget.spendPercent));
@@ -98,18 +103,31 @@ export class BudgetGuard implements CanActivate {
       req.body.model = decision.resolvedModel;
       response.setHeader('x-ai-auto-downgraded', 'true');
     }
+    req.aiBudget = {
+      requestedModel,
+      resolvedModel: decision.resolvedModel,
+      autoDowngraded: decision.autoDowngraded,
+    };
 
     return true;
   }
 
-  private resolveRequestedModel(model: unknown): ClaudeModel {
-    return model === 'opus' ? 'opus' : 'sonnet';
+  private resolveRequestedModel(body: Record<string, unknown> | undefined): ClaudeModel {
+    const model = body?.model;
+    if (model === 'haiku' || model === 'sonnet' || model === 'opus') {
+      return model;
+    }
+    const feature = body?.feature;
+    if (feature === 'comment-drafter') {
+      return 'haiku';
+    }
+    return 'sonnet';
   }
 
   private looksLikeAiPath(path?: string): boolean {
     if (!path) {
       return false;
     }
-    return /\/(ai|learn)\//.test(path);
+    return /\/ai\//.test(path);
   }
 }

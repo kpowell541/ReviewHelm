@@ -121,7 +121,7 @@ export class RateLimitGuard implements CanActivate {
     if (!path) {
       return false;
     }
-    return /\/(ai|learn)\//.test(path);
+    return /\/ai\//.test(path);
   }
 
   private logSecurityEvent(

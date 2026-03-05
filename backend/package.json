@@ -9,8 +9,10 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "typecheck": "tsc --noEmit",
+    "openapi:check-routes": "node scripts/check-openapi-routes.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio"
   },
   "dependencies": {

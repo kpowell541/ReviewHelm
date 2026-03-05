@@ -1,6 +1,6 @@
 # ReviewHelm API Backend
 
-NestJS + Prisma backend scaffold for the ReviewHelm API contract.
+NestJS + Prisma backend implementation of the ReviewHelm API contract.
 
 ## Stack
 
@@ -36,18 +36,46 @@ npm run prisma:generate
 npm run start:dev
 ```
 
-## Available Endpoints (Scaffold)
+## Available Endpoints
 
-- `GET /api/v1/health`
-- Swagger docs at `/docs`
+- `GET /api/v1/health` (authenticated)
+- `GET /api/v1/health/ready` (authenticated)
+- `GET/PATCH /api/v1/me/preferences`
+- `GET/PUT/DELETE /api/v1/me/api-keys/anthropic`
+- `GET /api/v1/checklists`, `GET /api/v1/checklists/version`, `GET /api/v1/checklists/:id`
+- Full sessions API under `/api/v1/sessions/*`
+- `GET /api/v1/gaps`, `GET /api/v1/learn/queue`
+- `POST /api/v1/ai/tutor`
+- Diff grounding APIs under `/api/v1/diffs/*` (optional for comment drafting)
+- Comment style profile APIs under `/api/v1/comment-profiles/*`
+- Calibration APIs under `/api/v1/calibration/*`
+- Risk heatmap API at `/api/v1/risk/sessions/:sessionId/heatmap`
+- Compliance pack APIs under `/api/v1/compliance/packs*`
+- Usage and budget API under `/api/v1/usage/*`
+- Export and backup API under `/api/v1/exports/*` and `/api/v1/backups/*`
+- Admin endpoints:
+  - `POST /api/v1/admin/checklists/publish`
+  - `POST /api/v1/admin/security/rotate-provider-keys`
+  - `POST /api/v1/admin/ci/policy-check`
 
-## Next Implementation Tasks
+Swagger docs are available at `/docs` when `ENABLE_SWAGGER_DOCS=true`.
 
-1. Supabase JWT auth guard and user context extraction.
-2. Implement endpoints from `../docs/openapi.yaml`.
-3. Add Upstash-backed cooldown and rate-limiting middleware.
-4. Add provider key envelope encryption service.
-5. Add e2e tests for API contract coverage.
+## AI Model Policy
+
+- Supported models: `haiku`, `sonnet`, `opus`
+- `comment-drafter` defaults to `haiku` when model is not provided
+- Other AI features default to `sonnet` when model is not provided
+- For `comment-drafter`, server can auto-escalate `haiku -> sonnet` when quality signals are weak (can be disabled per request).
+
+## Validation Commands
+
+```bash
+npm run typecheck
+npm run build
+npm run openapi:check-routes
+```
+
+The OpenAPI route check verifies implemented controller routes against `../docs/openapi.yaml`.
 
 ## Deployment
 

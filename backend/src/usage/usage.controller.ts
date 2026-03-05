@@ -4,12 +4,15 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { UpdateBudgetConfigDto } from './dto/update-budget-config.dto';
+import { UsageMonthQueryDto } from './dto/usage-month-query.dto';
 import { UsageService } from './usage.service';
 
 @Controller('usage')
@@ -19,6 +22,30 @@ export class UsageController {
   @Get('budget')
   async getBudgetConfig(@CurrentUser() user: AuthenticatedUser) {
     return this.usageService.getBudgetConfig(user);
+  }
+
+  @Get('summary')
+  async getUsageSummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: UsageMonthQueryDto,
+  ) {
+    return this.usageService.getUsageSummary(user, query.month);
+  }
+
+  @Get('by-feature')
+  async getUsageByFeature(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: UsageMonthQueryDto,
+  ) {
+    return this.usageService.getUsageByFeature(user, query.month);
+  }
+
+  @Get('sessions/:sessionId')
+  async getUsageBySession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('sessionId') sessionId: string,
+  ) {
+    return this.usageService.getSessionUsage(user, sessionId);
   }
 
   @Patch('budget')

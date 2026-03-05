@@ -28,6 +28,7 @@ enum Verdict {
 }
 
 enum ClaudeModel {
+  haiku
   sonnet
   opus
 }
@@ -41,6 +42,17 @@ enum AiFeature {
 enum KeySource {
   byok
   platform
+}
+
+enum DiffSource {
+  pasted
+  uploaded
+}
+
+enum FeedbackOutcome {
+  accepted
+  edited
+  rejected
 }
 
 model User {
@@ -57,6 +69,9 @@ model User {
   usageDays      UsageDay[]
   usageSessions  UsageSession[]
   auditEvents    AuditEvent[]
+  diffArtifacts  DiffArtifact[]
+  commentStyleProfiles CommentStyleProfile[]
+  commentFeedback CommentFeedback[]
 }
 
 model Preference {
@@ -68,6 +83,7 @@ model Preference {
   fontSize                 String      @default("medium")
   codeBlockTheme           String      @default("dark")
   autoExportPdf            Boolean     @default(false)
+  activeCommentStyleProfileId String?
 
   monthlyBudgetUsd         Decimal     @default(40)
   alertThresholds          Int[]       @default([70, 85, 95])
@@ -81,6 +97,58 @@ model Preference {
   updatedAt                DateTime    @updatedAt
 
   user                     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DiffArtifact {
+  id         String     @id @default(uuid())
+  userId     String
+  source     DiffSource
+  label      String?
+  filename   String?
+  content    String     @db.Text
+  lineCount  Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model CommentStyleProfile {
+  id                   String   @id @default(uuid())
+  userId               String
+  name                 String
+  tone                 String
+  strictness           Int      @default(3)
+  verbosity            Int      @default(3)
+  includePraise        Boolean  @default(false)
+  includeActionItems   Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model CommentFeedback {
+  id            String          @id @default(uuid())
+  userId        String
+  sessionId     String?
+  itemId        String
+  feature       String
+  model         ClaudeModel
+  draftText     String          @db.Text
+  finalText     String?         @db.Text
+  outcome       FeedbackOutcome
+  editDistance  Int?
+  createdAt     DateTime        @default(now())
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, outcome, model, createdAt])
 }
 
 model ProviderKey {

@@ -6,6 +6,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import type { AppEnv } from '../../config/env.schema';
 
 interface ModelTokenTotals {
+  haiku: { inputTokens: number; outputTokens: number };
   sonnet: { inputTokens: number; outputTokens: number };
   opus: { inputTokens: number; outputTokens: number };
 }
@@ -150,6 +151,8 @@ export class BudgetService {
     );
     const modelTotals = normalized.reduce<ModelTokenTotals>(
       (acc, row) => {
+        acc.haiku.inputTokens += row.byModelUsage.haiku.inputTokens;
+        acc.haiku.outputTokens += row.byModelUsage.haiku.outputTokens;
         acc.sonnet.inputTokens += row.byModelUsage.sonnet.inputTokens;
         acc.sonnet.outputTokens += row.byModelUsage.sonnet.outputTokens;
         acc.opus.inputTokens += row.byModelUsage.opus.inputTokens;
@@ -157,6 +160,7 @@ export class BudgetService {
         return acc;
       },
       {
+        haiku: { inputTokens: 0, outputTokens: 0 },
         sonnet: { inputTokens: 0, outputTokens: 0 },
         opus: { inputTokens: 0, outputTokens: 0 },
       },
@@ -192,7 +196,8 @@ export class BudgetService {
     totalOutput: number,
   ): ModelTokenTotals {
     const fallback: ModelTokenTotals = {
-      sonnet: { inputTokens: totalInput, outputTokens: totalOutput },
+      haiku: { inputTokens: 0, outputTokens: 0 },
+      sonnet: { inputTokens: 0, outputTokens: 0 },
       opus: { inputTokens: 0, outputTokens: 0 },
     };
     if (!byModel || typeof byModel !== 'object' || Array.isArray(byModel)) {
@@ -200,6 +205,7 @@ export class BudgetService {
     }
 
     const usage: ModelTokenTotals = {
+      haiku: { inputTokens: 0, outputTokens: 0 },
       sonnet: { inputTokens: 0, outputTokens: 0 },
       opus: { inputTokens: 0, outputTokens: 0 },
     };
@@ -222,31 +228,45 @@ export class BudgetService {
       };
     };
 
+    usage.haiku = parseEntry(obj.haiku);
     usage.sonnet = parseEntry(obj.sonnet);
     usage.opus = parseEntry(obj.opus);
 
     if (
-      usage.sonnet.inputTokens + usage.sonnet.outputTokens + usage.opus.inputTokens + usage.opus.outputTokens ===
+      usage.haiku.inputTokens +
+        usage.haiku.outputTokens +
+        usage.sonnet.inputTokens +
+        usage.sonnet.outputTokens +
+        usage.opus.inputTokens +
+        usage.opus.outputTokens ===
       0
     ) {
-      return fallback;
+      return {
+        ...fallback,
+        sonnet: { inputTokens: totalInput, outputTokens: totalOutput },
+      };
     }
     return usage;
   }
 
   private calculateCostUsd(totals: ModelTokenTotals): number {
+    const haikuIn = this.config.get('HAIKU_INPUT_COST_PER_MILLION_USD');
+    const haikuOut = this.config.get('HAIKU_OUTPUT_COST_PER_MILLION_USD');
     const sonnetIn = this.config.get('SONNET_INPUT_COST_PER_MILLION_USD');
     const sonnetOut = this.config.get('SONNET_OUTPUT_COST_PER_MILLION_USD');
     const opusIn = this.config.get('OPUS_INPUT_COST_PER_MILLION_USD');
     const opusOut = this.config.get('OPUS_OUTPUT_COST_PER_MILLION_USD');
 
+    const haikuCost =
+      (totals.haiku.inputTokens / 1_000_000) * haikuIn +
+      (totals.haiku.outputTokens / 1_000_000) * haikuOut;
     const sonnetCost =
       (totals.sonnet.inputTokens / 1_000_000) * sonnetIn +
       (totals.sonnet.outputTokens / 1_000_000) * sonnetOut;
     const opusCost =
       (totals.opus.inputTokens / 1_000_000) * opusIn +
       (totals.opus.outputTokens / 1_000_000) * opusOut;
-    return Number((sonnetCost + opusCost).toFixed(6));
+    return Number((haikuCost + sonnetCost + opusCost).toFixed(6));
   }
 
   private getCurrentMonthKey(date: Date = new Date()): string {

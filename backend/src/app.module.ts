@@ -14,6 +14,20 @@ import { BudgetGuard } from './common/budget/budget.guard';
 import { UsageModule } from './usage/usage.module';
 import { AdminSecurityModule } from './admin/security/admin-security.module';
 import { AuditModule } from './common/audit/audit.module';
+import { ChecklistsModule } from './checklists/checklists.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { GapsModule } from './gaps/gaps.module';
+import { LearnModule } from './learn/learn.module';
+import { AiModule } from './ai/ai.module';
+import { BackupsModule } from './backups/backups.module';
+import { ExportsModule } from './exports/exports.module';
+import { AdminChecklistsModule } from './admin/checklists/admin-checklists.module';
+import { DiffsModule } from './diffs/diffs.module';
+import { RiskModule } from './risk/risk.module';
+import { CommentProfilesModule } from './comment-profiles/comment-profiles.module';
+import { CalibrationModule } from './calibration/calibration.module';
+import { ComplianceModule } from './compliance/compliance.module';
+import { AdminCiModule } from './admin/ci/admin-ci.module';
 
 @Module({
   imports: [
@@ -28,7 +42,21 @@ import { AuditModule } from './common/audit/audit.module';
     HealthModule,
     MeModule,
     UsageModule,
+    ChecklistsModule,
+    SessionsModule,
+    GapsModule,
+    LearnModule,
+    AiModule,
+    DiffsModule,
+    RiskModule,
+    CommentProfilesModule,
+    CalibrationModule,
+    ComplianceModule,
+    BackupsModule,
+    ExportsModule,
     AdminSecurityModule,
+    AdminChecklistsModule,
+    AdminCiModule,
   ],
   providers: [
     {

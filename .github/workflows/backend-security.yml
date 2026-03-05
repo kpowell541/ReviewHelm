@@ -40,6 +40,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: OpenAPI route drift check
+        run: npm run openapi:check-routes
+
       - name: Dependency audit (prod)
         run: npm audit --omit=dev --audit-level=high
 

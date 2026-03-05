@@ -36,6 +36,8 @@ const EnvSchema = z.object({
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
   AI_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(20),
   AI_COOLDOWN_SECONDS: z.coerce.number().int().min(0).max(60).default(6),
+  HAIKU_INPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(1),
+  HAIKU_OUTPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(5),
   SONNET_INPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(3),
   SONNET_OUTPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(15),
   OPUS_INPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(15),

@@ -33,7 +33,7 @@
 
 ### 2.3 Auth Rules
 
-- All `/api/v1/*` endpoints are protected unless marked public.
+- All `/api/v1/*` endpoints are protected by OAuth2 JWT validation.
 - A user can only access their own resources.
 - Admin endpoints are explicitly prefixed `/api/v1/admin/*` and require admin role.
 
@@ -94,7 +94,7 @@ Common `error.code` values:
 - `Severity`: `blocker` | `major` | `minor` | `nit`
 - `Verdict`: `looks-good` | `needs-attention` | `na` | `skipped`
 - `ConfidenceLevel`: `1` | `2` | `3` | `4` | `5`
-- `ClaudeModel`: `sonnet` | `opus`
+- `ClaudeModel`: `haiku` | `sonnet` | `opus`
 - `TutorRole`:
   - `concept-explainer`
   - `qa`
@@ -145,12 +145,10 @@ Common `error.code` values:
 }
 ```
 
-## 6. Public Endpoints
-
-### 6.1 Health
+## 6. Health Endpoints (Authenticated)
 
 - `GET /health`
-- Auth: none
+- Auth: required
 - Response `200`:
 
 ```json
@@ -545,6 +543,17 @@ Each item includes:
 }
 ```
 
+- `model` is optional:
+  - default = `haiku` when `feature=comment-drafter`
+  - default = `sonnet` for other features
+- Additional optional fields:
+  - `allowEscalation` (default true)
+  - `diffId`
+  - `diffText`
+  - `commentStyleProfileId`
+- Escalation policy:
+  - For `comment-drafter`, if model is Haiku and quality heuristics are weak, server may auto-escalate to Sonnet.
+
 - Server behavior (required):
   - enforces cooldown
   - enforces hard budget stop
@@ -559,6 +568,7 @@ Each item includes:
   "requestedModel": "opus",
   "resolvedModel": "sonnet",
   "autoDowngraded": true,
+  "autoEscalated": false,
   "cached": false,
   "inputTokens": 1200,
   "outputTokens": 500,
@@ -571,7 +581,46 @@ Each item includes:
   - `429 RATE_LIMITED`
   - `409 COOLDOWN_ACTIVE`
   - `402 BUDGET_EXCEEDED`
-  - `502 UPSTREAM_AI_ERROR`
+- `502 UPSTREAM_AI_ERROR`
+
+## 11.2 Diff Intake Endpoints (Optional Grounding Input)
+
+- `POST /diffs` (paste diff text)
+- `POST /diffs/upload` (upload patch/diff file)
+- `GET /diffs/:diffId` (retrieve stored diff)
+- Auth: required
+- Purpose: provide optional grounding context for comment drafting.
+
+## 11.3 Comment Style Profiles
+
+- `GET /comment-profiles`
+- `POST /comment-profiles`
+- `PATCH /comment-profiles/:profileId`
+- `DELETE /comment-profiles/:profileId`
+- `POST /comment-profiles/:profileId/activate`
+- Auth: required
+- Purpose: configure reusable drafting tone/strictness profile.
+
+## 11.4 Personal Calibration Endpoints
+
+- `POST /calibration/feedback`
+- `GET /calibration/summary`
+- Auth: required
+- Purpose: learn from accepted/edited/rejected outputs to tune future drafting guidance.
+
+## 11.5 Risk Heatmap
+
+- `GET /risk/sessions/:sessionId/heatmap`
+- Auth: required
+- Optional query: `diffId`
+- Purpose: compute section/file risk signal for reviewed sessions.
+
+## 11.6 Compliance Packs
+
+- `GET /compliance/packs`
+- `GET /compliance/packs/:packId`
+- Auth: required
+- Purpose: provide structured control packs (OWASP API, Terraform guardrails, SOC2 change control).
 
 ## 12. Usage and Budget Endpoints
 
@@ -770,6 +819,12 @@ Each item includes:
   "failed": 1
 }
 ```
+
+### 14.3 CI Policy Gate Hook
+
+- `POST /admin/ci/policy-check`
+- Auth: admin only
+- Purpose: evaluate session quality thresholds for CI gating.
 
 ## 15. Rate Limits and Idempotency
 

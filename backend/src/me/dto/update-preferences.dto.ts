@@ -10,7 +10,9 @@ import {
   IsInt,
   IsNumber,
   IsOptional,
+  IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 
@@ -45,6 +47,11 @@ export class UpdatePreferencesDto {
   @IsOptional()
   @IsBoolean()
   autoExportPdf?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  activeCommentStyleProfileId?: string | null;
 
   @IsOptional()
   @Type(() => Number)

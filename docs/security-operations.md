@@ -6,6 +6,7 @@
 - KEK versioning and key rotation endpoint (`POST /api/v1/admin/security/rotate-provider-keys`).
 - Global API and AI rate limiting + AI cooldown.
 - Server-side budget guard with hard stop and auto-downgrade policy.
+- AI model support and usage accounting for Haiku/Sonnet/Opus with feature-level defaults.
 - Audit events for auth failures, rate-limit/cooldown blocks, budget events, and provider key lifecycle events.
 - Readiness health check (`GET /api/v1/health/ready`) with DB and Redis probes.
 - CI workflow for typecheck, Prisma validation, dependency audit, and secret scanning.
@@ -18,6 +19,7 @@
   - `AWS_KMS_KEY_ID`
 - Set `ADMIN_USER_IDS` for allowed security admins.
 - Keep Swagger docs disabled in production (`ENABLE_SWAGGER_DOCS=false`).
+- Health and readiness probes are authenticated; uptime checks must include OAuth bearer tokens.
 
 ## Rotation Procedure
 1. Increase `KEY_ENCRYPTION_VERSION` in runtime secrets.

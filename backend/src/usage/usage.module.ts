@@ -7,5 +7,6 @@ import { UsageService } from './usage.service';
   imports: [BudgetModule],
   controllers: [UsageController],
   providers: [UsageService],
+  exports: [UsageService],
 })
 export class UsageModule {}

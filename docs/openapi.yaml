@@ -19,6 +19,11 @@ tags:
   - name: Gaps
   - name: Learn
   - name: AI
+  - name: Diffs
+  - name: Comment Profiles
+  - name: Calibration
+  - name: Risk
+  - name: Compliance
   - name: Usage
   - name: Exports
   - name: Backups
@@ -31,7 +36,6 @@ paths:
     get:
       tags: [Health]
       summary: Health check
-      security: []
       responses:
         '200':
           description: Service is healthy
@@ -50,6 +54,39 @@ paths:
                     type: string
                     format: date-time
                 required: [ok, service, version, time]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Dependency readiness
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  service:
+                    type: string
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: boolean
+                      redis:
+                        type: boolean
+                    required: [database, redis]
+                  time:
+                    type: string
+                    format: date-time
+                required: [ok, service, checks, time]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
   /me:
     get:
@@ -482,6 +519,298 @@ paths:
         '502':
           $ref: '#/components/responses/UpstreamAiError'
 
+  /diffs:
+    post:
+      tags: [Diffs]
+      summary: Save pasted diff content for optional grounding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiffRequest'
+      responses:
+        '200':
+          description: Stored diff metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffArtifact'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /diffs/upload:
+    post:
+      tags: [Diffs]
+      summary: Upload a patch/diff file for optional grounding
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+      responses:
+        '200':
+          description: Stored diff metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffArtifact'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /diffs/{diffId}:
+    get:
+      tags: [Diffs]
+      summary: Get stored diff by id
+      parameters:
+        - in: path
+          name: diffId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Diff detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffArtifact'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /comment-profiles:
+    get:
+      tags: [Comment Profiles]
+      summary: List comment drafting style profiles
+      responses:
+        '200':
+          description: Profile list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentProfileListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags: [Comment Profiles]
+      summary: Create a new comment drafting profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentProfileRequest'
+      responses:
+        '201':
+          description: Created profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /comment-profiles/{profileId}:
+    patch:
+      tags: [Comment Profiles]
+      summary: Update a comment profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommentProfileRequest'
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Comment Profiles]
+      summary: Delete a comment profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Profile deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /comment-profiles/{profileId}/activate:
+    post:
+      tags: [Comment Profiles]
+      summary: Set active comment profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Active profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activeProfileId:
+                    type: string
+                required: [activeProfileId]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /calibration/feedback:
+    post:
+      tags: [Calibration]
+      summary: Submit feedback on drafted AI output for personal calibration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitCommentFeedbackRequest'
+      responses:
+        '200':
+          description: Feedback accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  createdAt:
+                    type: string
+                    format: date-time
+                required: [id, createdAt]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /calibration/summary:
+    get:
+      tags: [Calibration]
+      summary: Get personal calibration summary
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 180
+            default: 30
+      responses:
+        '200':
+          description: Calibration summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalibrationSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /risk/sessions/{sessionId}/heatmap:
+    get:
+      tags: [Risk]
+      summary: Generate session risk heatmap
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+        - in: query
+          name: diffId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Risk heatmap
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskHeatmapResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /compliance/packs:
+    get:
+      tags: [Compliance]
+      summary: List available compliance packs
+      responses:
+        '200':
+          description: Compliance pack catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompliancePackListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /compliance/packs/{packId}:
+    get:
+      tags: [Compliance]
+      summary: Get compliance pack by id
+      parameters:
+        - in: path
+          name: packId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Compliance pack detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompliancePack'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /usage/summary:
     get:
       tags: [Usage]
@@ -702,6 +1031,30 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
 
+  /admin/ci/policy-check:
+    post:
+      tags: [Admin]
+      summary: Evaluate CI policy gate for a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CiPolicyCheckRequest'
+      responses:
+        '200':
+          description: CI policy evaluation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CiPolicyCheckResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -845,7 +1198,7 @@ components:
 
     ClaudeModel:
       type: string
-      enum: [sonnet, opus]
+      enum: [haiku, sonnet, opus]
 
     TutorRole:
       type: string
@@ -895,6 +1248,9 @@ components:
           enum: [dark, light]
         autoExportPdf:
           type: boolean
+        activeCommentStyleProfileId:
+          type: string
+          nullable: true
       required:
         - aiModel
         - defaultSeverityFilter
@@ -922,6 +1278,9 @@ components:
           enum: [dark, light]
         autoExportPdf:
           type: boolean
+        activeCommentStyleProfileId:
+          type: string
+          nullable: true
       additionalProperties: false
 
     AnthropicKeyStatus:
@@ -1308,9 +1667,19 @@ components:
         allowResponseCache:
           type: boolean
           default: true
+        allowEscalation:
+          type: boolean
+          default: true
+        diffId:
+          type: string
+          format: uuid
+        diffText:
+          type: string
+        commentStyleProfileId:
+          type: string
+          format: uuid
       required:
         - feature
-        - model
         - role
         - itemId
         - itemText
@@ -1330,6 +1699,8 @@ components:
           $ref: '#/components/schemas/ClaudeModel'
         autoDowngraded:
           type: boolean
+        autoEscalated:
+          type: boolean
         cached:
           type: boolean
         inputTokens:
@@ -1345,11 +1716,334 @@ components:
         - requestedModel
         - resolvedModel
         - autoDowngraded
+        - autoEscalated
         - cached
         - inputTokens
         - outputTokens
         - costUsd
         - cooldownRemainingMs
+
+    CreateDiffRequest:
+      type: object
+      properties:
+        content:
+          type: string
+        label:
+          type: string
+      required: [content]
+      additionalProperties: false
+
+    DiffArtifact:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          enum: [pasted, uploaded]
+        label:
+          type: string
+          nullable: true
+        filename:
+          type: string
+          nullable: true
+        lineCount:
+          type: integer
+        preview:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, source, lineCount, preview, createdAt, updatedAt]
+
+    CommentProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tone:
+          type: string
+        strictness:
+          type: integer
+        verbosity:
+          type: integer
+        includePraise:
+          type: boolean
+        includeActionItems:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - tone
+        - strictness
+        - verbosity
+        - includePraise
+        - includeActionItems
+        - createdAt
+        - updatedAt
+
+    CreateCommentProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        tone:
+          type: string
+        strictness:
+          type: integer
+          minimum: 1
+          maximum: 5
+        verbosity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        includePraise:
+          type: boolean
+        includeActionItems:
+          type: boolean
+      required: [name, tone, strictness, verbosity]
+      additionalProperties: false
+
+    UpdateCommentProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        tone:
+          type: string
+        strictness:
+          type: integer
+          minimum: 1
+          maximum: 5
+        verbosity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        includePraise:
+          type: boolean
+        includeActionItems:
+          type: boolean
+      additionalProperties: false
+
+    CommentProfileListResponse:
+      type: object
+      properties:
+        activeProfileId:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentProfile'
+      required: [activeProfileId, items]
+
+    SubmitCommentFeedbackRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+        feature:
+          type: string
+          enum: [comment-drafter, deep-dive, learn]
+        model:
+          $ref: '#/components/schemas/ClaudeModel'
+        draftText:
+          type: string
+        finalText:
+          type: string
+        outcome:
+          type: string
+          enum: [accepted, edited, rejected]
+        editDistance:
+          type: integer
+          minimum: 0
+      required: [itemId, feature, model, draftText, outcome]
+      additionalProperties: false
+
+    CalibrationSummary:
+      type: object
+      properties:
+        windowDays:
+          type: integer
+        totalFeedback:
+          type: integer
+        counts:
+          type: object
+          properties:
+            accepted:
+              type: integer
+            edited:
+              type: integer
+            rejected:
+              type: integer
+          required: [accepted, edited, rejected]
+        acceptanceRate:
+          type: number
+        averageEditDistance:
+          type: number
+        byModel:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: true
+        guidance:
+          type: string
+      required:
+        - windowDays
+        - totalFeedback
+        - counts
+        - acceptanceRate
+        - averageEditDistance
+        - byModel
+        - guidance
+
+    RiskHeatmapResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        overallRisk:
+          type: number
+        respondedItems:
+          type: integer
+        bySection:
+          type: array
+          items:
+            type: object
+            properties:
+              sectionId:
+                type: string
+              score:
+                type: number
+              normalizedRisk:
+                type: number
+              issues:
+                type: integer
+              responded:
+                type: integer
+            required: [sectionId, score, normalizedRisk, issues, responded]
+        byFile:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+              added:
+                type: integer
+              removed:
+                type: integer
+              churn:
+                type: integer
+            required: [path, added, removed, churn]
+      required: [sessionId, overallRisk, respondedItems, bySection, byFile]
+
+    CompliancePackControl:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [high, medium, low]
+      required: [id, title, description, priority]
+
+    CompliancePack:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        controls:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompliancePackControl'
+      required: [id, title, description, version, controls]
+
+    CompliancePackListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              version:
+                type: string
+              controlsCount:
+                type: integer
+            required: [id, title, description, version, controlsCount]
+      required: [items]
+
+    CiPolicyCheckRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        userSupabaseUserId:
+          type: string
+        minCoverage:
+          type: integer
+        minConfidence:
+          type: integer
+        maxBlockers:
+          type: integer
+        maxMajors:
+          type: integer
+      required: [sessionId, userSupabaseUserId]
+      additionalProperties: false
+
+    CiPolicyCheckResponse:
+      type: object
+      properties:
+        pass:
+          type: boolean
+        reasons:
+          type: array
+          items:
+            type: string
+        thresholds:
+          type: object
+          additionalProperties: true
+        metrics:
+          type: object
+          additionalProperties: true
+      required: [pass, reasons, thresholds, metrics]
 
     UsageSummary:
       type: object

@@ -58,6 +58,9 @@ export class MeService {
     if (input.autoExportPdf !== undefined) {
       updateData.autoExportPdf = input.autoExportPdf;
     }
+    if (input.activeCommentStyleProfileId !== undefined) {
+      updateData.activeCommentStyleProfileId = input.activeCommentStyleProfileId;
+    }
     if (input.monthlyBudgetUsd !== undefined) {
       updateData.monthlyBudgetUsd = new Prisma.Decimal(input.monthlyBudgetUsd);
     }
@@ -209,6 +212,7 @@ export class MeService {
       fontSize: preference.fontSize,
       codeBlockTheme: preference.codeBlockTheme,
       autoExportPdf: preference.autoExportPdf,
+      activeCommentStyleProfileId: preference.activeCommentStyleProfileId,
       monthlyBudgetUsd: Number(preference.monthlyBudgetUsd),
       alertThresholds: preference.alertThresholds,
       hardStopAtBudget: preference.hardStopAtBudget,
