@@ -10,7 +10,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-type StackId = 'java-protobuf' | 'js-ts-react-node' | 'go' | 'polish-my-pr';
+type StackId =
+  | 'java-protobuf'
+  | 'js-ts-react-node'
+  | 'go'
+  | 'terraform-hcl'
+  | 'swift-objc'
+  | 'web-devops-config'
+  | 'python'
+  | 'ruby'
+  | 'lua'
+  | 'c-lang'
+  | 'polish-my-pr';
 
 interface CodeExample {
   title: string;
@@ -66,6 +77,13 @@ const CHECKLIST_FILES = [
   'java-protobuf.json',
   'js-ts-react-node.json',
   'go.json',
+  'terraform-hcl.json',
+  'swift-objc.json',
+  'web-devops-config.json',
+  'python.json',
+  'ruby.json',
+  'lua.json',
+  'c-lang.json',
   'polish-my-pr.json',
 ] as const;
 
@@ -99,6 +117,20 @@ function stackLanguageHint(stackId: StackId): string {
     return 'Prefer Java/Kotlin + Protobuf examples.';
   if (stackId === 'js-ts-react-node')
     return 'Prefer TypeScript/React/Node examples.';
+  if (stackId === 'terraform-hcl')
+    return 'Prefer Terraform HCL examples and infrastructure-focused review guidance.';
+  if (stackId === 'swift-objc')
+    return 'Prefer Swift and Objective-C examples focused on iOS/macOS development.';
+  if (stackId === 'web-devops-config')
+    return 'Prefer examples across HTML/CSS, shell scripts, Dockerfiles, Groovy/Jenkins, and configuration files.';
+  if (stackId === 'python')
+    return 'Prefer Python examples with practical typing, testing, and readability guidance.';
+  if (stackId === 'ruby')
+    return 'Prefer Ruby and Ruby on Rails examples with idiomatic patterns.';
+  if (stackId === 'lua')
+    return 'Prefer Lua examples (including embedded or game scripting contexts).';
+  if (stackId === 'c-lang')
+    return 'Prefer C examples focused on memory safety, correctness, and systems concerns.';
   return 'Use stack-agnostic examples focused on PR polish and review behavior.';
 }
 

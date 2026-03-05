@@ -9,6 +9,13 @@ const CHECKLIST_FILES = {
   'java-protobuf': 'java-protobuf.json',
   'js-ts-react-node': 'js-ts-react-node.json',
   go: 'go.json',
+  'terraform-hcl': 'terraform-hcl.json',
+  'swift-objc': 'swift-objc.json',
+  'web-devops-config': 'web-devops-config.json',
+  python: 'python.json',
+  ruby: 'ruby.json',
+  lua: 'lua.json',
+  'c-lang': 'c-lang.json',
   'polish-my-pr': 'polish-my-pr.json',
 } as const;
 

@@ -1,0 +1,2363 @@
+{
+  "meta": {
+    "id": "python",
+    "mode": "review",
+    "title": "Python",
+    "shortTitle": "Python",
+    "description": "Review checklist for Python projects",
+    "icon": "🐍",
+    "totalItems": 88,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "python.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "python.general-code-quality.does-the-pr-have-a-clear-description-of-what-it-does-and-why",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The pull request includes a summary of what changed and why, giving reviewers context before reading the diff.",
+            "whyItMatters": "Without context, reviewers waste time reverse-engineering intent. A clear description speeds up review and catches misaligned requirements early.",
+            "howToVerify": "- Read the PR description — does it explain the motivation and approach?\n- Check for links to related issues or design documents\n- Verify the description matches the actual code changes",
+            "exampleComment": "Could you add a brief description of why this endpoint was restructured? The motivation isn't clear from the diff alone.",
+            "codeExamples": [],
+            "keyTakeaway": "A good PR description saves more time in review than it takes to write.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.general-code-quality.is-the-change-scoped-appropriately",
+          "text": "Is the change scoped appropriately?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The PR contains a single logical change — not too large to review meaningfully, not split so small that pieces don't make sense alone.",
+            "whyItMatters": "Oversized PRs get rubber-stamped. Well-scoped PRs get thorough, fast reviews and are easier to revert if problems arise.",
+            "howToVerify": "- Check the diff size — ideally under 400 lines of meaningful changes\n- Verify all changes relate to the stated purpose\n- Check whether the PR could be split into independent units",
+            "exampleComment": "This PR adds the new API endpoint and refactors the ORM models. Could we split the model refactor into a separate PR?",
+            "codeExamples": [],
+            "keyTakeaway": "One logical change per PR leads to better reviews and safer merges.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.general-code-quality.are-there-any-unrelated-changes-bundled-in",
+          "text": "Are there any unrelated changes bundled in?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The PR doesn't mix unrelated fixes, refactors, or formatting changes with the primary feature or bug fix.",
+            "whyItMatters": "Bundled changes make reviews harder, complicate reverts, and obscure git blame history.",
+            "howToVerify": "- Scan the file list for files that seem unrelated to the PR's purpose\n- Look for stray formatting changes or import reordering\n- Check for drive-by fixes mixed in",
+            "exampleComment": "The Black reformatting of `utils/` is unrelated to the authentication feature. Could you move it to a separate PR?",
+            "codeExamples": [],
+            "keyTakeaway": "Keep PRs focused — unrelated changes belong in separate PRs.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.general-code-quality.is-dead-code-removed-rather-than-commented-out",
+          "text": "Is dead code removed rather than commented out?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Unused code is deleted outright rather than left as commented-out blocks. Git history preserves deleted code if it's ever needed.",
+            "whyItMatters": "Commented-out code creates confusion about whether it's needed, planned, or forgotten.",
+            "howToVerify": "- Search for large commented-out blocks in the diff\n- Check for functions or classes that are no longer called\n- Look for feature flag checks for flags that have been fully rolled out",
+            "exampleComment": "This commented-out `legacy_sync()` function can be safely deleted — git history has it if we ever need it.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "# def legacy_sync():\n#     old_client.sync(data)\n\ndef sync():\n    new_client.sync(data)"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def sync():\n    new_client.sync(data)"
+              }
+            ],
+            "keyTakeaway": "Delete dead code — version control is your backup.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.general-code-quality.are-todofixme-comments-accompanied-by-a-tracking-ticket",
+          "text": "Are TODO/FIXME comments accompanied by a tracking ticket?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "TODO and FIXME comments reference a ticket or issue number so the work is tracked and not forgotten.",
+            "whyItMatters": "Untracked TODOs accumulate as tech debt that nobody owns. Linking to a ticket ensures the work gets prioritized.",
+            "howToVerify": "- Search the diff for TODO, FIXME, HACK, XXX comments\n- Verify each has a ticket reference (e.g., JIRA-123, #456)\n- Check that referenced tickets are open and assigned",
+            "exampleComment": "This `# TODO: handle edge case` should reference a ticket so it doesn't get lost.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "# TODO: refactor this later"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "# TODO(PROJ-456): Extract shared validation logic into a mixin"
+              }
+            ],
+            "keyTakeaway": "Every TODO needs an owner — link it to a tracked issue.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.general-code-quality.does-the-commit-history-tell-a-coherent-story",
+          "text": "Does the commit history tell a coherent story?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Commits are logically organized with clear messages, making the change history easy to understand and bisect.",
+            "whyItMatters": "Good commit history helps future developers understand why changes were made and makes bisecting bugs much easier.",
+            "howToVerify": "- Read commit messages in order — do they tell a logical story?\n- Check for WIP or fixup commits that should be squashed\n- Verify each commit passes tests independently",
+            "exampleComment": "The 'fix' and 'wip' commits should be squashed before merging. Consider organizing into 'Add migration', 'Add model', 'Add endpoint'.",
+            "codeExamples": [],
+            "keyTakeaway": "Clean commit history is documentation — make each commit a meaningful unit of change.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.python-style-idioms",
+      "title": "Python Style & Idioms",
+      "subsections": [
+        {
+          "id": "python.python-style-idioms.pep-8-formatting",
+          "title": "PEP 8 & Formatting",
+          "items": [
+            {
+              "id": "python.python-style-idioms.pep-8-formatting.does-the-code-follow-pep-8-style-guidelines",
+              "text": "Does the code follow PEP 8 style guidelines?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "The code follows PEP 8, Python's official style guide, covering indentation, spacing, naming, and structure.",
+                "whyItMatters": "PEP 8 is the universal Python style standard. Following it makes code immediately readable to any Python developer and reduces review friction.",
+                "howToVerify": "- Run `flake8` or `ruff check` on changed files\n- Check that no new style violations are introduced\n- Verify the project's style configuration is consistent",
+                "exampleComment": "Ruff is flagging several PEP 8 violations. Could you run `ruff check --fix` on the changed files?",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "def calculate( x,y ):\n    return x+y\nclass myClass:\n    pass"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "def calculate(x, y):\n    return x + y\n\nclass MyClass:\n    pass"
+                  }
+                ],
+                "keyTakeaway": "Let automated tools enforce PEP 8 so reviewers can focus on logic and design.",
+                "references": [
+                  {
+                    "title": "PEP 8",
+                    "url": "https://peps.python.org/pep-0008/"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pep-8-formatting.is-a-formatter-black-autopep8-and-linter-flake8-ruff-configured",
+              "text": "Is a formatter (Black, autopep8) and linter (flake8, ruff) configured?",
+              "severity": "minor",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "The project has an auto-formatter (Black or Ruff format) and linter (Ruff, Flake8) configured and integrated into the development workflow.",
+                "whyItMatters": "Automated formatting eliminates style debates in code review. Linters catch bugs and anti-patterns automatically, freeing reviewers to focus on logic.",
+                "howToVerify": "- Check for `pyproject.toml` or `setup.cfg` with formatter/linter configuration\n- Verify pre-commit hooks or CI enforce formatting\n- Check that the formatter config matches the project's line length preference",
+                "exampleComment": "The project uses Black but this file has inconsistent formatting. Could you run `black .` before committing? Consider adding a pre-commit hook to prevent this.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "toml",
+                    "code": "# No formatter or linter configured"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "toml",
+                    "code": "# pyproject.toml\n[tool.ruff]\nline-length = 88\nselect = [\"E\", \"F\", \"I\", \"N\", \"W\"]\n\n[tool.ruff.format]\nquote-style = \"double\""
+                  }
+                ],
+                "keyTakeaway": "Configure Ruff or Black + Flake8 with pre-commit hooks — never debate style in reviews.",
+                "references": [
+                  {
+                    "title": "Ruff",
+                    "url": "https://docs.astral.sh/ruff/"
+                  },
+                  {
+                    "title": "Black",
+                    "url": "https://black.readthedocs.io/"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pep-8-formatting.are-imports-organized-stdlib-third-party-local-with-isort-or-ruff",
+              "text": "Are imports organized (stdlib, third-party, local) with isort or ruff?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Imports are organized in the standard order: standard library, third-party packages, local modules — separated by blank lines.",
+                "whyItMatters": "Organized imports make dependencies visible at a glance and prevent merge conflicts from random import ordering.",
+                "howToVerify": "- Check that imports follow the stdlib → third-party → local order\n- Verify `isort` or `ruff` import sorting is configured\n- Look for import ordering inconsistencies in new files",
+                "exampleComment": "The imports mix stdlib and third-party packages. Could you run `ruff check --select I --fix` to sort them?",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "from myapp.models import User\nimport os\nimport requests\nfrom pathlib import Path"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "import os\nfrom pathlib import Path\n\nimport requests\n\nfrom myapp.models import User"
+                  }
+                ],
+                "keyTakeaway": "Sort imports automatically with isort or Ruff — stdlib, third-party, then local.",
+                "references": [
+                  {
+                    "title": "isort",
+                    "url": "https://pycqa.github.io/isort/"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pep-8-formatting.are-wildcard-imports-from-module-import-avoided",
+              "text": "Are wildcard imports (`from module import *`) avoided?",
+              "severity": "minor",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Wildcard imports (`from module import *`) are avoided in favor of explicit imports that make dependencies clear.",
+                "whyItMatters": "Wildcard imports pollute the namespace, make it impossible to tell where names come from, and can silently shadow local names.",
+                "howToVerify": "- Search for `from ... import *` in the diff\n- Check that each imported name is explicitly listed\n- Verify `__all__` is defined in modules that might be star-imported",
+                "exampleComment": "The `from utils import *` makes it unclear which names are used. Could you import the specific functions needed?",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "from utils import *\nfrom models import *"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "from utils import validate_email, format_name\nfrom models import User, Order"
+                  }
+                ],
+                "keyTakeaway": "Import explicitly — wildcard imports make code impossible to understand and refactor.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pep-8-formatting.are-line-lengths-within-project-limits-79-or-88-characters",
+              "text": "Are line lengths within project limits (79 or 88 characters)?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Lines stay within the project's configured maximum length (typically 79 for PEP 8 strict or 88 for Black-formatted projects).",
+                "whyItMatters": "Long lines are hard to read, cause horizontal scrolling, and make side-by-side diffs difficult to review.",
+                "howToVerify": "- Check the project's `pyproject.toml` for line length configuration\n- Run the formatter to auto-wrap long lines\n- Look for long strings or function calls that could be broken up",
+                "exampleComment": "This line is 142 characters. The project uses an 88-character limit. Could you break it across multiple lines?",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "result = some_function(very_long_argument_name, another_long_argument, yet_another_argument, final_argument='default_value')"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "result = some_function(\n    very_long_argument_name,\n    another_long_argument,\n    yet_another_argument,\n    final_argument='default_value',\n)"
+                  }
+                ],
+                "keyTakeaway": "Keep lines short — configure Black or Ruff to enforce the limit automatically.",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "python.python-style-idioms.pythonic-patterns",
+          "title": "Pythonic Patterns",
+          "items": [
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.are-listdictset-comprehensions-used-instead-of-manual-loops-where-clearer",
+              "text": "Are list/dict/set comprehensions used instead of manual loops where clearer?",
+              "severity": "minor",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "List, dict, and set comprehensions are used instead of manual loops with append/add when the transformation is simple and clear.",
+                "whyItMatters": "Comprehensions are more readable for simple transformations, faster (implemented in C internally), and communicate intent better than explicit loops.",
+                "howToVerify": "- Look for `for` loops with `append()` that could be comprehensions\n- Check that comprehensions aren't too complex (if they need multiple lines, a loop may be clearer)\n- Verify nested comprehensions are readable",
+                "exampleComment": "This loop with `append()` is a classic comprehension pattern. `names = [u.name for u in users if u.active]` is more Pythonic.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "names = []\nfor user in users:\n    if user.active:\n        names.append(user.name)"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "names = [user.name for user in users if user.active]"
+                  }
+                ],
+                "keyTakeaway": "Use comprehensions for simple transformations — switch to explicit loops when logic gets complex.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.are-context-managers-with-statements-used-for-resource-management",
+              "text": "Are context managers (`with` statements) used for resource management?",
+              "severity": "major",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Resources (files, connections, locks) are managed with `with` statements to ensure proper cleanup, even on exceptions.",
+                "whyItMatters": "Without `with`, resources can leak if exceptions occur between open and close. Context managers guarantee cleanup in all code paths.",
+                "howToVerify": "- Look for `open()` without `with` — files may not be closed on exceptions\n- Check for database connections, locks, or sessions opened without context managers\n- Verify custom resource classes implement `__enter__` and `__exit__`",
+                "exampleComment": "The `open(path)` without a `with` statement could leak the file handle if an exception occurs before `f.close()`. Use `with open(path) as f:`.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "f = open('data.txt')\ndata = f.read()  # Exception here leaks file handle!\nf.close()"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "with open('data.txt') as f:\n    data = f.read()\n# File automatically closed, even on exception"
+                  }
+                ],
+                "keyTakeaway": "Always use `with` for resources — it guarantees cleanup even when exceptions occur.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.are-f-strings-used-instead-of-formatting-or-format",
+              "text": "Are f-strings used instead of `%` formatting or `.format()`?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "F-strings (`f'Hello {name}'`) are used for string formatting instead of `%` formatting or `.format()` method.",
+                "whyItMatters": "F-strings are the most readable, fastest, and most Pythonic way to format strings (Python 3.6+). They evaluate expressions inline.",
+                "howToVerify": "- Look for `'%s' % var` or `'{}'.format(var)` patterns\n- Check that f-strings don't contain overly complex expressions\n- Verify f-strings aren't used where `str.format()` templates are needed (user-configurable formats)",
+                "exampleComment": "The `'Hello, %s! You have %d items.' % (name, count)` is more readable as `f'Hello, {name}! You have {count} items.'`",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "msg = 'Hello, %s! You have %d items.' % (name, count)\nmsg = 'Hello, {}!'.format(name)"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "msg = f'Hello, {name}! You have {count} items.'"
+                  }
+                ],
+                "keyTakeaway": "Use f-strings for string formatting — they're clearer, faster, and more Pythonic.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.is-enumerate-used-instead-of-manual-counter-variables",
+              "text": "Is `enumerate()` used instead of manual counter variables?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "`enumerate()` is used to get both index and value when iterating, instead of maintaining a manual counter variable.",
+                "whyItMatters": "Manual counters are error-prone (forgetting to increment, off-by-one) and less readable. `enumerate()` is the Pythonic way.",
+                "howToVerify": "- Look for `i = 0` / `i += 1` patterns inside loops\n- Check for `range(len(items))` — usually indicates `enumerate()` should be used\n- Verify the starting index if needed: `enumerate(items, start=1)`",
+                "exampleComment": "The `for i in range(len(items))` then `items[i]` pattern is better written as `for i, item in enumerate(items)`.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "i = 0\nfor item in items:\n    print(f'{i}: {item}')\n    i += 1"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "for i, item in enumerate(items):\n    print(f'{i}: {item}')"
+                  }
+                ],
+                "keyTakeaway": "Use `enumerate()` whenever you need both index and value — it's cleaner and safer.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.are-pathlibpath-objects-used-instead-of-ospath-string-manipulation",
+              "text": "Are `pathlib.Path` objects used instead of `os.path` string manipulation?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "`pathlib.Path` objects are used for file path operations instead of string concatenation and `os.path` functions.",
+                "whyItMatters": "`pathlib` provides an object-oriented API for paths that's more readable, cross-platform, and less error-prone than string-based `os.path` operations.",
+                "howToVerify": "- Look for `os.path.join`, `os.path.exists`, `os.path.dirname` — these can use `pathlib`\n- Check for string concatenation with `/` for building paths\n- Verify `Path` objects are used consistently (not mixing `os.path` and `pathlib`)",
+                "exampleComment": "The `os.path.join(base_dir, 'config', 'settings.json')` is more readable as `Path(base_dir) / 'config' / 'settings.json'`.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "import os\npath = os.path.join(base_dir, 'config', 'settings.json')\nif os.path.exists(path):\n    with open(path) as f:\n        data = f.read()"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "from pathlib import Path\npath = Path(base_dir) / 'config' / 'settings.json'\nif path.exists():\n    data = path.read_text()"
+                  }
+                ],
+                "keyTakeaway": "Use `pathlib.Path` for all path operations — it's cleaner and more Pythonic than `os.path`.",
+                "references": [
+                  {
+                    "title": "pathlib",
+                    "url": "https://docs.python.org/3/library/pathlib.html"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.is-unpacking-used-instead-of-index-based-access-where-appropriate",
+              "text": "Is unpacking used instead of index-based access where appropriate?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Tuple/list unpacking is used instead of accessing elements by index when the structure is known.",
+                "whyItMatters": "Unpacking gives descriptive names to values and makes the code self-documenting. Index access like `result[0]`, `result[1]` is opaque.",
+                "howToVerify": "- Look for `result[0]`, `item[1]` patterns that could use unpacking\n- Check that unpacking matches the expected tuple/list length\n- Use `_` for values you don't need",
+                "exampleComment": "The `point[0]` and `point[1]` accesses would be clearer as `x, y = point`.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "result = get_user_info()\nname = result[0]\nemail = result[1]\nage = result[2]"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "name, email, age = get_user_info()"
+                  }
+                ],
+                "keyTakeaway": "Unpack tuples into named variables — `x, y = point` beats `point[0], point[1]`.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.are-any-and-all-used-instead-of-loop-based-boolean-checks",
+              "text": "Are `any()` and `all()` used instead of loop-based boolean checks?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "`any()` and `all()` built-ins are used for boolean checks over iterables instead of manual loop-based checking.",
+                "whyItMatters": "`any()` and `all()` are more readable, concise, and short-circuit (stop early when the result is determined).",
+                "howToVerify": "- Look for loops that check a condition and return True/False\n- Check for manual flag variables used to track boolean conditions\n- Verify generator expressions are used inside `any()`/`all()` (not list comprehensions)",
+                "exampleComment": "The loop checking if any user is admin can be simplified to `any(u.is_admin for u in users)`.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "has_admin = False\nfor user in users:\n    if user.is_admin:\n        has_admin = True\n        break"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "has_admin = any(user.is_admin for user in users)"
+                  }
+                ],
+                "keyTakeaway": "Use `any()` and `all()` for boolean checks over iterables — they're concise and short-circuit.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.is-eafp-tryexcept-preferred-over-lbyl-ifcheck-for-python",
+              "text": "Is EAFP (try/except) preferred over LBYL (if/check) for Python?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "EAFP (Easier to Ask Forgiveness than Permission) style using try/except is preferred over LBYL (Look Before You Leap) style using if-checks, following Python conventions.",
+                "whyItMatters": "EAFP is more Pythonic, avoids race conditions (checking then acting), and is often faster for the common case since exceptions in Python are cheap to set up.",
+                "howToVerify": "- Look for `if key in dict:` followed by `dict[key]` — could use try/except or `.get()`\n- Check for `if hasattr(obj, 'method'):` — could use try/except\n- Note: EAFP isn't always better — use judgment",
+                "exampleComment": "The `if key in config:` before `config[key]` is LBYL. The Pythonic way is `config.get(key, default)` or a try/except KeyError.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "# LBYL style\nif 'database' in config:\n    if 'host' in config['database']:\n        host = config['database']['host']\n    else:\n        host = 'localhost'"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "# EAFP style\ntry:\n    host = config['database']['host']\nexcept KeyError:\n    host = 'localhost'\n\n# Or even simpler:\nhost = config.get('database', {}).get('host', 'localhost')"
+                  }
+                ],
+                "keyTakeaway": "Prefer EAFP in Python — try/except is the idiomatic way to handle expected failure cases.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.pythonic-patterns.are-walrus-operator-usages-clear-and-not-overly-clever",
+              "text": "Are walrus operator (`:=`) usages clear and not overly clever?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "The walrus operator (`:=`) is used only when it genuinely improves readability by combining assignment with a condition, not for cleverness.",
+                "whyItMatters": "The walrus operator can make code more concise but overuse hurts readability. It's most useful in while loops and if conditions.",
+                "howToVerify": "- Check that walrus operator usages are clear to read\n- Look for overly nested or complex walrus expressions\n- Verify it's used where it eliminates redundancy (repeated function calls, long conditions)",
+                "exampleComment": "The walrus operator in this nested comprehension is hard to follow. Consider using a regular loop for clarity.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "# Overly clever\nresults = [y for x in data if (y := transform(x)) > threshold and (z := validate(y))]"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "# Clear and useful\nwhile chunk := file.read(8192):\n    process(chunk)\n\n# Good: avoids double regex match\nif match := pattern.search(line):\n    process(match.group(1))"
+                  }
+                ],
+                "keyTakeaway": "Use walrus operator for simple cases (while loops, if conditions) — avoid in complex expressions.",
+                "references": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "python.python-style-idioms.naming",
+          "title": "Naming",
+          "items": [
+            {
+              "id": "python.python-style-idioms.naming.are-class-names-in-pascalcase-functionsvariables-in-snakecase",
+              "text": "Are class names in PascalCase, functions/variables in snake_case?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Classes use PascalCase, functions/methods/variables use snake_case, following PEP 8 naming conventions.",
+                "whyItMatters": "Consistent naming makes it instantly clear whether something is a class or a function/variable. PEP 8 naming is expected by the Python community.",
+                "howToVerify": "- Check that new class names use PascalCase\n- Verify function and variable names use snake_case\n- Look for mixed styles like `camelCase` methods",
+                "exampleComment": "The function `getUserData` should be `get_user_data` to follow Python's snake_case convention.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "class order_processor:\n    def ProcessOrder(self, orderData):\n        pass"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "class OrderProcessor:\n    def process_order(self, order_data):\n        pass"
+                  }
+                ],
+                "keyTakeaway": "PascalCase for classes, snake_case for everything else — follow PEP 8 naming.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.naming.are-constants-in-uppersnakecase",
+              "text": "Are constants in UPPER_SNAKE_CASE?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Module-level constants use UPPER_SNAKE_CASE to distinguish them from regular variables.",
+                "whyItMatters": "UPPER_SNAKE_CASE immediately signals that a value is a constant and shouldn't be modified. It's the universal Python convention.",
+                "howToVerify": "- Check that module-level constants use UPPER_SNAKE_CASE\n- Look for regular variable names used for values that never change\n- Verify constants are defined at module scope, not inside functions",
+                "exampleComment": "The `max_retries = 3` at module level should be `MAX_RETRIES = 3` to signal it's a constant.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "default_timeout = 30\nmax_retries = 3\napi_base_url = 'https://api.example.com'"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "DEFAULT_TIMEOUT = 30\nMAX_RETRIES = 3\nAPI_BASE_URL = 'https://api.example.com'"
+                  }
+                ],
+                "keyTakeaway": "Use UPPER_SNAKE_CASE for constants — it's a universal signal that the value shouldn't change.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.naming.are-private-attributes-prefixed-with-underscore-private",
+              "text": "Are private attributes prefixed with underscore (`_private`)?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Internal attributes and methods use a single underscore prefix (`_private`) to signal they're not part of the public API.",
+                "whyItMatters": "The underscore convention communicates intent — 'this is an implementation detail, don't depend on it'. It helps maintain stable public APIs.",
+                "howToVerify": "- Check that internal methods/attributes use `_` prefix\n- Verify double-underscore (`__name_mangling`) is used sparingly and intentionally\n- Look for public methods that should be private",
+                "exampleComment": "The `helper_method` is only used internally. Prefix it with `_` to signal it's not part of the public API.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "class Parser:\n    def parse(self, data):\n        tokens = self.tokenize(data)  # Public but internal\n        return self.build_tree(tokens)\n\n    def tokenize(self, data): ...  # Should be private\n    def build_tree(self, tokens): ...  # Should be private"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "class Parser:\n    def parse(self, data):\n        tokens = self._tokenize(data)\n        return self._build_tree(tokens)\n\n    def _tokenize(self, data): ...\n    def _build_tree(self, tokens): ..."
+                  }
+                ],
+                "keyTakeaway": "Prefix internal methods with `_` — it signals 'implementation detail, may change'.",
+                "references": []
+              }
+            },
+            {
+              "id": "python.python-style-idioms.naming.are-dunder-methods-init-repr-used-correctly",
+              "text": "Are dunder methods (`__init__`, `__repr__`) used correctly?",
+              "severity": "minor",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Dunder methods (`__init__`, `__repr__`, `__str__`, etc.) follow Python's data model conventions and are used for their intended purposes.",
+                "whyItMatters": "Dunder methods integrate your classes with Python's built-in operations (printing, comparison, iteration). Misusing them causes confusing behavior.",
+                "howToVerify": "- Check that `__repr__` returns a string useful for debugging (ideally eval-able)\n- Verify `__str__` returns a human-readable representation\n- Check that `__init__` doesn't return a value\n- Look for custom dunder names (don't invent them)",
+                "exampleComment": "The `__repr__` method returns `'User object'` which isn't useful for debugging. Could you return `f'User(id={self.id}, name={self.name!r})'`?",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "class User:\n    def __repr__(self):\n        return 'User object'  # Not useful for debugging"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "class User:\n    def __repr__(self):\n        return f'User(id={self.id}, name={self.name!r})'\n\n    def __str__(self):\n        return self.name"
+                  }
+                ],
+                "keyTakeaway": "Implement `__repr__` for debugging and `__str__` for display — don't invent custom dunders.",
+                "references": [
+                  {
+                    "title": "Python Data Model",
+                    "url": "https://docs.python.org/3/reference/datamodel.html"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "python.python-style-idioms.naming.are-module-names-short-lowercase-and-descriptive",
+              "text": "Are module names short, lowercase, and descriptive?",
+              "severity": "nit",
+              "tags": [],
+              "baseContent": {
+                "whatItMeans": "Module (file) names are short, lowercase, use underscores if needed, and clearly describe their contents.",
+                "whyItMatters": "Module names appear in import statements throughout the codebase. Short, descriptive names make imports readable and help developers find code.",
+                "howToVerify": "- Check that new module names are lowercase with underscores\n- Verify names are descriptive but concise\n- Look for module names that don't match their contents",
+                "exampleComment": "The module `UserAuthenticationHandlerUtils.py` should be `auth.py` or `auth_utils.py` — keep module names short and lowercase.",
+                "codeExamples": [
+                  {
+                    "label": "Bad",
+                    "language": "python",
+                    "code": "# File names:\nUserAuthenticationHandlerUtils.py\nMyHelpers.py\nMisc.py"
+                  },
+                  {
+                    "label": "Good",
+                    "language": "python",
+                    "code": "# File names:\nauth.py\nvalidation.py\nformatting.py"
+                  }
+                ],
+                "keyTakeaway": "Keep module names short, lowercase, and descriptive — they appear in every import.",
+                "references": []
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python.type-hints-safety",
+      "title": "Type Hints & Safety",
+      "items": [
+        {
+          "id": "python.type-hints-safety.are-type-hints-added-for-function-signatures",
+          "text": "Are type hints added for function signatures?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Functions have type hints for parameters and return types, documenting the expected types and enabling static analysis.",
+            "whyItMatters": "Type hints catch type errors before runtime, serve as documentation, enable IDE auto-completion, and make code more maintainable.",
+            "howToVerify": "- Check that new function signatures include type hints\n- Verify return types are annotated (including `-> None`)\n- Look for untyped `**kwargs` that could be more specific",
+            "exampleComment": "The `process_data` function has no type hints. Adding `def process_data(items: list[dict], limit: int = 100) -> list[str]:` would improve clarity and catch bugs.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def process_data(items, limit=100):\n    results = []\n    for item in items:\n        results.append(item['name'])\n    return results"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def process_data(items: list[dict[str, Any]], limit: int = 100) -> list[str]:\n    return [item['name'] for item in items[:limit]]"
+              }
+            ],
+            "keyTakeaway": "Add type hints to all function signatures — they're documentation that the type checker enforces.",
+            "references": [
+              {
+                "title": "PEP 484 – Type Hints",
+                "url": "https://peps.python.org/pep-0484/"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.type-hints-safety.are-complex-types-using-typing-module-optional-union-list-dict",
+          "text": "Are complex types using `typing` module (Optional, Union, List, Dict)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Complex type annotations use `typing` module types (`Optional`, `Union`, `list`, `dict`) or modern Python 3.10+ syntax (`X | Y`).",
+            "whyItMatters": "Precise type annotations catch more bugs. `list[str]` is more useful than just `list` because the type checker knows the element type.",
+            "howToVerify": "- Check that generic types specify their type parameters\n- Verify `Optional[X]` is used for nullable types (equivalent to `X | None`)\n- Look for bare `list`, `dict`, `tuple` without type parameters",
+            "exampleComment": "The `items: list` parameter could be more specific. Is it `list[str]`, `list[int]`, or `list[User]`? Adding the element type helps the type checker catch misuse.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def process(items: list, config: dict) -> tuple:\n    pass"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def process(\n    items: list[str],\n    config: dict[str, Any],\n) -> tuple[int, list[str]]:\n    pass"
+              }
+            ],
+            "keyTakeaway": "Specify type parameters for generic types — `list[str]` catches more bugs than `list`.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.type-hints-safety.is-mypy-or-pyright-configured-and-passing",
+          "text": "Is mypy or pyright configured and passing?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "A type checker (mypy or pyright) is configured for the project and the changed code passes without errors.",
+            "whyItMatters": "Type checkers catch bugs that tests miss: wrong argument types, None access, missing attributes. They're especially valuable in large codebases.",
+            "howToVerify": "- Run `mypy` or `pyright` on changed files\n- Check that no new type errors are introduced\n- Verify the type checker configuration in `pyproject.toml`",
+            "exampleComment": "mypy reports `error: Argument 1 to \"process\" has incompatible type \"str\"; expected \"int\"`. Could you fix the type mismatch?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "toml",
+                "code": "# No type checker configured"
+              },
+              {
+                "label": "Good",
+                "language": "toml",
+                "code": "[tool.mypy]\nstrict = true\nwarn_return_any = true\nwarn_unused_configs = true"
+              }
+            ],
+            "keyTakeaway": "Configure mypy or pyright in strict mode — they catch real bugs that tests miss.",
+            "references": [
+              {
+                "title": "mypy",
+                "url": "https://mypy.readthedocs.io/"
+              },
+              {
+                "title": "pyright",
+                "url": "https://microsoft.github.io/pyright/"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.type-hints-safety.are-optional-types-handled-explicitly-not-assuming-non-none",
+          "text": "Are `Optional` types handled explicitly (not assuming non-None)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Variables typed as `Optional[X]` or `X | None` are explicitly checked for `None` before use, rather than assuming they always have a value.",
+            "whyItMatters": "`None` access errors (`AttributeError: 'NoneType' has no attribute...`) are one of the most common Python runtime errors. Explicit None checks prevent them.",
+            "howToVerify": "- Check that Optional values are guarded with `if value is not None:` or `if value:`\n- Look for methods called on Optional values without None checks\n- Verify type narrowing works correctly after None checks",
+            "exampleComment": "The `user.email.lower()` call will crash if `user.email` is None (it's typed as `Optional[str]`). Add a None check or use `(user.email or '').lower()`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def greet(user: User) -> str:\n    # user.nickname is Optional[str]\n    return f'Hello, {user.nickname.upper()}!'  # Crash if None!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def greet(user: User) -> str:\n    name = user.nickname or user.email or 'stranger'\n    return f'Hello, {name.upper()}!'"
+              }
+            ],
+            "keyTakeaway": "Always check for None before accessing Optional values — they're None more often than you think.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.type-hints-safety.are-typeddict-or-dataclasses-used-for-structured-data",
+          "text": "Are TypedDict or dataclasses used for structured data?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Structured data uses `TypedDict`, `dataclass`, or `NamedTuple` instead of plain dicts, providing type safety and auto-completion.",
+            "whyItMatters": "Plain dicts with string keys are error-prone — typos in keys cause silent bugs. Typed structures catch errors at type-check time and provide IDE support.",
+            "howToVerify": "- Look for plain dicts used to represent domain objects\n- Check for `dict[str, Any]` that could be `TypedDict` or `dataclass`\n- Verify dataclasses have appropriate field types",
+            "exampleComment": "The `user_data` dict with keys like `'name'`, `'email'`, `'role'` would be safer as a `UserData` TypedDict or dataclass.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "user = {'name': 'Alice', 'email': 'alice@test.com', 'role': 'admin'}\nprint(user['nme'])  # Typo: KeyError at runtime!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from dataclasses import dataclass\n\n@dataclass\nclass User:\n    name: str\n    email: str\n    role: str\n\nuser = User(name='Alice', email='alice@test.com', role='admin')\nprint(user.nme)  # AttributeError caught by type checker!"
+              }
+            ],
+            "keyTakeaway": "Use dataclasses or TypedDict instead of plain dicts — they catch typos and provide auto-completion.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.type-hints-safety.are-any-types-avoided-unless-justified",
+          "text": "Are `Any` types avoided unless justified?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`Any` type is avoided in favor of more specific types. When `Any` is used, it's justified by a comment explaining why.",
+            "whyItMatters": "`Any` disables type checking — it's compatible with everything, catching nothing. Overusing it defeats the purpose of having type hints.",
+            "howToVerify": "- Search for `Any` in type annotations\n- Check if a more specific type could be used\n- Look for justified uses (wrapping untyped third-party libs, genuinely dynamic data)",
+            "exampleComment": "The `data: Any` parameter could be `data: dict[str, str | int]` based on its usage. `Any` disables all type checking on this parameter.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def process(data: Any, config: Any) -> Any:\n    return data.get('result')  # No type checking!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def process(data: dict[str, str], config: AppConfig) -> ProcessResult:\n    return ProcessResult(value=data.get('result', ''))"
+              }
+            ],
+            "keyTakeaway": "Avoid `Any` — use specific types to get real value from type checking.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.type-hints-safety.are-protocol-classes-used-for-structural-subtyping-where-appropriate",
+          "text": "Are Protocol classes used for structural subtyping where appropriate?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`Protocol` classes from `typing` are used for structural subtyping (duck typing with type safety) instead of requiring explicit inheritance.",
+            "whyItMatters": "Protocols let you type-check duck-typed code. A function that needs 'anything with a `.read()` method' can specify that without requiring a base class.",
+            "howToVerify": "- Look for parameters typed as `Any` that actually need specific methods\n- Check for abstract base classes that could be Protocols\n- Verify Protocol definitions match the actual interface needed",
+            "exampleComment": "The `reader` parameter is typed as `Any` but only needs `.read()` and `.close()` methods. A `Protocol` would add type safety without requiring inheritance.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def process(reader: Any) -> str:  # What does reader need?\n    data = reader.read()\n    reader.close()\n    return data"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from typing import Protocol\n\nclass Readable(Protocol):\n    def read(self) -> str: ...\n    def close(self) -> None: ...\n\ndef process(reader: Readable) -> str:\n    data = reader.read()\n    reader.close()\n    return data"
+              }
+            ],
+            "keyTakeaway": "Use Protocol for duck typing with type safety — it's Python's answer to Go interfaces.",
+            "references": [
+              {
+                "title": "PEP 544 – Protocols",
+                "url": "https://peps.python.org/pep-0544/"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.type-hints-safety.are-type-aliases-used-for-complex-nested-types",
+          "text": "Are type aliases used for complex nested types?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Complex nested type annotations are extracted into named type aliases for readability.",
+            "whyItMatters": "Inline `dict[str, list[tuple[int, str, Optional[float]]]]` is unreadable. Type aliases give complex types meaningful names.",
+            "howToVerify": "- Look for long, nested type annotations that could be aliased\n- Check that type aliases have descriptive names\n- Verify type aliases are used consistently",
+            "exampleComment": "The `dict[str, list[tuple[int, str, Optional[float]]]]` type is hard to parse. Could you create a type alias like `ScoreRecord = tuple[int, str, Optional[float]]`?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def process(data: dict[str, list[tuple[int, str, float | None]]]) -> dict[str, list[tuple[int, str, float | None]]]:\n    pass"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "type ScoreEntry = tuple[int, str, float | None]\ntype ScoreBoard = dict[str, list[ScoreEntry]]\n\ndef process(data: ScoreBoard) -> ScoreBoard:\n    pass"
+              }
+            ],
+            "keyTakeaway": "Create type aliases for complex nested types — give them meaningful names.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.error-handling",
+      "title": "Error Handling",
+      "items": [
+        {
+          "id": "python.error-handling.are-exceptions-caught-specifically-not-bare-except-or-except-exception",
+          "text": "Are exceptions caught specifically, not bare `except:` or `except Exception:`?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Except blocks catch specific exception types instead of using bare `except:` or `except Exception:` which swallows all errors.",
+            "whyItMatters": "Bare except catches `KeyboardInterrupt` and `SystemExit`, making the program hard to kill. Broad except hides bugs by swallowing unexpected errors.",
+            "howToVerify": "- Search for bare `except:` — almost always wrong\n- Check for `except Exception:` — usually too broad\n- Verify each except block catches the narrowest applicable exception",
+            "exampleComment": "The bare `except:` will swallow `KeyboardInterrupt` and `SystemExit`. Could you catch the specific exception, like `except FileNotFoundError:`?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "try:\n    data = load_file(path)\nexcept:  # Catches everything, including Ctrl+C!\n    data = default_data"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "try:\n    data = load_file(path)\nexcept FileNotFoundError:\n    logger.warning(f'Config not found at {path}, using defaults')\n    data = default_data"
+              }
+            ],
+            "keyTakeaway": "Catch specific exceptions — bare except hides bugs and catches system signals.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.error-handling.are-custom-exception-classes-used-where-they-add-semantic-value",
+          "text": "Are custom exception classes used where they add semantic value?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Domain-specific error conditions use custom exception classes that inherit from appropriate built-in exceptions.",
+            "whyItMatters": "Custom exceptions enable precise error handling. Callers can catch `InsufficientFundsError` separately from `InvalidAccountError`.",
+            "howToVerify": "- Check that domain errors have custom exception classes\n- Verify they inherit from appropriate built-in exceptions\n- Look for `raise ValueError('payment declined')` that should be a custom exception",
+            "exampleComment": "Raising `ValueError('payment declined')` loses semantic meaning. A `PaymentDeclinedError(ValueError)` would let callers handle payment failures specifically.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "raise ValueError('Insufficient funds')\nraise RuntimeError('User not found')"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "class InsufficientFundsError(ValueError):\n    def __init__(self, balance: Decimal, amount: Decimal):\n        super().__init__(f'Balance {balance} insufficient for {amount}')\n        self.balance = balance\n        self.amount = amount"
+              }
+            ],
+            "keyTakeaway": "Create custom exceptions for domain errors — they enable precise, typed error handling.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.error-handling.are-error-messages-descriptive-with-relevant-context",
+          "text": "Are error messages descriptive with relevant context?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Error messages include enough context to diagnose the problem without reproducing it.",
+            "whyItMatters": "Generic messages like 'invalid input' are useless. Context (what was invalid, what was expected, what was received) enables quick diagnosis.",
+            "howToVerify": "- Check that error messages include the relevant values\n- Look for generic messages like 'error', 'invalid', 'failed'\n- Verify error messages don't leak sensitive data",
+            "exampleComment": "The `raise ValueError('invalid input')` doesn't say what's invalid. Try `raise ValueError(f'Expected positive integer, got {value!r}')`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "raise ValueError('invalid input')"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "raise ValueError(\n    f'Expected age between 0 and 150, got {age!r} '\n    f'(type: {type(age).__name__})'\n)"
+              }
+            ],
+            "keyTakeaway": "Include what, expected, and got in error messages — they're read more often than you think.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.error-handling.is-raise-from-used-to-chain-exceptions-and-preserve-tracebacks",
+          "text": "Is `raise from` used to chain exceptions and preserve tracebacks?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`raise NewError() from original_error` is used when wrapping exceptions to preserve the original traceback chain.",
+            "whyItMatters": "Without `from`, the original exception's traceback is lost, making debugging much harder. `raise from` creates a clear causal chain.",
+            "howToVerify": "- Look for `except` blocks that raise a new exception — do they use `from`?\n- Check for `raise from None` to intentionally suppress the chain\n- Verify the new exception adds context while preserving the original cause",
+            "exampleComment": "The `raise AppError('failed')` inside the except block loses the original traceback. Use `raise AppError('failed') from e` to preserve it.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "try:\n    conn = db.connect()\nexcept ConnectionError as e:\n    raise AppError('Database unavailable')  # Original traceback lost!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "try:\n    conn = db.connect()\nexcept ConnectionError as e:\n    raise AppError('Database unavailable') from e  # Chain preserved"
+              }
+            ],
+            "keyTakeaway": "Use `raise ... from e` when wrapping exceptions — it preserves the causal chain for debugging.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.error-handling.are-exceptions-not-used-for-flow-control-in-normal-cases",
+          "text": "Are exceptions not used for flow control in normal cases?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Exceptions are used for exceptional conditions, not as a primary flow control mechanism for expected cases.",
+            "whyItMatters": "Using exceptions for expected control flow (like checking if an item exists) makes code harder to follow, slower, and obscures real errors.",
+            "howToVerify": "- Look for try/except used where a simple if-check would work\n- Check for catch-all except blocks used as flow control\n- Note: EAFP is fine when the exception case is rare; this is about using it as the primary code path",
+            "exampleComment": "Using `StopIteration` as a flag to exit the loop is less clear than a simple `break`. Reserve exceptions for truly exceptional situations.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def find_user(users, name):\n    try:\n        for user in users:\n            if user.name == name:\n                raise FoundIt(user)  # Using exception as goto!\n    except FoundIt as e:\n        return e.user\n    return None"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def find_user(users, name):\n    for user in users:\n        if user.name == name:\n            return user\n    return None\n\n# Or:\nnext((u for u in users if u.name == name), None)"
+              }
+            ],
+            "keyTakeaway": "Use exceptions for exceptional conditions — use normal control flow for expected paths.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.error-handling.is-finally-or-context-managers-used-for-cleanup",
+          "text": "Is `finally` or context managers used for cleanup?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`finally` blocks or context managers (`with` statements) are used for cleanup that must happen regardless of success or failure.",
+            "whyItMatters": "Without guaranteed cleanup, resources leak on exceptions. `finally` and context managers ensure cleanup runs on all code paths.",
+            "howToVerify": "- Look for resources opened without `finally` or `with`\n- Check for lock acquisitions without guaranteed release\n- Verify temporary files and database transactions are cleaned up",
+            "exampleComment": "If `process()` raises, the lock is never released. Use a `with` statement or `finally` block to guarantee release.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "lock.acquire()\nprocess()  # If this raises, lock never released!\nlock.release()"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "with lock:\n    process()\n# Lock automatically released"
+              }
+            ],
+            "keyTakeaway": "Use `with` statements for resources and `finally` for cleanup — they guarantee execution.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.error-handling.are-assert-statements-not-used-for-runtime-validation-only-for-debug",
+          "text": "Are `assert` statements not used for runtime validation (only for debug)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`assert` statements are used only for debug checks and invariants, not for runtime input validation, because they're stripped in optimized mode.",
+            "whyItMatters": "Running Python with `-O` (optimize) flag removes all `assert` statements. If asserts validate user input, security checks vanish in production.",
+            "howToVerify": "- Check for `assert` used on user input or external data\n- Verify asserts are only used for internal invariants and debug checks\n- Look for `assert` in validation functions",
+            "exampleComment": "The `assert isinstance(user_input, str)` validation is stripped with `python -O`. Use `if not isinstance(...): raise TypeError(...)` instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def process_payment(amount):\n    assert amount > 0, 'Amount must be positive'  # Stripped with -O!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def process_payment(amount):\n    if amount <= 0:\n        raise ValueError(f'Amount must be positive, got {amount}')"
+              }
+            ],
+            "keyTakeaway": "Never use `assert` for runtime validation — it's removed with `-O`. Use `if/raise` instead.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.error-handling.are-logging-levels-appropriate-debug-info-warning-error-critical",
+          "text": "Are logging levels appropriate (debug, info, warning, error, critical)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Log messages use appropriate severity levels: DEBUG for detailed diagnostics, INFO for normal operations, WARNING for concerning but not failing states, ERROR for failures.",
+            "whyItMatters": "Correct log levels enable effective monitoring and alerting. Using ERROR for informational messages creates alert fatigue; using INFO for errors hides problems.",
+            "howToVerify": "- Check that ERROR/CRITICAL is used for actual failures\n- Verify INFO messages aren't too noisy\n- Check that DEBUG is used for detailed diagnostic output\n- Look for `print()` statements that should be `logging`",
+            "exampleComment": "The `logger.error('User logged in')` should be `logger.info(...)`. ERROR level should be reserved for actual errors that need investigation.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "logger.error('Processing started')  # Not an error\nlogger.info('Database connection failed')  # IS an error\nprint(f'Debug: user={user}')  # Should use logging"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "logger.info('Processing started for batch %s', batch_id)\nlogger.error('Database connection failed: %s', error, exc_info=True)\nlogger.debug('User details: %r', user)"
+              }
+            ],
+            "keyTakeaway": "Match log levels to severity — ERROR for failures, INFO for normal operations, DEBUG for details.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.data-structures-classes",
+      "title": "Data Structures & Classes",
+      "items": [
+        {
+          "id": "python.data-structures-classes.are-dataclasses-used-for-data-holding-classes",
+          "text": "Are dataclasses used for data-holding classes?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Classes that primarily hold data use the `@dataclass` decorator instead of manually implementing `__init__`, `__repr__`, `__eq__`, etc.",
+            "whyItMatters": "Dataclasses auto-generate boilerplate methods, reducing code and bugs. They're the standard way to create data containers in modern Python.",
+            "howToVerify": "- Look for classes with a manual `__init__` that just assigns attributes\n- Check for manual `__repr__` and `__eq__` on data-holding classes\n- Verify `@dataclass(frozen=True)` is used for immutable data",
+            "exampleComment": "This class manually assigns 5 attributes in `__init__` and implements `__repr__`. Using `@dataclass` would generate all of this automatically.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "class Point:\n    def __init__(self, x, y, z):\n        self.x = x\n        self.y = y\n        self.z = z\n\n    def __repr__(self):\n        return f'Point({self.x}, {self.y}, {self.z})'\n\n    def __eq__(self, other):\n        return self.x == other.x and self.y == other.y and self.z == other.z"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Point:\n    x: float\n    y: float\n    z: float"
+              }
+            ],
+            "keyTakeaway": "Use `@dataclass` for data-holding classes — it auto-generates init, repr, eq, and more.",
+            "references": [
+              {
+                "title": "dataclasses",
+                "url": "https://docs.python.org/3/library/dataclasses.html"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.data-structures-classes.are-pydantic-models-used-for-data-validation-at-boundaries",
+          "text": "Are Pydantic models used for data validation at boundaries?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Pydantic models are used for validating data at system boundaries (API inputs, config files, external data) where data integrity must be enforced.",
+            "whyItMatters": "Pydantic validates data on construction, converting types and raising clear errors. It's the standard for API input validation in FastAPI and modern Python.",
+            "howToVerify": "- Check that API request/response schemas use Pydantic models\n- Verify config parsing uses Pydantic for validation\n- Look for manual validation code that Pydantic could handle",
+            "exampleComment": "The manual validation of 12 fields could be replaced with a Pydantic model. It would handle type coercion, validation, and error messages automatically.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def create_user(data: dict):\n    if 'email' not in data:\n        raise ValueError('email required')\n    if not isinstance(data['email'], str):\n        raise TypeError('email must be string')\n    # ... 10 more manual checks"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from pydantic import BaseModel, EmailStr\n\nclass CreateUserRequest(BaseModel):\n    email: EmailStr\n    name: str\n    age: int = Field(ge=0, le=150)\n\ndef create_user(data: CreateUserRequest):\n    # All validation already done!"
+              }
+            ],
+            "keyTakeaway": "Use Pydantic at system boundaries — it validates, converts, and documents your data contracts.",
+            "references": [
+              {
+                "title": "Pydantic",
+                "url": "https://docs.pydantic.dev/"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.data-structures-classes.are-repr-and-str-implemented-for-debuggability",
+          "text": "Are `__repr__` and `__str__` implemented for debuggability?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Custom classes implement `__repr__` for debugging and optionally `__str__` for user-facing display.",
+            "whyItMatters": "Without `__repr__`, debugging shows `<MyClass object at 0x...>` which is useless. A good repr shows the object's state at a glance.",
+            "howToVerify": "- Check that new classes have `__repr__` defined\n- Verify `__repr__` output is useful for debugging (shows key attributes)\n- Check `__str__` is defined if the class needs user-facing representation",
+            "exampleComment": "The `Order` class shows `<Order object at 0x...>` in the debugger. Could you add `__repr__` returning something like `Order(id=123, status='pending')`?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "class Order:\n    def __init__(self, id, status, total):\n        self.id = id\n        self.status = status\n        self.total = total\n    # print(order) → <Order object at 0x7f...>"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "class Order:\n    def __init__(self, id, status, total):\n        self.id = id\n        self.status = status\n        self.total = total\n\n    def __repr__(self):\n        return f'Order(id={self.id}, status={self.status!r}, total={self.total})'"
+              }
+            ],
+            "keyTakeaway": "Always implement `__repr__` — it makes debugging 10x easier.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.data-structures-classes.are-eq-and-hash-implemented-correctly-when-needed",
+          "text": "Are `__eq__` and `__hash__` implemented correctly when needed?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When objects need to be compared for equality or used as dict keys/set members, `__eq__` and `__hash__` are implemented correctly and consistently.",
+            "whyItMatters": "Implementing `__eq__` without `__hash__` makes objects unhashable (can't be used in sets or as dict keys). Inconsistent implementations cause silent bugs.",
+            "howToVerify": "- Check that `__eq__` and `__hash__` are both implemented or neither\n- Verify `__hash__` returns consistent values for equal objects\n- Consider using `@dataclass(frozen=True)` which auto-generates both",
+            "exampleComment": "The `__eq__` method is implemented but `__hash__` is not. This makes `User` objects unhashable — they can't be used in sets or as dict keys.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "class User:\n    def __eq__(self, other):\n        return self.id == other.id\n    # Missing __hash__! Now unhashable"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "class User:\n    def __eq__(self, other):\n        if not isinstance(other, User):\n            return NotImplemented\n        return self.id == other.id\n\n    def __hash__(self):\n        return hash(self.id)"
+              }
+            ],
+            "keyTakeaway": "Always implement `__hash__` when you implement `__eq__` — or use frozen dataclasses.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.data-structures-classes.are-mutable-default-arguments-avoided-def-funcitems",
+          "text": "Are mutable default arguments avoided (`def func(items=[])`)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Mutable default arguments (lists, dicts, sets) are avoided because they're shared across all calls, causing subtle bugs.",
+            "whyItMatters": "Python evaluates default arguments once at function definition time. A mutable default like `[]` is shared between all calls, accumulating state.",
+            "howToVerify": "- Search for `def func(items=[])` or `def func(data={})` patterns\n- Check for mutable defaults in `__init__` methods\n- Verify `None` sentinel pattern is used instead",
+            "exampleComment": "The default `items=[]` is mutable and shared across calls. If one call appends to it, the next call starts with the modified list. Use `items=None` and `items = items or []`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def add_item(item, items=[]):\n    items.append(item)  # Shared across calls!\n    return items"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def add_item(item, items=None):\n    if items is None:\n        items = []\n    items.append(item)\n    return items"
+              }
+            ],
+            "keyTakeaway": "Never use mutable defaults — use `None` and create a new object inside the function.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.data-structures-classes.are-slots-used-for-memory-intensive-classes",
+          "text": "Are slots used for memory-intensive classes?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`__slots__` is used on classes with many instances to reduce memory usage by preventing the creation of `__dict__` for each instance.",
+            "whyItMatters": "Each regular Python object has a `__dict__` that uses ~100+ bytes. For millions of instances, `__slots__` can reduce memory usage by 30-50%.",
+            "howToVerify": "- Check if the class will have many instances (data rows, graph nodes, etc.)\n- Verify `__slots__` lists all attributes\n- Note: `@dataclass(slots=True)` in Python 3.10+ does this automatically",
+            "exampleComment": "This `Pixel` class will have millions of instances in the image processor. Adding `__slots__ = ('r', 'g', 'b', 'a')` would significantly reduce memory usage.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "class Point:  # Each instance has a __dict__ (~100+ bytes)\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "class Point:\n    __slots__ = ('x', 'y')\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\n# Or with dataclasses (Python 3.10+):\n@dataclass(slots=True)\nclass Point:\n    x: float\n    y: float"
+              }
+            ],
+            "keyTakeaway": "Use `__slots__` for classes with many instances — or `@dataclass(slots=True)` in Python 3.10+.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.data-structures-classes.is-inheritance-depth-reasonable-prefer-composition",
+          "text": "Is inheritance depth reasonable (prefer composition)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Class hierarchies are shallow (2-3 levels max) and composition is preferred over deep inheritance chains.",
+            "whyItMatters": "Deep inheritance creates fragile, tightly-coupled code. Composition ('has-a') is more flexible than inheritance ('is-a') for most relationships.",
+            "howToVerify": "- Check that inheritance depth doesn't exceed 3 levels\n- Look for classes that inherit just to reuse code (use composition instead)\n- Verify the 'is-a' relationship genuinely holds",
+            "exampleComment": "The 5-level inheritance chain `Base → Model → ValidatedModel → CachedModel → UserModel` is fragile. Consider using composition with mixins or delegation.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "class Base: ...\nclass Model(Base): ...\nclass ValidatedModel(Model): ...\nclass CachedModel(ValidatedModel): ...\nclass UserModel(CachedModel): ...  # 5 levels deep!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "class UserModel:\n    def __init__(self):\n        self.validator = Validator()\n        self.cache = Cache()\n\n    def save(self):\n        self.validator.validate(self)\n        self.cache.invalidate(self.id)"
+              }
+            ],
+            "keyTakeaway": "Prefer composition over deep inheritance — flat hierarchies are easier to understand and change.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.data-structures-classes.are-abstract-base-classes-used-for-interface-contracts",
+          "text": "Are abstract base classes used for interface contracts?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Abstract base classes (`ABC`) are used to define interface contracts that subclasses must implement.",
+            "whyItMatters": "ABCs catch missing method implementations at class instantiation time rather than runtime, providing a clear contract for subclasses.",
+            "howToVerify": "- Check that interface contracts use `ABC` and `@abstractmethod`\n- Verify all abstract methods are implemented in subclasses\n- Look for duck typing that would benefit from a formal interface",
+            "exampleComment": "The `BaseProcessor` has methods that subclasses must implement but doesn't use `@abstractmethod`. Without it, missing implementations only fail at runtime.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "class BaseProcessor:\n    def process(self, data):\n        raise NotImplementedError  # Only fails at runtime"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from abc import ABC, abstractmethod\n\nclass BaseProcessor(ABC):\n    @abstractmethod\n    def process(self, data: bytes) -> str:\n        ...  # Fails at instantiation if not implemented"
+              }
+            ],
+            "keyTakeaway": "Use `ABC` and `@abstractmethod` for interface contracts — they catch missing implementations early.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.async-concurrency",
+      "title": "Async & Concurrency",
+      "items": [
+        {
+          "id": "python.async-concurrency.are-asyncawait-used-consistently-not-mixing-sync-and-async-patterns",
+          "text": "Are async/await used consistently (not mixing sync and async patterns)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Async code uses `async/await` consistently without mixing synchronous blocking calls that would negate the benefits of async.",
+            "whyItMatters": "A single blocking call in async code blocks the entire event loop, negating all async performance benefits and potentially freezing the application.",
+            "howToVerify": "- Check for blocking calls (`time.sleep`, synchronous HTTP, file I/O) inside async functions\n- Verify `await` is used for all async operations\n- Look for `requests` library usage inside async code (should use `httpx` or `aiohttp`)",
+            "exampleComment": "The `requests.get()` inside this `async` function blocks the event loop. Use `httpx.AsyncClient` or `aiohttp` instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "async def fetch_data(url):\n    response = requests.get(url)  # Blocks the event loop!\n    return response.json()"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "async def fetch_data(url):\n    async with httpx.AsyncClient() as client:\n        response = await client.get(url)\n        return response.json()"
+              }
+            ],
+            "keyTakeaway": "Never use blocking calls in async functions — they freeze the entire event loop.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.async-concurrency.are-blocking-operations-not-called-inside-async-functions",
+          "text": "Are blocking operations not called inside async functions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "CPU-bound or blocking I/O operations inside async functions are offloaded to thread or process pools using `asyncio.to_thread` or executors.",
+            "whyItMatters": "Blocking operations in async code stall the event loop, preventing other coroutines from running and destroying async performance.",
+            "howToVerify": "- Look for file I/O, database calls, or CPU-heavy computation in async functions\n- Check for `time.sleep()` — should be `asyncio.sleep()`\n- Verify blocking library calls use `asyncio.to_thread()` or `run_in_executor()`",
+            "exampleComment": "The `open()` file read blocks the event loop. Use `asyncio.to_thread(read_file, path)` or `aiofiles` for async file I/O.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "async def process():\n    time.sleep(5)  # Blocks event loop!\n    data = open('big_file.csv').read()  # Blocking I/O!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "async def process():\n    await asyncio.sleep(5)  # Non-blocking\n    data = await asyncio.to_thread(Path('big_file.csv').read_text)"
+              }
+            ],
+            "keyTakeaway": "Offload blocking operations to threads with `asyncio.to_thread()` — keep the event loop free.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.async-concurrency.is-asynciogather-used-for-concurrent-async-operations",
+          "text": "Is `asyncio.gather()` used for concurrent async operations?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`asyncio.gather()` or `asyncio.TaskGroup` is used to run independent async operations concurrently rather than sequentially.",
+            "whyItMatters": "Awaiting operations one by one serializes them, losing async benefits. `gather()` runs them concurrently, dramatically reducing total wait time.",
+            "howToVerify": "- Look for sequential `await` calls on independent operations\n- Check that `asyncio.gather()` or `TaskGroup` is used for concurrent operations\n- Verify error handling with `return_exceptions=True` if partial failures are acceptable",
+            "exampleComment": "These three independent API calls are awaited sequentially (3x latency). Using `asyncio.gather()` would run them concurrently (1x latency).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "users = await fetch_users()     # 200ms\norders = await fetch_orders()   # 200ms\nstats = await fetch_stats()     # 200ms\n# Total: 600ms"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "users, orders, stats = await asyncio.gather(\n    fetch_users(),\n    fetch_orders(),\n    fetch_stats(),\n)\n# Total: ~200ms (concurrent)"
+              }
+            ],
+            "keyTakeaway": "Use `asyncio.gather()` for independent async operations — run them concurrently, not sequentially.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.async-concurrency.are-thread-safe-data-structures-used-for-multi-threaded-code",
+          "text": "Are thread-safe data structures used for multi-threaded code?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Code using threads uses thread-safe data structures (`queue.Queue`, `threading.Lock`) instead of regular collections for shared state.",
+            "whyItMatters": "Python's GIL doesn't protect against all race conditions. Operations like `dict[key] = value` during iteration can cause `RuntimeError`.",
+            "howToVerify": "- Check that shared mutable data uses locks or thread-safe containers\n- Look for regular dicts/lists modified by multiple threads\n- Verify `threading.Lock` or `queue.Queue` is used for shared state",
+            "exampleComment": "The shared `results` list is appended to by multiple threads without a lock. Use `queue.Queue` or protect with a `threading.Lock`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "results = []  # Shared, no protection\ndef worker(item):\n    results.append(process(item))  # Race condition!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from queue import Queue\nresults = Queue()\ndef worker(item):\n    results.put(process(item))  # Thread-safe"
+              }
+            ],
+            "keyTakeaway": "Use thread-safe containers or locks for shared state — the GIL doesn't prevent all races.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.async-concurrency.is-the-gil-impact-considered-for-cpu-bound-operations-use-multiprocessing",
+          "text": "Is the GIL impact considered for CPU-bound operations (use multiprocessing)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "CPU-bound operations use `multiprocessing` or `ProcessPoolExecutor` instead of threading, because the GIL prevents true parallelism in threads.",
+            "whyItMatters": "Python's GIL means only one thread runs Python code at a time. Threading helps I/O-bound work but not CPU-bound. Use processes for CPU parallelism.",
+            "howToVerify": "- Check if threaded code is CPU-bound (computation, not I/O)\n- Verify CPU-heavy work uses `multiprocessing` or `ProcessPoolExecutor`\n- Look for thread pools doing CPU work that could use process pools",
+            "exampleComment": "This image processing is CPU-bound — threading won't help due to the GIL. Switch to `ProcessPoolExecutor` for actual parallelism.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "# Threading for CPU-bound work — GIL prevents parallelism\nwith ThreadPoolExecutor() as pool:\n    results = pool.map(cpu_heavy_process, data)"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "# Multiprocessing for CPU-bound work — true parallelism\nwith ProcessPoolExecutor() as pool:\n    results = pool.map(cpu_heavy_process, data)"
+              }
+            ],
+            "keyTakeaway": "Use processes for CPU-bound work, threads for I/O-bound — the GIL limits thread parallelism.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.async-concurrency.are-concurrentfutures-used-for-threadprocess-pool-management",
+          "text": "Are `concurrent.futures` used for thread/process pool management?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`concurrent.futures.ThreadPoolExecutor` and `ProcessPoolExecutor` are used for managing worker pools instead of raw `threading` or `multiprocessing`.",
+            "whyItMatters": "The `concurrent.futures` API provides a clean, high-level interface for parallel execution with proper pool management, Future objects, and error handling.",
+            "howToVerify": "- Look for manual thread creation that could use `ThreadPoolExecutor`\n- Check for `multiprocessing.Process` that could use `ProcessPoolExecutor`\n- Verify pool is used as a context manager (`with` statement)",
+            "exampleComment": "The manual thread creation and joining could be simplified with `ThreadPoolExecutor`. It handles the pool lifecycle and returns results via `Future` objects.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "threads = []\nfor url in urls:\n    t = threading.Thread(target=fetch, args=(url,))\n    t.start()\n    threads.append(t)\nfor t in threads:\n    t.join()"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from concurrent.futures import ThreadPoolExecutor\n\nwith ThreadPoolExecutor(max_workers=10) as pool:\n    results = list(pool.map(fetch, urls))"
+              }
+            ],
+            "keyTakeaway": "Use `concurrent.futures` for parallel work — it's cleaner than raw threading/multiprocessing.",
+            "references": [
+              {
+                "title": "concurrent.futures",
+                "url": "https://docs.python.org/3/library/concurrent.futures.html"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "python.testing.are-there-unit-tests-for-new-logic-pytest-or-unittest",
+          "text": "Are there unit tests for new logic (pytest or unittest)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New logic has corresponding unit tests using pytest or unittest, verifying behavior and preventing regressions.",
+            "whyItMatters": "Tests verify behavior, prevent regressions, and serve as documentation. Untested code breaks silently when requirements change.",
+            "howToVerify": "- Check that new functions/classes have corresponding test files\n- Verify tests cover the happy path and key error paths\n- Check that tests actually assert outcomes, not just call functions",
+            "exampleComment": "The new `DiscountCalculator` class doesn't have tests. Could you add tests covering standard discount, bulk discount, and expired coupon scenarios?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "# No tests for new service class"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def test_discount_percentage():\n    calc = DiscountCalculator(percentage=10)\n    assert calc.calculate(100) == 10\n\ndef test_discount_caps_at_total():\n    calc = DiscountCalculator(fixed=20)\n    assert calc.calculate(5) == 5  # Capped at order total"
+              }
+            ],
+            "keyTakeaway": "Every new piece of logic needs tests — they're the safety net for confident refactoring.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.testing.are-fixtures-used-for-test-setup-instead-of-repeated-setup-code",
+          "text": "Are fixtures used for test setup instead of repeated setup code?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "pytest fixtures are used for test setup and teardown instead of duplicated setup code in each test function.",
+            "whyItMatters": "Fixtures provide reusable, composable test setup. They reduce duplication, handle cleanup automatically, and make tests more readable.",
+            "howToVerify": "- Look for repeated setup code across test functions\n- Check that fixtures use appropriate scopes (function, class, module, session)\n- Verify fixtures clean up after themselves (use `yield` for teardown)",
+            "exampleComment": "The database connection setup is repeated in every test. Could you extract it to a `@pytest.fixture` that yields a connection and closes it in teardown?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def test_create_user():\n    db = Database(TEST_URL)  # Repeated in every test\n    db.connect()\n    user = db.create_user('test')\n    assert user.id is not None\n    db.disconnect()  # Forgotten on exception"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "@pytest.fixture\ndef db():\n    conn = Database(TEST_URL)\n    conn.connect()\n    yield conn\n    conn.disconnect()\n\ndef test_create_user(db):\n    user = db.create_user('test')\n    assert user.id is not None"
+              }
+            ],
+            "keyTakeaway": "Use pytest fixtures for setup/teardown — they're composable and handle cleanup automatically.",
+            "references": [
+              {
+                "title": "pytest fixtures",
+                "url": "https://docs.pytest.org/en/stable/how-to/fixtures.html"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.testing.are-parametrized-tests-used-for-testing-multiple-inputs",
+          "text": "Are parametrized tests used for testing multiple inputs?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`@pytest.mark.parametrize` is used to test the same logic with multiple inputs instead of writing separate test functions for each case.",
+            "whyItMatters": "Parametrized tests reduce duplication and make it easy to add new test cases. Each parameter set runs as a separate test with clear pass/fail reporting.",
+            "howToVerify": "- Look for multiple test functions with identical structure but different inputs\n- Check that parametrize IDs are descriptive\n- Verify edge cases are included in the parameter sets",
+            "exampleComment": "These 5 test functions all test `validate_email` with different inputs. They'd be cleaner as a single `@pytest.mark.parametrize` test.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def test_validate_email_valid(): assert validate_email('a@b.com')\ndef test_validate_email_no_at(): assert not validate_email('ab.com')\ndef test_validate_email_empty(): assert not validate_email('')"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "@pytest.mark.parametrize('email,expected', [\n    ('user@example.com', True),\n    ('invalid', False),\n    ('', False),\n    ('a@b', False),\n    ('user+tag@example.co.uk', True),\n])\ndef test_validate_email(email, expected):\n    assert validate_email(email) == expected"
+              }
+            ],
+            "keyTakeaway": "Use `@pytest.mark.parametrize` for testing multiple inputs — one test function, many cases.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.testing.are-mocks-used-appropriately-not-over-mocking",
+          "text": "Are mocks used appropriately (not over-mocking)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Mocks are used for external dependencies (APIs, databases, filesystem) but not for internal logic that should be tested with real objects.",
+            "whyItMatters": "Over-mocking tests the mock, not the code. Under-mocking makes tests slow and flaky. Mock at the boundary between your code and external systems.",
+            "howToVerify": "- Check that mocks replace external dependencies, not internal logic\n- Look for tests that mock the class being tested (defeats the purpose)\n- Verify mock return values match real API responses",
+            "exampleComment": "This test mocks 6 internal methods of the class being tested — it's testing the mocks, not the code. Consider using real objects and only mocking the HTTP client.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "# Over-mocking: testing the mocks, not the code\ndef test_process(mocker):\n    mocker.patch.object(Processor, 'validate')\n    mocker.patch.object(Processor, 'transform')\n    mocker.patch.object(Processor, 'save')\n    Processor().process(data)  # What are we even testing?"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "# Mock only the external boundary\ndef test_process(mocker):\n    mock_api = mocker.patch('myapp.services.external_api')\n    mock_api.return_value = {'status': 'ok'}\n    result = Processor().process(data)\n    assert result.status == 'ok'"
+              }
+            ],
+            "keyTakeaway": "Mock at system boundaries (APIs, databases) — test internal logic with real objects.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.testing.are-test-names-descriptive-of-the-expected-behavior",
+          "text": "Are test names descriptive of the expected behavior?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test function names clearly describe the scenario and expected behavior, serving as documentation.",
+            "whyItMatters": "Descriptive test names tell you exactly what broke when a test fails, without needing to read the test code.",
+            "howToVerify": "- Read test names — do they describe behavior or implementation?\n- Check for generic names like `test_1`, `test_basic`\n- Verify names follow `test_<unit>_<scenario>_<expected>` pattern",
+            "exampleComment": "The test name `test_process` doesn't describe the expected behavior. Try `test_process_returns_empty_list_when_no_items_match`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def test_1(): ...\ndef test_process(): ...\ndef test_it_works(): ..."
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def test_calculate_discount_applies_percentage():\n    ...\ndef test_calculate_discount_caps_at_order_total():\n    ...\ndef test_calculate_discount_returns_zero_for_expired_coupon():\n    ..."
+              }
+            ],
+            "keyTakeaway": "Name tests after what they verify — failures should be self-explanatory.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.testing.are-edge-cases-covered-none-empty-boundary-values",
+          "text": "Are edge cases covered (None, empty, boundary values)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests cover edge cases: None inputs, empty collections, boundary values, and unusual but valid inputs.",
+            "whyItMatters": "Bugs hide in edge cases. Happy-path-only testing gives false confidence — production data hits every corner case.",
+            "howToVerify": "- Check for tests with None, empty string, empty list, zero\n- Look for boundary value tests\n- Verify error handling paths are tested",
+            "exampleComment": "The tests only check positive amounts. What happens with zero, negative, None, and very large values?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def test_discount():\n    assert calc.discount(100) == 10"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def test_discount_normal(): assert calc.discount(100) == 10\ndef test_discount_zero(): assert calc.discount(0) == 0\ndef test_discount_none(): \n    with pytest.raises(TypeError):\n        calc.discount(None)\ndef test_discount_negative():\n    with pytest.raises(ValueError):\n        calc.discount(-10)"
+              }
+            ],
+            "keyTakeaway": "Test None, empty, zero, max, and negative values — that's where bugs live.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.testing.is-test-coverage-adequate-for-the-change",
+          "text": "Is test coverage adequate for the change?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The test coverage for changed code is sufficient, covering main paths, error cases, and critical edge cases.",
+            "whyItMatters": "Insufficient coverage means changes can break behavior without any test failing. Good coverage enables confident refactoring.",
+            "howToVerify": "- Run `pytest --cov` and check coverage of changed files\n- Verify core behavior paths are tested\n- Check that the PR doesn't decrease overall coverage",
+            "exampleComment": "The new `PaymentService` has only 40% coverage. The retry logic and error handling aren't tested. Could you add tests for timeout and declined payment scenarios?",
+            "codeExamples": [],
+            "keyTakeaway": "Aim for meaningful coverage — test behavior and edge cases, not just lines executed.",
+            "references": [
+              {
+                "title": "pytest-cov",
+                "url": "https://pytest-cov.readthedocs.io/"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.testing.are-integration-tests-added-for-external-service-interactions",
+          "text": "Are integration tests added for external service interactions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Interactions with external services (APIs, databases, message queues) have integration tests that verify the full interaction works.",
+            "whyItMatters": "Unit tests with mocks verify your code's logic but not the actual integration. Integration tests catch serialization, authentication, and protocol issues.",
+            "howToVerify": "- Check that external service interactions have integration tests\n- Verify tests use test instances or containers (not production services)\n- Look for docker-compose test infrastructure",
+            "exampleComment": "The Stripe integration is only unit-tested with mocks. Could you add an integration test using Stripe's test mode to verify the payment flow end-to-end?",
+            "codeExamples": [],
+            "keyTakeaway": "Integration tests catch bugs that mocked unit tests miss — test the real integration.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.testing.are-flaky-tests-avoided-no-sleep-based-waits-no-ordering-dependency",
+          "text": "Are flaky tests avoided (no sleep-based waits, no ordering dependency)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests are deterministic: no `time.sleep()` waits, no dependency on test execution order, no reliance on external state.",
+            "whyItMatters": "Flaky tests erode trust in the test suite. If tests randomly fail, developers stop trusting and eventually stop running them.",
+            "howToVerify": "- Search for `time.sleep()` in tests — use mocking or async waits instead\n- Check that tests don't depend on execution order\n- Verify tests don't depend on external services being available\n- Look for fixed timestamps that may cause failures on certain dates",
+            "exampleComment": "The `time.sleep(2)` makes this test flaky on slow CI machines. Could you mock the timer or use an event-based wait instead?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def test_async_process():\n    start_process()\n    time.sleep(5)  # Flaky: may not be enough on slow CI\n    assert get_result() is not None"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def test_async_process(mocker):\n    mocker.patch('myapp.process.sleep')  # Don't actually sleep\n    start_process()\n    assert get_result() is not None"
+              }
+            ],
+            "keyTakeaway": "Eliminate `time.sleep()` and state dependencies from tests — flaky tests are worse than no tests.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.dependencies-packaging",
+      "title": "Dependencies & Packaging",
+      "items": [
+        {
+          "id": "python.dependencies-packaging.are-new-dependencies-justified-and-vetted",
+          "text": "Are new dependencies justified and vetted?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New package dependencies are justified by need and vetted for quality, maintenance status, and security.",
+            "whyItMatters": "Every dependency adds attack surface, maintenance burden, and potential supply chain risk. Abandoned or malicious packages are a real threat.",
+            "howToVerify": "- Check the package's PyPI page: downloads, maintenance activity\n- Verify the package isn't abandoned (no releases in 2+ years)\n- Check if the functionality exists in stdlib or existing dependencies",
+            "exampleComment": "The `string-utils` package has 200 downloads/month and no updates in 3 years. Python's built-in `str` methods likely cover this use case.",
+            "codeExamples": [],
+            "keyTakeaway": "Vet new dependencies carefully — prefer stdlib and well-maintained packages.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.dependencies-packaging.are-dependencies-pinned-requirementstxt-poetrylock-pipenvlock",
+          "text": "Are dependencies pinned (requirements.txt, poetry.lock, pipenv.lock)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Dependencies are pinned to specific versions in lock files to ensure reproducible builds across all environments.",
+            "whyItMatters": "Without pinning, different environments may get different versions, causing 'works on my machine' bugs and inconsistent behavior.",
+            "howToVerify": "- Check that a lock file exists and is committed (poetry.lock, Pipfile.lock, or requirements.txt with exact versions)\n- Verify the lock file is updated in the PR when dependencies change\n- Check that it's not in `.gitignore`",
+            "exampleComment": "The new `httpx` dependency isn't pinned in `requirements.txt`. Please pin it to the exact version: `httpx==0.27.0`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "text",
+                "code": "# requirements.txt\nrequests\nflask\npandas"
+              },
+              {
+                "label": "Good",
+                "language": "text",
+                "code": "# requirements.txt\nrequests==2.31.0\nflask==3.0.0\npandas==2.1.4"
+              }
+            ],
+            "keyTakeaway": "Pin all dependencies — lock files ensure reproducible builds.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.dependencies-packaging.are-dev-dependencies-separated-from-production-dependencies",
+          "text": "Are dev dependencies separated from production dependencies?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Development-only dependencies (test frameworks, linters, formatters) are separated from production dependencies.",
+            "whyItMatters": "Installing dev dependencies in production adds attack surface, increases image size, and can cause conflicts. Keep production lean.",
+            "howToVerify": "- Check that test/dev packages are in a separate section\n- Verify `pyproject.toml` uses `[project.optional-dependencies]` for dev deps\n- Check that Docker builds don't install dev dependencies",
+            "exampleComment": "pytest and black are in the main dependencies but should be in `[project.optional-dependencies] dev = [...]`. They shouldn't be in production.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "toml",
+                "code": "[project]\ndependencies = [\n    \"flask\",\n    \"pytest\",  # Dev only!\n    \"black\",   # Dev only!\n]"
+              },
+              {
+                "label": "Good",
+                "language": "toml",
+                "code": "[project]\ndependencies = [\"flask\"]\n\n[project.optional-dependencies]\ndev = [\"pytest\", \"black\", \"mypy\"]"
+              }
+            ],
+            "keyTakeaway": "Separate dev and production dependencies — keep production installs lean.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.dependencies-packaging.is-a-pyprojecttoml-or-setuppy-properly-configured",
+          "text": "Is a `pyproject.toml` or `setup.py` properly configured?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The project uses `pyproject.toml` (modern standard) or `setup.py` with correct metadata, dependencies, and entry points.",
+            "whyItMatters": "`pyproject.toml` is the modern standard for Python packaging. Proper configuration ensures the project can be installed, distributed, and maintained.",
+            "howToVerify": "- Check for `pyproject.toml` with `[project]` section\n- Verify metadata (name, version, description, requires-python)\n- Check that entry points and scripts are defined correctly",
+            "exampleComment": "The project still uses `setup.py`. Consider migrating to `pyproject.toml` — it's the modern standard and supports all build backends.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "# setup.py with hardcoded values\nfrom setuptools import setup\nsetup(name='myapp', version='1.0')"
+              },
+              {
+                "label": "Good",
+                "language": "toml",
+                "code": "[project]\nname = \"myapp\"\nversion = \"1.0.0\"\nrequires-python = \">= 3.10\"\ndependencies = [\"flask>=3.0\"]\n\n[project.scripts]\nmyapp = \"myapp.cli:main\""
+              }
+            ],
+            "keyTakeaway": "Use `pyproject.toml` for project configuration — it's the modern Python packaging standard.",
+            "references": [
+              {
+                "title": "pyproject.toml",
+                "url": "https://packaging.python.org/en/latest/guides/writing-pyproject-toml/"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.dependencies-packaging.are-virtual-environments-used-not-installing-globally",
+          "text": "Are virtual environments used (not installing globally)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The project uses virtual environments (venv, virtualenv, conda) to isolate dependencies from the system Python installation.",
+            "whyItMatters": "Global installs cause version conflicts between projects and can break system tools. Virtual environments provide isolation.",
+            "howToVerify": "- Check that the README documents virtual environment setup\n- Look for `venv/`, `.venv/`, or `env/` in `.gitignore`\n- Verify CI uses virtual environments or containers",
+            "exampleComment": "The setup instructions say `pip install -r requirements.txt` without mentioning a virtual environment. Could you add `python -m venv .venv` to the setup steps?",
+            "codeExamples": [],
+            "keyTakeaway": "Always use virtual environments — never install project dependencies globally.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.dependencies-packaging.are-unused-dependencies-removed",
+          "text": "Are unused dependencies removed?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Dependencies that are no longer imported or used are removed from requirements files to keep the project lean.",
+            "whyItMatters": "Unused dependencies increase install time, attack surface, and maintenance burden. They also confuse developers about what the project actually uses.",
+            "howToVerify": "- Check if removed import statements have corresponding dependency removals\n- Use `pip-autoremove` or `deptry` to find unused dependencies\n- Verify no code imports the dependency before removing it",
+            "exampleComment": "The `pandas` dependency isn't imported anywhere after this refactor. Could you remove it from `pyproject.toml` to keep dependencies lean?",
+            "codeExamples": [],
+            "keyTakeaway": "Remove unused dependencies — they add cost without value.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "python.security.is-user-input-validated-and-sanitized",
+          "text": "Is user input validated and sanitized?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "All user-provided input is validated for expected format and sanitized before use in operations.",
+            "whyItMatters": "Unvalidated input is the root cause of injection attacks, XSS, and data corruption. Validate at system boundaries.",
+            "howToVerify": "- Check that API inputs are validated (Pydantic, marshmallow, or manual)\n- Look for user input used directly in file paths, shell commands, or HTML\n- Verify validation happens before processing, not after",
+            "exampleComment": "The `filename` parameter from user input is used directly in `open(filename)`. This allows path traversal. Validate and sanitize the filename first.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "filename = request.args['file']\ndata = open(f'/data/{filename}').read()  # Path traversal!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "filename = secure_filename(request.args['file'])\npath = Path('/data') / filename\nif not path.resolve().is_relative_to(Path('/data')):\n    abort(400)\ndata = path.read_text()"
+              }
+            ],
+            "keyTakeaway": "Validate and sanitize all user input at system boundaries — never trust raw input.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.security.are-sql-queries-parameterized-no-string-concatenation",
+          "text": "Are SQL queries parameterized (no string concatenation)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "SQL queries use parameterized queries (placeholders) instead of string concatenation or f-strings to prevent SQL injection.",
+            "whyItMatters": "SQL injection is one of the most dangerous vulnerabilities. It allows attackers to read, modify, or delete all data in the database.",
+            "howToVerify": "- Search for f-strings or string concatenation in SQL queries\n- Check that ORM queries use parameters, not interpolation\n- Look for raw SQL with `format()` or `%` formatting",
+            "exampleComment": "The `f\"SELECT * FROM users WHERE name = '{name}'\"` is SQL injection vulnerable. Use parameterized queries: `cursor.execute('SELECT * FROM users WHERE name = %s', (name,))`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "query = f\"SELECT * FROM users WHERE name = '{name}'\"\ncursor.execute(query)  # SQL injection!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "cursor.execute('SELECT * FROM users WHERE name = %s', (name,))\n# Or with ORM:\nUser.objects.filter(name=name)"
+              }
+            ],
+            "keyTakeaway": "Always parameterize SQL queries — never interpolate user input into SQL strings.",
+            "references": [
+              {
+                "title": "OWASP SQL Injection",
+                "url": "https://owasp.org/www-community/attacks/SQL_Injection"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.security.are-secrets-loaded-from-environment-variables-not-hardcoded",
+          "text": "Are secrets loaded from environment variables, not hardcoded?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Secrets (API keys, database passwords, tokens) are loaded from environment variables or secret managers, never hardcoded.",
+            "whyItMatters": "Hardcoded secrets in source code end up in git history and can be exposed through repository access or log files.",
+            "howToVerify": "- Search for hardcoded API keys, passwords, or tokens in the diff\n- Check that secrets use `os.environ` or a secret manager\n- Verify `.env` files are in `.gitignore`",
+            "exampleComment": "This API key is hardcoded. Could you move it to an environment variable: `api_key = os.environ['STRIPE_KEY']`?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "STRIPE_KEY = 'sk_live_abc123def456'\nDATABASE_URL = 'postgres://user:pass@host/db'"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "STRIPE_KEY = os.environ['STRIPE_KEY']\nDATABASE_URL = os.environ['DATABASE_URL']"
+              }
+            ],
+            "keyTakeaway": "Never hardcode secrets — use environment variables or secret managers.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.security.are-pickle-and-eval-avoided-with-untrusted-data",
+          "text": "Are `pickle` and `eval()` avoided with untrusted data?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`pickle.load()` and `eval()` are never used with untrusted data because they allow arbitrary code execution.",
+            "whyItMatters": "`pickle` and `eval` can execute arbitrary Python code. Loading a malicious pickle or eval-ing untrusted input gives attackers full control.",
+            "howToVerify": "- Search for `pickle.load`, `pickle.loads` with external data\n- Look for `eval()` or `exec()` with user input\n- Verify safe alternatives are used (JSON, YAML safe_load, ast.literal_eval)",
+            "exampleComment": "Using `pickle.loads(request.data)` allows arbitrary code execution. Use `json.loads()` for data serialization from untrusted sources.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "data = pickle.loads(request.data)  # Arbitrary code execution!\nresult = eval(user_expression)  # Arbitrary code execution!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "data = json.loads(request.data)\n# For simple literals:\nresult = ast.literal_eval(user_expression)"
+              }
+            ],
+            "keyTakeaway": "Never use `pickle` or `eval` with untrusted data — use JSON or `ast.literal_eval`.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.security.are-file-path-operations-protected-against-traversal-attacks",
+          "text": "Are file path operations protected against traversal attacks?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "File path operations validate that resolved paths stay within the expected directory, preventing path traversal attacks (`../../../etc/passwd`).",
+            "whyItMatters": "Path traversal allows attackers to read or write arbitrary files on the server. A simple `../` in a filename can escape the intended directory.",
+            "howToVerify": "- Check that user-provided filenames are sanitized\n- Verify `Path.resolve().is_relative_to(base_dir)` is used\n- Look for `os.path.join(base, user_input)` without validation",
+            "exampleComment": "The `os.path.join('/uploads', filename)` doesn't prevent `../../../etc/passwd` as filename. Validate the resolved path stays within `/uploads`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "path = os.path.join('/uploads', user_filename)\ndata = open(path).read()  # Traversal!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "base = Path('/uploads')\npath = (base / user_filename).resolve()\nif not path.is_relative_to(base):\n    raise ValueError('Path traversal detected')\ndata = path.read_text()"
+              }
+            ],
+            "keyTakeaway": "Always validate that resolved file paths stay within the expected directory.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.security.are-dependencies-scanned-for-vulnerabilities-pip-audit-safety",
+          "text": "Are dependencies scanned for vulnerabilities (pip-audit, safety)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Python dependencies are scanned for known security vulnerabilities using tools like `pip-audit` or `safety`.",
+            "whyItMatters": "Dependencies with known CVEs are a common attack vector. Regular scanning catches vulnerabilities before they're exploited.",
+            "howToVerify": "- Run `pip-audit` on the project\n- Check if dependency scanning is part of CI\n- Look for outdated packages with known vulnerabilities",
+            "exampleComment": "pip-audit reports CVE-2024-XXXX in `urllib3` 1.26.5. Could you upgrade to 1.26.18+ which patches this vulnerability?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "text",
+                "code": "# No vulnerability scanning configured"
+              },
+              {
+                "label": "Good",
+                "language": "yaml",
+                "code": "# In CI pipeline:\nsteps:\n  - run: pip-audit --strict"
+              }
+            ],
+            "keyTakeaway": "Run `pip-audit` in CI — catch vulnerable dependencies before they reach production.",
+            "references": [
+              {
+                "title": "pip-audit",
+                "url": "https://pypi.org/project/pip-audit/"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.security.are-yaml-loads-using-safeload-instead-of-load",
+          "text": "Are YAML loads using `safe_load()` instead of `load()`?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`yaml.safe_load()` is used instead of `yaml.load()` to prevent arbitrary code execution from malicious YAML content.",
+            "whyItMatters": "`yaml.load()` with the default loader can execute arbitrary Python code embedded in YAML. `safe_load()` only allows basic data types.",
+            "howToVerify": "- Search for `yaml.load(` — should be `yaml.safe_load(`\n- Check for `Loader=yaml.FullLoader` which is also unsafe\n- Verify all YAML loading uses safe loading",
+            "exampleComment": "The `yaml.load(data)` is unsafe — it can execute arbitrary Python code. Use `yaml.safe_load(data)` instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "config = yaml.load(open('config.yml'))  # Unsafe!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "config = yaml.safe_load(open('config.yml'))"
+              }
+            ],
+            "keyTakeaway": "Always use `yaml.safe_load()` — regular `yaml.load()` allows arbitrary code execution.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.security.is-subprocess-usage-avoiding-shelltrue-with-user-input",
+          "text": "Is subprocess usage avoiding shell=True with user input?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`subprocess` calls avoid `shell=True` when user input is involved, preventing shell injection attacks.",
+            "whyItMatters": "`shell=True` with user input allows shell injection: `; rm -rf /` appended to input gets executed. Use `subprocess.run()` with a list of arguments.",
+            "howToVerify": "- Search for `subprocess.run` or `subprocess.Popen` with `shell=True`\n- Check if user input flows into shell commands\n- Look for `os.system()` calls (always uses shell)",
+            "exampleComment": "The `subprocess.run(f'convert {filename}', shell=True)` is shell injection vulnerable. Use `subprocess.run(['convert', filename])` without shell=True.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "subprocess.run(f'convert {user_file}', shell=True)  # Injection!\nos.system(f'ls {directory}')  # Always uses shell!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "subprocess.run(['convert', user_file], check=True)  # No shell"
+              }
+            ],
+            "keyTakeaway": "Never use `shell=True` with user input — pass commands as a list of arguments.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.performance",
+      "title": "Performance",
+      "items": [
+        {
+          "id": "python.performance.are-generators-used-instead-of-lists-for-large-sequences",
+          "text": "Are generators used instead of lists for large sequences?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Generators and generator expressions are used instead of lists when processing large sequences that don't need to be stored in memory.",
+            "whyItMatters": "Lists load everything into memory at once. Generators process items one at a time, using constant memory regardless of sequence size.",
+            "howToVerify": "- Look for list comprehensions that could be generator expressions\n- Check for functions that build large lists when yielding would suffice\n- Verify generators are used with `sum()`, `any()`, `all()`, and iteration",
+            "exampleComment": "The `[x**2 for x in range(10_000_000)]` creates a 10M-element list. Using a generator `(x**2 for x in range(10_000_000))` uses constant memory.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "total = sum([x**2 for x in range(10_000_000)])  # 10M-element list!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "total = sum(x**2 for x in range(10_000_000))  # Constant memory"
+              }
+            ],
+            "keyTakeaway": "Use generators for large sequences — they process items one at a time with constant memory.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.performance.are-set-and-dict-used-for-o1-lookups-instead-of-list-searches",
+          "text": "Are `set` and `dict` used for O(1) lookups instead of list searches?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Sets and dicts are used for membership testing and lookups instead of searching through lists.",
+            "whyItMatters": "`x in list` is O(n) — it scans every element. `x in set` and `x in dict` are O(1) — they use hash tables. For large collections, this is dramatic.",
+            "howToVerify": "- Look for `if x in large_list:` patterns — consider converting to set\n- Check for repeated list searches in loops\n- Verify dict is used for key-based lookups instead of list iteration",
+            "exampleComment": "The `if user_id in blocked_ids` scans the entire list (O(n) per check). Converting to `blocked_ids = set(blocked_ids)` makes it O(1).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "blocked = [1, 2, 3, ..., 10000]  # List\nfor user in users:\n    if user.id in blocked:  # O(n) each time!\n        skip(user)"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "blocked = {1, 2, 3, ..., 10000}  # Set\nfor user in users:\n    if user.id in blocked:  # O(1) each time!\n        skip(user)"
+              }
+            ],
+            "keyTakeaway": "Use sets for membership testing and dicts for lookups — they're O(1) vs O(n) for lists.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.performance.is-string-concatenation-in-loops-using-join-instead-of-",
+          "text": "Is string concatenation in loops using `join()` instead of `+=`?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`str.join()` is used for building strings from sequences instead of `+=` concatenation in loops.",
+            "whyItMatters": "String concatenation with `+=` in a loop creates a new string object each iteration (O(n^2) total). `join` builds the result in one pass (O(n)).",
+            "howToVerify": "- Look for `result += string` inside loops\n- Check for string building patterns that could use `join`\n- Verify the separator is correct in `join` calls",
+            "exampleComment": "The `result += line` in this loop creates a new string each iteration (O(n^2)). Use `'\\n'.join(lines)` for O(n) performance.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "result = ''\nfor line in lines:\n    result += line + '\\n'  # O(n^2)!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "result = '\\n'.join(lines)"
+              }
+            ],
+            "keyTakeaway": "Use `str.join()` for building strings — `+=` in loops is O(n^2).",
+            "references": []
+          }
+        },
+        {
+          "id": "python.performance.are-n1-query-patterns-avoided-in-orm-usage",
+          "text": "Are N+1 query patterns avoided in ORM usage?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "ORM queries avoid N+1 patterns by using eager loading (`select_related`, `prefetch_related` in Django; `joinedload` in SQLAlchemy).",
+            "whyItMatters": "N+1 queries execute one query per related object, turning a page load from 2 queries into 102 queries. This devastates performance.",
+            "howToVerify": "- Look for association access inside loops without eager loading\n- Check Django `select_related` / `prefetch_related` usage\n- Use Django Debug Toolbar or SQLAlchemy echo to count queries",
+            "exampleComment": "Iterating `post.author` in a template loop triggers an N+1. Add `.select_related('author')` to the queryset.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "posts = Post.objects.all()\nfor post in posts:\n    print(post.author.name)  # N+1: one query per post!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "posts = Post.objects.select_related('author').all()\nfor post in posts:\n    print(post.author.name)  # No extra queries"
+              }
+            ],
+            "keyTakeaway": "Eager-load related objects with `select_related`/`prefetch_related` to prevent N+1 queries.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.performance.is-caching-used-for-expensive-computations-functoolslrucache",
+          "text": "Is caching used for expensive computations (`functools.lru_cache`)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "`functools.lru_cache` or `functools.cache` is used to memoize expensive function calls that are called repeatedly with the same arguments.",
+            "whyItMatters": "Caching avoids redundant computation. An expensive function called 1000 times with the same arguments only computes once with caching.",
+            "howToVerify": "- Look for expensive functions called repeatedly with same arguments\n- Check that cached functions have hashable arguments\n- Verify cache size limits are appropriate (use `maxsize=None` for unlimited, or a specific limit)",
+            "exampleComment": "The `calculate_score` function is called multiple times with the same user_id per request. Adding `@lru_cache(maxsize=128)` would avoid redundant calculations.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def fibonacci(n):\n    if n < 2: return n\n    return fibonacci(n-1) + fibonacci(n-2)  # Exponential time!"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from functools import lru_cache\n\n@lru_cache(maxsize=None)\ndef fibonacci(n):\n    if n < 2: return n\n    return fibonacci(n-1) + fibonacci(n-2)  # O(n) with cache"
+              }
+            ],
+            "keyTakeaway": "Use `@lru_cache` for expensive pure functions — it turns exponential into linear.",
+            "references": [
+              {
+                "title": "functools.lru_cache",
+                "url": "https://docs.python.org/3/library/functools.html#functools.lru_cache"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.performance.are-database-connections-pooled-and-properly-managed",
+          "text": "Are database connections pooled and properly managed?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Database connections use connection pooling rather than creating a new connection for each request or operation.",
+            "whyItMatters": "Creating a new database connection takes 20-50ms. Connection pooling reuses connections, reducing latency and preventing connection exhaustion.",
+            "howToVerify": "- Check that the database library/ORM has pooling configured\n- Verify pool size is appropriate for the workload\n- Look for connection leaks (connections opened but never closed)",
+            "exampleComment": "Creating a new database connection per request is expensive. SQLAlchemy's pool is disabled (`pool_pre_ping` not set). Could you configure connection pooling?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def get_user(id):\n    conn = psycopg2.connect(DATABASE_URL)  # New connection every call!\n    cur = conn.cursor()\n    cur.execute('SELECT * FROM users WHERE id = %s', (id,))\n    return cur.fetchone()"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "from sqlalchemy import create_engine\nengine = create_engine(DATABASE_URL, pool_size=5, pool_pre_ping=True)\n\ndef get_user(id):\n    with engine.connect() as conn:  # Reuses pooled connection\n        result = conn.execute(text('SELECT * FROM users WHERE id = :id'), {'id': id})\n        return result.fetchone()"
+              }
+            ],
+            "keyTakeaway": "Use connection pooling — creating new connections per request is expensive and exhausts limits.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "python.documentation",
+      "title": "Documentation",
+      "items": [
+        {
+          "id": "python.documentation.are-docstrings-added-for-public-functions-and-classes-googlenumpy-style",
+          "text": "Are docstrings added for public functions and classes (Google/NumPy style)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Public functions and classes have docstrings in a consistent style (Google, NumPy, or Sphinx) documenting their purpose, parameters, and return values.",
+            "whyItMatters": "Docstrings are Python's built-in documentation system. They appear in `help()`, IDEs, and generated documentation. Well-documented code is easier to use correctly.",
+            "howToVerify": "- Check that new public functions have docstrings\n- Verify the docstring style matches the project (Google, NumPy, or Sphinx)\n- Look for missing parameter or return value documentation",
+            "exampleComment": "The `calculate_shipping` function has complex logic but no docstring. Could you add one describing the parameters, return value, and edge cases?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "def calculate_shipping(weight, zone, express):\n    # complex logic...\n    pass"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "def calculate_shipping(\n    weight: float,\n    zone: str,\n    express: bool = False,\n) -> Decimal:\n    \"\"\"Calculate shipping cost based on package weight and destination.\n\n    Args:\n        weight: Package weight in kilograms.\n        zone: Shipping zone code (e.g., 'US-WEST').\n        express: Whether to use express shipping.\n\n    Returns:\n        The calculated shipping cost.\n\n    Raises:\n        InvalidZoneError: If the zone code is not recognized.\n    \"\"\"\n    ..."
+              }
+            ],
+            "keyTakeaway": "Add docstrings to public APIs — they appear in help(), IDEs, and generated docs.",
+            "references": [
+              {
+                "title": "Google Python Style Guide",
+                "url": "https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings"
+              }
+            ]
+          }
+        },
+        {
+          "id": "python.documentation.are-complex-algorithms-or-business-rules-explained-in-comments",
+          "text": "Are complex algorithms or business rules explained in comments?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Complex algorithms, business rules, and non-obvious logic have comments explaining the 'why', not just the 'what'.",
+            "whyItMatters": "Code shows what happens but not why. Comments explaining business rules and algorithm choices save future developers hours of investigation.",
+            "howToVerify": "- Look for complex conditionals without explanation\n- Check for magic numbers that should be named constants with comments\n- Verify business rules are explained, not just implemented",
+            "exampleComment": "The discount calculation has a special case for orders over $500 but no comment explaining the business rule. Could you add context?",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "if total > 500 and user.created_at < threshold:\n    discount = 0.15"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "# Loyalty discount: 15% off for customers who joined before the\n# pricing change (Jan 2024) and spend over $500. See PRICING-789.\nif total > LOYALTY_THRESHOLD and user.created_at < PRICING_CHANGE_DATE:\n    discount = LOYALTY_DISCOUNT_RATE"
+              }
+            ],
+            "keyTakeaway": "Comment the 'why' — business rules and algorithm choices need explanation.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.documentation.is-the-readme-updated-for-new-setup-steps-or-dependencies",
+          "text": "Is the README updated for new setup steps or dependencies?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When the PR changes setup steps, environment variables, or dependencies, the README is updated accordingly.",
+            "whyItMatters": "Outdated setup docs cause new team members to waste hours. The README should always reflect the current setup requirements.",
+            "howToVerify": "- Check if new environment variables are documented\n- Verify new system dependencies have install steps\n- Check that changed configuration is reflected in the README",
+            "exampleComment": "This PR adds a Redis dependency but the README doesn't mention it. Could you add Redis to the setup steps?",
+            "codeExamples": [],
+            "keyTakeaway": "Update the README when setup requirements change — documentation debt compounds fast.",
+            "references": []
+          }
+        },
+        {
+          "id": "python.documentation.are-breaking-changes-called-out-in-the-pr-description",
+          "text": "Are breaking changes called out in the PR description?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Changes that break existing APIs, remove features, or require migration steps are clearly documented in the PR.",
+            "whyItMatters": "Breaking changes without documentation surprise consumers and cause production incidents.",
+            "howToVerify": "- Check if the PR removes or renames public functions, classes, or endpoints\n- Verify the PR description mentions breaking changes\n- Look for migration guides or deprecation notices",
+            "exampleComment": "This PR renames the `authenticate()` function to `verify_auth()`. This is a breaking change — could you add a deprecation warning and document the migration?",
+            "codeExamples": [],
+            "keyTakeaway": "Call out breaking changes loudly — in the PR title, description, and changelog.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

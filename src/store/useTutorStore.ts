@@ -5,6 +5,9 @@ import type { TutorConversation, TutorMessage } from '../data/types';
 
 const MAX_CACHE_ENTRIES = 200;
 const DEFAULT_CACHE_TTL_MS = 1000 * 60 * 60 * 6;
+const MAX_PERSISTED_CONVERSATIONS = 30;
+const MAX_MESSAGES_PER_CONVERSATION = 20;
+const MAX_CONVERSATION_AGE_MS = 1000 * 60 * 60 * 24 * 14;
 
 export interface TutorResponseCacheEntry {
   key: string;
@@ -61,6 +64,34 @@ function pruneCache(
   for (const entry of sorted.slice(entries.length - maxEntries)) {
     next[entry.key] = entry;
   }
+  return next;
+}
+
+function pruneConversationsForPersistence(
+  conversations: Record<string, TutorConversation>,
+): Record<string, TutorConversation> {
+  const now = Date.now();
+  const next: Record<string, TutorConversation> = {};
+
+  const sorted = Object.values(conversations)
+    .filter((conversation) => {
+      const age = now - new Date(conversation.lastAccessed).getTime();
+      return Number.isFinite(age) && age <= MAX_CONVERSATION_AGE_MS;
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.lastAccessed).getTime() -
+        new Date(a.lastAccessed).getTime(),
+    )
+    .slice(0, MAX_PERSISTED_CONVERSATIONS);
+
+  for (const conversation of sorted) {
+    next[conversation.itemId] = {
+      ...conversation,
+      messages: conversation.messages.slice(-MAX_MESSAGES_PER_CONVERSATION),
+    };
+  }
+
   return next;
 }
 
@@ -130,6 +161,11 @@ export const useTutorStore = create<TutorStoreState>()(
     {
       name: 'tutor-storage',
       storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        conversations: pruneConversationsForPersistence(state.conversations),
+        // Do not persist response cache to disk; it is recomputable and can contain sensitive text.
+        responseCache: {},
+      }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

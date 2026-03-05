@@ -4,7 +4,17 @@
 
 export type Severity = 'blocker' | 'major' | 'minor' | 'nit';
 export type ChecklistMode = 'review' | 'polish';
-export type StackId = 'java-protobuf' | 'js-ts-react-node' | 'go';
+export type StackId =
+  | 'java-protobuf'
+  | 'js-ts-react-node'
+  | 'go'
+  | 'terraform-hcl'
+  | 'swift-objc'
+  | 'web-devops-config'
+  | 'python'
+  | 'ruby'
+  | 'lua'
+  | 'c-lang';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,

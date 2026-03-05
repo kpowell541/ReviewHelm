@@ -1,0 +1,1415 @@
+module.exports = {
+  // ============================================
+  // General Code Quality (6 items)
+  // ============================================
+  "swift-objc.general-code-quality.does-the-pr-have-a-clear-description-of-what-it-does-and-why": {
+    whatItMeans: "The pull request includes a summary explaining the change, the motivation behind it, and any relevant context such as linked tickets or design docs.",
+    whyItMatters: "A clear PR description helps reviewers understand intent quickly, reduces back-and-forth questions, and serves as future documentation when investigating why a change was made.",
+    howToVerify: "- Read the PR description and check it explains the what and why\n- Verify linked tickets or issues are referenced\n- Confirm screenshots or recordings are included for UI changes",
+    exampleComment: "Could you add a brief description of why this refactor was needed? It'll help reviewers understand the motivation and make future archaeology easier.",
+    codeExamples: [
+      { label: "Bad", language: "markdown", code: "## PR Description\n(empty)" },
+      { label: "Good", language: "markdown", code: "## PR Description\nRefactors the NetworkManager to use async/await instead of completion handlers.\n\n**Why:** Reduces callback nesting and prepares us for structured concurrency.\n**Ticket:** MOBILE-1234\n**Testing:** Unit tests updated, manual testing on iOS 17 simulator." }
+    ],
+    keyTakeaway: "Treat PR descriptions as documentation — they should explain intent, not just list file changes.",
+    references: [
+      { title: "Writing Great Pull Requests", url: "https://github.blog/developer-skills/github/how-to-write-the-perfect-pull-request/" }
+    ]
+  },
+  "swift-objc.general-code-quality.is-the-change-scoped-appropriately-or-should-it-be-split-into-smaller-prs": {
+    whatItMeans: "The PR focuses on a single logical change rather than bundling multiple unrelated features, bug fixes, or refactors together.",
+    whyItMatters: "Large, multi-purpose PRs are harder to review, more likely to introduce bugs, and more difficult to revert if something goes wrong. Focused PRs get reviewed faster and more thoroughly.",
+    howToVerify: "- Check if the PR touches unrelated modules or features\n- Look for changes that could be submitted independently\n- Verify the PR title accurately describes all changes (if it's hard to write a concise title, the PR may be too large)",
+    exampleComment: "This PR includes both the new caching layer and the UI redesign of the settings screen. Could we split these into separate PRs? It would make each one easier to review and safer to merge.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// PR: \"Update networking, add dark mode, fix crash\"\n// 47 files changed across 6 modules" },
+      { label: "Good", language: "swift", code: "// PR 1: \"Add URLSession-based NetworkClient\"\n// PR 2: \"Add dark mode support to Settings\"\n// PR 3: \"Fix crash in ProfileViewController on nil user\"" }
+    ],
+    keyTakeaway: "Each PR should represent one logical change that can be understood, reviewed, and reverted independently.",
+    references: [
+      { title: "Small PRs Best Practice", url: "https://google.github.io/eng-practices/review/developer/small-cls.html" }
+    ]
+  },
+  "swift-objc.general-code-quality.are-there-any-unrelated-changes-bundled-in": {
+    whatItMeans: "The PR does not include drive-by fixes, formatting changes, or refactors that are unrelated to the stated purpose of the change.",
+    whyItMatters: "Unrelated changes obscure the actual intent of the PR, make code review harder, and complicate git blame history. They also increase the risk of the PR introducing unintended side effects.",
+    howToVerify: "- Scan the diff for changes in files unrelated to the PR's purpose\n- Look for whitespace-only or formatting-only changes mixed in\n- Check for 'while I was here' fixes that could be separate PRs",
+    exampleComment: "The formatting changes to `AppDelegate.swift` seem unrelated to the networking refactor. Could you move those to a separate PR so this one stays focused?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// PR: \"Fix login crash\"\n// Also includes:\n// - Renamed variables in ProfileVC\n// - Updated pod versions\n// - Reformatted AppDelegate" },
+      { label: "Good", language: "swift", code: "// PR: \"Fix login crash when user has no email\"\n// Only touches LoginViewController and LoginViewModelTests" }
+    ],
+    keyTakeaway: "Keep PRs focused — submit unrelated changes as separate PRs to maintain clean review history.",
+    references: []
+  },
+  "swift-objc.general-code-quality.is-dead-code-removed-rather-than-commented-out": {
+    whatItMeans: "Unused code is deleted rather than commented out. Version control (git) preserves history, so there's no need to keep dead code as comments.",
+    whyItMatters: "Commented-out code creates confusion about whether it's intentionally disabled, planned for restoration, or simply forgotten. It clutters the codebase and makes files harder to read.",
+    howToVerify: "- Search for large blocks of commented-out code\n- Check for functions or classes that are never called\n- Look for #if false or #if 0 blocks wrapping unused code",
+    exampleComment: "This commented-out `fetchLegacyUser()` method has been here since the migration. Since we can always recover it from git history, could we remove it to reduce noise?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class UserService {\n    func fetchUser() { /* current impl */ }\n    \n    // func fetchLegacyUser() {\n    //     let url = legacyEndpoint\n    //     URLSession.shared.dataTask(with: url) { ... }\n    // }\n}" },
+      { label: "Good", language: "swift", code: "class UserService {\n    func fetchUser() { /* current impl */ }\n    // Legacy user fetch removed in PR #234 — see git history if needed\n}" }
+    ],
+    keyTakeaway: "Delete dead code instead of commenting it out — git is your backup.",
+    references: []
+  },
+  "swift-objc.general-code-quality.are-todofixme-comments-accompanied-by-a-tracking-ticket": {
+    whatItMeans: "TODO and FIXME comments include a reference to a tracking ticket (e.g., Jira, Linear, GitHub issue) so they can be prioritized and addressed systematically.",
+    whyItMatters: "TODO comments without tickets tend to become permanent fixtures in the codebase. Linking them to tickets ensures they're triaged, assigned, and eventually resolved.",
+    howToVerify: "- Search for TODO and FIXME comments in changed files\n- Verify each has a ticket reference (e.g., MOBILE-1234)\n- Check if the ticket actually exists and is in a relevant sprint or backlog",
+    exampleComment: "This `// TODO: handle error` would benefit from a tracking ticket. Could you create one and reference it here so it doesn't get lost?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// TODO: handle this edge case\n// FIXME: sometimes crashes here" },
+      { label: "Good", language: "swift", code: "// TODO(MOBILE-1234): Handle expired token edge case\n// FIXME(MOBILE-1235): Race condition in image cache — see ticket for repro steps" }
+    ],
+    keyTakeaway: "Every TODO/FIXME should have a ticket — if it's worth noting, it's worth tracking.",
+    references: []
+  },
+  "swift-objc.general-code-quality.does-the-commit-history-tell-a-coherent-story": {
+    whatItMeans: "The commits in the PR are logically structured, with each commit representing a meaningful step in the change. The history reads like a narrative that future developers can follow.",
+    whyItMatters: "Clean commit history makes it easier to understand how a feature was built, bisect regressions, and review changes incrementally. Messy history with 'fix' and 'wip' commits obscures intent.",
+    howToVerify: "- Read the commit messages in order — do they tell a story?\n- Check for WIP, fixup, or typo-fix commits that should be squashed\n- Verify each commit compiles and passes tests independently",
+    exampleComment: "Could you squash the 'fix typo' and 'oops' commits into their parent commits? It'll make the history much cleaner for future readers.",
+    codeExamples: [
+      { label: "Bad", language: "text", code: "abc1234 wip\ndef5678 more stuff\nghi9012 fix\njkl3456 oops\nmno7890 actually fix" },
+      { label: "Good", language: "text", code: "abc1234 Extract NetworkClient protocol\ndef5678 Implement URLSession-based NetworkClient\nghi9012 Migrate UserService to new NetworkClient\njkl3456 Add unit tests for NetworkClient" }
+    ],
+    keyTakeaway: "Craft commit history that tells a clear story — each commit should be a meaningful, self-contained step.",
+    references: []
+  },
+
+  // ============================================
+  // Swift Language Style — Naming Conventions (5 items)
+  // ============================================
+  "swift-objc.swift-language-style.naming-conventions.are-types-and-protocols-in-pascalcase-properties-and-methods-in-camelcase": {
+    whatItMeans: "Type names (classes, structs, enums, protocols) use PascalCase (e.g., `UserProfile`), while properties, methods, and local variables use camelCase (e.g., `userName`).",
+    whyItMatters: "Consistent casing is a fundamental Swift convention enforced by the Swift API Design Guidelines. Deviating from it makes code look foreign and harder to read for Swift developers.",
+    howToVerify: "- Check that all new type declarations use PascalCase\n- Verify properties, methods, and parameters use camelCase\n- Look for any snake_case or ALL_CAPS (except for legacy Objective-C interop constants)",
+    exampleComment: "The struct `user_profile` should be `UserProfile` per Swift naming conventions. Similarly, `GetUserName()` should be `getUserName()` or better yet, a computed property `userName`.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "struct user_profile {\n    var User_Name: String\n    func GetEmail() -> String { ... }\n}" },
+      { label: "Good", language: "swift", code: "struct UserProfile {\n    var userName: String\n    func getEmail() -> String { ... }\n}" }
+    ],
+    keyTakeaway: "Follow Swift conventions: PascalCase for types, camelCase for everything else.",
+    references: [
+      { title: "Swift API Design Guidelines", url: "https://www.swift.org/documentation/api-design-guidelines/" }
+    ]
+  },
+  "swift-objc.swift-language-style.naming-conventions.are-function-parameters-labeled-clearly-following-swift-api-design-guidelines": {
+    whatItMeans: "Function parameter labels read naturally at the call site, forming grammatical phrases. External labels are used to clarify the role of each argument.",
+    whyItMatters: "Swift's parameter labeling system is designed to make call sites read like English phrases. Poor labels force readers to look up function signatures to understand what arguments mean.",
+    howToVerify: "- Read function calls aloud — do they form natural phrases?\n- Check that external parameter labels clarify the argument's role\n- Verify underscore `_` is used only when the label would be redundant",
+    exampleComment: "At the call site, `move(p1, p2)` is unclear. Could we use `move(from: start, to: end)` so it reads naturally?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func move(_ p1: Point, _ p2: Point) { }\nmove(startPoint, endPoint) // unclear what each arg means" },
+      { label: "Good", language: "swift", code: "func move(from start: Point, to end: Point) { }\nmove(from: startPoint, to: endPoint) // reads like English" }
+    ],
+    keyTakeaway: "Design parameter labels so call sites read as natural English phrases.",
+    references: [
+      { title: "Swift API Design Guidelines — Naming", url: "https://www.swift.org/documentation/api-design-guidelines/#naming" }
+    ]
+  },
+  "swift-objc.swift-language-style.naming-conventions.are-boolean-propertiesmethods-named-as-assertions-eg-isempty-hascontent": {
+    whatItMeans: "Boolean properties and methods are named as assertions that read as true/false statements, using prefixes like `is`, `has`, `can`, `should`, or `allows`.",
+    whyItMatters: "Boolean names that read as assertions make conditions self-documenting. `if user.isActive` is immediately clear, while `if user.active` or `if user.status` requires context to understand.",
+    howToVerify: "- Check that Boolean properties use assertive prefixes (is, has, can, should)\n- Verify Boolean-returning methods also follow this pattern\n- Look for ambiguous Boolean names like `flag`, `status`, or `check`",
+    exampleComment: "The property `enabled` would be clearer as `isEnabled` — it reads better in conditions: `if button.isEnabled`.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "var loading: Bool\nvar data: Bool\nfunc check() -> Bool" },
+      { label: "Good", language: "swift", code: "var isLoading: Bool\nvar hasData: Bool\nfunc canSubmit() -> Bool" }
+    ],
+    keyTakeaway: "Name Booleans as assertions — they should read naturally in `if` statements.",
+    references: [
+      { title: "Swift API Design Guidelines", url: "https://www.swift.org/documentation/api-design-guidelines/" }
+    ]
+  },
+  "swift-objc.swift-language-style.naming-conventions.are-abbreviations-avoided-in-names-unless-universally-understood": {
+    whatItMeans: "Names use full words instead of abbreviations, except for widely understood terms like URL, ID, HTTP, JSON, or HTML.",
+    whyItMatters: "Abbreviations save a few keystrokes but cost significantly more in readability. Code is read far more often than it's written, and unclear abbreviations force readers to guess or look up meanings.",
+    howToVerify: "- Scan new names for non-standard abbreviations (e.g., `mgr`, `btn`, `vc`, `cfg`)\n- Verify abbreviations used are universally understood (URL, ID, etc.)\n- Check that abbreviations in uppercase follow Swift conventions (e.g., `urlString` not `URLString`)",
+    exampleComment: "`usrMgr` is hard to parse at a glance. Could we use `userManager` instead? Swift favors clarity over brevity.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let usrMgr = UserMgr()\nlet cfgVc = CfgViewController()\nlet btnBg = UIColor.gray" },
+      { label: "Good", language: "swift", code: "let userManager = UserManager()\nlet configViewController = ConfigViewController()\nlet buttonBackground = UIColor.gray" }
+    ],
+    keyTakeaway: "Spell out names fully — clarity beats brevity in Swift code.",
+    references: [
+      { title: "Swift API Design Guidelines — Clarity", url: "https://www.swift.org/documentation/api-design-guidelines/#fundamentals" }
+    ]
+  },
+  "swift-objc.swift-language-style.naming-conventions.are-factory-methods-named-with-make-prefix-per-swift-conventions": {
+    whatItMeans: "Factory methods that create and return new instances use the `make` prefix (e.g., `makeIterator()`, `makeCoordinator()`), following Swift standard library conventions.",
+    whyItMatters: "The `make` prefix signals that the method creates a new instance each time it's called, distinguishing it from accessor methods that return existing objects. This convention is used throughout Swift's standard library.",
+    howToVerify: "- Check that factory methods use the `make` prefix\n- Verify that `create` or `build` prefixes are not used where `make` is conventional\n- Look for methods returning new instances that lack the `make` prefix",
+    exampleComment: "`createCoordinator()` should be `makeCoordinator()` per Swift conventions. The `make` prefix signals that a new instance is created each time.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func createIterator() -> Iterator { ... }\nfunc buildViewModel() -> ViewModel { ... }" },
+      { label: "Good", language: "swift", code: "func makeIterator() -> Iterator { ... }\nfunc makeViewModel() -> ViewModel { ... }" }
+    ],
+    keyTakeaway: "Use the `make` prefix for factory methods — it's a Swift standard library convention.",
+    references: [
+      { title: "Swift API Design Guidelines — Strive for Fluent Usage", url: "https://www.swift.org/documentation/api-design-guidelines/#strive-for-fluent-usage" }
+    ]
+  },
+
+  // ============================================
+  // Swift Language Style — Type System & Safety (8 items)
+  // ============================================
+  "swift-objc.swift-language-style.type-system-safety.are-optionals-unwrapped-safely-guard-let-if-let-nil-coalescing": {
+    whatItMeans: "Optional values are unwrapped using safe patterns like `guard let`, `if let`, or nil coalescing (`??`) rather than force-unwrapping with `!`.",
+    whyItMatters: "Force-unwrapping a nil value causes a runtime crash. Safe unwrapping ensures the app handles missing values gracefully instead of crashing in production.",
+    howToVerify: "- Search for `!` on optional values in changed code\n- Verify each optional unwrap uses guard let, if let, or ??\n- Check that force-unwraps, if any, have comments justifying them",
+    exampleComment: "This force-unwrap `user!.name` will crash if `user` is nil. Could we use `guard let user` or optional chaining instead?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let name = user!.name\nlet url = URL(string: urlString)!\nprint(dictionary[\"key\"]!)" },
+      { label: "Good", language: "swift", code: "guard let user = user else { return }\nlet name = user.name\n\nguard let url = URL(string: urlString) else {\n    logger.error(\"Invalid URL: \\(urlString)\")\n    return\n}\n\nlet value = dictionary[\"key\"] ?? defaultValue" }
+    ],
+    keyTakeaway: "Always unwrap optionals safely — every `!` is a potential crash site.",
+    references: [
+      { title: "Swift Optional Chaining", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/optionalchaining/" }
+    ]
+  },
+  "swift-objc.swift-language-style.type-system-safety.is-force-unwrapping-avoided-unless-the-value-is-guaranteed-non-nil": {
+    whatItMeans: "Force-unwrapping (`!`) is used only when the value is provably non-nil — such as immediately after a nil check, with hardcoded values, or in test code — and never on values that could be nil at runtime.",
+    whyItMatters: "Force-unwrapping is the #1 cause of crashes in Swift apps. Even when you 'know' a value exists, future code changes or unexpected states can make it nil, causing a crash.",
+    howToVerify: "- Count force-unwraps in the diff\n- For each one, verify the value is guaranteed non-nil at that point\n- Check if a safe alternative (guard, if let, ??) would be better",
+    exampleComment: "While `UIImage(named:)` rarely returns nil for bundled assets, it's safer to use `guard let` here since missing assets do happen during development.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let image = UIImage(named: \"icon\")!  // crashes if asset missing\nlet data = try! JSONEncoder().encode(model)  // crashes on encoding failure" },
+      { label: "Good", language: "swift", code: "// OK: hardcoded value that's guaranteed valid\nlet url = URL(string: \"https://example.com\")!\n\n// Better: safe unwrap for dynamic values\nguard let image = UIImage(named: iconName) else {\n    assertionFailure(\"Missing asset: \\(iconName)\")\n    return placeholderImage\n}" }
+    ],
+    keyTakeaway: "Reserve force-unwrapping for provably non-nil values — use safe unwrapping everywhere else.",
+    references: []
+  },
+  "swift-objc.swift-language-style.type-system-safety.are-implicitly-unwrapped-optionals-justified-and-documented": {
+    whatItMeans: "Implicitly unwrapped optionals (`var x: Type!`) are used only when a value is guaranteed to be set before use (e.g., IBOutlets, dependency injection) and have documentation explaining why.",
+    whyItMatters: "IUOs bypass the compiler's nil safety, creating the same crash risk as force-unwrapping but hiding it in the type declaration. They should be rare and justified.",
+    howToVerify: "- Search for `Type!` declarations in changed code\n- Verify each IUO is justified (IBOutlets, two-phase init, etc.)\n- Check that non-IBOutlet IUOs have comments explaining the guarantee",
+    exampleComment: "This `var coordinator: Coordinator!` could be a regular optional with a `guard let` in the methods that use it. IUOs should be reserved for cases where the value is guaranteed to be set before access.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ProfileVC: UIViewController {\n    var viewModel: ProfileViewModel!  // set sometime later, maybe\n    var apiClient: APIClient!  // who sets this?\n}" },
+      { label: "Good", language: "swift", code: "class ProfileVC: UIViewController {\n    @IBOutlet weak var nameLabel: UILabel!  // set by storyboard\n    \n    private let viewModel: ProfileViewModel  // injected via init\n    \n    init(viewModel: ProfileViewModel) {\n        self.viewModel = viewModel\n        super.init(nibName: nil, bundle: nil)\n    }\n}" }
+    ],
+    keyTakeaway: "Limit IUOs to IBOutlets and two-phase initialization — prefer regular optionals or non-optional injection.",
+    references: []
+  },
+  "swift-objc.swift-language-style.type-system-safety.are-as-force-casts-avoided-in-favor-of-as-with-handling": {
+    whatItMeans: "Type casts use `as?` (conditional cast) with proper nil handling instead of `as!` (forced cast) which crashes on failure.",
+    whyItMatters: "Forced casts crash at runtime if the type doesn't match. Using `as?` lets you handle type mismatches gracefully with `guard let` or `if let`.",
+    howToVerify: "- Search for `as!` in the diff\n- Verify each forced cast is on a type that's guaranteed correct\n- Check if `as?` with handling would be safer",
+    exampleComment: "This `as! CustomCell` will crash if the cell type is wrong. Could we use `as?` with a guard and a descriptive assertion failure for debugging?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let cell = tableView.dequeueReusableCell(withIdentifier: \"Cell\") as! CustomCell\nlet number = json[\"count\"] as! Int" },
+      { label: "Good", language: "swift", code: "guard let cell = tableView.dequeueReusableCell(withIdentifier: \"Cell\") as? CustomCell else {\n    assertionFailure(\"Failed to dequeue CustomCell\")\n    return UITableViewCell()\n}\n\nif let count = json[\"count\"] as? Int {\n    updateCount(count)\n}" }
+    ],
+    keyTakeaway: "Use `as?` with handling instead of `as!` — handle type mismatches instead of crashing.",
+    references: []
+  },
+  "swift-objc.swift-language-style.type-system-safety.are-enums-with-associated-values-used-instead-of-loosely-typed-dictionaries": {
+    whatItMeans: "Enums with associated values are used to model distinct states or variants, instead of dictionaries or tuples with string keys that lose type safety.",
+    whyItMatters: "Enums make invalid states unrepresentable and give you exhaustive switch checking. Dictionaries require runtime key checks and provide no compile-time guarantees about what keys exist.",
+    howToVerify: "- Look for dictionaries used to represent state or variants\n- Check for string-keyed lookups that model distinct cases\n- Verify enum cases cover all states with appropriate associated data",
+    exampleComment: "This `[String: Any]` response dictionary could be modeled as a `Result<User, APIError>` enum — it would make the success/failure states explicit and type-safe.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// State as dictionary\nlet result: [String: Any] = [\"status\": \"success\", \"data\": userData]\nif result[\"status\"] as? String == \"success\" {\n    let data = result[\"data\"] as? User\n}" },
+      { label: "Good", language: "swift", code: "enum APIResult {\n    case success(User)\n    case failure(APIError)\n}\n\nswitch result {\ncase .success(let user): display(user)\ncase .failure(let error): show(error)\n}" }
+    ],
+    keyTakeaway: "Use enums with associated values to make states explicit and type-safe — avoid stringly-typed dictionaries.",
+    references: [
+      { title: "Swift Enumerations", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/enumerations/" }
+    ]
+  },
+  "swift-objc.swift-language-style.type-system-safety.are-generics-used-where-they-add-value-for-reusability": {
+    whatItMeans: "Generic types and functions are used when code needs to work with multiple types while preserving type safety, but not over-applied when a concrete type suffices.",
+    whyItMatters: "Generics enable code reuse without sacrificing type safety. However, premature or unnecessary generics add complexity. They should be used when there's a clear, current need for type flexibility.",
+    howToVerify: "- Check if generic code is actually used with multiple types\n- Verify generic constraints are specific enough (prefer protocol constraints over unconstrained generics)\n- Look for cases where a concrete type would be simpler",
+    exampleComment: "This generic `Repository<T>` is only ever used with `User`. Consider making it a concrete `UserRepository` until you actually need to support other types.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Over-generic: only ever used with String\nfunc process<T>(_ value: T) -> T {\n    return value\n}" },
+      { label: "Good", language: "swift", code: "// Generic with clear multi-type use\nstruct Repository<Model: Identifiable & Codable> {\n    func save(_ model: Model) throws { ... }\n    func fetch(id: Model.ID) -> Model? { ... }\n}\n\nlet userRepo = Repository<User>()\nlet postRepo = Repository<Post>()" }
+    ],
+    keyTakeaway: "Use generics when you need type-safe code reuse across multiple types — not as premature abstraction.",
+    references: [
+      { title: "Swift Generics", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/generics/" }
+    ]
+  },
+  "swift-objc.swift-language-style.type-system-safety.are-value-types-struct-preferred-over-reference-types-class-where-appropriate": {
+    whatItMeans: "Structs (value types) are preferred over classes (reference types) for data models and simple types, reserving classes for when identity, inheritance, or reference semantics are needed.",
+    whyItMatters: "Value types are safer in concurrent code because each copy is independent — no shared mutable state. They also avoid retain cycle risks and are more predictable since mutations don't affect other references.",
+    howToVerify: "- Check if new classes could be structs instead\n- Verify classes are used only when inheritance, identity, or reference semantics are required\n- Look for data models declared as classes that could be structs",
+    exampleComment: "This `UserProfile` class doesn't use inheritance or reference semantics. Making it a struct would give us value semantics and eliminate retain cycle risks.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Class used for a simple data model\nclass UserProfile {\n    var name: String\n    var email: String\n    init(name: String, email: String) {\n        self.name = name\n        self.email = email\n    }\n}" },
+      { label: "Good", language: "swift", code: "// Struct for data model — value semantics\nstruct UserProfile {\n    var name: String\n    var email: String\n}\n\n// Class when identity/reference semantics needed\nclass NetworkSession {\n    private var tasks: [URLSessionTask] = []\n    func cancel() { tasks.forEach { $0.cancel() } }\n}" }
+    ],
+    keyTakeaway: "Default to structs for data types — use classes only when you need inheritance, identity, or reference semantics.",
+    references: [
+      { title: "Choosing Between Structures and Classes", url: "https://developer.apple.com/documentation/swift/choosing-between-structures-and-classes" }
+    ]
+  },
+  "swift-objc.swift-language-style.type-system-safety.are-protocol-oriented-patterns-used-instead-of-deep-class-hierarchies": {
+    whatItMeans: "Shared behavior is defined through protocols and protocol extensions rather than deep class inheritance hierarchies, following Swift's protocol-oriented programming paradigm.",
+    whyItMatters: "Deep inheritance creates tight coupling and fragile base class problems. Protocols enable composition over inheritance, allowing types to adopt multiple behaviors independently.",
+    howToVerify: "- Check for class hierarchies deeper than 2-3 levels\n- Look for base classes that could be replaced with protocols\n- Verify protocol extensions provide default implementations where appropriate",
+    exampleComment: "This 4-level class hierarchy (`BaseVC → ListVC → FilteredListVC → UserListVC`) is getting deep. Could we extract the filtering behavior into a protocol so it can be composed independently?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class BaseViewController: UIViewController { func showLoading() { } }\nclass ListViewController: BaseViewController { func loadItems() { } }\nclass FilteredListVC: ListViewController { func applyFilter() { } }\nclass UserListVC: FilteredListVC { /* inherits everything */ }" },
+      { label: "Good", language: "swift", code: "protocol Loadable {\n    func showLoading()\n}\nextension Loadable where Self: UIViewController {\n    func showLoading() { /* default impl */ }\n}\n\nprotocol Filterable {\n    associatedtype Item\n    func applyFilter(_ predicate: (Item) -> Bool)\n}\n\nclass UserListVC: UIViewController, Loadable, Filterable { ... }" }
+    ],
+    keyTakeaway: "Favor protocols and composition over deep class hierarchies — it's the Swift way.",
+    references: [
+      { title: "Protocol-Oriented Programming in Swift (WWDC)", url: "https://developer.apple.com/videos/play/wwdc2015/408/" }
+    ]
+  },
+
+  // ============================================
+  // Swift Language Style — Swift Patterns (10 items)
+  // ============================================
+  "swift-objc.swift-language-style.swift-patterns.are-closures-using-weak-self-or-unowned-self-to-prevent-retain-cycles": {
+    whatItMeans: "Closures that capture `self` use `[weak self]` or `[unowned self]` to avoid retain cycles, especially in escaping closures stored as properties or passed to long-lived objects.",
+    whyItMatters: "Retain cycles are one of the most common memory leaks in Swift. When a closure captures `self` strongly and is stored on `self`, neither can be deallocated, leading to memory leaks.",
+    howToVerify: "- Check escaping closures for `self` captures without `[weak self]`\n- Verify `[unowned self]` is used only when self is guaranteed to outlive the closure\n- Look for stored closures (properties, completion handlers) that might create cycles",
+    exampleComment: "This completion handler captures `self` strongly and is stored on the view model, creating a retain cycle. Adding `[weak self]` would prevent the memory leak.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ViewModel {\n    var onUpdate: (() -> Void)?\n    \n    func setup() {\n        onUpdate = {\n            self.refresh()  // strong capture → retain cycle\n        }\n    }\n}" },
+      { label: "Good", language: "swift", code: "class ViewModel {\n    var onUpdate: (() -> Void)?\n    \n    func setup() {\n        onUpdate = { [weak self] in\n            self?.refresh()\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Use `[weak self]` in escaping closures to prevent retain cycles — it's the default safe choice.",
+    references: [
+      { title: "Swift Closures — Capturing Values", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/closures/#Capturing-Values" }
+    ]
+  },
+  "swift-objc.swift-language-style.swift-patterns.are-trailing-closure-syntax-and-shorthand-argument-names-used-appropriately": {
+    whatItMeans: "Trailing closure syntax is used when the last parameter is a closure, and shorthand argument names (`$0`, `$1`) are used only in short, simple closures where meaning is obvious.",
+    whyItMatters: "Trailing closures improve readability for common patterns like `map`, `filter`, and completion handlers. Shorthand arguments keep simple transforms concise, but in complex closures they obscure meaning.",
+    howToVerify: "- Check that trailing closure syntax is used for the final closure argument\n- Verify `$0` and `$1` are only used in closures of 1-2 lines\n- Look for long closures using shorthand that would benefit from named parameters",
+    exampleComment: "This multi-line closure using `$0` and `$1` is hard to follow. Could we use named parameters like `(user, index)` to make the intent clearer?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Shorthand in complex closure — hard to follow\nusers.sorted(by: { $0.department == $1.department ? $0.name < $1.name : $0.department < $1.department })" },
+      { label: "Good", language: "swift", code: "// Short: shorthand is fine\nnames.map { $0.uppercased() }\n\n// Complex: use named parameters\nusers.sorted { lhs, rhs in\n    if lhs.department == rhs.department {\n        return lhs.name < rhs.name\n    }\n    return lhs.department < rhs.department\n}" }
+    ],
+    keyTakeaway: "Use shorthand `$0` for simple one-liners; switch to named parameters when closures get complex.",
+    references: []
+  },
+  "swift-objc.swift-language-style.swift-patterns.are-guard-statements-used-for-early-exits-instead-of-nested-if-blocks": {
+    whatItMeans: "Guard statements are used to validate conditions and exit early, keeping the main logic at the lowest indentation level instead of nesting it inside multiple `if` blocks.",
+    whyItMatters: "Guard clauses reduce cognitive load by handling error cases upfront and keeping the happy path unindented. Deeply nested `if` blocks (the 'pyramid of doom') are harder to read and reason about.",
+    howToVerify: "- Look for nested `if let` chains that could be flattened with `guard let`\n- Check that guard is used for precondition validation at the start of functions\n- Verify guard's else block always exits the scope (return, throw, continue, break)",
+    exampleComment: "These nested `if let` blocks would be clearer as sequential `guard let` statements — it would flatten the code and keep the happy path at the top level.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func process(data: Data?) {\n    if let data = data {\n        if let json = try? JSONSerialization.jsonObject(with: data) {\n            if let dict = json as? [String: Any] {\n                // finally do the work, 3 levels deep\n            }\n        }\n    }\n}" },
+      { label: "Good", language: "swift", code: "func process(data: Data?) {\n    guard let data = data else { return }\n    guard let json = try? JSONSerialization.jsonObject(with: data) else { return }\n    guard let dict = json as? [String: Any] else { return }\n    \n    // do the work at top level\n}" }
+    ],
+    keyTakeaway: "Use guard for early exits to keep the happy path at the lowest indentation level.",
+    references: [
+      { title: "Swift Control Flow — Early Exit", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/controlflow/#Early-Exit" }
+    ]
+  },
+  "swift-objc.swift-language-style.swift-patterns.is-defer-used-for-cleanup-operations": {
+    whatItMeans: "The `defer` statement is used to ensure cleanup code runs when leaving a scope, regardless of how the scope is exited (return, throw, break).",
+    whyItMatters: "Without `defer`, cleanup code may be missed if a function has multiple exit points. `defer` guarantees resources are released, locks are unlocked, and files are closed.",
+    howToVerify: "- Look for resource acquisition (file handles, locks, connections) without corresponding `defer` cleanup\n- Check that `defer` is placed immediately after resource acquisition\n- Verify cleanup code in functions with multiple return paths",
+    exampleComment: "This file handle is opened but only closed in the success path. If the parsing throws, the handle leaks. A `defer { handle.close() }` right after opening would ensure cleanup.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func readFile() throws -> String {\n    let handle = try FileHandle(forReadingFrom: url)\n    let data = handle.readDataToEndOfFile()\n    // If this throws, handle is never closed!\n    let result = try parse(data)\n    handle.closeFile()\n    return result\n}" },
+      { label: "Good", language: "swift", code: "func readFile() throws -> String {\n    let handle = try FileHandle(forReadingFrom: url)\n    defer { handle.closeFile() }\n    \n    let data = handle.readDataToEndOfFile()\n    return try parse(data)\n}" }
+    ],
+    keyTakeaway: "Use `defer` immediately after resource acquisition to guarantee cleanup regardless of exit path.",
+    references: []
+  },
+  "swift-objc.swift-language-style.swift-patterns.are-lazy-properties-used-for-expensive-initialization-that-may-not-be-needed": {
+    whatItMeans: "Properties that are expensive to create or may not be accessed use the `lazy` keyword so they're initialized only on first access rather than during object initialization.",
+    whyItMatters: "Eager initialization of expensive properties (formatters, heavy views, database connections) wastes memory and slows startup if the property is never used. `lazy` defers the cost until needed.",
+    howToVerify: "- Look for expensive property initializations in `init` or property declarations\n- Check if properties like DateFormatters, NumberFormatters, or heavy views could be lazy\n- Verify lazy properties are only used in single-threaded contexts (lazy is not thread-safe)",
+    exampleComment: "This `DateFormatter` is created on init but only used when displaying dates. Making it `lazy` would avoid the initialization cost for views that don't show dates.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ProfileView {\n    // Created even if dates are never displayed\n    let dateFormatter: DateFormatter = {\n        let f = DateFormatter()\n        f.dateStyle = .medium\n        return f\n    }()\n}" },
+      { label: "Good", language: "swift", code: "class ProfileView {\n    lazy var dateFormatter: DateFormatter = {\n        let f = DateFormatter()\n        f.dateStyle = .medium\n        return f\n    }()\n}" }
+    ],
+    keyTakeaway: "Use `lazy` for expensive properties that may not be accessed — defer initialization until first use.",
+    references: []
+  },
+  "swift-objc.swift-language-style.swift-patterns.are-computed-properties-used-instead-of-getter-methods": {
+    whatItMeans: "Properties that derive their value from other properties use computed property syntax (`var x: Type { return ... }`) instead of getter methods (`func getX() -> Type`).",
+    whyItMatters: "Swift's computed properties are more idiomatic than getter methods and provide a cleaner API. They also integrate with property wrappers, key paths, and SwiftUI's data flow.",
+    howToVerify: "- Look for `getX()` or `fetchX()` methods that simply compute and return a value\n- Check that they don't have side effects or expensive operations (which would be better as methods)\n- Verify computed properties are O(1) or clearly documented if expensive",
+    exampleComment: "The `getFullName()` method could be a computed property `fullName` — it's a pure derivation from `firstName` and `lastName` with no side effects.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "struct User {\n    let firstName: String\n    let lastName: String\n    \n    func getFullName() -> String {\n        return \"\\(firstName) \\(lastName)\"\n    }\n}" },
+      { label: "Good", language: "swift", code: "struct User {\n    let firstName: String\n    let lastName: String\n    \n    var fullName: String {\n        \"\\(firstName) \\(lastName)\"\n    }\n}" }
+    ],
+    keyTakeaway: "Use computed properties for derived values — reserve methods for operations with side effects or significant cost.",
+    references: []
+  },
+  "swift-objc.swift-language-style.swift-patterns.are-extensions-used-to-organize-code-by-protocol-conformance": {
+    whatItMeans: "Extensions are used to separate protocol conformance implementations into distinct blocks, organizing a type's code by concern rather than having everything in one large declaration.",
+    whyItMatters: "Organizing conformances in extensions makes large types more navigable. You can quickly find all methods related to a specific protocol by looking at its extension block.",
+    howToVerify: "- Check if protocol conformance methods are grouped in extensions\n- Look for large type declarations that could benefit from extension-based organization\n- Verify each extension has a `// MARK:` comment identifying the conformance",
+    exampleComment: "The `UITableViewDataSource` methods are mixed into the main class body. Could we move them into an extension with a `// MARK: - UITableViewDataSource` header for better organization?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ProfileVC: UIViewController, UITableViewDataSource, UITableViewDelegate {\n    // 500 lines of everything mixed together\n    func viewDidLoad() { ... }\n    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { ... }\n    func setupUI() { ... }\n    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell { ... }\n}" },
+      { label: "Good", language: "swift", code: "class ProfileVC: UIViewController {\n    override func viewDidLoad() { ... }\n    private func setupUI() { ... }\n}\n\n// MARK: - UITableViewDataSource\nextension ProfileVC: UITableViewDataSource {\n    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int { ... }\n    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell { ... }\n}\n\n// MARK: - UITableViewDelegate\nextension ProfileVC: UITableViewDelegate { ... }" }
+    ],
+    keyTakeaway: "Use extensions to organize protocol conformances — one extension per protocol with a MARK comment.",
+    references: []
+  },
+  "swift-objc.swift-language-style.swift-patterns.are-access-modifiers-private-fileprivate-internal-public-open-used-correctly": {
+    whatItMeans: "Access control modifiers are applied intentionally: `private` for implementation details, `internal` (default) for module-internal use, `public` for the module's API, and `open` when subclassing is intended.",
+    whyItMatters: "Proper access control enforces encapsulation, reduces API surface area, and prevents external code from depending on implementation details. It also enables compiler optimizations for `private` and `fileprivate`.",
+    howToVerify: "- Check that helper methods and properties are `private` if only used within the type\n- Verify `public` is only applied to intentional API surfaces\n- Look for missing access modifiers on types that should be `public` in library/framework code",
+    exampleComment: "The `parseResponse()` helper is only called within this class. Marking it `private` would prevent other types from accidentally depending on it.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class NetworkClient {\n    var session: URLSession  // exposed by default (internal)\n    func parseResponse(_ data: Data) { }  // internal, but only used here\n    func makeRequest() { }  // the actual API\n}" },
+      { label: "Good", language: "swift", code: "class NetworkClient {\n    private let session: URLSession\n    \n    private func parseResponse(_ data: Data) { }\n    \n    public func makeRequest() { }\n}" }
+    ],
+    keyTakeaway: "Start with the most restrictive access level (`private`) and only widen when there's a clear need.",
+    references: [
+      { title: "Swift Access Control", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol/" }
+    ]
+  },
+  "swift-objc.swift-language-style.swift-patterns.is-discardableresult-used-when-function-return-values-are-intentionally-ignorabl": {
+    whatItMeans: "Functions whose return values can reasonably be ignored are annotated with `@discardableResult`, while functions whose return values should always be used generate a compiler warning when ignored.",
+    whyItMatters: "By default, Swift warns when a function's return value is unused. `@discardableResult` suppresses this for functions where ignoring the result is a valid use case, while keeping the warning for functions where the result matters.",
+    howToVerify: "- Check for `@discardableResult` annotations and verify they're appropriate\n- Look for `_ =` assignments that suppress compiler warnings — the function might need `@discardableResult`\n- Verify functions that return important values (errors, success status) are NOT marked `@discardableResult`",
+    exampleComment: "The `save()` method returns a `Bool` indicating success, which callers should check. Removing `@discardableResult` would warn callers who accidentally ignore the result.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "@discardableResult\nfunc save() -> Bool {  // callers should check this!\n    return storage.write(data)\n}\n\n// Elsewhere:\nsave()  // silently ignored — bug if save fails" },
+      { label: "Good", language: "swift", code: "// Result matters — no @discardableResult\nfunc save() throws {\n    try storage.write(data)\n}\n\n// Result is genuinely optional\n@discardableResult\nfunc addItem(_ item: Item) -> Int {\n    items.append(item)\n    return items.count  // sometimes useful, but not required\n}" }
+    ],
+    keyTakeaway: "Use `@discardableResult` only when ignoring the return value is a valid use case — not to silence warnings.",
+    references: []
+  },
+
+  // ============================================
+  // Swift Language Style — Collections & Functional Patterns (4 items)
+  // ============================================
+  "swift-objc.swift-language-style.collections-functional-patterns.are-higher-order-functions-map-filter-reduce-compactmap-used-where-clearer-than-": {
+    whatItMeans: "Higher-order functions like `map`, `filter`, `reduce`, and `compactMap` are used when they make the intent clearer than equivalent `for` loops, but not when they hurt readability.",
+    whyItMatters: "Functional transforms express intent declaratively — `names.filter { $0.isActive }` instantly communicates 'get active names.' But chaining too many transforms or using them for side effects obscures intent.",
+    howToVerify: "- Check that functional transforms are used for simple, pure transformations\n- Verify `for` loops are used when the operation has side effects or complex logic\n- Look for deeply chained transforms that could be clearer as a loop",
+    exampleComment: "This chain of `map`, `filter`, `flatMap`, `compactMap` is hard to follow. Could we break it into named intermediate steps or use a `for` loop for clarity?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Over-chained — hard to follow\nlet result = data.map { $0.items }.flatMap { $0 }.filter { $0.isValid }.compactMap { $0.transform() }.reduce(0) { $0 + $1.value }" },
+      { label: "Good", language: "swift", code: "// Clear functional transform\nlet activeNames = users.filter { $0.isActive }.map { $0.name }\n\n// Complex logic — loop is clearer\nvar result = 0\nfor item in data.flatMap({ $0.items }) where item.isValid {\n    if let transformed = item.transform() {\n        result += transformed.value\n    }\n}" }
+    ],
+    keyTakeaway: "Use functional transforms for simple, declarative operations — switch to loops when logic gets complex.",
+    references: []
+  },
+  "swift-objc.swift-language-style.collections-functional-patterns.is-compactmap-used-instead-of-map-filter-0-nil-for-optional-unwrapping": {
+    whatItMeans: "`compactMap` is used to transform and unwrap optionals in one step, instead of the less efficient `map { }.filter { $0 != nil }.map { $0! }` pattern.",
+    whyItMatters: "`compactMap` is purpose-built for this operation — it's more concise, eliminates force-unwrapping, and makes the intent clear: 'transform and keep only non-nil results.'",
+    howToVerify: "- Search for `.filter { $0 != nil }` or `.map { $0! }` patterns\n- Check for `flatMap` used for optional unwrapping (deprecated in favor of `compactMap`)\n- Verify `compactMap` is used when both transforming and filtering nils",
+    exampleComment: "This `map + filter + force-unwrap` chain can be simplified to a single `compactMap` — it's cleaner and eliminates the force unwrap.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let urls = strings\n    .map { URL(string: $0) }      // [URL?]\n    .filter { $0 != nil }          // [URL?] still optional\n    .map { $0! }                   // [URL] force unwrap" },
+      { label: "Good", language: "swift", code: "let urls = strings.compactMap { URL(string: $0) }  // [URL]" }
+    ],
+    keyTakeaway: "Use `compactMap` to transform and unwrap optionals in one step — no force unwrapping needed.",
+    references: []
+  },
+  "swift-objc.swift-language-style.collections-functional-patterns.are-set-and-dictionary-used-instead-of-arrays-for-lookup-heavy-operations": {
+    whatItMeans: "When code frequently checks membership or looks up values by key, `Set` or `Dictionary` are used instead of `Array` to get O(1) lookups instead of O(n).",
+    whyItMatters: "Searching an array with `contains` or `first(where:)` is O(n). For collections that are searched frequently, converting to a Set or Dictionary provides O(1) lookups, which can be a massive performance win.",
+    howToVerify: "- Look for `array.contains()` or `array.first(where:)` in loops or hot paths\n- Check if collections used for lookups could be Sets or Dictionaries\n- Verify Set is used when order doesn't matter and elements are Hashable",
+    exampleComment: "This `blockedUserIds.contains(id)` is called in a loop for every message. Since `blockedUserIds` is an Array, each check is O(n). Converting to a `Set` would make it O(1).",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let blockedIds: [String] = loadBlockedIds()\n\n// O(n) lookup for each message — O(n*m) total\nlet filtered = messages.filter { !blockedIds.contains($0.senderId) }" },
+      { label: "Good", language: "swift", code: "let blockedIds: Set<String> = Set(loadBlockedIds())\n\n// O(1) lookup for each message — O(m) total\nlet filtered = messages.filter { !blockedIds.contains($0.senderId) }" }
+    ],
+    keyTakeaway: "Use Set for membership checks and Dictionary for key-based lookups — Array.contains() is O(n).",
+    references: []
+  },
+  "swift-objc.swift-language-style.collections-functional-patterns.is-reduce-avoided-when-it-hurts-readability": {
+    whatItMeans: "`reduce` is used only for simple accumulations (sums, counts, building strings). Complex or multi-step logic in `reduce` closures is refactored into clearer `for` loops.",
+    whyItMatters: "While `reduce` is powerful, complex reduce closures are notoriously hard to read and debug. A `for` loop with named variables is often dramatically clearer for non-trivial accumulations.",
+    howToVerify: "- Check `reduce` closures for length — more than 2-3 lines is a code smell\n- Verify the accumulation logic is simple (sum, concatenation, counting)\n- Look for `reduce(into:)` usage for better performance with value types",
+    exampleComment: "This `reduce` closure builds a complex nested dictionary over 15 lines. A `for` loop with named intermediate variables would be much easier to understand and debug.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Complex reduce — hard to follow\nlet grouped = items.reduce(into: [String: [String: [Item]]]()) { result, item in\n    var category = result[item.category] ?? [:]\n    var subcategory = category[item.subcategory] ?? []\n    subcategory.append(item)\n    category[item.subcategory] = subcategory\n    result[item.category] = category\n}" },
+      { label: "Good", language: "swift", code: "// Simple reduce — clear and appropriate\nlet total = prices.reduce(0, +)\n\n// Complex logic — loop is clearer\nvar grouped = [String: [String: [Item]]]()\nfor item in items {\n    grouped[item.category, default: [:]][item.subcategory, default: []].append(item)\n}" }
+    ],
+    keyTakeaway: "Keep `reduce` simple — if the closure exceeds 2-3 lines, a `for` loop is probably clearer.",
+    references: []
+  },
+
+  // ============================================
+  // Objective-C Interop & Legacy (8 items)
+  // ============================================
+  "swift-objc.objective-c-interop-legacy.are-objc-annotations-used-only-where-objective-c-interop-is-required": {
+    whatItMeans: "`@objc` annotations are applied only to methods, properties, and classes that need to be visible to the Objective-C runtime — not applied broadly or unnecessarily.",
+    whyItMatters: "Unnecessary `@objc` annotations expose Swift code to the Objective-C runtime, increasing binary size, slowing method dispatch, and preventing Swift-only optimizations. They should be used intentionally.",
+    howToVerify: "- Check that `@objc` is only on methods used by selectors, KVO, Interface Builder, or Objective-C code\n- Look for `@objcMembers` on classes — it exposes all members, which is usually too broad\n- Verify `@objc` isn't used just to suppress compiler errors (which may indicate a design issue)",
+    exampleComment: "This class uses `@objcMembers` but only one method needs `@objc` for the selector. Could we remove `@objcMembers` and add `@objc` only to `handleTap()`?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "@objcMembers  // exposes everything to ObjC\nclass ProfileManager {\n    var name: String = \"\"\n    func updateProfile() { }\n    func handleTap() { }  // only this needs @objc\n}" },
+      { label: "Good", language: "swift", code: "class ProfileManager {\n    var name: String = \"\"\n    func updateProfile() { }\n    \n    @objc func handleTap() { }  // only this needs ObjC visibility\n}" }
+    ],
+    keyTakeaway: "Apply `@objc` surgically — only where Objective-C interop is actually needed.",
+    references: []
+  },
+  "swift-objc.objective-c-interop-legacy.are-nullability-annotations-nullable-nonnull-nsassumenonnullbegin-used-in-objc-h": {
+    whatItMeans: "Objective-C header files use nullability annotations (`nullable`, `nonnull`, `NS_ASSUME_NONNULL_BEGIN/END`) to specify which pointers can be nil, enabling better Swift interop.",
+    whyItMatters: "Without nullability annotations, all Objective-C pointers import into Swift as implicitly unwrapped optionals (`Type!`), losing type safety. Annotations make the Swift interface use proper optionals or non-optionals.",
+    howToVerify: "- Check Objective-C headers for `NS_ASSUME_NONNULL_BEGIN`/`END` wrapping\n- Verify nullable parameters and return values are marked `nullable`\n- Look at the Swift-generated interface to confirm optionality is correct",
+    exampleComment: "This header is missing nullability annotations, so all properties import as implicitly unwrapped optionals in Swift. Adding `NS_ASSUME_NONNULL_BEGIN` and marking nullable params would improve the Swift API.",
+    codeExamples: [
+      { label: "Bad", language: "objectivec", code: "// No nullability — everything becomes Type! in Swift\n@interface UserService : NSObject\n- (User *)fetchUser:(NSString *)userId;\n- (void)saveUser:(User *)user completion:(void (^)(NSError *))completion;\n@end" },
+      { label: "Good", language: "objectivec", code: "NS_ASSUME_NONNULL_BEGIN\n\n@interface UserService : NSObject\n- (nullable User *)fetchUser:(NSString *)userId;\n- (void)saveUser:(User *)user completion:(void (^)(nullable NSError *))completion;\n@end\n\nNS_ASSUME_NONNULL_END" }
+    ],
+    keyTakeaway: "Add nullability annotations to all Objective-C headers for proper Swift optional/non-optional bridging.",
+    references: [
+      { title: "Nullability and Objective-C", url: "https://developer.apple.com/swift/blog/?id=25" }
+    ]
+  },
+  "swift-objc.objective-c-interop-legacy.are-objc-bridging-headers-minimal-and-maintained": {
+    whatItMeans: "The Objective-C bridging header only imports what's needed for Swift code to interact with Objective-C, and unused imports are removed to keep it clean.",
+    whyItMatters: "A bloated bridging header increases compile times because every import is processed for every Swift file in the module. It also exposes more of the Objective-C API surface than necessary.",
+    howToVerify: "- Check the bridging header for unused imports\n- Verify each import is actually referenced from Swift code\n- Look for opportunities to use module maps or framework imports instead",
+    exampleComment: "The bridging header imports 15 Objective-C headers but only 3 are referenced from Swift code. Removing the unused imports would improve compile times.",
+    codeExamples: [
+      { label: "Bad", language: "objectivec", code: "// ProjectName-Bridging-Header.h\n#import \"LegacyNetworking.h\"\n#import \"OldDatabase.h\"       // no longer used from Swift\n#import \"DeprecatedUtils.h\"   // no longer used from Swift\n#import \"Analytics.h\"\n#import \"CrashReporter.h\"     // no longer used from Swift" },
+      { label: "Good", language: "objectivec", code: "// ProjectName-Bridging-Header.h\n#import \"LegacyNetworking.h\"  // Used by NetworkMigrationLayer.swift\n#import \"Analytics.h\"          // Used by AnalyticsSwiftWrapper.swift" }
+    ],
+    keyTakeaway: "Keep the bridging header minimal — only import Objective-C headers that Swift code actually uses.",
+    references: []
+  },
+  "swift-objc.objective-c-interop-legacy.are-objc-categoriesextensions-named-to-avoid-method-conflicts": {
+    whatItMeans: "Objective-C categories use prefixed method names (e.g., `abc_customMethod`) to avoid collisions with Apple's private methods or other categories on the same class.",
+    whyItMatters: "Objective-C categories can silently override existing methods, including Apple's private implementations. This causes unpredictable behavior and App Store rejections. Prefixing prevents collisions.",
+    howToVerify: "- Check that category methods use a unique prefix\n- Verify category file names follow the `ClassName+CategoryName` convention\n- Look for generic method names in categories that might conflict with system methods",
+    exampleComment: "The category method `isValid` on `NSString` could conflict with a private Apple method. Could we prefix it as `myapp_isValid` to avoid potential collisions?",
+    codeExamples: [
+      { label: "Bad", language: "objectivec", code: "@interface NSString (Validation)\n- (BOOL)isValid;           // might conflict with private API\n- (NSString *)trimmed;     // generic name — collision risk\n@end" },
+      { label: "Good", language: "objectivec", code: "@interface NSString (MYAPPValidation)\n- (BOOL)myapp_isValid;\n- (NSString *)myapp_trimmed;\n@end" }
+    ],
+    keyTakeaway: "Always prefix Objective-C category methods to avoid silent method collisions.",
+    references: []
+  },
+  "swift-objc.objective-c-interop-legacy.is-arc-automatic-reference-counting-used-correctly-with-no-manual-retainrelease": {
+    whatItMeans: "Code uses ARC (Automatic Reference Counting) and doesn't contain manual `retain`, `release`, or `autorelease` calls. ARC-incompatible patterns like manual memory management are avoided.",
+    whyItMatters: "ARC handles reference counting automatically, and mixing manual memory management creates over-release crashes or leaks. Modern Objective-C code should always use ARC.",
+    howToVerify: "- Search for manual `retain`, `release`, `autorelease` calls\n- Check that `-fno-objc-arc` compiler flag isn't applied to new files\n- Verify `dealloc` doesn't call `[super dealloc]` (ARC does this automatically)",
+    exampleComment: "This file calls `[object release]` manually. Since the project uses ARC, these calls will cause over-release crashes. ARC handles this automatically — just remove the manual calls.",
+    codeExamples: [
+      { label: "Bad", language: "objectivec", code: "- (void)loadData {\n    NSArray *items = [[NSArray alloc] initWithArray:data];\n    [self processItems:items];\n    [items release];  // manual release under ARC = crash\n}\n\n- (void)dealloc {\n    [super dealloc];  // ARC does this automatically\n}" },
+      { label: "Good", language: "objectivec", code: "- (void)loadData {\n    NSArray *items = [[NSArray alloc] initWithArray:data];\n    [self processItems:items];\n    // ARC handles release automatically\n}\n\n- (void)dealloc {\n    // Remove observers/timers; ARC handles [super dealloc]\n    [[NSNotificationCenter defaultCenter] removeObserver:self];\n}" }
+    ],
+    keyTakeaway: "Let ARC manage memory — never use manual retain/release in ARC-enabled code.",
+    references: []
+  },
+  "swift-objc.objective-c-interop-legacy.are-nsenum-and-nsoptions-used-for-enumerations-in-objc": {
+    whatItMeans: "Objective-C enumerations use the `NS_ENUM` and `NS_OPTIONS` macros instead of plain C enums, enabling better type safety and Swift interoperability.",
+    whyItMatters: "`NS_ENUM` creates a proper typed enum that bridges to Swift as a native enum. Plain C enums import as loose integer constants, losing type safety and switch exhaustiveness checking.",
+    howToVerify: "- Check that new enums use `NS_ENUM` for mutually exclusive values\n- Verify `NS_OPTIONS` is used for bitmask/flag enumerations\n- Look for plain `enum` declarations that should be converted",
+    exampleComment: "This plain C enum won't bridge cleanly to Swift. Using `NS_ENUM(NSInteger, UserStatus)` would create a proper Swift enum with exhaustive switching.",
+    codeExamples: [
+      { label: "Bad", language: "objectivec", code: "// Plain C enum — imports as Int constants in Swift\nenum UserStatus {\n    UserStatusActive,\n    UserStatusInactive,\n    UserStatusBanned\n};" },
+      { label: "Good", language: "objectivec", code: "// NS_ENUM — imports as proper Swift enum\ntypedef NS_ENUM(NSInteger, UserStatus) {\n    UserStatusActive,\n    UserStatusInactive,\n    UserStatusBanned\n};\n\n// NS_OPTIONS for bitmask flags\ntypedef NS_OPTIONS(NSUInteger, UserPermissions) {\n    UserPermissionsRead  = 1 << 0,\n    UserPermissionsWrite = 1 << 1,\n    UserPermissionsAdmin = 1 << 2\n};" }
+    ],
+    keyTakeaway: "Use `NS_ENUM` for exclusive enumerations and `NS_OPTIONS` for bitmask flags — they bridge correctly to Swift.",
+    references: []
+  },
+  "swift-objc.objective-c-interop-legacy.are-instancetype-return-types-used-instead-of-id-for-init-and-factory-methods": {
+    whatItMeans: "Objective-C init and factory methods return `instancetype` instead of `id`, enabling the compiler to infer the correct return type and catch type errors.",
+    whyItMatters: "`instancetype` tells the compiler the return type matches the receiver's class, enabling type checking that `id` completely bypasses. This catches bugs at compile time rather than runtime.",
+    howToVerify: "- Check that `init` methods return `instancetype`\n- Verify factory methods (e.g., `+ (instancetype)managerWithConfig:`) use `instancetype`\n- Look for methods returning `id` that should return `instancetype`",
+    exampleComment: "This factory method returns `id`, which loses type information. Returning `instancetype` would enable the compiler to catch type mismatches.",
+    codeExamples: [
+      { label: "Bad", language: "objectivec", code: "@interface UserManager : NSObject\n+ (id)sharedManager;  // returns id — no type checking\n+ (id)managerWithConfig:(Config *)config;\n@end" },
+      { label: "Good", language: "objectivec", code: "@interface UserManager : NSObject\n+ (instancetype)sharedManager;\n+ (instancetype)managerWithConfig:(Config *)config;\n@end" }
+    ],
+    keyTakeaway: "Use `instancetype` instead of `id` for init and factory methods to enable compile-time type checking.",
+    references: []
+  },
+  "swift-objc.objective-c-interop-legacy.is-property-memory-semantics-correct-strong-weak-copy-assign": {
+    whatItMeans: "Objective-C property attributes (`strong`, `weak`, `copy`, `assign`) are chosen correctly based on ownership and mutability semantics.",
+    whyItMatters: "Wrong memory semantics cause crashes or leaks: a `strong` delegate creates retain cycles, `assign` for objects causes dangling pointer crashes, and missing `copy` on `NSString` allows mutation through the original reference.",
+    howToVerify: "- Verify delegates are `weak` to prevent retain cycles\n- Check `NSString` and `NSArray` properties use `copy` (prevents mutation through original mutable reference)\n- Confirm block properties use `copy`\n- Verify `assign` is only used for primitive types (NSInteger, BOOL, CGFloat)",
+    exampleComment: "This `NSString` property uses `strong` instead of `copy`. If someone passes an `NSMutableString`, they could mutate it after assignment. Using `copy` prevents this.",
+    codeExamples: [
+      { label: "Bad", language: "objectivec", code: "@property (nonatomic, strong) id<UserDelegate> delegate;  // retain cycle\n@property (nonatomic, strong) NSString *name;  // mutable mutation risk\n@property (nonatomic, assign) NSObject *parent;  // dangling pointer" },
+      { label: "Good", language: "objectivec", code: "@property (nonatomic, weak) id<UserDelegate> delegate;  // no retain cycle\n@property (nonatomic, copy) NSString *name;  // safe from mutation\n@property (nonatomic, strong) NSObject *parent;  // proper ownership\n@property (nonatomic, assign) NSInteger count;  // primitive — assign is correct" }
+    ],
+    keyTakeaway: "Use `weak` for delegates, `copy` for value-semantic types (NSString, NSArray, blocks), `strong` for owned objects, `assign` for primitives.",
+    references: []
+  },
+
+  // ============================================
+  // Memory Management (6 items)
+  // ============================================
+  "swift-objc.memory-management.are-retain-cycles-prevented-weak-references-in-closures-delegate-patterns": {
+    whatItMeans: "Object graphs don't form strong reference cycles. Closures use `[weak self]`, delegates are declared `weak`, and parent-child relationships use weak back-references.",
+    whyItMatters: "Retain cycles are the most common memory leak in Swift/ObjC. When two objects hold strong references to each other, neither can be deallocated, causing memory to grow indefinitely.",
+    howToVerify: "- Check closures stored as properties for `[weak self]` captures\n- Verify delegate properties are `weak`\n- Look for parent-child relationships where the child holds a strong ref to parent\n- Run Instruments Leaks on suspicious flows",
+    exampleComment: "The `onComplete` closure captures `self` strongly and is stored on `self.viewModel`, creating a retain cycle. Adding `[weak self]` would break the cycle.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class Parent {\n    var child: Child?\n}\n\nclass Child {\n    var parent: Parent  // strong ref back → retain cycle\n}" },
+      { label: "Good", language: "swift", code: "class Parent {\n    var child: Child?\n}\n\nclass Child {\n    weak var parent: Parent?  // weak ref back → no cycle\n}" }
+    ],
+    keyTakeaway: "Break retain cycles with `weak` references — delegates, parent back-references, and closure captures are the usual suspects.",
+    references: [
+      { title: "ARC — Strong Reference Cycles", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/automaticreferencecounting/#Strong-Reference-Cycles-Between-Class-Instances" }
+    ]
+  },
+  "swift-objc.memory-management.are-delegates-declared-as-weak-to-prevent-retain-cycles": {
+    whatItMeans: "Delegate properties are declared as `weak var` to avoid retain cycles between the delegating object and its delegate (typically a view controller that owns the delegating object).",
+    whyItMatters: "A strong delegate reference creates a retain cycle: the owner holds the delegating object strongly, and the delegating object holds the owner (delegate) strongly. Neither can be deallocated.",
+    howToVerify: "- Check that all delegate properties are `weak var`\n- Verify the delegate protocol is `AnyObject` or class-bound (required for `weak`)\n- Look for protocol declarations missing `: AnyObject` constraint",
+    exampleComment: "This `delegate` property isn't `weak`, which will create a retain cycle with the owning view controller. Could we make it `weak var delegate: ProfileDelegate?`?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "protocol ProfileDelegate {\n    func didUpdate()\n}\n\nclass ProfileManager {\n    var delegate: ProfileDelegate?  // strong — retain cycle!\n}" },
+      { label: "Good", language: "swift", code: "protocol ProfileDelegate: AnyObject {\n    func didUpdate()\n}\n\nclass ProfileManager {\n    weak var delegate: ProfileDelegate?\n}" }
+    ],
+    keyTakeaway: "Always declare delegate properties as `weak` and constrain the protocol to `AnyObject`.",
+    references: []
+  },
+  "swift-objc.memory-management.is-autoreleasepool-used-for-memory-intensive-loops": {
+    whatItMeans: "`autoreleasepool` blocks wrap iterations in loops that create many temporary objects, allowing those objects to be released at the end of each iteration instead of accumulating.",
+    whyItMatters: "In tight loops creating temporary objects (image processing, file parsing, data transformation), objects pile up in memory until the pool drains at the end of the run loop. Wrapping iterations in `autoreleasepool` keeps peak memory low.",
+    howToVerify: "- Look for loops processing large datasets (images, files, records)\n- Check if temporary objects accumulate during iteration\n- Verify `autoreleasepool` wraps the loop body, not the entire loop",
+    exampleComment: "This loop processes 10,000 images without an autoreleasepool. Each iteration's temporary objects accumulate until the loop ends, spiking memory. Wrapping the body in `autoreleasepool` would keep memory stable.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "for path in imagePaths {  // 10,000 images\n    let data = try Data(contentsOf: path)\n    let image = UIImage(data: data)\n    let thumbnail = image?.resized(to: thumbnailSize)\n    // All temporaries accumulate in memory\n}" },
+      { label: "Good", language: "swift", code: "for path in imagePaths {\n    autoreleasepool {\n        let data = try Data(contentsOf: path)\n        let image = UIImage(data: data)\n        let thumbnail = image?.resized(to: thumbnailSize)\n        // Temporaries released each iteration\n    }\n}" }
+    ],
+    keyTakeaway: "Wrap memory-intensive loop bodies in `autoreleasepool` to release temporary objects each iteration.",
+    references: []
+  },
+  "swift-objc.memory-management.are-large-resources-images-data-released-when-no-longer-needed": {
+    whatItMeans: "Large objects like images, data buffers, and caches are explicitly released (set to nil or removed from collections) when they're no longer needed, not held indefinitely.",
+    whyItMatters: "iOS has strict memory limits and will terminate apps that exceed them. Holding large resources longer than needed leads to memory warnings and termination, especially on older devices.",
+    howToVerify: "- Check that image caches have size limits and eviction policies\n- Verify large data buffers are nil'd after processing\n- Look for `didReceiveMemoryWarning` or notification handlers that clear caches\n- Check view controllers release resources in `viewDidDisappear` if appropriate",
+    exampleComment: "This full-resolution image is kept in memory even after being displayed as a thumbnail. Could we release the full image after generating the thumbnail?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class GalleryVC: UIViewController {\n    var fullImages: [UIImage] = []  // all full-res images in memory\n    \n    func loadGallery() {\n        for url in imageURLs {\n            fullImages.append(UIImage(contentsOfFile: url.path)!)\n        }\n    }\n}" },
+      { label: "Good", language: "swift", code: "class GalleryVC: UIViewController {\n    private let imageCache = NSCache<NSString, UIImage>()\n    \n    init() {\n        super.init(nibName: nil, bundle: nil)\n        imageCache.countLimit = 20\n        imageCache.totalCostLimit = 50 * 1024 * 1024  // 50MB\n    }\n    \n    override func didReceiveMemoryWarning() {\n        super.didReceiveMemoryWarning()\n        imageCache.removeAllObjects()\n    }\n}" }
+    ],
+    keyTakeaway: "Release large resources proactively — use caches with limits and respond to memory warnings.",
+    references: []
+  },
+  "swift-objc.memory-management.are-instruments-leaks-allocations-findings-addressed": {
+    whatItMeans: "Memory issues identified by Xcode Instruments (Leaks, Allocations, Memory Graph Debugger) are investigated and resolved before the PR is merged.",
+    whyItMatters: "Instruments provides concrete evidence of memory problems. Ignoring leak warnings leads to growing memory usage, degraded performance, and eventual app termination by the OS.",
+    howToVerify: "- Ask if Instruments was run on the changed code paths\n- Check for known leak patterns (retain cycles, observer registration without removal)\n- Verify the Memory Graph Debugger shows no unexpected object retention",
+    exampleComment: "Have we profiled this with Instruments Leaks? The closure-based notification pattern here looks like it could create a retain cycle that Instruments would catch.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Registered but never removed → observer leaks\nNotificationCenter.default.addObserver(\n    forName: .userDidUpdate, object: nil, queue: .main\n) { notification in\n    self.refresh()  // strong capture + never removed = leak\n}" },
+      { label: "Good", language: "swift", code: "private var observers: [Any] = []\n\nfunc setupObservers() {\n    let token = NotificationCenter.default.addObserver(\n        forName: .userDidUpdate, object: nil, queue: .main\n    ) { [weak self] _ in\n        self?.refresh()\n    }\n    observers.append(token)\n}\n\ndeinit {\n    observers.forEach { NotificationCenter.default.removeObserver($0) }\n}" }
+    ],
+    keyTakeaway: "Profile with Instruments before merging memory-sensitive code — fix all leaks and unbounded growth.",
+    references: [
+      { title: "Instruments — Finding Memory Leaks", url: "https://developer.apple.com/documentation/xcode/gathering-information-about-memory-use" }
+    ]
+  },
+  "swift-objc.memory-management.is-deinit-implemented-to-clean-up-observations-timers-and-subscriptions": {
+    whatItMeans: "`deinit` is implemented in classes that register for notifications, create timers, or hold subscriptions, to ensure these are cleaned up when the object is deallocated.",
+    whyItMatters: "Leaked timers continue firing after their owner is deallocated, notifications are delivered to stale objects causing crashes, and Combine subscriptions hold strong references preventing deallocation.",
+    howToVerify: "- Check for `NotificationCenter.addObserver` without corresponding removal in `deinit`\n- Look for `Timer.scheduledTimer` without `invalidate()` in `deinit`\n- Verify Combine subscriptions use `store(in: &cancellables)` with cancellables cleared in `deinit`",
+    exampleComment: "This view controller registers for `UIKeyboardWillShow` but never removes the observer. Adding a `deinit` that calls `NotificationCenter.removeObserver(self)` would prevent crashes after deallocation.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ChatVC: UIViewController {\n    var timer: Timer?\n    \n    override func viewDidLoad() {\n        super.viewDidLoad()\n        timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in\n            self.pollMessages()  // timer keeps self alive forever\n        }\n    }\n    // No deinit — timer never invalidated\n}" },
+      { label: "Good", language: "swift", code: "class ChatVC: UIViewController {\n    private var timer: Timer?\n    \n    override func viewDidLoad() {\n        super.viewDidLoad()\n        timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in\n            self?.pollMessages()\n        }\n    }\n    \n    deinit {\n        timer?.invalidate()\n    }\n}" }
+    ],
+    keyTakeaway: "Implement `deinit` to clean up timers, observers, and subscriptions — prevent leaks and crashes.",
+    references: []
+  },
+
+  // ============================================
+  // Concurrency (8 items)
+  // ============================================
+  "swift-objc.concurrency.are-swift-concurrency-features-asyncawait-actors-used-instead-of-gcd-where-avail": {
+    whatItMeans: "New code uses Swift's structured concurrency (async/await, actors, task groups) instead of Grand Central Dispatch (GCD) completion handlers, where the deployment target supports it.",
+    whyItMatters: "Swift concurrency is safer, more readable, and compiler-checked. It eliminates callback hell, prevents data races with actors, and enables structured cancellation — all of which are error-prone with GCD.",
+    howToVerify: "- Check if new async code uses `async/await` instead of `DispatchQueue` + completion handlers\n- Verify the deployment target supports Swift concurrency (iOS 13+ with back-deployment, iOS 15+ native)\n- Look for opportunities to convert completion handler APIs to async wrappers",
+    exampleComment: "Since we target iOS 15+, this GCD-based fetch could use async/await. It would eliminate the completion handler nesting and make error handling linear.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func fetchUser(id: String, completion: @escaping (Result<User, Error>) -> Void) {\n    DispatchQueue.global().async {\n        let data = try? self.network.fetch(id)\n        DispatchQueue.main.async {\n            if let data = data {\n                completion(.success(User(data: data)))\n            } else {\n                completion(.failure(FetchError.failed))\n            }\n        }\n    }\n}" },
+      { label: "Good", language: "swift", code: "func fetchUser(id: String) async throws -> User {\n    let data = try await network.fetch(id)\n    return User(data: data)\n}" }
+    ],
+    keyTakeaway: "Prefer async/await over GCD for new code — it's safer, cleaner, and compiler-verified.",
+    references: [
+      { title: "Swift Concurrency", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/" }
+    ]
+  },
+  "swift-objc.concurrency.is-mainactor-used-for-ui-related-code": {
+    whatItMeans: "UI-related classes and methods are annotated with `@MainActor` to ensure they always run on the main thread, preventing UI updates from background threads.",
+    whyItMatters: "UIKit and SwiftUI require all UI updates on the main thread. Without `@MainActor`, async code might update UI from a background thread, causing crashes, visual glitches, or undefined behavior.",
+    howToVerify: "- Check that view models and UI-updating code are marked `@MainActor`\n- Verify `@MainActor` is on the class/struct level or individual methods as appropriate\n- Look for `DispatchQueue.main.async` that could be replaced with `@MainActor`",
+    exampleComment: "This view model updates `@Published` properties from an async context without `@MainActor`. SwiftUI will crash or behave unpredictably. Adding `@MainActor` to the class ensures all updates happen on the main thread.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ProfileViewModel: ObservableObject {\n    @Published var user: User?\n    \n    func load() async {\n        let user = try? await api.fetchUser()\n        self.user = user  // might be on background thread!\n    }\n}" },
+      { label: "Good", language: "swift", code: "@MainActor\nclass ProfileViewModel: ObservableObject {\n    @Published var user: User?\n    \n    func load() async {\n        let user = try? await api.fetchUser()\n        self.user = user  // guaranteed main thread\n    }\n}" }
+    ],
+    keyTakeaway: "Use `@MainActor` on view models and UI code to guarantee main-thread execution.",
+    references: [
+      { title: "MainActor", url: "https://developer.apple.com/documentation/swift/mainactor" }
+    ]
+  },
+  "swift-objc.concurrency.are-data-races-prevented-actors-locks-serial-queues": {
+    whatItMeans: "Shared mutable state is protected from concurrent access using actors, locks, or serial dispatch queues. Multiple threads don't read and write the same data simultaneously.",
+    whyItMatters: "Data races cause crashes, corrupted data, and impossible-to-reproduce bugs. They're one of the hardest bug categories to diagnose and fix, making prevention essential.",
+    howToVerify: "- Check for mutable properties accessed from multiple threads without synchronization\n- Verify actors are used for shared state in async contexts\n- Look for `var` properties on classes accessed concurrently without locks",
+    exampleComment: "This `cache` dictionary is accessed from multiple async tasks without synchronization. Wrapping it in an actor would prevent data races.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ImageCache {\n    var cache: [String: UIImage] = [:]  // accessed from multiple threads\n    \n    func set(_ image: UIImage, for key: String) {\n        cache[key] = image  // data race!\n    }\n}" },
+      { label: "Good", language: "swift", code: "actor ImageCache {\n    private var cache: [String: UIImage] = [:]\n    \n    func set(_ image: UIImage, for key: String) {\n        cache[key] = image  // actor-isolated — safe\n    }\n    \n    func get(_ key: String) -> UIImage? {\n        cache[key]\n    }\n}" }
+    ],
+    keyTakeaway: "Use actors to protect shared mutable state — they make data races a compile-time error.",
+    references: [
+      { title: "Swift Actors", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/#Actors" }
+    ]
+  },
+  "swift-objc.concurrency.are-task-cancellation-and-cooperative-cancellation-handled": {
+    whatItMeans: "Async tasks check for cancellation using `Task.checkCancellation()` or `Task.isCancelled` and clean up appropriately when cancelled, rather than running to completion unnecessarily.",
+    whyItMatters: "Without cancellation handling, tasks continue running even when their results are no longer needed (e.g., user navigated away). This wastes resources and can cause bugs when updating stale state.",
+    howToVerify: "- Check that long-running async operations check `Task.isCancelled`\n- Verify tasks stored as properties are cancelled when no longer needed (e.g., in `deinit` or `onDisappear`)\n- Look for `Task.checkCancellation()` in loops and before expensive operations",
+    exampleComment: "This search task isn't cancelled when the user types a new query, so stale results might arrive after current ones. Storing and cancelling the task would fix this.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class SearchVM: ObservableObject {\n    func search(_ query: String) {\n        Task {\n            let results = try await api.search(query)\n            self.results = results  // stale task might overwrite newer results\n        }\n    }\n}" },
+      { label: "Good", language: "swift", code: "class SearchVM: ObservableObject {\n    private var searchTask: Task<Void, Never>?\n    \n    func search(_ query: String) {\n        searchTask?.cancel()  // cancel previous\n        searchTask = Task {\n            do {\n                try Task.checkCancellation()\n                let results = try await api.search(query)\n                try Task.checkCancellation()  // check before updating\n                self.results = results\n            } catch is CancellationError {\n                // expected — ignore\n            } catch {\n                self.error = error\n            }\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Cancel obsolete tasks and check for cancellation in long-running operations to avoid stale updates.",
+    references: []
+  },
+  "swift-objc.concurrency.is-dispatchqueuemain-used-for-ui-updates-when-not-using-asyncawait": {
+    whatItMeans: "When using GCD (not async/await), UI updates from background operations are dispatched to the main queue with `DispatchQueue.main.async`.",
+    whyItMatters: "UIKit is not thread-safe. Updating UI from background threads causes visual glitches, crashes, and undefined behavior. The main queue is the only safe place for UI operations.",
+    howToVerify: "- Check completion handlers called from background queues for UI updates\n- Verify `DispatchQueue.main.async` wraps any UI changes in callbacks\n- Look for URLSession completion handlers (which run on background threads by default)",
+    exampleComment: "This URLSession completion handler updates `self.label.text` directly, but URLSession callbacks run on a background thread. Wrapping the UI update in `DispatchQueue.main.async` would fix this.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "URLSession.shared.dataTask(with: url) { data, _, error in\n    let name = String(data: data!, encoding: .utf8)\n    self.nameLabel.text = name  // background thread — crash risk!\n}.resume()" },
+      { label: "Good", language: "swift", code: "URLSession.shared.dataTask(with: url) { data, _, error in\n    guard let data = data, let name = String(data: data, encoding: .utf8) else { return }\n    DispatchQueue.main.async {\n        self.nameLabel.text = name  // safe — main thread\n    }\n}.resume()" }
+    ],
+    keyTakeaway: "Always dispatch UI updates to the main queue when working with GCD and completion handlers.",
+    references: []
+  },
+  "swift-objc.concurrency.are-sendable-conformances-correct-for-types-shared-across-concurrency-domains": {
+    whatItMeans: "Types passed between concurrency domains (across actor boundaries, into tasks) conform to `Sendable` to guarantee they can be safely shared without data races.",
+    whyItMatters: "Swift's `Sendable` protocol is a compile-time guarantee that a type is safe to share across concurrency domains. Non-Sendable types crossing boundaries can cause data races.",
+    howToVerify: "- Check for `Sendable` conformance on types passed to actors or across task boundaries\n- Verify structs with only value-type stored properties conform to `Sendable`\n- Look for `@unchecked Sendable` and verify the thread-safety guarantees are actually met",
+    exampleComment: "This `Config` class is passed into a `Task` but isn't `Sendable`. Since it's a mutable class, concurrent access could cause data races. Could we make it a struct or add proper synchronization?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class Config {  // not Sendable — mutable class\n    var apiURL: String\n    var timeout: Int\n}\n\nfunc startTask(config: Config) {\n    Task {\n        await api.configure(config)  // sharing non-Sendable across boundary\n    }\n}" },
+      { label: "Good", language: "swift", code: "struct Config: Sendable {  // value type — naturally Sendable\n    let apiURL: String\n    let timeout: Int\n}\n\n// Or for classes that need synchronization:\nfinal class Config: @unchecked Sendable {\n    private let lock = NSLock()\n    private var _apiURL: String\n    var apiURL: String {\n        lock.lock(); defer { lock.unlock() }\n        return _apiURL\n    }\n}" }
+    ],
+    keyTakeaway: "Conform to `Sendable` for types shared across concurrency domains — prefer value types for natural Sendability.",
+    references: [
+      { title: "Sendable", url: "https://developer.apple.com/documentation/swift/sendable" }
+    ]
+  },
+  "swift-objc.concurrency.are-completion-handlers-replaced-with-asyncawait-where-swift-concurrency-is-avai": {
+    whatItMeans: "Legacy completion-handler APIs are wrapped with async/await interfaces using `withCheckedContinuation` or `withCheckedThrowingContinuation`, providing a modern async API.",
+    whyItMatters: "Completion handlers lead to nested callbacks, forgotten completions, and error handling spread across closures. Async wrappers provide linear, readable, try/catch-based flow.",
+    howToVerify: "- Check for new completion-handler APIs that could be async instead\n- Verify continuations are resumed exactly once (not zero or multiple times)\n- Look for existing completion-handler APIs that have async equivalents in newer SDKs",
+    exampleComment: "Since we support iOS 15+, we can use `URLSession.data(from:)` directly instead of wrapping `dataTask` in a continuation. Apple provides async versions of most system APIs.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Using old completion-handler API in new code\nfunc fetchData(completion: @escaping (Data?) -> Void) {\n    URLSession.shared.dataTask(with: url) { data, _, _ in\n        completion(data)\n    }.resume()\n}" },
+      { label: "Good", language: "swift", code: "// Async wrapper for legacy API\nfunc fetchData() async throws -> Data {\n    try await withCheckedThrowingContinuation { continuation in\n        legacyFetch { result in\n            switch result {\n            case .success(let data):\n                continuation.resume(returning: data)\n            case .failure(let error):\n                continuation.resume(throwing: error)\n            }\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Wrap legacy completion handlers with `withCheckedContinuation` to provide clean async/await interfaces.",
+    references: [
+      { title: "withCheckedContinuation", url: "https://developer.apple.com/documentation/swift/withcheckedcontinuation(function:_:)" }
+    ]
+  },
+  "swift-objc.concurrency.is-taskgroup-or-async-let-used-for-concurrent-operations-instead-of-nested-callb": {
+    whatItMeans: "Concurrent operations use `async let` for a fixed number of parallel tasks or `TaskGroup` for a dynamic number, instead of nested completion handlers or manual dispatch groups.",
+    whyItMatters: "`async let` and `TaskGroup` provide structured concurrency with automatic cancellation, error propagation, and clear parent-child relationships. Nested callbacks lack these guarantees.",
+    howToVerify: "- Check for multiple independent async calls that could run concurrently with `async let`\n- Look for loops spawning concurrent tasks that should use `TaskGroup`\n- Verify DispatchGroup usage could be replaced with structured concurrency",
+    exampleComment: "These three sequential network calls are independent and could use `async let` to run concurrently, cutting load time from ~3 seconds to ~1 second.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Sequential — 3x slower than needed\nlet user = try await fetchUser()\nlet posts = try await fetchPosts()\nlet notifications = try await fetchNotifications()" },
+      { label: "Good", language: "swift", code: "// Concurrent with async let\nasync let user = fetchUser()\nasync let posts = fetchPosts()\nasync let notifications = fetchNotifications()\n\nlet (u, p, n) = try await (user, posts, notifications)\n\n// Dynamic concurrency with TaskGroup\nlet images = try await withThrowingTaskGroup(of: UIImage.self) { group in\n    for url in imageURLs {\n        group.addTask { try await downloadImage(url) }\n    }\n    return try await group.reduce(into: []) { $0.append($1) }\n}" }
+    ],
+    keyTakeaway: "Use `async let` for fixed concurrent tasks and `TaskGroup` for dynamic ones — both provide structured concurrency.",
+    references: []
+  },
+
+  // ============================================
+  // UIKit & SwiftUI (10 items)
+  // ============================================
+  "swift-objc.uikit-swiftui.are-view-controllers-not-overly-large-massive-view-controller-anti-pattern": {
+    whatItMeans: "View controllers focus on coordinating the view lifecycle and delegating business logic to separate objects (view models, coordinators, services) rather than containing everything.",
+    whyItMatters: "Massive View Controllers (MVC = Massive View Controller) are the most common iOS anti-pattern. They're hard to test, hard to modify, and tend to grow unboundedly as features are added.",
+    howToVerify: "- Check view controller line count — above 300-400 lines is a warning sign\n- Verify networking, data transformation, and business logic are in separate types\n- Look for table/collection view data source methods doing heavy data processing inline",
+    exampleComment: "This view controller is 800 lines with networking, data parsing, and UI logic all mixed in. Could we extract the networking into a service and the data processing into a view model?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class ProfileVC: UIViewController {\n    // 800 lines: networking, parsing, formatting,\n    // table view data source, animations, navigation...\n    func viewDidLoad() {\n        URLSession.shared.dataTask(with: url) { data, _, _ in\n            let json = try! JSONSerialization.jsonObject(with: data!)\n            // 50 more lines of parsing inline\n        }.resume()\n    }\n}" },
+      { label: "Good", language: "swift", code: "class ProfileVC: UIViewController {\n    private let viewModel: ProfileViewModel\n    \n    override func viewDidLoad() {\n        super.viewDidLoad()\n        bindViewModel()\n    }\n    \n    private func bindViewModel() {\n        viewModel.onUserLoaded = { [weak self] user in\n            self?.updateUI(with: user)\n        }\n        viewModel.loadUser()\n    }\n}" }
+    ],
+    keyTakeaway: "Keep view controllers thin — delegate business logic, networking, and data processing to separate objects.",
+    references: []
+  },
+  "swift-objc.uikit-swiftui.are-state-binding-observedobject-stateobject-used-correctly-in-swiftui": {
+    whatItMeans: "SwiftUI property wrappers (`@State`, `@Binding`, `@ObservedObject`, `@StateObject`, `@EnvironmentObject`) are chosen based on ownership and lifetime semantics.",
+    whyItMatters: "Using the wrong property wrapper causes bugs: `@ObservedObject` for owned state causes recreation on redraws, `@State` for reference types doesn't trigger updates, and `@Binding` without a source of truth creates stale data.",
+    howToVerify: "- Verify `@StateObject` is used for objects the view creates and owns\n- Check `@ObservedObject` is used for objects injected from a parent\n- Confirm `@State` is used for simple value-type view-local state\n- Look for `@Binding` with a matching `@State` source of truth in a parent view",
+    exampleComment: "This view creates the `ViewModel` inline with `@ObservedObject`. This means it's recreated every time the parent redraws. Use `@StateObject` since this view owns the object.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "struct ProfileView: View {\n    // Wrong: recreated on every parent redraw\n    @ObservedObject var viewModel = ProfileViewModel()\n    \n    var body: some View {\n        Text(viewModel.name)\n    }\n}" },
+      { label: "Good", language: "swift", code: "struct ProfileView: View {\n    // Correct: owned by this view, survives redraws\n    @StateObject private var viewModel = ProfileViewModel()\n    \n    var body: some View {\n        Text(viewModel.name)\n    }\n}\n\n// Injected from parent — ObservedObject is correct\nstruct ProfileDetail: View {\n    @ObservedObject var viewModel: ProfileViewModel\n    var body: some View { Text(viewModel.bio) }\n}" }
+    ],
+    keyTakeaway: "Use `@StateObject` for owned objects and `@ObservedObject` for injected ones — never create objects inline with `@ObservedObject`.",
+    references: [
+      { title: "Managing Model Data in Your App", url: "https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app" }
+    ]
+  },
+  "swift-objc.uikit-swiftui.is-stateobject-used-for-owned-objects-and-observedobject-for-injected-ones": {
+    whatItMeans: "`@StateObject` initializes and owns an `ObservableObject`, while `@ObservedObject` receives one from a parent view. The distinction determines the object's lifetime.",
+    whyItMatters: "`@StateObject` persists across view redraws — it's created once and survives. `@ObservedObject` doesn't own the object, so if used to create one, SwiftUI may recreate it on every redraw, losing state.",
+    howToVerify: "- Check that views creating their own ObservableObjects use `@StateObject`\n- Verify views receiving ObservableObjects from parents use `@ObservedObject`\n- Look for `@ObservedObject var vm = ViewModel()` — this is almost always wrong",
+    exampleComment: "This `@ObservedObject var vm = ViewModel()` will be recreated every time the parent redraws. Since this view owns the object, it should be `@StateObject`.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "struct SearchView: View {\n    @ObservedObject var viewModel = SearchViewModel()  // recreated on redraws!\n}" },
+      { label: "Good", language: "swift", code: "struct SearchView: View {\n    @StateObject private var viewModel = SearchViewModel()  // persists\n}\n\nstruct SearchResults: View {\n    @ObservedObject var viewModel: SearchViewModel  // injected, not owned\n}" }
+    ],
+    keyTakeaway: "`@StateObject` = you create it, `@ObservedObject` = someone gives it to you.",
+    references: []
+  },
+  "swift-objc.uikit-swiftui.are-observableobject-publishers-minimal-to-prevent-unnecessary-view-updates": {
+    whatItMeans: "`@Published` properties on `ObservableObject` classes are minimized, and unrelated state is split into separate objects to prevent unnecessary view re-renders.",
+    whyItMatters: "Every `@Published` property change triggers all observing views to re-evaluate their `body`. A view model with 10 `@Published` properties causes re-renders even when only one changes, degrading performance.",
+    howToVerify: "- Count `@Published` properties — more than 5-6 is a warning sign\n- Check if unrelated properties could be split into separate observable objects\n- Verify views only observe the data they actually display",
+    exampleComment: "This view model has 12 `@Published` properties, but the list view only uses `items` and `isLoading`. Splitting into focused view models would prevent the list from re-rendering when unrelated properties change.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class AppViewModel: ObservableObject {\n    @Published var user: User?          // all views re-render\n    @Published var posts: [Post] = []   // when any of these\n    @Published var settings: Settings?  // properties change\n    @Published var notifications: [Note] = []\n}" },
+      { label: "Good", language: "swift", code: "class UserViewModel: ObservableObject {\n    @Published var user: User?\n}\n\nclass PostsViewModel: ObservableObject {\n    @Published var posts: [Post] = []\n    @Published var isLoading = false\n}\n\n// Each view observes only what it needs" }
+    ],
+    keyTakeaway: "Split large ObservableObjects into focused ones — each @Published change triggers re-renders of all observers.",
+    references: []
+  },
+  "swift-objc.uikit-swiftui.is-the-view-hierarchy-structured-to-minimize-unnecessary-swiftui-redraws": {
+    whatItMeans: "The SwiftUI view hierarchy is structured so that state changes only trigger re-evaluation of the minimal set of views, using techniques like extracting subviews and moving state down.",
+    whyItMatters: "SwiftUI re-evaluates a view's `body` whenever its state or observed data changes. If state is held too high in the hierarchy, large portions of the tree re-render unnecessarily.",
+    howToVerify: "- Check that `@State` is placed on the lowest view that needs it\n- Verify complex views are broken into smaller subviews\n- Look for state in parent views that only affects one child",
+    exampleComment: "The `isExpanded` state is on the list view, but it only affects one row. Moving it into the row subview would prevent the entire list from re-rendering on expand/collapse.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "struct ListView: View {\n    @State private var expandedId: String?  // entire list re-renders on change\n    \n    var body: some View {\n        ForEach(items) { item in\n            ItemRow(item: item, isExpanded: expandedId == item.id)\n        }\n    }\n}" },
+      { label: "Good", language: "swift", code: "struct ListView: View {\n    var body: some View {\n        ForEach(items) { item in\n            ItemRow(item: item)  // each row manages its own state\n        }\n    }\n}\n\nstruct ItemRow: View {\n    let item: Item\n    @State private var isExpanded = false  // localized state\n    \n    var body: some View {\n        VStack {\n            Text(item.title)\n                .onTapGesture { isExpanded.toggle() }\n            if isExpanded { Text(item.detail) }\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Push state down to the lowest view that needs it to minimize re-render scope.",
+    references: []
+  },
+  "swift-objc.uikit-swiftui.are-storyboardxib-changes-minimal-and-not-causing-merge-conflicts": {
+    whatItMeans: "Storyboard and XIB file changes are minimal, targeted, and avoid unnecessary diffs caused by Xcode regenerating internal IDs or reordering XML elements.",
+    whyItMatters: "Storyboard/XIB files are XML that Xcode frequently reformats, creating massive diffs that are impossible to review meaningfully and cause constant merge conflicts in team environments.",
+    howToVerify: "- Check the storyboard/XIB diff size — large diffs for small changes indicate Xcode reformatting\n- Verify only the intended views/constraints were changed\n- Look for ID regeneration or element reordering that inflates the diff",
+    exampleComment: "This storyboard diff is 500 lines but you only added one label. It looks like Xcode reformatted the entire file. Could you revert the unrelated changes and only commit the label addition?",
+    codeExamples: [
+      { label: "Bad", language: "xml", code: "<!-- 500-line diff for adding one label -->\n<!-- Xcode reformatted all element ordering and regenerated IDs -->" },
+      { label: "Good", language: "text", code: "Strategies to minimize storyboard conflicts:\n1. Use separate storyboards per feature/flow\n2. Consider programmatic UI or SwiftUI for complex screens\n3. Open storyboard only when editing, close immediately\n4. Use storyboard references for cross-flow navigation" }
+    ],
+    keyTakeaway: "Minimize storyboard diffs — consider programmatic UI or SwiftUI for complex or frequently-changed screens.",
+    references: []
+  },
+  "swift-objc.uikit-swiftui.are-auto-layout-constraints-correct-and-not-causing-ambiguous-layouts": {
+    whatItMeans: "Auto Layout constraints fully define the position and size of every view without conflicts (over-constrained) or ambiguity (under-constrained), and don't generate runtime warnings.",
+    whyItMatters: "Ambiguous layouts cause unpredictable view positioning that varies across devices. Conflicting constraints generate console warnings and force the system to break constraints arbitrarily.",
+    howToVerify: "- Check the console for \"Unable to simultaneously satisfy constraints\" warnings\n- Verify each view has enough constraints to determine x, y, width, and height\n- Look for hardcoded frame values mixed with Auto Layout\n- Test on multiple screen sizes",
+    exampleComment: "This view has horizontal constraints but no vertical positioning — Auto Layout will guess where to place it vertically. Could you add top/bottom constraints?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Ambiguous: no vertical constraints\nlabel.translatesAutoresizingMaskIntoConstraints = false\nNSLayoutConstraint.activate([\n    label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),\n    label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)\n    // missing: top or centerY constraint\n])" },
+      { label: "Good", language: "swift", code: "label.translatesAutoresizingMaskIntoConstraints = false\nNSLayoutConstraint.activate([\n    label.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 12),\n    label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),\n    label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)\n    // height determined by intrinsic content size\n])" }
+    ],
+    keyTakeaway: "Ensure every view has unambiguous, non-conflicting constraints — check the console for Auto Layout warnings.",
+    references: []
+  },
+  "swift-objc.uikit-swiftui.are-custom-views-reusable-and-following-single-responsibility": {
+    whatItMeans: "Custom views handle one responsibility (displaying a specific piece of UI), are configurable via properties, and don't contain business logic or networking.",
+    whyItMatters: "Views that mix display, data fetching, and business logic are impossible to reuse and hard to test. Single-responsibility views can be composed into different screens and tested in isolation.",
+    howToVerify: "- Check that custom views don't make network calls or access databases\n- Verify views are configured via properties/init parameters, not internal data fetching\n- Look for views that could be used in multiple places but are too specialized",
+    exampleComment: "This `UserCard` view fetches user data internally. If it instead received a `User` model via init, it could be reused in the search results, profile, and contacts screens.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class UserCardView: UIView {\n    func configure(userId: String) {\n        // View fetches its own data — not reusable\n        APIClient.shared.fetchUser(userId) { user in\n            self.nameLabel.text = user.name\n        }\n    }\n}" },
+      { label: "Good", language: "swift", code: "class UserCardView: UIView {\n    func configure(with user: User) {\n        nameLabel.text = user.name\n        avatarView.image = user.avatar\n    }\n}\n\n// Or in SwiftUI:\nstruct UserCard: View {\n    let user: User\n    var body: some View {\n        HStack {\n            Avatar(image: user.avatar)\n            Text(user.name)\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Views should display data, not fetch it — pass data in, keep views reusable and testable.",
+    references: []
+  },
+  "swift-objc.uikit-swiftui.is-accessibility-supported-voiceover-labels-dynamic-type-color-contrast": {
+    whatItMeans: "UI components support accessibility features: VoiceOver labels for interactive elements, Dynamic Type for text scaling, and sufficient color contrast ratios.",
+    whyItMatters: "Accessibility is both a legal requirement and a quality standard. Apps that don't support VoiceOver, Dynamic Type, and color contrast exclude users with disabilities and may violate accessibility laws.",
+    howToVerify: "- Check that interactive elements have `accessibilityLabel` set\n- Verify text uses Dynamic Type fonts (preferredFont or @ScaledMetric)\n- Test with VoiceOver enabled\n- Check color contrast ratios meet WCAG AA standards (4.5:1 for text)",
+    exampleComment: "This custom button uses a fixed font size of 14pt, which won't scale with Dynamic Type. Using `.preferredFont(forTextStyle: .body)` or `@ScaledMetric` would make it accessible.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let button = UIButton()\nbutton.setTitle(\"\", for: .normal)  // icon only, no accessibility label\nbutton.titleLabel?.font = UIFont.systemFont(ofSize: 14)  // fixed size" },
+      { label: "Good", language: "swift", code: "let button = UIButton()\nbutton.setTitle(\"\", for: .normal)\nbutton.accessibilityLabel = \"Settings\"\nbutton.titleLabel?.font = UIFont.preferredFont(forTextStyle: .body)\nbutton.titleLabel?.adjustsFontForContentSizeCategory = true\n\n// SwiftUI:\nButton(action: openSettings) {\n    Image(systemName: \"gear\")\n}\n.accessibilityLabel(\"Settings\")\n.font(.body)  // automatically supports Dynamic Type" }
+    ],
+    keyTakeaway: "Add VoiceOver labels, use Dynamic Type fonts, and ensure sufficient contrast — accessibility is a requirement, not a feature.",
+    references: [
+      { title: "Accessibility for Developers", url: "https://developer.apple.com/accessibility/" }
+    ]
+  },
+  "swift-objc.uikit-swiftui.are-images-using-asset-catalogs-with-appropriate-scale-variants": {
+    whatItMeans: "Images are stored in Xcode Asset Catalogs with proper 1x, 2x, and 3x scale variants, and use platform-specific assets where needed (dark mode, device-specific).",
+    whyItMatters: "Asset catalogs optimize app size (app thinning delivers only the relevant scale), provide automatic dark mode support, and ensure crisp images on all device resolutions.",
+    howToVerify: "- Check that new images are added to an asset catalog, not loose in the project\n- Verify all three scale variants (1x, 2x, 3x) are provided\n- Look for hardcoded image paths that should use `UIImage(named:)` or SwiftUI `Image()`",
+    exampleComment: "This image is added as a loose PNG file. Moving it to the asset catalog would enable app thinning, dark mode variants, and proper scaling across devices.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Loose file — no scale variants, no app thinning\nlet image = UIImage(contentsOfFile: Bundle.main.path(forResource: \"icon\", ofType: \"png\")!)" },
+      { label: "Good", language: "swift", code: "// Asset catalog — automatic scale selection and app thinning\nlet image = UIImage(named: \"icon\")\n\n// SwiftUI\nImage(\"icon\")\n    .resizable()\n    .aspectRatio(contentMode: .fit)" }
+    ],
+    keyTakeaway: "Use Asset Catalogs for all images — they enable app thinning, dark mode, and automatic scale selection.",
+    references: []
+  },
+
+  // ============================================
+  // Error Handling (6 items)
+  // ============================================
+  "swift-objc.error-handling.are-errors-modeled-with-swift-error-enums-with-descriptive-cases": {
+    whatItMeans: "Errors are defined as enums conforming to `Error` (or `LocalizedError`) with descriptive cases that carry relevant context, rather than using generic error types or string messages.",
+    whyItMatters: "Typed error enums enable exhaustive `catch` handling, carry structured context (user ID, status code), and provide better debugging information than generic `NSError` or string-based errors.",
+    howToVerify: "- Check that custom errors use `enum: Error` with descriptive cases\n- Verify error cases include associated values for context (e.g., status codes, failed IDs)\n- Look for `NSError` or `Error` used generically where typed errors would be better",
+    exampleComment: "This function throws a generic `NSError` with a string message. Defining a `NetworkError` enum with cases like `.unauthorized`, `.notFound(id:)` would make error handling more precise.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func fetchUser() throws -> User {\n    throw NSError(domain: \"com.app\", code: -1, userInfo: [\n        NSLocalizedDescriptionKey: \"User not found\"\n    ])\n}" },
+      { label: "Good", language: "swift", code: "enum NetworkError: LocalizedError {\n    case unauthorized\n    case notFound(resource: String)\n    case serverError(statusCode: Int)\n    \n    var errorDescription: String? {\n        switch self {\n        case .unauthorized: return \"Authentication required\"\n        case .notFound(let resource): return \"\\(resource) not found\"\n        case .serverError(let code): return \"Server error (\\(code))\"\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Model errors as enums with descriptive cases and associated values — enable precise, exhaustive error handling.",
+    references: [
+      { title: "Error Handling in Swift", url: "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/errorhandling/" }
+    ]
+  },
+  "swift-objc.error-handling.are-do-catch-blocks-handling-specific-error-cases-not-just-generic-catch": {
+    whatItMeans: "`do-catch` blocks catch specific error types and cases, handling each appropriately, rather than catching all errors with a generic `catch` that logs or ignores them.",
+    whyItMatters: "A generic `catch` treats all errors identically — a network timeout gets the same handling as an authentication failure. Specific catches enable appropriate recovery: retry for timeouts, re-login for auth errors.",
+    howToVerify: "- Check that `catch` blocks handle specific error types or cases\n- Verify the generic `catch` at the bottom handles truly unexpected errors\n- Look for empty catch blocks or `catch { }` that silently swallow errors",
+    exampleComment: "This generic `catch { print(error) }` treats network errors, parsing errors, and auth errors identically. Could we catch specific cases to provide appropriate recovery (retry, re-login, etc.)?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "do {\n    try await fetchAndSaveUser()\n} catch {\n    print(error)  // all errors handled the same way\n}" },
+      { label: "Good", language: "swift", code: "do {\n    try await fetchAndSaveUser()\n} catch NetworkError.unauthorized {\n    await promptLogin()\n} catch NetworkError.serverError(let code) where code >= 500 {\n    await retryWithBackoff()\n} catch is DecodingError {\n    logger.error(\"Data parsing failed: \\(error)\")\n    showCorruptDataAlert()\n} catch {\n    logger.error(\"Unexpected error: \\(error)\")\n    showGenericError()\n}" }
+    ],
+    keyTakeaway: "Catch specific error types to enable appropriate recovery — generic catches hide distinct failure modes.",
+    references: []
+  },
+  "swift-objc.error-handling.are-try-and-try-used-sparingly-and-justified": {
+    whatItMeans: "`try?` (which converts errors to nil) and `try!` (which crashes on error) are used sparingly, with comments justifying why error details are intentionally discarded or why failure is impossible.",
+    whyItMatters: "`try?` silently swallows error information, making debugging difficult. `try!` crashes on failure. Both should be rare — most throwing calls should use `do-catch` for proper error handling.",
+    howToVerify: "- Search for `try?` and `try!` in the diff\n- Verify each `try?` has a comment explaining why the error is intentionally ignored\n- Check that `try!` is only used where failure is provably impossible",
+    exampleComment: "This `try?` swallows the error from `saveToDatabase()`. If the save fails, the user loses data with no feedback. Could we use `do-catch` and show an error alert?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Error silently swallowed — data loss with no feedback\ntry? database.save(user)\n\n// Crashes if encoding fails\nlet data = try! JSONEncoder().encode(complexModel)" },
+      { label: "Good", language: "swift", code: "// try? justified: best-effort cache, failure is non-critical\ntry? cacheManager.store(thumbnail)  // cache miss is acceptable\n\n// Proper error handling for important operations\ndo {\n    try database.save(user)\n} catch {\n    showSaveError(error)\n}" }
+    ],
+    keyTakeaway: "Use `do-catch` by default — reserve `try?` for intentionally ignored errors and `try!` for provably safe calls.",
+    references: []
+  },
+  "swift-objc.error-handling.are-result-types-used-for-completion-handler-based-async-error-handling": {
+    whatItMeans: "Completion handlers use `Result<Success, Failure>` to express success and failure as a single, type-safe value, rather than separate `(data, error)` parameters.",
+    whyItMatters: "The old `(data?, error?)` pattern allows four states (both nil, both non-nil, either one) when only two are valid. `Result` makes exactly two states possible: `.success` or `.failure`.",
+    howToVerify: "- Check completion handlers for `(Data?, Error?)` dual-optional patterns\n- Verify `Result<T, Error>` is used instead\n- Look for call sites that don't handle all combinations of the dual-optional",
+    exampleComment: "This completion handler takes `(User?, Error?)` which allows both to be nil (a state that shouldn't exist). Using `Result<User, Error>` would make the success/failure states unambiguous.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func fetchUser(completion: @escaping (User?, Error?) -> Void) {\n    // Caller must handle 4 possible states\n}\n\nfetchUser { user, error in\n    if let error = error { /* handle error */ }\n    if let user = user { /* use user */ }\n    // What if both nil? Both non-nil?\n}" },
+      { label: "Good", language: "swift", code: "func fetchUser(completion: @escaping (Result<User, NetworkError>) -> Void) {\n    // Exactly two possible states\n}\n\nfetchUser { result in\n    switch result {\n    case .success(let user): display(user)\n    case .failure(let error): show(error)\n    }\n}" }
+    ],
+    keyTakeaway: "Use `Result` in completion handlers to make success and failure states unambiguous and exhaustive.",
+    references: []
+  },
+  "swift-objc.error-handling.are-error-messages-user-friendly-for-user-facing-errors-and-detailed-for-develop": {
+    whatItMeans: "Error messages shown to users are friendly and actionable ('Unable to save. Please try again.'), while developer-facing errors include technical details (status codes, stack context).",
+    whyItMatters: "Users don't understand 'Error: NSURLErrorDomain code=-1009'. Developer logs need those details. Separating the two audiences ensures users get helpful guidance while developers get debuggable information.",
+    howToVerify: "- Check that user-facing error alerts use friendly, non-technical language\n- Verify `LocalizedError.errorDescription` provides user-friendly messages\n- Check that technical details are logged (not shown to users)\n- Look for raw error.localizedDescription shown directly in alerts",
+    exampleComment: "This alert shows `error.localizedDescription` directly, which for network errors displays 'The Internet connection appears to be offline.' — not bad, but for our custom errors it shows internal enum names. Could we use custom user-facing messages?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Technical error shown to user\ncatch {\n    showAlert(message: error.localizedDescription)\n    // User sees: \"decodingError: keyNotFound('email')\" 😱\n}" },
+      { label: "Good", language: "swift", code: "enum ProfileError: LocalizedError {\n    case loadFailed\n    case saveFailed\n    \n    var errorDescription: String? {\n        switch self {\n        case .loadFailed: return \"Unable to load your profile. Please check your connection.\"\n        case .saveFailed: return \"Couldn't save changes. Please try again.\"\n        }\n    }\n}\n\ncatch {\n    logger.error(\"Profile save failed: \\(error)\")  // detailed for devs\n    showAlert(message: (error as? ProfileError)?.errorDescription ?? \"Something went wrong.\")\n}" }
+    ],
+    keyTakeaway: "Show friendly messages to users, log technical details for developers — never expose raw error internals in the UI.",
+    references: []
+  },
+  "swift-objc.error-handling.is-fatalerror-preconditionfailure-used-only-for-truly-unrecoverable-states": {
+    whatItMeans: "`fatalError()` and `preconditionFailure()` are used only for states that indicate a programming error — never for recoverable conditions like network failures or missing data.",
+    whyItMatters: "These functions crash the app immediately. Using them for recoverable errors turns transient issues (server down, missing file) into app crashes. They should only guard against impossible states.",
+    howToVerify: "- Search for `fatalError` and `preconditionFailure` in the diff\n- Verify each one guards a truly impossible state (programming error)\n- Check that recoverable errors use `throw` or `return` instead",
+    exampleComment: "This `fatalError(\"User not found\")` will crash the app if the API returns no user. Since that's a recoverable situation, could we return nil or throw an error instead?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func fetchUser() -> User {\n    guard let user = database.find(userId) else {\n        fatalError(\"User not found\")  // crashes on missing data!\n    }\n    return user\n}" },
+      { label: "Good", language: "swift", code: "// fatalError for truly impossible states (programming errors)\nfunc tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {\n    guard let cell = tableView.dequeueReusableCell(withIdentifier: \"Cell\") as? CustomCell else {\n        fatalError(\"Cell not registered — check storyboard\")  // programming error\n    }\n    return cell\n}\n\n// Recoverable: use throws\nfunc fetchUser() throws -> User {\n    guard let user = database.find(userId) else {\n        throw DatabaseError.notFound(id: userId)\n    }\n    return user\n}" }
+    ],
+    keyTakeaway: "Reserve `fatalError` for programming errors — use `throw` or `return` for recoverable conditions.",
+    references: []
+  },
+
+  // ============================================
+  // Networking & Data (8 items)
+  // ============================================
+  "swift-objc.networking-data.are-network-requests-using-urlsession-or-a-well-maintained-networking-library": {
+    whatItMeans: "Network requests use `URLSession` (Apple's built-in networking) or a well-maintained library like Alamofire, rather than custom low-level implementations or abandoned third-party libraries.",
+    whyItMatters: "URLSession is battle-tested, regularly updated by Apple, and supports modern features (async/await, background downloads, certificate pinning). Custom implementations miss edge cases around encoding, caching, and authentication.",
+    howToVerify: "- Check that network calls use URLSession or an established library\n- Verify no custom HTTP implementations (raw sockets, NSConnection)\n- Look for outdated networking libraries that should be migrated",
+    exampleComment: "This custom HTTP client using `CFNetwork` directly is complex and misses edge cases URLSession handles automatically (redirect following, cookie management, HTTP/2). Could we migrate to URLSession?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Custom low-level networking — missing many edge cases\nlet socket = CFSocketCreate(/* ... */)\n// 200 lines of raw HTTP parsing" },
+      { label: "Good", language: "swift", code: "// Modern URLSession with async/await\nfunc fetchUser(id: String) async throws -> User {\n    let url = baseURL.appendingPathComponent(\"users/\\(id)\")\n    let (data, response) = try await URLSession.shared.data(from: url)\n    guard let httpResponse = response as? HTTPURLResponse,\n          httpResponse.statusCode == 200 else {\n        throw NetworkError.invalidResponse\n    }\n    return try JSONDecoder().decode(User.self, from: data)\n}" }
+    ],
+    keyTakeaway: "Use URLSession for networking — it handles the complexity of HTTP correctly and supports modern Swift concurrency.",
+    references: [
+      { title: "URLSession", url: "https://developer.apple.com/documentation/foundation/urlsession" }
+    ]
+  },
+  "swift-objc.networking-data.are-codable-conformances-used-for-json-parsing-instead-of-manual-dictionary-acce": {
+    whatItMeans: "JSON parsing uses `Codable` (Decodable/Encodable) with `JSONDecoder`/`JSONEncoder` instead of manually accessing `[String: Any]` dictionaries with string keys.",
+    whyItMatters: "`Codable` provides compile-time type safety, eliminates string-key typos, handles nested structures automatically, and reduces boilerplate. Manual dictionary access is error-prone and verbose.",
+    howToVerify: "- Check for `JSONSerialization` usage that could use `JSONDecoder` instead\n- Look for `as? [String: Any]` dictionary access patterns\n- Verify model types conform to `Codable` or `Decodable`",
+    exampleComment: "This manual JSON parsing with `json[\"user\"][\"name\"] as? String` is fragile and verbose. Defining a `Codable` struct would give us type safety and reduce the parsing code from 30 lines to 3.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]\nlet name = json[\"name\"] as? String ?? \"\"\nlet age = json[\"age\"] as? Int ?? 0\nlet address = (json[\"address\"] as? [String: Any])?[\"city\"] as? String" },
+      { label: "Good", language: "swift", code: "struct User: Codable {\n    let name: String\n    let age: Int\n    let address: Address\n    \n    struct Address: Codable {\n        let city: String\n    }\n}\n\nlet user = try JSONDecoder().decode(User.self, from: data)" }
+    ],
+    keyTakeaway: "Use `Codable` for JSON parsing — it's type-safe, concise, and eliminates string-key errors.",
+    references: [
+      { title: "Encoding and Decoding Custom Types", url: "https://developer.apple.com/documentation/foundation/archives_and_serialization/encoding_and_decoding_custom_types" }
+    ]
+  },
+  "swift-objc.networking-data.are-codingkeys-used-when-api-field-names-differ-from-swift-property-names": {
+    whatItMeans: "`CodingKeys` enums are used to map between API field names (often snake_case) and Swift property names (camelCase), or `keyDecodingStrategy` is configured on the decoder.",
+    whyItMatters: "APIs often use snake_case (`first_name`) while Swift uses camelCase (`firstName`). Without CodingKeys or a decoding strategy, you'd have to use non-idiomatic property names to match the API.",
+    howToVerify: "- Check if API responses use different naming than Swift properties\n- Verify CodingKeys are defined or `keyDecodingStrategy = .convertFromSnakeCase` is set\n- Look for properties named in snake_case to match API responses",
+    exampleComment: "These properties use snake_case to match the API (`first_name`, `created_at`). Using `CodingKeys` or `.convertFromSnakeCase` on the decoder would let us use idiomatic Swift names.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "struct User: Codable {\n    let first_name: String    // non-idiomatic Swift\n    let last_name: String\n    let created_at: String\n}" },
+      { label: "Good", language: "swift", code: "struct User: Codable {\n    let firstName: String\n    let lastName: String\n    let createdAt: Date\n    \n    enum CodingKeys: String, CodingKey {\n        case firstName = \"first_name\"\n        case lastName = \"last_name\"\n        case createdAt = \"created_at\"\n    }\n}\n\n// Or globally:\nlet decoder = JSONDecoder()\ndecoder.keyDecodingStrategy = .convertFromSnakeCase" }
+    ],
+    keyTakeaway: "Use CodingKeys or `.convertFromSnakeCase` to keep Swift property names idiomatic while matching API formats.",
+    references: []
+  },
+  "swift-objc.networking-data.are-network-errors-handled-gracefully-with-retry-and-offline-state": {
+    whatItMeans: "Network code handles common failure scenarios: timeouts with retry, offline detection with queued operations, and graceful degradation when the server is unavailable.",
+    whyItMatters: "Mobile networks are inherently unreliable — users go through tunnels, switch between WiFi and cellular, and experience server outages. Apps that don't handle these scenarios feel broken.",
+    howToVerify: "- Check for timeout and retry logic on network requests\n- Verify the app detects offline state and shows appropriate UI\n- Look for network reachability monitoring (NWPathMonitor)\n- Test the app with airplane mode enabled",
+    exampleComment: "This API call has no retry logic and shows a generic error on failure. Could we add retry with exponential backoff for 5xx errors and a clear offline indicator for connectivity issues?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func loadFeed() async {\n    do {\n        let feed = try await api.fetchFeed()\n        self.items = feed.items\n    } catch {\n        self.error = \"Something went wrong\"  // no retry, no offline handling\n    }\n}" },
+      { label: "Good", language: "swift", code: "func loadFeed() async {\n    do {\n        let feed = try await api.fetchFeed()\n        self.items = feed.items\n        self.lastFetchDate = Date()\n    } catch let error as URLError where error.code == .notConnectedToInternet {\n        self.isOffline = true\n        // Show cached data if available\n        self.items = cache.loadFeed()\n    } catch {\n        retryCount += 1\n        if retryCount < 3 {\n            try? await Task.sleep(for: .seconds(pow(2, Double(retryCount))))\n            await loadFeed()\n        } else {\n            self.errorMessage = \"Unable to load feed. Pull to refresh.\"\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Handle offline state, implement retry with backoff, and show cached data — mobile networks are unreliable.",
+    references: []
+  },
+  "swift-objc.networking-data.are-api-responses-validated-before-use": {
+    whatItMeans: "API responses are validated for expected status codes, content types, and data integrity before being parsed and used, rather than blindly assuming success.",
+    whyItMatters: "APIs can return unexpected responses: HTML error pages, 302 redirects, rate limit responses, or maintenance pages. Blindly parsing these causes confusing crashes or silent data corruption.",
+    howToVerify: "- Check that HTTP status codes are validated (200-299 for success)\n- Verify Content-Type headers are checked before parsing\n- Look for response validation before `JSONDecoder.decode`",
+    exampleComment: "This code decodes the response without checking the status code. A 401 or 500 response would cause a decoding error with a confusing message instead of a clear 'unauthorized' or 'server error'.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let (data, _) = try await URLSession.shared.data(from: url)\nlet user = try JSONDecoder().decode(User.self, from: data)  // no status check" },
+      { label: "Good", language: "swift", code: "let (data, response) = try await URLSession.shared.data(from: url)\n\nguard let httpResponse = response as? HTTPURLResponse else {\n    throw NetworkError.invalidResponse\n}\n\nswitch httpResponse.statusCode {\ncase 200...299:\n    return try JSONDecoder().decode(User.self, from: data)\ncase 401:\n    throw NetworkError.unauthorized\ncase 404:\n    throw NetworkError.notFound\ncase 429:\n    throw NetworkError.rateLimited\ndefault:\n    throw NetworkError.serverError(statusCode: httpResponse.statusCode)\n}" }
+    ],
+    keyTakeaway: "Always validate HTTP status codes before parsing — don't assume every response is a successful JSON body.",
+    references: []
+  },
+  "swift-objc.networking-data.is-core-data-swiftdata-used-correctly-managed-object-contexts-threading": {
+    whatItMeans: "Core Data (or SwiftData) usage follows threading rules: managed objects are accessed only on their context's queue, background contexts handle heavy writes, and merging is configured.",
+    whyItMatters: "Core Data managed objects are not thread-safe. Accessing them on the wrong queue causes crashes, data corruption, and race conditions that are extremely difficult to debug.",
+    howToVerify: "- Check that managed objects aren't passed between threads\n- Verify `perform` or `performAndWait` is used for context operations\n- Look for background contexts for heavy import/write operations\n- Check that `automaticallyMergesChangesFromParent` is configured",
+    exampleComment: "This fetches managed objects on a background context but accesses their properties on the main thread. Managed objects must be used on their context's queue — pass the objectID and re-fetch on the main context instead.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Fetched on background, used on main — crash!\nlet bgContext = container.newBackgroundContext()\nvar users: [UserEntity] = []\nbgContext.perform {\n    users = try! bgContext.fetch(UserEntity.fetchRequest())\n}\n// Later on main thread:\nnameLabel.text = users.first?.name  // wrong thread!" },
+      { label: "Good", language: "swift", code: "// Fetch on background, pass IDs, re-fetch on main\nlet bgContext = container.newBackgroundContext()\nbgContext.perform {\n    let results = try! bgContext.fetch(UserEntity.fetchRequest())\n    let ids = results.map { $0.objectID }\n    \n    DispatchQueue.main.async {\n        let mainContext = container.viewContext\n        let users = ids.compactMap { mainContext.object(with: $0) as? UserEntity }\n        self.nameLabel.text = users.first?.name  // correct thread\n    }\n}" }
+    ],
+    keyTakeaway: "Never pass managed objects across threads — use objectIDs and re-fetch on the target context.",
+    references: [
+      { title: "Core Data Concurrency", url: "https://developer.apple.com/documentation/coredata/using_core_data_in_the_background" }
+    ]
+  },
+  "swift-objc.networking-data.are-userdefaults-used-only-for-simple-preferences-not-large-data-storage": {
+    whatItMeans: "`UserDefaults` is used only for small, simple values like user preferences, feature flags, and settings — not for storing large data, arrays of models, or sensitive information.",
+    whyItMatters: "UserDefaults loads its entire plist into memory at app launch. Storing large data (images, arrays of thousands of items) increases launch time and memory usage. It's also not encrypted, making it unsuitable for sensitive data.",
+    howToVerify: "- Check that UserDefaults stores only simple values (Bool, Int, String, small arrays)\n- Verify large data uses file storage or databases (Core Data, SQLite, SwiftData)\n- Look for sensitive data (tokens, passwords) stored in UserDefaults instead of Keychain",
+    exampleComment: "Storing the entire chat history in UserDefaults will slow app launch as the plist grows. Could we use Core Data or a SQLite database for this data?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Large data in UserDefaults — slow launch, high memory\nUserDefaults.standard.set(chatMessages, forKey: \"allMessages\")  // thousands of items\nUserDefaults.standard.set(imageData, forKey: \"profileImage\")     // large binary\nUserDefaults.standard.set(authToken, forKey: \"token\")            // sensitive!" },
+      { label: "Good", language: "swift", code: "// Preferences — appropriate for UserDefaults\nUserDefaults.standard.set(true, forKey: \"hasSeenOnboarding\")\nUserDefaults.standard.set(\"dark\", forKey: \"theme\")\n\n// Large data → database\ntry database.saveChatMessages(messages)\n\n// Sensitive data → Keychain\ntry KeychainHelper.save(token, forKey: \"authToken\")" }
+    ],
+    keyTakeaway: "UserDefaults for preferences, databases for large data, Keychain for secrets — each storage has its purpose.",
+    references: []
+  },
+  "swift-objc.networking-data.is-keychain-used-for-sensitive-data-tokens-credentials": {
+    whatItMeans: "Sensitive data like authentication tokens, API keys, passwords, and certificates are stored in the iOS Keychain, which provides hardware-backed encryption, rather than in UserDefaults, files, or code.",
+    whyItMatters: "The Keychain encrypts data at rest and ties it to the device/user. UserDefaults and file storage are unencrypted — anyone with file system access (jailbreak, backup extraction) can read them.",
+    howToVerify: "- Check that auth tokens are stored in Keychain, not UserDefaults\n- Verify API keys aren't hardcoded in source code\n- Look for password or credential storage outside the Keychain\n- Check for Keychain wrapper libraries used correctly",
+    exampleComment: "This auth token is stored in UserDefaults, which is unencrypted. A jailbroken device or iTunes backup could expose it. Could we move it to the Keychain?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Unencrypted storage — exposed in backups and jailbreak\nUserDefaults.standard.set(authToken, forKey: \"auth_token\")\n\n// Hardcoded secret — visible in binary\nlet apiKey = \"sk-1234567890abcdef\"" },
+      { label: "Good", language: "swift", code: "// Keychain — encrypted, hardware-backed\nimport Security\n\nfunc saveToken(_ token: String) throws {\n    let data = token.data(using: .utf8)!\n    let query: [String: Any] = [\n        kSecClass as String: kSecClassGenericPassword,\n        kSecAttrAccount as String: \"auth_token\",\n        kSecValueData as String: data,\n        kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly\n    ]\n    SecItemAdd(query as CFDictionary, nil)\n}" }
+    ],
+    keyTakeaway: "Store all sensitive data in the Keychain — UserDefaults and files are not encrypted.",
+    references: [
+      { title: "Keychain Services", url: "https://developer.apple.com/documentation/security/keychain_services" }
+    ]
+  },
+
+  // ============================================
+  // Testing (8 items)
+  // ============================================
+  "swift-objc.testing.are-there-unit-tests-for-new-logic": {
+    whatItMeans: "New business logic, data transformations, and utility functions have corresponding unit tests that verify their behavior, including edge cases.",
+    whyItMatters: "Tests catch regressions early, document expected behavior, and give confidence to refactor. Untested code is risky to change because you can't verify you haven't broken anything.",
+    howToVerify: "- Check that new functions and classes have corresponding test files\n- Verify tests cover the happy path and at least one edge case\n- Look for complex logic without any test coverage",
+    exampleComment: "This new `PriceCalculator` class has complex discount logic but no unit tests. Could we add tests for the standard case, no-discount case, and maximum-discount boundary?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// New complex logic with no tests\nclass PriceCalculator {\n    func calculateTotal(items: [Item], discount: Discount?) -> Decimal {\n        // 30 lines of complex calculation\n    }\n}" },
+      { label: "Good", language: "swift", code: "class PriceCalculatorTests: XCTestCase {\n    func testCalculateTotal_noDiscount() {\n        let calc = PriceCalculator()\n        let items = [Item(price: 10), Item(price: 20)]\n        XCTAssertEqual(calc.calculateTotal(items: items, discount: nil), 30)\n    }\n    \n    func testCalculateTotal_withPercentDiscount() {\n        let calc = PriceCalculator()\n        let items = [Item(price: 100)]\n        let discount = Discount(type: .percent, value: 20)\n        XCTAssertEqual(calc.calculateTotal(items: items, discount: discount), 80)\n    }\n    \n    func testCalculateTotal_emptyItems() {\n        let calc = PriceCalculator()\n        XCTAssertEqual(calc.calculateTotal(items: [], discount: nil), 0)\n    }\n}" }
+    ],
+    keyTakeaway: "Test new logic — cover the happy path, edge cases, and error conditions at minimum.",
+    references: [
+      { title: "XCTest", url: "https://developer.apple.com/documentation/xctest" }
+    ]
+  },
+  "swift-objc.testing.are-tests-using-xctest-or-swift-testing-framework-correctly": {
+    whatItMeans: "Tests use XCTest or Swift Testing framework idiomatically: proper setUp/tearDown, meaningful assertions, and test isolation without shared mutable state between tests.",
+    whyItMatters: "Poorly structured tests give false confidence — they may pass for the wrong reasons, fail intermittently, or not actually verify the behavior they claim to test.",
+    howToVerify: "- Check that tests use specific assertions (XCTAssertEqual, not just XCTAssertTrue)\n- Verify setUp creates fresh instances (no shared state between tests)\n- Look for test methods that don't assert anything",
+    exampleComment: "This test uses `XCTAssertTrue(result != nil)` — using `XCTAssertNotNil(result)` would give a better failure message, and `XCTAssertEqual` would verify the actual value.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class UserTests: XCTestCase {\n    static var sharedUser = User()  // shared state between tests!\n    \n    func testName() {\n        let result = UserTests.sharedUser.fullName\n        XCTAssertTrue(result != nil)  // weak assertion, bad failure message\n    }\n}" },
+      { label: "Good", language: "swift", code: "class UserTests: XCTestCase {\n    private var sut: User!  // system under test\n    \n    override func setUp() {\n        super.setUp()\n        sut = User(firstName: \"Jane\", lastName: \"Doe\")  // fresh per test\n    }\n    \n    override func tearDown() {\n        sut = nil\n        super.tearDown()\n    }\n    \n    func testFullName_combinesFirstAndLast() {\n        XCTAssertEqual(sut.fullName, \"Jane Doe\")  // specific assertion\n    }\n}" }
+    ],
+    keyTakeaway: "Use specific assertions, fresh state per test, and descriptive test names for reliable, informative tests.",
+    references: []
+  },
+  "swift-objc.testing.are-mocksstubs-using-protocols-for-testability": {
+    whatItMeans: "Dependencies are defined as protocols so they can be replaced with mock/stub implementations in tests, enabling isolated unit testing without real network calls, databases, etc.",
+    whyItMatters: "Classes with hard-coded dependencies (e.g., `URLSession.shared` directly) can't be tested without hitting real servers. Protocol-based dependencies enable fast, deterministic, offline testing.",
+    howToVerify: "- Check that external dependencies (networking, database, analytics) are injected via protocols\n- Verify tests use mock implementations, not real services\n- Look for `shared` singletons used directly in classes under test",
+    exampleComment: "This view model calls `URLSession.shared` directly, making it impossible to test without network access. Could we inject a `NetworkClient` protocol so tests can use a mock?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "class UserViewModel {\n    func loadUser() async throws -> User {\n        let (data, _) = try await URLSession.shared.data(from: url)  // untestable\n        return try JSONDecoder().decode(User.self, from: data)\n    }\n}" },
+      { label: "Good", language: "swift", code: "protocol NetworkClient {\n    func data(from url: URL) async throws -> (Data, URLResponse)\n}\n\nextension URLSession: NetworkClient { }  // production\n\nclass UserViewModel {\n    private let network: NetworkClient\n    init(network: NetworkClient = URLSession.shared) {\n        self.network = network\n    }\n}\n\n// In tests:\nclass MockNetworkClient: NetworkClient {\n    var mockData: Data?\n    func data(from url: URL) async throws -> (Data, URLResponse) {\n        return (mockData!, HTTPURLResponse())\n    }\n}" }
+    ],
+    keyTakeaway: "Define dependencies as protocols and inject them — this enables mock-based testing without real services.",
+    references: []
+  },
+  "swift-objc.testing.are-async-tests-using-xctestexpectation-or-swift-testing-async-support": {
+    whatItMeans: "Asynchronous tests properly wait for async operations to complete using `XCTestExpectation`, `async/await` test methods, or Swift Testing's built-in async support.",
+    whyItMatters: "Async tests that don't wait for completion pass vacuously — the test finishes before the async code runs, so failures are never caught. Proper async testing ensures assertions run after the operation completes.",
+    howToVerify: "- Check that async tests use `async throws` method signatures or `XCTestExpectation`\n- Verify `await fulfillment(of:)` is used instead of deprecated `waitForExpectations`\n- Look for tests with async operations that don't wait for results",
+    exampleComment: "This test calls an async function but doesn't await it — the test passes immediately before the assertion runs. Adding `async` to the test method signature would fix this.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func testFetchUser() {\n    // BUG: test passes instantly, assertion never runs\n    Task {\n        let user = try await viewModel.fetchUser()\n        XCTAssertEqual(user.name, \"Jane\")  // never executed!\n    }\n}" },
+      { label: "Good", language: "swift", code: "// Modern: async test method\nfunc testFetchUser() async throws {\n    let user = try await viewModel.fetchUser()\n    XCTAssertEqual(user.name, \"Jane\")\n}\n\n// Legacy: expectation-based\nfunc testFetchUserCallback() {\n    let expectation = expectation(description: \"fetch user\")\n    viewModel.fetchUser { result in\n        XCTAssertEqual(try? result.get().name, \"Jane\")\n        expectation.fulfill()\n    }\n    waitForExpectations(timeout: 5)\n}" }
+    ],
+    keyTakeaway: "Use `async` test methods or XCTestExpectation — never fire-and-forget async operations in tests.",
+    references: []
+  },
+  "swift-objc.testing.are-ui-tests-added-for-critical-user-flows": {
+    whatItMeans: "Critical user flows (login, checkout, onboarding) have UI tests that verify the end-to-end experience, catching integration issues that unit tests miss.",
+    whyItMatters: "Unit tests verify individual pieces work, but UI tests verify they work together from the user's perspective. A login flow might have passing unit tests for each component but fail when assembled.",
+    howToVerify: "- Check that critical flows (login, purchase, sign-up) have XCUITest coverage\n- Verify UI tests use accessibility identifiers for reliable element selection\n- Look for tests that tap actual UI elements and verify screen transitions",
+    exampleComment: "The new checkout flow doesn't have any UI tests. Could we add a test that verifies the complete flow: add item → cart → payment → confirmation?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// No UI tests for critical checkout flow\n// \"We'll test it manually before release\" 🤞" },
+      { label: "Good", language: "swift", code: "class CheckoutUITests: XCTestCase {\n    func testCompleteCheckoutFlow() {\n        let app = XCUIApplication()\n        app.launch()\n        \n        // Add item to cart\n        app.buttons[\"addToCart\"].tap()\n        \n        // Navigate to cart\n        app.tabBars.buttons[\"Cart\"].tap()\n        XCTAssertTrue(app.staticTexts[\"1 item\"].exists)\n        \n        // Proceed to checkout\n        app.buttons[\"checkout\"].tap()\n        XCTAssertTrue(app.staticTexts[\"Order Confirmation\"].waitForExistence(timeout: 5))\n    }\n}" }
+    ],
+    keyTakeaway: "Add UI tests for critical flows — they catch integration issues that unit tests miss.",
+    references: [
+      { title: "XCUITest", url: "https://developer.apple.com/documentation/xctest/user_interface_tests" }
+    ]
+  },
+  "swift-objc.testing.are-snapshot-tests-used-for-visual-regression-detection": {
+    whatItMeans: "Snapshot tests capture reference images of UI components and compare them against future renders, catching unintended visual changes like layout shifts, color changes, or missing elements.",
+    whyItMatters: "Visual regressions are hard to catch in code review — a padding change or color constant update might look harmless in diff but break the UI. Snapshot tests automate visual verification.",
+    howToVerify: "- Check if snapshot testing is set up (e.g., swift-snapshot-testing library)\n- Verify new UI components have snapshot tests for key states\n- Look for snapshot reference images that need updating after intentional UI changes",
+    exampleComment: "This new ProfileCard component would benefit from snapshot tests for its normal, loading, and error states. It would catch visual regressions automatically in CI.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// New UI component with no visual regression protection\nstruct ProfileCard: View {\n    var body: some View { /* complex layout */ }\n}\n// \"Looks good on my device\" 🤷" },
+      { label: "Good", language: "swift", code: "import SnapshotTesting\n\nclass ProfileCardSnapshotTests: XCTestCase {\n    func testProfileCard_normalState() {\n        let view = ProfileCard(user: .mock)\n        assertSnapshot(of: view, as: .image(layout: .device(config: .iPhone13)))\n    }\n    \n    func testProfileCard_loadingState() {\n        let view = ProfileCard(user: nil, isLoading: true)\n        assertSnapshot(of: view, as: .image(layout: .device(config: .iPhone13)))\n    }\n    \n    func testProfileCard_darkMode() {\n        let view = ProfileCard(user: .mock)\n            .environment(\\.colorScheme, .dark)\n        assertSnapshot(of: view, as: .image(layout: .device(config: .iPhone13)))\n    }\n}" }
+    ],
+    keyTakeaway: "Use snapshot tests to catch visual regressions automatically — they're especially valuable for shared UI components.",
+    references: [
+      { title: "swift-snapshot-testing", url: "https://github.com/pointfreeco/swift-snapshot-testing" }
+    ]
+  },
+  "swift-objc.testing.are-test-names-descriptive-of-the-expected-behavior": {
+    whatItMeans: "Test method names describe the scenario and expected outcome, following a pattern like `test[Unit]_[scenario]_[expectedResult]`, so test failures are immediately understandable.",
+    whyItMatters: "When a test named `testUser()` fails, you have no idea what broke without reading the test. When `testFetchUser_withInvalidId_throwsNotFoundError()` fails, the issue is immediately clear.",
+    howToVerify: "- Check that test names describe what's being tested and what's expected\n- Verify names follow a consistent convention across the test suite\n- Look for vague names like `test1`, `testStuff`, `testUser`",
+    exampleComment: "The test name `testParsing()` doesn't describe what scenario is being tested or what the expected outcome is. Could we rename it to something like `testParseUser_withMissingEmail_usesDefaultEmail()`?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func testUser() { ... }\nfunc testNetworking() { ... }\nfunc test1() { ... }" },
+      { label: "Good", language: "swift", code: "func testFetchUser_withValidId_returnsUser() { ... }\nfunc testFetchUser_withInvalidId_throwsNotFoundError() { ... }\nfunc testFetchUser_whenOffline_returnsCachedData() { ... }\nfunc testCalculateTotal_withEmptyCart_returnsZero() { ... }" }
+    ],
+    keyTakeaway: "Name tests as `test[Unit]_[scenario]_[expected]` — failures should be self-explanatory from the name alone.",
+    references: []
+  },
+  "swift-objc.testing.are-edge-cases-covered-nil-empty-boundary-values": {
+    whatItMeans: "Tests cover edge cases like nil values, empty collections, boundary values (0, Int.max), empty strings, and invalid inputs — not just the happy path.",
+    whyItMatters: "Most bugs live in edge cases. Code that works for typical inputs often fails on empty arrays, nil values, negative numbers, or maximum values. Edge case tests catch these before users do.",
+    howToVerify: "- Check for tests with nil inputs, empty arrays, empty strings\n- Look for boundary value tests (0, 1, max, min)\n- Verify error paths are tested, not just success paths\n- Check for tests with concurrent access if the code is thread-safe",
+    exampleComment: "The tests only cover the happy path with valid users. Could we add tests for an empty name, a nil email, and a very long bio (boundary testing)?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Only tests the happy path\nfunc testValidateUser_valid() {\n    let user = User(name: \"Jane\", email: \"jane@example.com\")\n    XCTAssertTrue(user.isValid)\n}" },
+      { label: "Good", language: "swift", code: "func testValidateUser_valid() {\n    let user = User(name: \"Jane\", email: \"jane@example.com\")\n    XCTAssertTrue(user.isValid)\n}\n\nfunc testValidateUser_emptyName_isInvalid() {\n    let user = User(name: \"\", email: \"jane@example.com\")\n    XCTAssertFalse(user.isValid)\n}\n\nfunc testValidateUser_nilEmail_isInvalid() {\n    let user = User(name: \"Jane\", email: nil)\n    XCTAssertFalse(user.isValid)\n}\n\nfunc testValidateUser_maxLengthName_isValid() {\n    let user = User(name: String(repeating: \"a\", count: 255), email: \"j@e.com\")\n    XCTAssertTrue(user.isValid)\n}\n\nfunc testValidateUser_exceedsMaxName_isInvalid() {\n    let user = User(name: String(repeating: \"a\", count: 256), email: \"j@e.com\")\n    XCTAssertFalse(user.isValid)\n}" }
+    ],
+    keyTakeaway: "Test edge cases — nil, empty, zero, max, and invalid inputs are where most bugs hide.",
+    references: []
+  },
+
+  // ============================================
+  // Security (8 items)
+  // ============================================
+  "swift-objc.security.are-sensitive-data-stored-in-keychain-not-userdefaults-or-plain-files": {
+    whatItMeans: "Authentication tokens, passwords, encryption keys, and other sensitive data are stored in the Keychain (hardware-encrypted) rather than UserDefaults, plist files, or plain text files.",
+    whyItMatters: "UserDefaults and files are unencrypted and accessible via device backups, jailbreak tools, or file system access. The Keychain provides hardware-backed encryption that protects data even on compromised devices.",
+    howToVerify: "- Search for UserDefaults usage with keys suggesting sensitive data (token, password, key, secret)\n- Check for credentials written to files in the documents or caches directory\n- Verify the Keychain accessibility level is appropriate (e.g., `whenUnlockedThisDeviceOnly`)",
+    exampleComment: "The refresh token is stored in UserDefaults under key 'refreshToken'. This is accessible in unencrypted backups. Could we move it to the Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Unencrypted, accessible in backups\nUserDefaults.standard.set(refreshToken, forKey: \"refreshToken\")\n\n// Plain text file\ntry token.write(to: documentsURL.appendingPathComponent(\"token.txt\"), atomically: true, encoding: .utf8)" },
+      { label: "Good", language: "swift", code: "// Keychain — encrypted, device-only, requires device unlock\nfunc storeToken(_ token: String) throws {\n    guard let data = token.data(using: .utf8) else { return }\n    let query: [String: Any] = [\n        kSecClass as String: kSecClassGenericPassword,\n        kSecAttrAccount as String: \"refreshToken\",\n        kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,\n        kSecValueData as String: data\n    ]\n    let status = SecItemAdd(query as CFDictionary, nil)\n    guard status == errSecSuccess else { throw KeychainError.saveFailed(status) }\n}" }
+    ],
+    keyTakeaway: "Store all secrets in the Keychain with appropriate accessibility levels — never use UserDefaults for sensitive data.",
+    references: [
+      { title: "Keychain Services", url: "https://developer.apple.com/documentation/security/keychain_services" }
+    ]
+  },
+  "swift-objc.security.is-app-transport-security-ats-configured-correctly": {
+    whatItMeans: "App Transport Security (ATS) is enabled and HTTP exceptions are minimal. The app communicates over HTTPS by default, and any ATS exceptions in Info.plist are justified and scoped narrowly.",
+    whyItMatters: "ATS enforces HTTPS connections with modern TLS. Disabling it globally (`NSAllowsArbitraryLoads = YES`) exposes all network traffic to eavesdropping and man-in-the-middle attacks.",
+    howToVerify: "- Check Info.plist for `NSAppTransportSecurity` settings\n- Verify `NSAllowsArbitraryLoads` is NOT set to true\n- If exceptions exist, confirm they're for specific domains with documented reasons\n- Look for HTTP URLs in network code",
+    exampleComment: "The Info.plist sets `NSAllowsArbitraryLoads = YES`, which disables ATS globally. This allows all HTTP traffic. Could we remove it and add exceptions only for the specific legacy domains that need HTTP?",
+    codeExamples: [
+      { label: "Bad", language: "xml", code: "<!-- Disables ATS for ALL domains -->\n<key>NSAppTransportSecurity</key>\n<dict>\n    <key>NSAllowsArbitraryLoads</key>\n    <true/>\n</dict>" },
+      { label: "Good", language: "xml", code: "<!-- Exception only for specific legacy domain -->\n<key>NSAppTransportSecurity</key>\n<dict>\n    <key>NSExceptionDomains</key>\n    <dict>\n        <key>legacy-api.internal.company.com</key>\n        <dict>\n            <key>NSExceptionAllowsInsecureHTTPLoads</key>\n            <true/>\n            <key>NSExceptionMinimumTLSVersion</key>\n            <string>TLSv1.2</string>\n        </dict>\n    </dict>\n</dict>" }
+    ],
+    keyTakeaway: "Keep ATS enabled globally — add narrow, justified exceptions only for specific domains that require HTTP.",
+    references: [
+      { title: "App Transport Security", url: "https://developer.apple.com/documentation/bundleresources/information_property_list/nsapptransportsecurity" }
+    ]
+  },
+  "swift-objc.security.are-ssl-certificate-pinning-implemented-for-sensitive-connections": {
+    whatItMeans: "SSL certificate pinning validates that the server's certificate matches a known, trusted certificate, preventing man-in-the-middle attacks even when a rogue CA is trusted by the device.",
+    whyItMatters: "Without pinning, any CA trusted by the device can issue a valid certificate for your domain. Corporate proxies, compromised CAs, and attackers with installed profiles can intercept HTTPS traffic.",
+    howToVerify: "- Check for URLSessionDelegate implementation of `urlSession(_:didReceive:completionHandler:)`\n- Verify pinned certificates or public keys are bundled in the app\n- Look for certificate pinning libraries (TrustKit, Alamofire's ServerTrustManager)",
+    exampleComment: "This banking app connects to the API over HTTPS but doesn't pin certificates. A corporate proxy or compromised CA could intercept sensitive financial data. Could we add certificate pinning for the API domain?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// No pinning — trusts any valid certificate\nlet session = URLSession.shared\nlet (data, _) = try await session.data(from: bankingAPIURL)" },
+      { label: "Good", language: "swift", code: "class PinnedSessionDelegate: NSObject, URLSessionDelegate {\n    let pinnedPublicKeyHash = \"sha256/AAAA...=\"\n    \n    func urlSession(_ session: URLSession,\n                    didReceive challenge: URLAuthenticationChallenge,\n                    completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {\n        guard let serverTrust = challenge.protectionSpace.serverTrust,\n              let serverCert = SecTrustGetCertificateAtIndex(serverTrust, 0),\n              let serverPublicKey = SecCertificateCopyKey(serverCert) else {\n            completionHandler(.cancelAuthenticationChallenge, nil)\n            return\n        }\n        // Compare public key hash with pinned value\n        if publicKeyHash(serverPublicKey) == pinnedPublicKeyHash {\n            completionHandler(.useCredential, URLCredential(trust: serverTrust))\n        } else {\n            completionHandler(.cancelAuthenticationChallenge, nil)\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Pin certificates or public keys for sensitive connections — HTTPS alone doesn't prevent all MITM attacks.",
+    references: []
+  },
+  "swift-objc.security.is-biometric-authentication-face-id-touch-id-implemented-correctly": {
+    whatItMeans: "Biometric authentication uses the LocalAuthentication framework correctly: checks biometric availability, provides a fallback, handles all error cases, and includes the `NSFaceIDUsageDescription` plist key.",
+    whyItMatters: "Incorrect biometric implementation can lock users out (no fallback when biometrics fail), skip authentication entirely (swallowed errors), or crash on devices without biometrics.",
+    howToVerify: "- Check for `LAContext.canEvaluatePolicy` before attempting biometric auth\n- Verify a fallback (passcode, password) exists when biometrics are unavailable\n- Confirm `NSFaceIDUsageDescription` is in Info.plist\n- Check all `LAError` cases are handled",
+    exampleComment: "This biometric check doesn't handle `LAError.biometryNotAvailable` or `LAError.biometryLockout`. Users on devices without Face ID or who fail too many attempts would get a generic error instead of a fallback.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "let context = LAContext()\ncontext.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,\n                       localizedReason: \"Authenticate\") { success, error in\n    if success {\n        self.unlock()\n    }\n    // error completely ignored — user stuck if biometrics fail\n}" },
+      { label: "Good", language: "swift", code: "let context = LAContext()\nvar error: NSError?\n\nif context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {\n    context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics,\n                           localizedReason: \"Unlock your account\") { success, error in\n        if success {\n            self.unlock()\n        } else if let laError = error as? LAError {\n            switch laError.code {\n            case .userFallback:\n                self.showPasswordPrompt()\n            case .biometryLockout:\n                self.showPasscodePrompt()\n            default:\n                self.showPasswordPrompt()\n            }\n        }\n    }\n} else {\n    showPasswordPrompt()  // biometrics not available\n}" }
+    ],
+    keyTakeaway: "Always check biometric availability, handle all error cases, and provide a fallback authentication method.",
+    references: [
+      { title: "LocalAuthentication", url: "https://developer.apple.com/documentation/localauthentication" }
+    ]
+  },
+  "swift-objc.security.are-third-party-sdks-vetted-for-privacy-and-data-collection": {
+    whatItMeans: "Third-party SDKs and libraries are evaluated for privacy implications, data collection practices, and compliance with App Store privacy requirements before integration.",
+    whyItMatters: "Third-party SDKs may collect device data, location, contacts, or usage analytics that must be disclosed in App Store privacy labels. Apple has rejected apps for undisclosed SDK data collection.",
+    howToVerify: "- Check if new SDKs have documented privacy policies\n- Verify the SDK's data collection is disclosed in the App Store privacy nutrition label\n- Look for SDKs accessing device identifiers, location, or contacts\n- Review SDK permissions in the privacy manifest",
+    exampleComment: "This analytics SDK collects device identifiers and usage data. Have we verified this is disclosed in our App Store privacy labels? Apple may reject the update otherwise.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Added SDK without privacy review\npod 'ShadyAnalytics'  // collects IDFA, location, contacts\n// No privacy label update\n// No privacy manifest" },
+      { label: "Good", language: "swift", code: "// Privacy-conscious integration\n// 1. Reviewed privacy policy and data collection docs\n// 2. Updated App Store privacy labels\n// 3. Added privacy manifest (PrivacyInfo.xcprivacy)\n// 4. Configured SDK for minimal data collection\n\nAnalytics.configure(\n    trackingEnabled: userConsented,\n    anonymizeIP: true,\n    disableIDFA: true\n)" }
+    ],
+    keyTakeaway: "Vet every third-party SDK for privacy — update App Store privacy labels and manifests accordingly.",
+    references: [
+      { title: "App Privacy Details", url: "https://developer.apple.com/app-store/app-privacy-details/" }
+    ]
+  },
+  "swift-objc.security.is-code-obfuscation-considered-for-sensitive-business-logic": {
+    whatItMeans: "Sensitive algorithms, license checks, anti-tamper logic, and business-critical code are protected from reverse engineering through obfuscation or server-side execution.",
+    whyItMatters: "iOS apps can be decompiled and analyzed. Without protection, competitors can copy algorithms, attackers can bypass license checks, and payment logic can be circumvented.",
+    howToVerify: "- Check if sensitive logic (licensing, DRM, pricing algorithms) is in client code\n- Verify critical checks run server-side where possible\n- Look for hardcoded secrets, API keys, or encryption keys in the binary",
+    exampleComment: "The premium feature check is purely client-side and easily bypassed by patching the binary. Could we move the entitlement verification to the server?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Easily bypassed by patching the binary\nfunc isPremiumUser() -> Bool {\n    return UserDefaults.standard.bool(forKey: \"isPremium\")\n}\n\n// Hardcoded secret in binary\nlet encryptionKey = \"my-super-secret-key-12345\"" },
+      { label: "Good", language: "swift", code: "// Server-side verification\nfunc isPremiumUser() async throws -> Bool {\n    let receipt = try loadAppStoreReceipt()\n    let status = try await api.verifyReceipt(receipt)\n    return status.hasActiveSubscription\n}\n\n// Key from Keychain, not hardcoded\nfunc getEncryptionKey() throws -> Data {\n    guard let key = try KeychainHelper.retrieve(\"encryptionKey\") else {\n        throw SecurityError.keyNotFound\n    }\n    return key\n}" }
+    ],
+    keyTakeaway: "Move sensitive logic server-side when possible — never hardcode secrets or rely solely on client-side checks.",
+    references: []
+  },
+  "swift-objc.security.are-deep-link-handlers-validating-incoming-urls": {
+    whatItMeans: "Deep link and universal link handlers validate incoming URLs for expected schemes, hosts, and paths before processing, preventing malicious URLs from triggering unintended actions.",
+    whyItMatters: "Attackers can craft malicious deep links to trigger actions like password resets, payments, or data exports. Without validation, any app or website can invoke sensitive functionality.",
+    howToVerify: "- Check that URL scheme handlers validate the full URL structure\n- Verify path parameters are sanitized before use\n- Look for deep links that trigger sensitive actions without confirmation\n- Test with unexpected/malformed URLs",
+    exampleComment: "This deep link handler processes `/transfer?amount=1000&to=attacker` without any validation or user confirmation. An attacker could trigger unauthorized transfers via a malicious link.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any]) -> Bool {\n    let components = URLComponents(url: url, resolvingAgainstBaseURL: true)\n    if let action = components?.path {\n        performAction(action, params: components?.queryItems)  // no validation!\n    }\n    return true\n}" },
+      { label: "Good", language: "swift", code: "func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any]) -> Bool {\n    guard url.scheme == \"myapp\",\n          let components = URLComponents(url: url, resolvingAgainstBaseURL: true),\n          let host = components.host else {\n        return false\n    }\n    \n    switch host {\n    case \"profile\":\n        if let id = components.queryItems?.first(where: { $0.name == \"id\" })?.value {\n            showProfile(id: id.prefix(36).description)  // sanitized\n        }\n    case \"settings\":\n        showSettings()\n    default:\n        return false  // unknown deep link — reject\n    }\n    return true\n}" }
+    ],
+    keyTakeaway: "Validate deep link URLs strictly — check scheme, host, path, and sanitize parameters before processing.",
+    references: []
+  },
+  "swift-objc.security.are-clipboard-operations-not-leaking-sensitive-data": {
+    whatItMeans: "Sensitive data (passwords, tokens, credit card numbers) is not copied to the system clipboard, or if it is, it uses expiring pasteboard items that auto-clear.",
+    whyItMatters: "The system clipboard is shared between apps on iOS. Any app with clipboard access can read sensitive data you've copied. iOS 14+ shows a notification when apps read the clipboard, alerting users to the issue.",
+    howToVerify: "- Check for `UIPasteboard.general.string =` with sensitive data\n- Look for password fields that allow copying\n- Verify one-time codes or tokens use expiring pasteboard items\n- Check that sensitive text fields set `isSecureTextEntry = true`",
+    exampleComment: "This 'Copy API Key' button puts the key on the system clipboard indefinitely. Could we use an expiring pasteboard item that auto-clears after 30 seconds?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Sensitive data stays on clipboard indefinitely\nfunc copyApiKey() {\n    UIPasteboard.general.string = apiKey\n    showToast(\"API key copied\")\n}" },
+      { label: "Good", language: "swift", code: "func copyApiKey() {\n    // Expires after 30 seconds\n    UIPasteboard.general.setItems(\n        [[\"public.utf8-plain-text\": apiKey]],\n        options: [\n            .expirationDate: Date().addingTimeInterval(30),\n            .localOnly: true  // don't sync to other devices\n        ]\n    )\n    showToast(\"API key copied (expires in 30s)\")\n}" }
+    ],
+    keyTakeaway: "Use expiring, local-only pasteboard items for sensitive data — don't leave secrets on the clipboard.",
+    references: []
+  },
+
+  // ============================================
+  // Performance & Build (8 items)
+  // ============================================
+  "swift-objc.performance-build.are-images-and-assets-optimized-for-size": {
+    whatItMeans: "Images and assets are optimized for file size without significant quality loss: PNGs are compressed, large images are resized to display dimensions, and vector assets (PDF, SVG) are used where appropriate.",
+    whyItMatters: "Unoptimized images bloat the app binary, increase download size, and consume excess memory at runtime. A single uncompressed 4K image can add megabytes to the app size.",
+    howToVerify: "- Check sizes of new image assets — look for unusually large files\n- Verify images aren't larger than their display size\n- Look for PNG images that could be JPEG (photos) or PDF/SVG (icons)\n- Check if Asset Catalog compression is enabled",
+    exampleComment: "This background image is 4000x3000px (5MB) but is displayed at 375x200pt. Resizing to 750x400px (@2x) would reduce it from 5MB to ~100KB without visible quality loss.",
+    codeExamples: [
+      { label: "Bad", language: "text", code: "Assets.xcassets/\n  background.imageset/\n    background.png       (5.2 MB, 4000x3000)   ← far too large\n  profile-icon.imageset/\n    icon.png             (200 KB, 1024x1024)    ← bitmap for a simple icon" },
+      { label: "Good", language: "text", code: "Assets.xcassets/\n  background.imageset/\n    background@2x.jpg    (95 KB, 750x400)       ← sized for display\n    background@3x.jpg    (150 KB, 1125x600)\n  profile-icon.imageset/\n    icon.pdf             (3 KB, vector)          ← scales to any size" }
+    ],
+    keyTakeaway: "Size images to display dimensions, use JPEG for photos, PDF/SVG for icons, and compress everything.",
+    references: []
+  },
+  "swift-objc.performance-build.is-view-rendering-performance-acceptable-no-jank-60fps-scrolling": {
+    whatItMeans: "Views render at 60fps (16ms per frame) during scrolling and animations, without dropped frames (jank) caused by expensive layout, drawing, or main-thread blocking.",
+    whyItMatters: "Dropped frames are immediately noticeable to users — scrolling feels sticky, animations stutter, and the app feels unresponsive. 60fps is the baseline for a quality iOS experience.",
+    howToVerify: "- Profile with Instruments Time Profiler during scrolling\n- Check for expensive operations on the main thread (image decoding, layout calculation)\n- Verify cells are reused properly in table/collection views\n- Look for transparency and shadow effects that trigger off-screen rendering",
+    exampleComment: "Scrolling this collection view drops to 30fps. The cell's `layoutSubviews` is decoding full-res images synchronously. Could we decode thumbnails on a background queue and cache them?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "func cellForRow(at indexPath: IndexPath) -> UITableViewCell {\n    let cell = tableView.dequeueReusableCell(withIdentifier: \"Cell\")!\n    let data = try! Data(contentsOf: imageURLs[indexPath.row])  // blocking I/O on main\n    cell.imageView?.image = UIImage(data: data)  // decode on main thread\n    cell.layer.shadowColor = UIColor.black.cgColor  // off-screen render\n    cell.layer.shadowOffset = CGSize(width: 0, height: 2)\n    return cell\n}" },
+      { label: "Good", language: "swift", code: "func cellForRow(at indexPath: IndexPath) -> UITableViewCell {\n    let cell = tableView.dequeueReusableCell(withIdentifier: \"Cell\") as! ImageCell\n    cell.configure(with: imageURLs[indexPath.row], cache: imageCache)\n    return cell\n}\n\n// In ImageCell:\nfunc configure(with url: URL, cache: ImageCache) {\n    imageView.image = cache[url] // cached thumbnail\n    if cache[url] == nil {\n        Task.detached(priority: .userInitiated) {\n            let image = await Self.loadThumbnail(from: url)\n            await cache.store(image, for: url)\n            await MainActor.run { self.imageView.image = image }\n        }\n    }\n}" }
+    ],
+    keyTakeaway: "Profile scrolling performance — move image loading and heavy work off the main thread to hit 60fps.",
+    references: [
+      { title: "Instruments — Time Profiler", url: "https://developer.apple.com/documentation/xcode/improving-your-app-s-performance" }
+    ]
+  },
+  "swift-objc.performance-build.are-background-tasks-using-appropriate-apis-bgtaskscheduler": {
+    whatItMeans: "Background work uses the appropriate API: `BGTaskScheduler` for periodic background tasks, background URLSession for downloads, and `beginBackgroundTask` for short completion work.",
+    whyItMatters: "iOS strictly limits background execution. Using the wrong API results in killed tasks, wasted battery, or App Store rejection. `BGTaskScheduler` is the modern API for scheduled background work.",
+    howToVerify: "- Check that background processing uses `BGTaskScheduler.shared.register`\n- Verify `beginBackgroundTask` is paired with `endBackgroundTask`\n- Look for timer-based polling in the background (not allowed by iOS)\n- Confirm background modes are enabled in the target's capabilities",
+    exampleComment: "This background sync uses a `Timer` which doesn't work when the app is suspended. Using `BGAppRefreshTaskRequest` would let iOS schedule the sync during optimal times.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Timer doesn't fire when app is suspended\nTimer.scheduledTimer(withTimeInterval: 3600, repeats: true) { _ in\n    self.syncData()  // never runs in background\n}" },
+      { label: "Good", language: "swift", code: "// Register in didFinishLaunching\nBGTaskScheduler.shared.register(\n    forTaskWithIdentifier: \"com.app.sync\",\n    using: nil\n) { task in\n    self.handleBackgroundSync(task: task as! BGAppRefreshTask)\n}\n\n// Schedule\nfunc scheduleSync() {\n    let request = BGAppRefreshTaskRequest(identifier: \"com.app.sync\")\n    request.earliestBeginDate = Date(timeIntervalSinceNow: 3600)\n    try? BGTaskScheduler.shared.submit(request)\n}" }
+    ],
+    keyTakeaway: "Use `BGTaskScheduler` for periodic background work — timers and GCD don't work when the app is suspended.",
+    references: [
+      { title: "BGTaskScheduler", url: "https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler" }
+    ]
+  },
+  "swift-objc.performance-build.is-battery-usage-considered-location-updates-network-polling": {
+    whatItMeans: "Battery-intensive operations (continuous location tracking, frequent network polling, heavy computation) are minimized, use efficient alternatives, and respect low-power mode.",
+    whyItMatters: "Battery drain is one of the top reasons users uninstall apps. Continuous GPS, frequent network requests, and background processing can drain the battery noticeably, especially on older devices.",
+    howToVerify: "- Check location accuracy — use `kCLLocationAccuracyHundredMeters` instead of `Best` when possible\n- Look for polling intervals and check if push notifications or WebSockets would be better\n- Verify the app reduces activity in low-power mode\n- Check for unnecessary background location updates",
+    exampleComment: "This app uses `kCLLocationAccuracyBest` with 1-second updates for a weather app. `kCLLocationAccuracyKilometer` with significant change monitoring would use dramatically less battery.",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Continuous high-accuracy GPS for a weather app\nlocationManager.desiredAccuracy = kCLLocationAccuracyBest\nlocationManager.distanceFilter = kCLDistanceFilterNone\nlocationManager.allowsBackgroundLocationUpdates = true  // always tracking\nlocationManager.startUpdatingLocation()" },
+      { label: "Good", language: "swift", code: "// Appropriate accuracy for weather\nlocationManager.desiredAccuracy = kCLLocationAccuracyKilometer\nlocationManager.startMonitoringSignificantLocationChanges()\n\n// Respect low-power mode\nif ProcessInfo.processInfo.isLowPowerModeEnabled {\n    reduceSyncFrequency()\n    pauseNonEssentialAnimations()\n}" }
+    ],
+    keyTakeaway: "Use the minimum location accuracy needed, prefer push over polling, and respect low-power mode.",
+    references: []
+  },
+  "swift-objc.performance-build.are-build-warnings-resolved": {
+    whatItMeans: "Xcode build warnings are resolved or explicitly acknowledged. Warnings about deprecations, unused variables, type mismatches, and potential issues are addressed rather than ignored.",
+    whyItMatters: "Warnings often indicate real issues: deprecated APIs that will break in future OS versions, type mismatches that could crash, or unused code that adds complexity. They also hide new, important warnings in the noise.",
+    howToVerify: "- Check for new warnings introduced by the PR's changes\n- Verify deprecation warnings have migration plans\n- Look for warnings treated as errors in the build settings (recommended)\n- Confirm the PR doesn't increase the total warning count",
+    exampleComment: "This change introduces 3 new deprecation warnings for iOS 17 APIs. Since we're targeting iOS 17+, could we migrate to the replacement APIs before merging?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// 47 warnings — new ones lost in noise\n// Warning: 'UIWebView' was deprecated in iOS 12\n// Warning: Initialization of 'UnsafeBufferPointer<Int>' results in a dangling pointer\n// Warning: Result of 'save()' is unused" },
+      { label: "Good", language: "swift", code: "// Build settings: treat warnings as errors\n// SWIFT_TREAT_WARNINGS_AS_ERRORS = YES\n// GCC_TREAT_WARNINGS_AS_ERRORS = YES\n\n// All warnings resolved or explicitly suppressed with reason\n// Zero warnings in build output" }
+    ],
+    keyTakeaway: "Resolve all build warnings — treat them as errors to prevent accumulation and catch issues early.",
+    references: []
+  },
+  "swift-objc.performance-build.are-unused-frameworks-and-dependencies-removed": {
+    whatItMeans: "Frameworks and dependencies that are no longer used are removed from the project, reducing app size, build times, and potential attack surface.",
+    whyItMatters: "Unused dependencies increase binary size, extend build times, and may introduce security vulnerabilities. Each dependency is also a maintenance burden that must be kept updated.",
+    howToVerify: "- Check for frameworks in the Podfile/Package.swift that aren't imported anywhere\n- Look for import statements of libraries that are being replaced\n- Verify removed features also remove their associated dependencies",
+    exampleComment: "We migrated from Alamofire to URLSession, but Alamofire is still in the Podfile. Removing it would reduce the binary by ~2MB and eliminate a dependency to maintain.",
+    codeExamples: [
+      { label: "Bad", language: "ruby", code: "# Podfile with unused dependencies\npod 'Alamofire'          # replaced by URLSession\npod 'SwiftyJSON'         # replaced by Codable\npod 'SnapKit'            # removed all programmatic UI\npod 'Kingfisher'         # still used ✓" },
+      { label: "Good", language: "ruby", code: "# Podfile — only active dependencies\npod 'Kingfisher'         # image loading and caching\n\n# Removed:\n# - Alamofire (replaced by URLSession in PR #234)\n# - SwiftyJSON (replaced by Codable in PR #245)\n# - SnapKit (migrated to SwiftUI in PR #256)" }
+    ],
+    keyTakeaway: "Remove unused dependencies when migrating away from them — less is more for app size and security.",
+    references: []
+  },
+  "swift-objc.performance-build.is-the-app-size-reasonable-asset-optimization-code-stripping": {
+    whatItMeans: "The app binary size is monitored and kept reasonable through asset optimization, dead code stripping, bitcode, and app thinning.",
+    whyItMatters: "Large apps have lower install rates (especially in emerging markets), take longer to download, and consume more device storage. Apple warns users about cellular downloads over 200MB.",
+    howToVerify: "- Check the app size report in Xcode (Product → Archive → Distribute → App Thinning Report)\n- Verify dead code stripping is enabled (DEAD_CODE_STRIPPING = YES)\n- Look for large embedded resources that could be downloaded on demand\n- Check for debug symbols accidentally included in release builds",
+    exampleComment: "The release build is 180MB, dangerously close to the cellular download limit. The 3D model assets (90MB) could be downloaded on demand using On-Demand Resources.",
+    codeExamples: [
+      { label: "Bad", language: "text", code: "App size: 250MB\n  - Embedded ML model: 80MB (used in one feature)\n  - HD tutorial videos: 60MB\n  - Debug symbols: 30MB (accidentally included)\n  - Uncompressed images: 40MB" },
+      { label: "Good", language: "text", code: "App size: 45MB\n  - ML model: On-Demand Resource (downloaded when needed)\n  - Tutorial videos: Streamed from CDN\n  - Debug symbols: dSYM uploaded to crash reporter\n  - Images: Compressed, app-thinned for device\n  Build settings:\n    DEAD_CODE_STRIPPING = YES\n    STRIP_INSTALLED_PRODUCT = YES" }
+    ],
+    keyTakeaway: "Monitor app size — use on-demand resources, streaming, and build optimizations to stay under the cellular download limit.",
+    references: [
+      { title: "Reducing Your App's Size", url: "https://developer.apple.com/documentation/xcode/reducing-your-app-s-size" }
+    ]
+  },
+  "swift-objc.performance-build.are-cocoapodsspm-dependencies-pinned-to-specific-versions": {
+    whatItMeans: "Dependencies in Podfile, Package.swift, or Cartfile are pinned to specific versions (or narrow ranges) rather than using loose version constraints that could pull in breaking changes.",
+    whyItMatters: "Unpinned dependencies can silently update to breaking versions, causing build failures or runtime bugs that are hard to debug. Pinning ensures reproducible builds across all team members.",
+    howToVerify: "- Check Podfile for exact version pins (e.g., `pod 'Lib', '1.2.3'`)\n- Verify Package.swift uses `.exact()` or narrow `.upToNextMinor()` ranges\n- Look for `~>` (pessimistic) constraints that are too broad\n- Confirm lock files (Podfile.lock, Package.resolved) are committed",
+    exampleComment: "This dependency uses `pod 'Analytics', '~> 5.0'` which allows any 5.x version. If 5.3 introduces a breaking change in a minor release, our build breaks. Could we pin to `5.2.1`?",
+    codeExamples: [
+      { label: "Bad", language: "ruby", code: "# Podfile — too loose\npod 'Alamofire'              # any version!\npod 'SnapKit', '~> 5.0'      # any 5.x" },
+      { label: "Good", language: "ruby", code: "# Podfile — pinned versions\npod 'Alamofire', '5.8.1'\npod 'SnapKit', '5.7.1'\n\n# Or in Package.swift:\n.package(url: \"...\", exact: \"5.8.1\")\n.package(url: \"...\", .upToNextMinor(from: \"5.8.0\"))  // allows 5.8.x only" }
+    ],
+    keyTakeaway: "Pin dependencies to specific versions and commit lock files for reproducible builds.",
+    references: []
+  },
+
+  // ============================================
+  // Documentation (4 items)
+  // ============================================
+  "swift-objc.documentation.are-public-apis-documented-with-doc-comments-": {
+    whatItMeans: "Public types, methods, and properties have Swift doc comments (`///` or `/** */`) that describe their purpose, parameters, return values, and throwing behavior.",
+    whyItMatters: "Doc comments power Xcode's Quick Help, code completion descriptions, and generated documentation. Undocumented public APIs force developers to read implementations to understand usage.",
+    howToVerify: "- Check that all `public` and `open` declarations have doc comments\n- Verify `- Parameter`, `- Returns`, and `- Throws` tags are used for methods\n- Look for doc comments that just restate the name without adding value",
+    exampleComment: "This public `fetchUser(id:)` method has no documentation. Could you add a doc comment explaining the parameter, return value, and what errors it can throw?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "public func fetchUser(id: String) async throws -> User {\n    // no documentation — what does it throw? what if ID is invalid?\n}" },
+      { label: "Good", language: "swift", code: "/// Fetches a user profile from the remote API.\n///\n/// - Parameter id: The unique identifier for the user (UUID format).\n/// - Returns: The fully populated `User` model.\n/// - Throws: `NetworkError.notFound` if no user exists with the given ID,\n///           `NetworkError.unauthorized` if the session has expired.\npublic func fetchUser(id: String) async throws -> User {" }
+    ],
+    keyTakeaway: "Document all public APIs with `///` comments — they power Xcode Quick Help and serve as living documentation.",
+    references: [
+      { title: "Swift Documentation Comments", url: "https://www.swift.org/documentation/api-design-guidelines/#fundamentals" }
+    ]
+  },
+  "swift-objc.documentation.are-complex-algorithms-or-business-rules-explained-in-comments": {
+    whatItMeans: "Complex algorithms, non-obvious business rules, and 'why' decisions are explained in comments, while straightforward code is left uncommented.",
+    whyItMatters: "Code shows what happens, but comments explain why. A complex pricing algorithm, a specific date offset, or an unusual API workaround needs explanation for future maintainers.",
+    howToVerify: "- Look for complex logic without explanatory comments\n- Check for magic numbers or constants without context\n- Verify 'why' comments exist for non-obvious decisions\n- Confirm comments explain intent, not just restate the code",
+    exampleComment: "This date calculation adds 3 days then subtracts weekends, but there's no comment explaining the business rule. Could you add a comment referencing the policy or ticket?",
+    codeExamples: [
+      { label: "Bad", language: "swift", code: "// Comment just restates the code — useless\nlet offset = 3  // set offset to 3\nlet adjustedDate = calendar.date(byAdding: .day, value: offset, to: today)!" },
+      { label: "Good", language: "swift", code: "// Business rule: SLA requires response within 3 business days (POLICY-42)\n// We add 3 days then skip weekends to calculate the deadline\nlet businessDays = 3\nvar deadline = today\nvar added = 0\nwhile added < businessDays {\n    deadline = calendar.date(byAdding: .day, value: 1, to: deadline)!\n    if !calendar.isDateInWeekend(deadline) { added += 1 }\n}" }
+    ],
+    keyTakeaway: "Comment the 'why' not the 'what' — explain business rules, workarounds, and non-obvious decisions.",
+    references: []
+  },
+  "swift-objc.documentation.are-breaking-changes-called-out-in-the-pr-description": {
+    whatItMeans: "Changes that break existing API contracts, require migration steps, or affect other teams' code are clearly flagged in the PR description with migration guidance.",
+    whyItMatters: "Breaking changes that aren't communicated cause cascading failures in dependent code, integration issues, and lost developer time. Clear callouts enable proactive migration.",
+    howToVerify: "- Check if public API signatures were changed (renamed, removed, parameter changes)\n- Look for database schema changes or data format changes\n- Verify the PR description mentions breaking changes and migration steps\n- Check if downstream teams or modules are affected",
+    exampleComment: "This PR renames `fetchUser()` to `loadUser()` which is a public API used by the Settings module. Could you add a '⚠️ Breaking Changes' section to the PR description with migration steps?",
+    codeExamples: [
+      { label: "Bad", language: "markdown", code: "## PR Description\nRefactored user service.\n\n(no mention of renamed public methods or changed return types)" },
+      { label: "Good", language: "markdown", code: "## PR Description\nRefactored UserService to use async/await.\n\n## ⚠️ Breaking Changes\n- `fetchUser(completion:)` → `fetchUser() async throws` (removed completion handler)\n- `UserService.shared` → inject via init (removed singleton)\n\n## Migration Guide\n1. Replace `UserService.shared.fetchUser { result in ... }` with `try await userService.fetchUser()`\n2. Inject `UserService` via initializer instead of using `.shared`\n\n**Affected modules:** Settings, Profile, Onboarding" }
+    ],
+    keyTakeaway: "Flag breaking changes prominently in PR descriptions with migration guides — don't let them be discovered by accident.",
+    references: []
+  },
+  "swift-objc.documentation.is-the-readme-updated-for-new-setup-steps-or-dependencies": {
+    whatItMeans: "When the PR adds new dependencies, environment variables, build steps, or setup requirements, the README or setup documentation is updated to reflect these changes.",
+    whyItMatters: "Outdated setup docs cause friction for new team members and CI/CD pipelines. If a PR adds a required environment variable but doesn't document it, every new setup will fail until someone debugs it.",
+    howToVerify: "- Check if new dependencies were added (Podfile, Package.swift changes)\n- Look for new environment variables or configuration files required\n- Verify any new build steps or tools are documented\n- Confirm the README's 'Getting Started' section still works",
+    exampleComment: "This PR adds Firebase, which requires a `GoogleService-Info.plist` file. Could you update the README's setup section to mention downloading this file from the Firebase console?",
+    codeExamples: [
+      { label: "Bad", language: "markdown", code: "## Setup\n1. Clone the repo\n2. Run `pod install`\n3. Open .xcworkspace\n\n(no mention of the new Firebase plist, API key, or Xcode 15 requirement)" },
+      { label: "Good", language: "markdown", code: "## Setup\n1. Clone the repo\n2. Run `pod install`\n3. Download `GoogleService-Info.plist` from Firebase console and add to project root\n4. Set `MAPS_API_KEY` in your environment or `.env` file\n5. Open .xcworkspace in Xcode 15+\n6. Build and run\n\n### New in v2.3\n- Firebase Analytics added — requires `GoogleService-Info.plist` (see step 3)\n- Minimum Xcode version bumped to 15" }
+    ],
+    keyTakeaway: "Update setup docs whenever you add dependencies, config files, or build requirements — save future you the debugging time.",
+    references: []
+  },
+};

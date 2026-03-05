@@ -4,12 +4,26 @@ import type { Checklist, StackId } from './types';
 import javaProtobufData from '../../assets/data/checklists/java-protobuf.json';
 import jsTsReactNodeData from '../../assets/data/checklists/js-ts-react-node.json';
 import goData from '../../assets/data/checklists/go.json';
+import terraformHclData from '../../assets/data/checklists/terraform-hcl.json';
 import polishMyPrData from '../../assets/data/checklists/polish-my-pr.json';
+import swiftObjcData from '../../assets/data/checklists/swift-objc.json';
+import webDevopsConfigData from '../../assets/data/checklists/web-devops-config.json';
+import pythonData from '../../assets/data/checklists/python.json';
+import rubyData from '../../assets/data/checklists/ruby.json';
+import luaData from '../../assets/data/checklists/lua.json';
+import cLangData from '../../assets/data/checklists/c-lang.json';
 
 const CHECKLIST_IDS = [
   'java-protobuf',
   'js-ts-react-node',
   'go',
+  'terraform-hcl',
+  'swift-objc',
+  'web-devops-config',
+  'python',
+  'ruby',
+  'lua',
+  'c-lang',
   'polish-my-pr',
 ] as const;
 
@@ -22,6 +36,13 @@ const bundledChecklists: ChecklistMap = {
   'java-protobuf': javaProtobufData as unknown as Checklist,
   'js-ts-react-node': jsTsReactNodeData as unknown as Checklist,
   go: goData as unknown as Checklist,
+  'terraform-hcl': terraformHclData as unknown as Checklist,
+  'swift-objc': swiftObjcData as unknown as Checklist,
+  'web-devops-config': webDevopsConfigData as unknown as Checklist,
+  python: pythonData as unknown as Checklist,
+  ruby: rubyData as unknown as Checklist,
+  lua: luaData as unknown as Checklist,
+  'c-lang': cLangData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -102,9 +123,18 @@ export function getPolishChecklist(): Checklist {
 }
 
 export function getAllReviewChecklists(): Checklist[] {
-  return ['java-protobuf', 'js-ts-react-node', 'go'].map((id) =>
-    getChecklist(id),
-  );
+  return [
+    'java-protobuf',
+    'js-ts-react-node',
+    'go',
+    'terraform-hcl',
+    'swift-objc',
+    'web-devops-config',
+    'python',
+    'ruby',
+    'lua',
+    'c-lang',
+  ].map((id) => getChecklist(id));
 }
 
 export function getAllChecklists(): Checklist[] {

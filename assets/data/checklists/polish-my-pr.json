@@ -23,12 +23,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "The PR title should be concise, descriptive, and follow team conventions. Titles like 'fix stuff' or 'updates' tell reviewers nothing.",
+            "whyItMatters": "The title is the first thing reviewers see and what appears in git log, release notes, and search results. A clear title helps reviewers prioritize and understand PRs at a glance.",
+            "howToVerify": "Read the title. Can you tell what the PR does without reading the description? Does it follow the team's convention (e.g., 'feat: add user auth' or 'PROJ-123: Fix login timeout')?",
+            "exampleComment": "The title 'updates' doesn't describe the change. Something like 'Fix timeout in user authentication flow' would help reviewers understand what to expect.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Your PR title is a headline. Make it informative enough to understand without clicking through.",
             "references": []
           }
         },
@@ -41,12 +41,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "The description should explain what changed and why — the motivation, context, and design decisions. The code shows HOW; the description explains WHY.",
+            "whyItMatters": "Reviewers need context to give meaningful feedback. Without knowing why a change was made, they can only review syntax, not whether the approach is correct.",
+            "howToVerify": "Read the description. Do you understand the motivation? Could a new team member understand why this change exists?",
+            "exampleComment": "The description lists what files changed but not why. Adding context like 'Users were experiencing 5s timeouts during peak load because...' would help reviewers evaluate the approach.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Explain the problem before the solution. Reviewers who understand the 'why' give better feedback on the 'how.'",
             "references": []
           }
         },
@@ -58,12 +58,12 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Include a link to the ticket, issue, or design document that motivated this change.",
+            "whyItMatters": "Links connect the code change to its business context. Future developers can trace from code to requirements. It also helps reviewers understand the full scope.",
+            "howToVerify": "Check for a ticket/issue link in the description. Is it the right ticket? Does the ticket have enough context?",
+            "exampleComment": "Could you link the relevant Jira ticket? It would help me understand the full requirements and acceptance criteria.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Always link to the ticket. It's the bridge between code and business context.",
             "references": []
           }
         },
@@ -75,12 +75,12 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "For UI changes, include screenshots or screen recordings showing the before and after states.",
+            "whyItMatters": "Visual changes are impossible to review from code alone. Screenshots let reviewers verify the UI matches designs and spot issues without checking out the branch.",
+            "howToVerify": "If the PR changes UI, are there screenshots? Do they show relevant states (default, loading, error, empty)? Before/after comparisons?",
+            "exampleComment": "This changes the login form layout but there are no screenshots. Could you add before/after images so we can verify it matches the design?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "If it changes pixels, show pixels. Screenshots save reviewers from checking out your branch.",
             "references": []
           }
         },
@@ -93,12 +93,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "For non-trivial changes, state the impact and risk. What could go wrong? What's the blast radius? Is this easily reversible?",
+            "whyItMatters": "Impact assessment helps reviewers focus their attention on the riskiest parts and helps the team plan deployment timing and monitoring.",
+            "howToVerify": "For significant changes, is there a risk assessment? Does it mention what could go wrong, who's affected, and how to roll back?",
+            "exampleComment": "This changes the payment flow which affects all users. Could you add a risk assessment — what happens if the new validation rejects valid cards?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "State the risk upfront. It helps reviewers focus and the team plan deployment.",
             "references": []
           }
         },
@@ -111,12 +111,12 @@
             "api-design"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "If the PR introduces breaking changes (API changes, removed features, changed behavior), call them out prominently in the description.",
+            "whyItMatters": "Breaking changes that aren't called out get merged without downstream teams preparing. This leads to outages, broken clients, and emergency fixes.",
+            "howToVerify": "Does the PR change any public APIs, remove features, or alter existing behavior? Are these changes prominently documented?",
+            "exampleComment": "This renames the API response field from 'userId' to 'user_id' — that's a breaking change for all clients. Please add a 'BREAKING CHANGE' section to the description.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Breaking changes need a spotlight, not a footnote. Make them impossible to miss.",
             "references": []
           }
         },
@@ -128,12 +128,12 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "If the change requires special deployment steps (database migrations, environment variables, feature flag setup), document them.",
+            "whyItMatters": "Missing deployment notes lead to failed deploys, missing config, and incidents. The deployer needs to know what's required beyond merging code.",
+            "howToVerify": "Does this change require new env vars, migrations, or infrastructure changes? Are they documented with clear steps?",
+            "exampleComment": "This adds a new REDIS_URL environment variable but the deployment notes don't mention it. Ops won't know to configure it.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "If it needs more than 'merge and deploy,' write it down. Your future self at 2am will thank you.",
             "references": []
           }
         }
@@ -151,12 +151,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "The PR should address one logical change — one feature, one bug fix, or one refactor. Not a mix of multiple concerns.",
+            "whyItMatters": "Multi-concern PRs are hard to review, hard to revert, and hard to understand in git history. If one part has issues, you can't merge the rest independently.",
+            "howToVerify": "Can you describe the PR's purpose in one sentence? Does it mix feature work with refactoring or cleanup? Could any part ship independently?",
+            "exampleComment": "This PR adds the new API endpoint and refactors the auth middleware. Could we split these? The refactor can land first, then the endpoint builds on it.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "One concern per PR. If you need 'and' to describe it, it's probably too much.",
             "references": []
           }
         },
@@ -168,12 +168,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Don't include drive-by fixes, formatting changes, or unrelated improvements alongside the main change.",
+            "whyItMatters": "Unrelated changes obscure the actual diff, make git blame less useful, and complicate reviews. They also risk introducing bugs in code that wasn't the focus.",
+            "howToVerify": "Scan the file list. Are there files that don't relate to the PR's purpose? Are there formatting-only changes in otherwise untouched files?",
+            "exampleComment": "The linting fixes in these 5 files are unrelated to the auth changes. Could you move them to a separate cleanup PR?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Keep it focused. Save drive-by fixes for a dedicated cleanup PR.",
             "references": []
           }
         },
@@ -185,12 +185,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "PRs should ideally be under ~400 lines of meaningful changes. Larger PRs get worse reviews and take longer to merge.",
+            "whyItMatters": "Research shows review quality drops sharply after 200-400 lines. Large PRs get rubber-stamped. Small PRs get thorough, fast reviews.",
+            "howToVerify": "Check the diff size. Over 400 lines? Could it be split into logical chunks? Are there auto-generated files inflating the count?",
+            "exampleComment": "This is 1200 lines across 30 files. Breaking it into 3-4 focused PRs would get faster, higher-quality reviews.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Smaller PRs get better reviews, faster. If it's over 400 lines, consider splitting.",
             "references": []
           }
         },
@@ -202,12 +202,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Large features should be broken into stacked or sequenced PRs, each building on the previous, with a clear ordering and dependency chain.",
+            "whyItMatters": "One massive PR for a feature is unreviewable. Stacked PRs let reviewers focus on one piece at a time and provide earlier feedback.",
+            "howToVerify": "For large features, is there a plan for how the work is sequenced? Does each PR in the stack make sense on its own?",
+            "exampleComment": "This feature is big. Could we structure it as: PR1 (data model), PR2 (API), PR3 (UI)? Each would be independently reviewable.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Break big features into a PR stack. Each piece should be reviewable and mergeable on its own.",
             "references": []
           }
         },
@@ -219,12 +219,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Refactoring should be in separate PRs from behavior changes. Mixing them makes it impossible to verify that behavior didn't change.",
+            "whyItMatters": "When refactoring and behavior changes are mixed, reviewers can't tell if a difference is intentional (new feature) or structural (same behavior, different code).",
+            "howToVerify": "Does the PR mix restructuring with new functionality? Could the refactor be done first as a no-behavior-change PR?",
+            "exampleComment": "This PR refactors the service layer and adds new validation logic. Splitting the refactor into its own PR would make both easier to review.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Refactor first, then build. Separate PRs make it clear what changed behavior and what didn't.",
             "references": []
           }
         }
@@ -242,12 +242,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Each commit should be a complete, working unit — it builds, tests pass, and represents one logical step.",
+            "whyItMatters": "Atomic commits enable git bisect for bug hunting, make reverts surgical, and tell a clear story of how the feature was built.",
+            "howToVerify": "Could you check out any individual commit and have a working build? Does each commit represent a complete thought?",
+            "exampleComment": "The 'add user model' commit doesn't compile without the 'add migrations' commit. Squashing them would make each commit independently valid.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Every commit should compile and pass tests. If it doesn't stand alone, squash it.",
             "references": []
           }
         },
@@ -260,13 +260,15 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Commit messages should follow team conventions (conventional commits, imperative mood) and explain what and why.",
+            "whyItMatters": "Good commit messages are the primary documentation in git log. They help future developers understand why changes were made months or years later.",
+            "howToVerify": "Read the commit messages. Are they descriptive? Do they follow the project's conventions? Could you understand the change from the message alone?",
+            "exampleComment": "The commit messages are generic ('update files', 'fix bug'). Messages like 'fix: prevent duplicate form submission on slow networks' would be much more helpful in git log.",
             "codeExamples": [],
-            "keyTakeaway": "",
-            "references": []
+            "keyTakeaway": "Write commit messages for the person reading git log 6 months from now. That person might be you.",
+            "references": [
+              "https://cbea.ms/git-commit/"
+            ]
           }
         },
         {
@@ -277,12 +279,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Clean up work-in-progress commits before requesting review. No 'WIP', 'fixup', 'squash me', or 'temp' commits.",
+            "whyItMatters": "WIP commits are noise for reviewers and pollute git history. They signal the PR isn't ready and make the commit log useless.",
+            "howToVerify": "Check the commit list for WIP, fixup, or placeholder commits. Have they been squashed into meaningful commits?",
+            "exampleComment": "There are 3 'WIP' commits and a 'fixup'. Could you squash these into the relevant feature commits before we review?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Clean your commits before requesting review. Interactive rebase is your friend.",
             "references": []
           }
         },
@@ -294,12 +296,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Use interactive rebase to organize commits into a logical sequence before requesting review. The history should tell a story.",
+            "whyItMatters": "A clean history makes the review process smoother and creates permanent documentation. Reviewers can follow the logical progression of changes.",
+            "howToVerify": "Does the commit sequence tell a logical story? Is there a clear progression from setup to implementation to tests?",
+            "exampleComment": "The commit history jumps between the API and UI work. Grouping related commits together (all API changes, then all UI changes) would be easier to follow.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Organize commits like chapters in a story. The reviewer should be able to follow the progression.",
             "references": []
           }
         }
@@ -317,12 +319,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Before requesting review, read your own diff in the GitHub/GitLab UI — the same view reviewers will see.",
+            "whyItMatters": "Reading in the review UI catches things you miss in your editor: leftover debug code, accidental file inclusions, and formatting issues. You'll spot 80% of your own mistakes.",
+            "howToVerify": "Have you looked at the diff in the PR UI? Did you check every file, including ones you didn't expect to change?",
+            "exampleComment": "There's a console.log on line 42 that looks like debug code. A self-review of the diff would have caught this.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Review your own PR first. You'll catch most issues before anyone else has to.",
             "references": []
           }
         },
@@ -334,12 +336,12 @@
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Run the code locally and verify it works end-to-end before requesting review. Don't rely on CI alone.",
+            "whyItMatters": "CI catches build and test failures but not whether the feature actually works as intended. Manual verification catches integration issues and UX problems.",
+            "howToVerify": "Have you run the application and tested the changed feature? Did you test the happy path and at least one error path?",
+            "exampleComment": "This form validation change looks correct in the code, but have you verified it works in the browser? The error messages might not display correctly.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "If you haven't run it, you haven't tested it. CI is necessary but not sufficient.",
             "references": []
           }
         },
@@ -351,12 +353,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Remove all debug statements before requesting review: console.log, fmt.Println, System.out.println, print(), debugger statements.",
+            "whyItMatters": "Debug code in production clutters logs, leaks internal information, and looks unprofessional. It also shows the PR wasn't self-reviewed.",
+            "howToVerify": "Search the diff for console.log, fmt.Println, print(, debugger, System.out, and other debug patterns.",
+            "exampleComment": "There are several console.log statements left in the diff. Could you clean these up before we review the logic?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Search your diff for debug output. Remove it all before requesting review.",
             "references": []
           }
         },
@@ -368,12 +370,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Delete commented-out code. Don't leave it in 'just in case' — version control is your backup.",
+            "whyItMatters": "Commented code creates confusion: Is it temporary? A reference? Will it be re-enabled? It's noise that makes reviews harder and code harder to read.",
+            "howToVerify": "Search the diff for large blocks of commented-out code. Is any of it intentionally preserved, or is it leftover from development?",
+            "exampleComment": "This commented-out function has been replaced by the new implementation. Since git preserves history, we can safely delete it.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Delete dead code. Git remembers so you don't have to.",
             "references": []
           }
         },
@@ -386,12 +388,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Check that no accidental files are included: .env files, IDE configs (.idea/, .vscode/), large binaries, node_modules, build artifacts.",
+            "whyItMatters": "Accidental files bloat the repo, potentially expose secrets, and waste reviewer time. Large binary files can't be easily removed from git history.",
+            "howToVerify": "Review the file list. Are there files that shouldn't be committed? Is .gitignore up to date?",
+            "exampleComment": "There's a .env file in the diff that contains the database URL. This should be in .gitignore, not committed.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Check the file list before submitting. One .env file can ruin your day.",
             "references": []
           }
         },
@@ -403,12 +405,12 @@
             "security"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Verify no secrets, credentials, API keys, passwords, or tokens are in the code or commit history.",
+            "whyItMatters": "Secrets in git history are almost impossible to fully remove. Even if you delete them in a later commit, they persist in history. Once pushed, they must be rotated.",
+            "howToVerify": "Search for common secret patterns: API_KEY, password, token, secret, Bearer, aws_access_key. Check .env files and config files.",
+            "exampleComment": "This config file contains what looks like a production API key. Please remove it and rotate the key, as it's now in git history.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Secrets in git are permanent. Check before you push. Rotate if you find them.",
             "references": []
           }
         },
@@ -420,12 +422,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Check for typos in code, comments, strings, and variable names. They're easy to fix now and embarrassing to fix later.",
+            "whyItMatters": "Typos in user-facing strings look unprofessional. Typos in variable names make code harder to search. Typos in comments mislead future developers.",
+            "howToVerify": "Read through your diff looking specifically for misspellings. Check user-facing strings, error messages, and comments.",
+            "exampleComment": "Small typo: 'recieve' should be 'receive' on line 42. Also 'sucessful' should be 'successful' in the error message.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "A quick spell-check of your diff takes 2 minutes and prevents embarrassing corrections later.",
             "references": []
           }
         }
@@ -443,12 +445,12 @@
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "New code should have corresponding tests that verify its behavior.",
+            "whyItMatters": "Untested code is a liability. Tests document expected behavior, catch regressions, and give confidence for future changes.",
+            "howToVerify": "Are there new test files or test cases for the new functionality? Do they cover the important behaviors?",
+            "exampleComment": "This new utility function doesn't have any tests. Adding tests now, while the context is fresh, will save time later.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Write tests with your code, not after. The context is freshest now.",
             "references": []
           }
         },
@@ -460,12 +462,12 @@
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "All existing tests must still pass. Your change should not break anything that was working before.",
+            "whyItMatters": "Broken tests block other developers and indicate your change has unintended side effects. Fixing them now is cheaper than debugging later.",
+            "howToVerify": "Run the full test suite locally. Do all tests pass? Are there test failures related to your changes?",
+            "exampleComment": "The test suite shows 3 failing tests in the user module. These seem related to your auth changes. Could you investigate and fix them?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Green tests are a prerequisite for review. Fix failures before requesting review.",
             "references": []
           }
         },
@@ -477,12 +479,12 @@
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Tests should cover edge cases: empty inputs, null values, boundary values, error paths, and unusual but valid states.",
+            "whyItMatters": "Happy path tests catch obvious bugs. Edge case tests catch the subtle bugs that make it to production and cause incidents at 3am.",
+            "howToVerify": "Review test cases. Are there tests for empty arrays, null inputs, zero values, large inputs, and error conditions?",
+            "exampleComment": "The tests cover the normal flow but not edge cases. What happens when the input array is empty? When the user has no permissions?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Test the edges: empty, one, many, zero, null, max. That's where production bugs hide.",
             "references": []
           }
         },
@@ -495,12 +497,12 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Test names should describe the expected behavior in plain language, forming a readable specification when listed.",
+            "whyItMatters": "When a test fails, the name is your first clue. 'test1 failed' helps nobody. 'should return 404 when user not found' tells you exactly what broke.",
+            "howToVerify": "Read the test names. Could someone unfamiliar with the code understand what's being tested?",
+            "exampleComment": "The test 'it works' doesn't describe the behavior. Something like 'returns sorted results when sort=ascending' would be clearer.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Test names are documentation. Write them so a failure message tells you what broke.",
             "references": []
           }
         },
@@ -512,12 +514,12 @@
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Tests should not depend on timing, execution order, or external state. They should pass reliably every time.",
+            "whyItMatters": "Flaky tests erode trust in the test suite. Developers start ignoring failures, and real bugs slip through.",
+            "howToVerify": "Do tests use sleep/timeout for timing? Do they depend on other tests running first? Do they depend on network or external services?",
+            "exampleComment": "This test uses a 2-second sleep to wait for an async operation. Use a proper wait mechanism to avoid flaky failures in CI.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "A flaky test is worse than no test. It teaches the team to ignore failures.",
             "references": []
           }
         },
@@ -529,12 +531,12 @@
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "For changes that cross module boundaries or affect APIs, add integration tests that verify the components work together.",
+            "whyItMatters": "Unit tests verify individual pieces. Integration tests verify they work together. Many bugs live in the seams between components.",
+            "howToVerify": "Does this change affect how modules interact? Are there integration tests covering the interaction points?",
+            "exampleComment": "This changes the API response format, but the integration tests still test the old format. They need updating to verify the new contract.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Unit tests for pieces, integration tests for seams. Both are needed for cross-module changes.",
             "references": []
           }
         }
@@ -553,12 +555,12 @@
             "api-design"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "If you changed a public API (REST endpoints, library functions, SDK methods), update the corresponding documentation.",
+            "whyItMatters": "Outdated API docs cause integration bugs and support burden. Consumers build against the docs, not the code.",
+            "howToVerify": "Does this PR change any public-facing API? Are the docs (OpenAPI, JSDoc, README, wiki) updated to match?",
+            "exampleComment": "This adds a new query parameter to the search endpoint but the OpenAPI spec doesn't reflect it. Frontend developers won't know about it.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "If you change the API, update the docs. Consumers rely on docs, not source code.",
             "references": []
           }
         },
@@ -570,12 +572,12 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "If the PR changes setup steps, environment variables, or running instructions, update the README.",
+            "whyItMatters": "An outdated README wastes hours of new developer time. If setup requires a step the README doesn't mention, nobody can get started.",
+            "howToVerify": "Does this change add new dependencies, env vars, or setup steps? Is the README updated?",
+            "exampleComment": "This adds Redis as a dependency but the README still says 'just run npm start.' New developers will get a confusing error.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "If you changed how to set up or run the project, update the README.",
             "references": []
           }
         },
@@ -588,12 +590,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Add comments for non-obvious logic, workarounds, and business rules. Don't comment what the code does — comment why it does it.",
+            "whyItMatters": "Self-documenting code explains what. Comments explain why. A workaround without a comment becomes mysterious legacy code that nobody dares to touch.",
+            "howToVerify": "Are there complex algorithms, business rules, or workarounds without explanation? Would a new developer understand why this code exists?",
+            "exampleComment": "This retry with a 37-second delay is oddly specific. A comment explaining why 37 seconds (e.g., 'matches the upstream cache TTL') would prevent someone from 'fixing' it later.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Comment the why, not the what. Future developers will thank you for explaining the weird parts.",
             "references": []
           }
         },
@@ -605,12 +607,12 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "If the project maintains a changelog, update it with a summary of user-facing changes.",
+            "whyItMatters": "Changelogs communicate what changed to users, stakeholders, and other teams. They're the bridge between code changes and release communication.",
+            "howToVerify": "Does the project have a CHANGELOG.md or equivalent? Does this PR introduce user-facing changes that should be noted?",
+            "exampleComment": "This adds a new export feature that users will see. Could you add an entry to the changelog under 'Added'?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Changelog for user-facing changes. Keep it updated as you go, not at release time.",
             "references": []
           }
         }
@@ -628,12 +630,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Assign reviewers who have relevant domain knowledge. Check CODEOWNERS if the project has one.",
+            "whyItMatters": "Domain experts catch subtle issues that generalists miss. The right reviewer for a database migration is different from the right reviewer for a CSS change.",
+            "howToVerify": "Are the assigned reviewers familiar with this area of the codebase? Does the CODEOWNERS file specify required reviewers?",
+            "exampleComment": "This changes the payment flow — could you add someone from the payments team as a reviewer? They'd catch edge cases I might miss.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "The right reviewers find the right issues. Choose based on expertise, not availability.",
             "references": []
           }
         },
@@ -645,12 +647,12 @@
             "documentation"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Add inline comments on your own PR to guide reviewers through complex sections, explain non-obvious decisions, or highlight areas of concern.",
+            "whyItMatters": "Self-comments save reviewer time and focus attention where it matters. They show you've thought about the code and make the review conversation more productive.",
+            "howToVerify": "Are there complex sections that would benefit from a self-comment? Have you explained any non-obvious design decisions?",
+            "exampleComment": "Consider adding a self-comment on the new caching logic explaining why you chose LRU over TTL. It would preempt the question reviewers will have.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Comment your own PR. Guide reviewers to what matters and explain the non-obvious.",
             "references": []
           }
         },
@@ -663,12 +665,12 @@
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Provide clear instructions for how to test the change manually, including setup steps and expected results.",
+            "whyItMatters": "Reviewers who can reproduce and test the change give better feedback. Without instructions, they review only the code, not whether it works.",
+            "howToVerify": "Are there testing instructions? Could a reviewer follow them to verify the change works?",
+            "exampleComment": "Could you add testing instructions? Something like: '1. Run the app, 2. Navigate to /settings, 3. Click export, 4. Verify the PDF downloads.'",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Make it easy for reviewers to test your change. Clear instructions = better feedback.",
             "references": []
           }
         },
@@ -680,12 +682,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Label the PR with relevant tags: size (S/M/L), area (frontend/backend/infra), priority, and type (feature/bugfix/chore).",
+            "whyItMatters": "Labels help reviewers prioritize and triage. A small bug fix can be reviewed quickly; a large feature needs dedicated time.",
+            "howToVerify": "Are appropriate labels applied? Does the team have a labeling convention? Is the size label accurate?",
+            "exampleComment": "Could you add a size label? This helps reviewers plan their time — a 'size/L' PR needs a dedicated review slot.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Labels help reviewers prioritize. A quick label saves everyone's time.",
             "references": []
           }
         },
@@ -697,12 +699,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Use draft status when the PR isn't ready for final review but you want early feedback or CI results.",
+            "whyItMatters": "Draft PRs set expectations. Reviewers won't waste time doing a thorough review on code that's still changing. When you mark it ready, they know to invest time.",
+            "howToVerify": "Is the PR in draft status while still in progress? Is it marked ready when actually ready for review?",
+            "exampleComment": "This is still a work in progress based on the TODO comments. Consider marking it as a draft until it's ready for review.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Draft means 'not ready, but look if you want.' Ready means 'please review.' Use them correctly.",
             "references": []
           }
         }
@@ -721,12 +723,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "The CI pipeline (lint, build, tests) should pass before requesting review. Fix failures, don't ignore them.",
+            "whyItMatters": "A failing CI wastes reviewer time — they might review code that won't even compile. Green CI is a baseline for review readiness.",
+            "howToVerify": "Is the CI pipeline green? Are there any failures or warnings?",
+            "exampleComment": "CI is showing a test failure in the auth module. Could you fix that before we review? It's hard to evaluate the change when the baseline is broken.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Green CI before review. Don't waste reviewer time on code that doesn't build.",
             "references": []
           }
         },
@@ -738,12 +740,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "The PR should not introduce new lint warnings, compiler warnings, or deprecation notices. Fix them proactively.",
+            "whyItMatters": "Warnings accumulate into a wall of noise that hides real issues. Each warning ignored makes the next one easier to ignore.",
+            "howToVerify": "Check the linter and compiler output. Are there new warnings compared to the base branch? Are deprecation warnings addressed?",
+            "exampleComment": "The build shows 3 new deprecation warnings from this change. Could you address them now before they accumulate?",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Zero new warnings. Treat warnings as errors and fix them immediately.",
             "references": []
           }
         },
@@ -755,12 +757,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Dependencies should be locked via a lockfile (package-lock.json, yarn.lock, go.sum). The lockfile should be committed and up to date.",
+            "whyItMatters": "Without locked dependencies, different environments install different versions, causing 'works on my machine' bugs.",
+            "howToVerify": "Is the lockfile committed? Is it updated to reflect any new dependencies? Are there conflicting lockfiles?",
+            "exampleComment": "The package-lock.json wasn't updated after adding the new dependency. Run `npm install` and commit the updated lockfile.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Commit your lockfile. It's the source of truth for dependency versions.",
             "references": []
           }
         },
@@ -772,12 +774,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "Database migrations should include a down/rollback migration so the change can be reverted if something goes wrong.",
+            "whyItMatters": "Irreversible migrations mean you can't rollback a deployment. If the new code is broken, you're stuck with a database schema that the old code can't use.",
+            "howToVerify": "Does the migration have both up and down scripts? Does the down migration actually reverse the changes?",
+            "exampleComment": "This migration adds a column but the down migration is empty. If we need to rollback, the old code will see an unexpected column.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Every migration needs a working rollback. Test the rollback, not just the migration.",
             "references": []
           }
         },
@@ -789,12 +791,12 @@
             "code-quality"
           ],
           "baseContent": {
-            "whatItMeans": "",
-            "whyItMatters": "",
-            "howToVerify": "",
-            "exampleComment": "",
+            "whatItMeans": "For risky changes, use feature flags to control rollout. This decouples deployment from release.",
+            "whyItMatters": "Feature flags let you deploy code without exposing it, roll out to a subset of users, and instantly disable a feature if issues arise.",
+            "howToVerify": "Is this a risky change? Would a feature flag allow safer rollout? Can it be turned off without a deployment?",
+            "exampleComment": "This changes the payment flow for all users at once. A feature flag would let us roll out gradually and revert instantly if there are issues.",
             "codeExamples": [],
-            "keyTakeaway": "",
+            "keyTakeaway": "Feature flags for risky changes. Deploy anytime, release safely.",
             "references": []
           }
         }
