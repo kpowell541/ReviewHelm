@@ -179,6 +179,7 @@ Authorization: Bearer <supabase_access_token>
 ## 11. Post-Provisioning Next Steps
 
 1. Run `npm run prisma:migrate:deploy` in production.
-2. Configure app with Supabase OAuth PKCE and API base URL.
-3. Validate OpenAPI drift check and security workflow in CI on PR.
-4. Add uptime monitoring that includes OAuth token injection for health checks.
+2. Run backend preflight (`npm run preflight`) with production-like env values.
+3. Configure app with Supabase OAuth PKCE and API base URL.
+4. Validate OpenAPI drift/schema/security checks and backend tests in CI on PR.
+5. Add uptime monitoring that includes OAuth token injection for health checks.

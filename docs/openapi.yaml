@@ -1055,6 +1055,44 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
 
+  /admin/maintenance/policy:
+    get:
+      tags: [Admin]
+      summary: Get retention and cleanup policy
+      responses:
+        '200':
+          description: Retention policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenancePolicy'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/maintenance/cleanup:
+    post:
+      tags: [Admin]
+      summary: Run cleanup for retention-managed datasets
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunCleanupRequest'
+      responses:
+        '200':
+          description: Cleanup result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunCleanupResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -2044,6 +2082,57 @@ components:
           type: object
           additionalProperties: true
       required: [pass, reasons, thresholds, metrics]
+
+    MaintenancePolicy:
+      type: object
+      properties:
+        retainDiffDays:
+          type: integer
+        retainCalibrationDays:
+          type: integer
+        retainAuditDays:
+          type: integer
+      required: [retainDiffDays, retainCalibrationDays, retainAuditDays]
+
+    RunCleanupRequest:
+      type: object
+      properties:
+        dryRun:
+          type: boolean
+          default: true
+      additionalProperties: false
+
+    RunCleanupResponse:
+      type: object
+      properties:
+        dryRun:
+          type: boolean
+        policy:
+          $ref: '#/components/schemas/MaintenancePolicy'
+        targets:
+          type: object
+          properties:
+            diffArtifacts:
+              type: integer
+            commentFeedback:
+              type: integer
+            auditEvents:
+              type: integer
+          required: [diffArtifacts, commentFeedback, auditEvents]
+        cutoffs:
+          type: object
+          properties:
+            diffBefore:
+              type: string
+              format: date-time
+            calibrationBefore:
+              type: string
+              format: date-time
+            auditBefore:
+              type: string
+              format: date-time
+          required: [diffBefore, calibrationBefore, auditBefore]
+      required: [dryRun, policy, targets, cutoffs]
 
     UsageSummary:
       type: object

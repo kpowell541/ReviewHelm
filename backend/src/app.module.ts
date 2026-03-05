@@ -28,6 +28,7 @@ import { CommentProfilesModule } from './comment-profiles/comment-profiles.modul
 import { CalibrationModule } from './calibration/calibration.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { AdminCiModule } from './admin/ci/admin-ci.module';
+import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { AdminCiModule } from './admin/ci/admin-ci.module';
     AdminSecurityModule,
     AdminChecklistsModule,
     AdminCiModule,
+    AdminMaintenanceModule,
   ],
   providers: [
     {

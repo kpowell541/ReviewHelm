@@ -1,0 +1,18 @@
+title = "ReviewHelm gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Allow non-secret placeholders that intentionally illustrate key shapes"
+paths = [
+  '''docs/backend-api-contract\.md''',
+  '''design/pages/04-settings\.html''',
+  '''backend/test/ai\.service\.spec\.ts''',
+]
+regexes = [
+  '''sk-ant-api\.\.\.''',
+  '''sk-ant-test''',
+  '''sk-ant\.\.\.x4f2''',
+  '''sk-ant-[.•]+''',
+]

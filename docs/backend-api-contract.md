@@ -234,7 +234,7 @@ Common `error.code` values:
 
 ```json
 {
-  "apiKey": "sk-ant-api..."
+  "apiKey": "<anthropic_api_key_value>"
 }
 ```
 
@@ -825,6 +825,13 @@ Each item includes:
 - `POST /admin/ci/policy-check`
 - Auth: admin only
 - Purpose: evaluate session quality thresholds for CI gating.
+
+### 14.4 Retention Policy and Cleanup
+
+- `GET /admin/maintenance/policy`
+- `POST /admin/maintenance/cleanup`
+- Auth: admin only
+- Purpose: expose retention policy and run cleanup for old diff artifacts, calibration feedback, and audit logs.
 
 ## 15. Rate Limits and Idempotency
 

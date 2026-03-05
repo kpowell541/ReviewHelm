@@ -57,6 +57,8 @@ npm run start:dev
   - `POST /api/v1/admin/checklists/publish`
   - `POST /api/v1/admin/security/rotate-provider-keys`
   - `POST /api/v1/admin/ci/policy-check`
+  - `GET /api/v1/admin/maintenance/policy`
+  - `POST /api/v1/admin/maintenance/cleanup`
 
 Swagger docs are available at `/docs` when `ENABLE_SWAGGER_DOCS=true`.
 
@@ -72,10 +74,33 @@ Swagger docs are available at `/docs` when `ENABLE_SWAGGER_DOCS=true`.
 ```bash
 npm run typecheck
 npm run build
+npm run test
+npm run test:ci
 npm run openapi:check-routes
+npm run openapi:validate
+npm run openapi:check-security
+npm run preflight
 ```
 
 The OpenAPI route check verifies implemented controller routes against `../docs/openapi.yaml`.
+
+## Test Coverage Focus
+
+The backend tests are intended to catch real regressions in critical paths:
+
+- `test/ai.service.spec.ts`
+  - verifies comment-drafter auto-escalation from Haiku to Sonnet
+  - verifies cached tutor responses short-circuit external AI calls
+- `test/budget.service.spec.ts`
+  - verifies auto-downgrade near budget threshold
+  - verifies hard-stop blocking once budget is exceeded
+- `test/rate-limit.guard.spec.ts`
+  - verifies cooldown rejection (`409`) for back-to-back AI calls
+  - verifies AI per-minute rate-limit rejection (`429`)
+- `test/diffs.service.spec.ts`
+  - verifies diff grounding summary and file heatmap ordering
+- `test/admin-ci.service.spec.ts`
+  - verifies CI policy checks fail/pass based on thresholds
 
 ## Deployment
 

@@ -9,6 +9,7 @@
 - AI model support and usage accounting for Haiku/Sonnet/Opus with feature-level defaults.
 - Audit events for auth failures, rate-limit/cooldown blocks, budget events, and provider key lifecycle events.
 - Readiness health check (`GET /api/v1/health/ready`) with DB and Redis probes.
+- Admin cleanup controls for retention-managed datasets (`/api/v1/admin/maintenance/*`).
 - CI workflow for typecheck, Prisma validation, dependency audit, and secret scanning.
 
 ## Required Runtime Setup
@@ -20,6 +21,7 @@
 - Set `ADMIN_USER_IDS` for allowed security admins.
 - Keep Swagger docs disabled in production (`ENABLE_SWAGGER_DOCS=false`).
 - Health and readiness probes are authenticated; uptime checks must include OAuth bearer tokens.
+- Run backend preflight (`npm run preflight`) before production cutovers.
 
 ## Rotation Procedure
 1. Increase `KEY_ENCRYPTION_VERSION` in runtime secrets.

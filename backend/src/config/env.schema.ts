@@ -42,6 +42,9 @@ const EnvSchema = z.object({
   SONNET_OUTPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(15),
   OPUS_INPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(15),
   OPUS_OUTPUT_COST_PER_MILLION_USD: z.coerce.number().positive().default(75),
+  RETAIN_DIFF_DAYS: z.coerce.number().int().min(1).default(90),
+  RETAIN_CALIBRATION_DAYS: z.coerce.number().int().min(1).default(180),
+  RETAIN_AUDIT_DAYS: z.coerce.number().int().min(7).default(365),
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;

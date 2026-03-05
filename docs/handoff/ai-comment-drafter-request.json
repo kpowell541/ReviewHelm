@@ -1,0 +1,18 @@
+{
+  "sessionId": "b5a0d225-6ead-4d99-9fb2-5bd0c2c2bf78",
+  "feature": "comment-drafter",
+  "role": "comment-drafter",
+  "itemId": "go.error-handling.check-errors",
+  "itemText": "Are all errors checked and handled?",
+  "stackLabel": "Go",
+  "confidence": 2,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Please draft a concise review comment."
+    }
+  ],
+  "allowResponseCache": true,
+  "allowEscalation": true,
+  "diffId": "6db040f3-a3e5-4a5c-b0ea-58c757cab671"
+}
