@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 1: Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Page header */
+  .page-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 500px; margin: 0 auto; line-height: 1.5; }
+
+  /* Layout */
+  .design-row {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #0a0a1a;
+    border-radius: 44px;
+    border: 3px solid #242442;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch {
+    width: 160px;
+    height: 34px;
+    background: #050510;
+    border-radius: 0 0 20px 20px;
+    margin: 0 auto;
+  }
+  .phone-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    height: 44px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e4e4ec;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  .phone-content {
+    padding: 52px 20px 20px;
+  }
+  .phone-home-indicator {
+    width: 134px;
+    height: 5px;
+    background: #e4e4ec;
+    border-radius: 3px;
+    margin: 20px auto 8px;
+    opacity: 0.2;
+  }
+
+  /* Annotations panel */
+  .annotations {
+    max-width: 380px;
+    flex: 1;
+  }
+  .annotation-section {
+    background: #111122;
+    border: 1px solid #242442;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .annotation-section h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8b5cf6;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .annotation-section p {
+    font-size: 13px;
+    color: #9898b0;
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    color: #a78bfa;
+    background: #1a1a30;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .color-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+  }
+  .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  /* ============ HOME SCREEN COMPONENTS ============ */
+
+  /* Header area */
+  .home-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    padding: 0 4px;
+  }
+  .home-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .home-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .home-logo svg {
+    width: 40px;
+    height: 40px;
+  }
+  .home-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+  }
+  .home-settings-btn {
+    width: 36px;
+    height: 36px;
+    background: #1a1a30;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 1px solid #242442;
+  }
+  .home-subtitle {
+    font-size: 14px;
+    color: #5a5a78;
+    padding: 0 4px;
+    margin-bottom: 28px;
+  }
+
+  /* Quick stats row */
+  .stats-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    flex: 1;
+    background: #111122;
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+    border: 1px solid #1a1a30;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  .stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: #5a5a78;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #5a5a78;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding: 0 4px;
+  }
+
+  /* Mode cards */
+  .mode-card {
+    background: #111122;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid #1a1a30;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .mode-card:hover {
+    border-color: #333355;
+  }
+  .mode-icon-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .mode-text {
+    flex: 1;
+  }
+  .mode-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e4e4ec;
+    margin-bottom: 2px;
+  }
+  .mode-desc {
+    font-size: 12px;
+    color: #5a5a78;
+    line-height: 1.3;
+  }
+  .mode-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .mode-arrow {
+    color: #3a3a52;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Recent sessions */
+  .recent-card {
+    background: #111122;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #1a1a30;
+    cursor: pointer;
+  }
+  .recent-left {
+    flex: 1;
+  }
+  .recent-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e4e4ec;
+    margin-bottom: 2px;
+  }
+  .recent-meta {
+    font-size: 11px;
+    color: #5a5a78;
+  }
+  .recent-status {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* Comparison label */
+  .comparison-label {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5a5a78;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 1 of 11</div>
+  <h1>Home Screen</h1>
+  <p class="desc">The main dashboard. Mode selection, quick stats at a glance, and recent session history.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ PHONE MOCKUP ============ -->
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-status">
+      <span>9:41</span>
+      <span style="display:flex; gap:6px; font-size:11px">
+        <span>&#9679;&#9679;&#9679;&#9679;</span>
+        <span>&#128267;</span>
+      </span>
+    </div>
+
+    <div class="phone-content">
+      <!-- Header with logo -->
+      <div class="home-header">
+        <div class="home-logo-area">
+          <div class="home-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="56 48 400 400" width="40" height="40">
+              <defs>
+                <linearGradient id="shG" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#a78bfa"/><stop offset="100%" style="stop-color:#7c3aed"/></linearGradient>
+                <linearGradient id="nG" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#ffffff"/><stop offset="100%" style="stop-color:#c4b5fd"/></linearGradient>
+                <linearGradient id="gG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#34d399"/><stop offset="100%" style="stop-color:#10b981"/></linearGradient>
+              </defs>
+              <rect x="56" y="48" width="400" height="400" rx="80" fill="#0a0a1a"/>
+              <path d="M256 58 L405 118 L405 262 Q405 365 256 432 Q107 365 107 262 L107 118 Z" fill="url(#shG)" opacity="0.18"/>
+              <path d="M256 58 L405 118 L405 262 Q405 365 256 432 Q107 365 107 262 L107 118 Z" fill="none" stroke="url(#shG)" stroke-width="6" stroke-linejoin="round"/>
+              <circle cx="256" cy="228" r="118" fill="none" stroke="#fff" stroke-width="3" opacity="0.12"/>
+              <polygon points="256,110 240,215 272,215" fill="url(#nG)" opacity="0.9"/>
+              <polygon points="256,346 240,241 272,241" fill="#2a2a42" opacity="0.6"/>
+              <polygon points="374,228 269,214 269,242" fill="#2a2a42" opacity="0.45"/>
+              <polygon points="138,228 243,214 243,242" fill="#2a2a42" opacity="0.45"/>
+              <circle cx="256" cy="228" r="42" fill="#0a0a1a"/>
+              <circle cx="256" cy="228" r="42" fill="none" stroke="#8b5cf6" stroke-width="4"/>
+              <text x="238" y="238" font-family="monospace" font-size="30" font-weight="800" fill="#34d399" text-anchor="middle">&lt;</text>
+              <text x="258" y="238" font-family="monospace" font-size="30" font-weight="800" fill="#fff" text-anchor="middle">/</text>
+              <text x="276" y="238" font-family="monospace" font-size="30" font-weight="800" fill="#34d399" text-anchor="middle">&gt;</text>
+              <line x1="256" y1="96" x2="256" y2="108" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+              <text x="256" y="90" font-family="sans-serif" font-size="16" font-weight="800" fill="#fbbf24" text-anchor="middle">N</text>
+              <circle cx="256" cy="395" r="20" fill="#0a0a1a"/>
+              <circle cx="256" cy="395" r="20" fill="url(#gG)" opacity="0.15"/>
+              <circle cx="256" cy="395" r="20" fill="none" stroke="url(#gG)" stroke-width="3"/>
+              <path d="M246 395 L253 402 L267 388" fill="none" stroke="url(#gG)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="home-title"><span style="color:#fbbf24">Review</span><span style="color:#8b5cf6">Helm</span></span>
+        </div>
+        <div class="home-settings-btn">⚙</div>
+      </div>
+      <div class="home-subtitle">Review with confidence. Learn as you go.</div>
+
+      <!-- Quick stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value" style="color:#34d399">12</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#a78bfa">3.6</div>
+          <div class="stat-label">Confidence</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" style="color:#fbbf24">4</div>
+          <div class="stat-label">Gaps</div>
+        </div>
+      </div>
+
+      <!-- Modes -->
+      <div class="section-label">Modes</div>
+
+      <div class="mode-card">
+        <div class="mode-icon-circle" style="background:#8b5cf615; border:1px solid #8b5cf633">
+          <span style="font-size:20px">🔍</span>
+        </div>
+        <div class="mode-text">
+          <div class="mode-title">Review a PR</div>
+          <div class="mode-desc">Checklist for reviewing teammate PRs</div>
+        </div>
+        <span class="mode-arrow">›</span>
+      </div>
+
+      <div class="mode-card">
+        <div class="mode-icon-circle" style="background:#10b98115; border:1px solid #10b98133">
+          <span style="font-size:20px">✨</span>
+        </div>
+        <div class="mode-text">
+          <div class="mode-title">Polish My PR</div>
+          <div class="mode-desc">Prep your PR for a smooth merge</div>
+        </div>
+        <span class="mode-arrow">›</span>
+      </div>
+
+      <div class="mode-card">
+        <div class="mode-icon-circle" style="background:#f59e0b15; border:1px solid #f59e0b33">
+          <span style="font-size:20px">📚</span>
+        </div>
+        <div class="mode-text">
+          <div class="mode-title">Learn</div>
+          <div class="mode-desc">Study your weak areas with AI tutor</div>
+        </div>
+        <div class="mode-badge" style="background:#f59e0b20; color:#fbbf24">4 gaps</div>
+        <span class="mode-arrow">›</span>
+      </div>
+
+      <div class="mode-card">
+        <div class="mode-icon-circle" style="background:#a78bfa15; border:1px solid #a78bfa33">
+          <span style="font-size:20px">📊</span>
+        </div>
+        <div class="mode-text">
+          <div class="mode-title">My Gaps</div>
+          <div class="mode-desc">Track and close your knowledge gaps</div>
+        </div>
+        <div class="mode-badge" style="background:#a78bfa20; color:#a78bfa">4 to learn</div>
+        <span class="mode-arrow">›</span>
+      </div>
+
+      <!-- Recent Sessions -->
+      <div style="margin-top:24px">
+        <div class="section-label">Recent Sessions</div>
+
+        <div class="recent-card">
+          <div class="recent-left">
+            <div class="recent-title">Go — Error Handling</div>
+            <div class="recent-meta">Today · Review · 87% coverage</div>
+          </div>
+          <div class="recent-status" style="background:#10b98120; color:#34d399">Complete</div>
+        </div>
+
+        <div class="recent-card">
+          <div class="recent-left">
+            <div class="recent-title">JS/TS — React Patterns</div>
+            <div class="recent-meta">Yesterday · Polish · 62% coverage</div>
+          </div>
+          <div class="recent-status" style="background:#f59e0b20; color:#fbbf24">In Progress</div>
+        </div>
+
+        <div class="recent-card">
+          <div class="recent-left">
+            <div class="recent-title">Java — Protobuf Validation</div>
+            <div class="recent-meta">Mar 1 · Review · 94% coverage</div>
+          </div>
+          <div class="recent-status" style="background:#10b98120; color:#34d399">Complete</div>
+        </div>
+      </div>
+
+      <div class="phone-home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Layout Structure</h3>
+      <p>Full-screen <code>ScrollView</code> with no tab bar — the home screen is a hub that branches into each flow.</p>
+      <p>Settings icon moved from bottom footer to top-right header for quicker access.</p>
+      <p>Logo icon sits beside the app name for brand reinforcement.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Quick Stats Row</h3>
+      <p>New addition — three stat cards give an at-a-glance dashboard feel:</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#34d399"></span> Green</span> Sessions completed count</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#a78bfa"></span> Violet</span> Average confidence across all items</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span> Amber</span> Active knowledge gaps count</p>
+      <p>Pulls from <code>useSessionStore</code> and <code>useConfidenceStore</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Mode Cards</h3>
+      <p>Each mode gets an icon circle with a tinted background matching its semantic color:</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#8b5cf6"></span> Violet</span> Review — primary action, brand color</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#10b981"></span> Green</span> Polish — positive/approval association</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#f59e0b"></span> Amber</span> Learn — attention/growth association</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#a78bfa"></span> Violet light</span> Gaps — tracks back to brand</p>
+      <p>Badges on Learn and Gaps show active gap count in amber. Arrow affordance on right.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Recent Sessions</h3>
+      <p>Shows last 3 sessions with title, date, mode, and coverage percentage.</p>
+      <p>Status badges use the semantic colors:</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#34d399"></span></span> <code>Complete</code> — green</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span></span> <code>In Progress</code> — amber</p>
+      <p>Tapping a card resumes/views that session.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Colors Used</h3>
+      <p><span class="color-ref"><span class="color-dot" style="background:#0a0a1a"></span></span> <code>#0a0a1a</code> Background</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#111122"></span></span> <code>#111122</code> Cards / stat boxes</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#1a1a30"></span></span> <code>#1a1a30</code> Card borders</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#e4e4ec"></span></span> <code>#e4e4ec</code> Primary text</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#5a5a78"></span></span> <code>#5a5a78</code> Secondary/muted text</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#8b5cf6"></span></span> <code>#8b5cf6</code> Primary violet</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#10b981"></span></span> <code>#10b981</code> / <code>#34d399</code> Green</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#f59e0b"></span></span> <code>#f59e0b</code> / <code>#fbbf24</code> Amber</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Typography</h3>
+      <p><strong>Primary font:</strong> Quicksand — rounded geometric sans-serif</p>
+      <p><strong>Code font:</strong> JetBrains Mono</p>
+      <p><strong>Wordmark:</strong> <span style="color:#fbbf24">Review</span><span style="color:#8b5cf6">Helm</span> — amber + violet</p>
+      <p>Expo package: <code>@expo-google-fonts/quicksand</code></p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Changes from Current</h3>
+      <p>1. Added logo icon in header (was text only)</p>
+      <p>2. Moved settings to top-right gear icon (was bottom link)</p>
+      <p>3. Added quick stats row (new component)</p>
+      <p>4. Mode cards redesigned — icon circles replace emoji-only, added arrow affordance, removed left border accent</p>
+      <p>5. Recent sessions now show coverage % and date</p>
+      <p>6. All colors updated to Electric Tri-Color palette</p>
+      <p>7. Section labels added for visual grouping</p>
+      <p>8. Font changed to Quicksand (was system font)</p>
+      <p>9. Wordmark uses amber "Review" + violet "Helm"</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Interactions</h3>
+      <p><strong>Mode cards:</strong> <code>Pressable</code> with opacity feedback → navigates to respective flow</p>
+      <p><strong>Recent sessions:</strong> Tap to resume/view session</p>
+      <p><strong>Settings gear:</strong> Navigates to <code>/settings</code></p>
+      <p><strong>Stats:</strong> Tapping gaps stat could shortcut to <code>/gaps</code></p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

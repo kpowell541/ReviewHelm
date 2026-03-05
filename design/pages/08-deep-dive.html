@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 8: Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 620px; margin: 0 auto; line-height: 1.5; }
+
+  .design-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .variant-label {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; border: 1px solid #5a5a7833; color: #5a5a78;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px; min-height: 812px; background: #0a0a1a;
+    border-radius: 44px; border: 3px solid #242442;
+    overflow: hidden; position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch { width: 160px; height: 34px; background: #050510; border-radius: 0 0 20px 20px; margin: 0 auto; }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; height: 44px; font-size: 12px; font-weight: 600; color: #e4e4ec;
+    position: absolute; top: 0; left: 0; right: 0;
+  }
+  .phone-content { padding: 52px 20px 20px; }
+  .phone-home-indicator { width: 134px; height: 5px; background: #e4e4ec; border-radius: 3px; margin: 20px auto 8px; opacity: 0.2; }
+
+  /* Annotations */
+  .annotations { max-width: 380px; flex: 1; min-width: 300px; }
+  .annotation-section {
+    background: #111122; border: 1px solid #242442; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .annotation-section h3 { font-size: 13px; font-weight: 700; color: #8b5cf6; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .annotation-section p { font-size: 13px; color: #9898b0; line-height: 1.6; margin-bottom: 6px; }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px; color: #a78bfa; background: #1a1a30; padding: 2px 6px; border-radius: 4px;
+  }
+
+  /* ============ DEEP DIVE COMPONENTS ============ */
+
+  .nav-back {
+    width: 36px; height: 36px; background: #1a1a30; border: 1px solid #242442;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #e4e4ec;
+  }
+
+  /* Item header card */
+  .item-header {
+    background: #111122;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #1a1a30;
+    margin-bottom: 12px;
+  }
+  .item-meta {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 6px;
+  }
+  .item-sev {
+    font-size: 8px; font-weight: 800; padding: 2px 6px; border-radius: 3px;
+    letter-spacing: 0.3px;
+  }
+  .item-sev.blocker { color: #ef4444; background: #ef444418; }
+  .item-sev.major { color: #f59e0b; background: #f59e0b18; }
+  .item-breadcrumb { font-size: 10px; color: #5a5a78; }
+  .item-text { font-size: 14px; font-weight: 600; color: #e4e4ec; line-height: 1.4; margin-bottom: 8px; }
+  .item-conf {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px;
+  }
+  .conf-pill {
+    padding: 3px 8px; border-radius: 6px;
+    font-weight: 700; font-size: 11px;
+  }
+  .conf-label { color: #5a5a78; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; border-bottom: 1px solid #1a1a30;
+    margin-bottom: 16px;
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 10px 0;
+    font-size: 13px; font-weight: 600; color: #5a5a78;
+    cursor: pointer; border-bottom: 2px solid transparent;
+  }
+  .tab.active {
+    color: #a78bfa;
+    border-bottom-color: #8b5cf6;
+  }
+
+  /* Content sections */
+  .content-section {
+    margin-bottom: 16px;
+  }
+  .content-label {
+    font-size: 10px; font-weight: 700; color: #8b5cf6;
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .content-text {
+    font-size: 13px; color: #c0c0d0; line-height: 1.5;
+  }
+
+  /* Code example */
+  .code-block {
+    background: #050510;
+    border: 1px solid #1a1a30;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #c0c0d0;
+    overflow-x: auto;
+  }
+  .code-label {
+    font-size: 10px; font-weight: 700; margin-bottom: 4px;
+  }
+  .code-label.bad { color: #ef4444; }
+  .code-label.good { color: #34d399; }
+
+  /* Takeaway box */
+  .takeaway {
+    background: #34d39910;
+    border: 1px solid #34d39925;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .takeaway-label {
+    font-size: 10px; font-weight: 700; color: #34d399;
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .takeaway-text {
+    font-size: 12px; color: #c0c0d0; line-height: 1.4;
+  }
+
+  /* Quick actions */
+  .quick-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .quick-btn {
+    background: #111122;
+    border: 1px solid #1a1a30;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #9898b0;
+    cursor: pointer;
+  }
+
+  /* Chat bubble */
+  .chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .chat-user {
+    background: #8b5cf6;
+    color: #fff;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-assistant {
+    background: #111122;
+    border: 1px solid #1a1a30;
+    color: #c0c0d0;
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Chat input */
+  .chat-input-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid #1a1a30;
+    margin-top: 8px;
+  }
+  .chat-input {
+    flex: 1;
+    background: #111122;
+    border: 1px solid #1a1a30;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #5a5a78;
+  }
+  .chat-send {
+    width: 36px; height: 36px;
+    background: #8b5cf6;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff;
+    flex-shrink: 0;
+  }
+  .chat-model {
+    font-size: 9px; color: #3a3a52; text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 8 of 11</div>
+  <h1>Deep Dive</h1>
+  <p class="desc">Educational screen for a single checklist item. Two tabs: Content (offline base content) and AI Tutor (interactive chat). Accessible from checklist items, gaps, and session summary.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ PHONE 1: Content Tab ============ -->
+  <div class="variant">
+    <div class="variant-label">Content Tab</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
+          <div class="nav-back">‹</div>
+          <span style="font-size:18px; font-weight:700; color:#e4e4ec">Deep Dive</span>
+        </div>
+
+        <!-- Item header -->
+        <div class="item-header">
+          <div class="item-meta">
+            <span class="item-sev major">MAJ</span>
+            <span class="item-breadcrumb">Go › Error Handling</span>
+          </div>
+          <div class="item-text">Verify context cancellation is handled correctly in goroutines</div>
+          <div class="item-conf">
+            <span class="conf-pill" style="background:#ef444415; color:#ef4444">2/5</span>
+            <span class="conf-label">Somewhat uncertain</span>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <div class="tab active">📖 Content</div>
+          <div class="tab">🎓 AI Tutor</div>
+        </div>
+
+        <!-- Base content -->
+        <div class="content-section">
+          <div class="content-label">What It Means</div>
+          <div class="content-text">When goroutines are spawned, they should check for context cancellation to avoid leaking resources when the parent context is done.</div>
+        </div>
+
+        <div class="content-section">
+          <div class="content-label">Why It Matters</div>
+          <div class="content-text">Leaked goroutines hold open connections, consume memory, and can cause cascading failures in production services.</div>
+        </div>
+
+        <div class="content-section">
+          <div class="content-label">How to Verify</div>
+          <div class="content-text">Check for <code style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#a78bfa; background:#1a1a30; padding:1px 4px; border-radius:3px">select</code> blocks that listen on <code style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#a78bfa; background:#1a1a30; padding:1px 4px; border-radius:3px">ctx.Done()</code> alongside channel operations.</div>
+        </div>
+
+        <!-- Code examples -->
+        <div class="content-section">
+          <div class="content-label">Code Examples</div>
+          <div class="code-label bad">❌ Bad</div>
+          <div class="code-block">go func() {
+  result := doWork()
+  ch &lt;- result
+}()</div>
+          <div class="code-label good">✅ Good</div>
+          <div class="code-block">go func() {
+  select {
+  case &lt;-ctx.Done():
+    return
+  case ch &lt;- doWork():
+  }
+}()</div>
+        </div>
+
+        <!-- Takeaway -->
+        <div class="takeaway">
+          <div class="takeaway-label">Key Takeaway</div>
+          <div class="takeaway-text">Every goroutine that outlives its caller should respect context cancellation to prevent resource leaks.</div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="content-label">Quick Actions</div>
+        <div class="quick-actions">
+          <div class="quick-btn">💡 Explain this</div>
+          <div class="quick-btn">✍️ Draft a comment</div>
+          <div class="quick-btn">🏋️ Give me an exercise</div>
+          <div class="quick-btn">🤔 Challenge me</div>
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHONE 2: AI Tutor Tab ============ -->
+  <div class="variant">
+    <div class="variant-label">AI Tutor Tab</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
+          <div class="nav-back">‹</div>
+          <span style="font-size:18px; font-weight:700; color:#e4e4ec">Deep Dive</span>
+        </div>
+
+        <!-- Item header (compact) -->
+        <div class="item-header" style="padding:10px 14px">
+          <div class="item-meta">
+            <span class="item-sev major">MAJ</span>
+            <span class="item-breadcrumb">Go › Error Handling</span>
+          </div>
+          <div class="item-text" style="font-size:13px; margin-bottom:0">Verify context cancellation is handled correctly in goroutines</div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <div class="tab">📖 Content</div>
+          <div class="tab active">🎓 AI Tutor</div>
+        </div>
+
+        <!-- Chat messages -->
+        <div class="chat-bubble chat-user">
+          Can you explain why context cancellation matters for goroutines?
+        </div>
+
+        <div class="chat-bubble chat-assistant">
+          Great question! When a goroutine doesn't check for context cancellation, it continues running even after its parent has moved on. This is called a "goroutine leak."
+
+Think of it like leaving a faucet running — each leaked goroutine holds onto resources (memory, connections, CPU) indefinitely.
+        </div>
+
+        <div class="chat-bubble chat-user">
+          How do I spot this in a code review?
+        </div>
+
+        <div class="chat-bubble chat-assistant">
+          Look for these patterns:
+
+1. Any `go func()` that does blocking work without a `select` on `ctx.Done()`
+2. Loops inside goroutines that don't check cancellation
+3. Channel sends without a context-aware timeout
+
+The key tell is: "If this goroutine's caller returns early, will this goroutine notice?"
+        </div>
+
+        <!-- Chat input -->
+        <div class="chat-input-bar">
+          <div class="chat-input">Ask a follow-up...</div>
+          <div class="chat-send">↑</div>
+        </div>
+        <div class="chat-model">Powered by Claude Sonnet</div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Purpose</h3>
+      <p>The learning hub for a single checklist item. Two tabs provide complementary ways to understand a topic:</p>
+      <p><strong>Content tab:</strong> Offline base content loaded from bundled JSON. No API calls.</p>
+      <p><strong>AI Tutor tab:</strong> Interactive chat with Claude for follow-up questions. Chat history persisted in <code>useTutorStore</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Item Header</h3>
+      <p>Shows the checklist item in context: severity badge, stack/section breadcrumb, item text, and current confidence level.</p>
+      <p>Confidence pill uses the standard color system: 1-2 red, 3 amber, 4-5 green.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Content Tab</h3>
+      <p>Structured educational content from bundled JSON:</p>
+      <p><strong>What It Means:</strong> Plain-language explanation of the checklist item.</p>
+      <p><strong>Why It Matters:</strong> Real-world impact and consequences.</p>
+      <p><strong>How to Verify:</strong> Practical steps for checking in a PR.</p>
+      <p><strong>Code Examples:</strong> Bad (❌) vs Good (✅) comparison in monospace blocks.</p>
+      <p><strong>Key Takeaway:</strong> Green-tinted highlight box with the core insight.</p>
+      <p><strong>Quick Actions:</strong> 2×2 grid of buttons that switch to AI Tutor tab with a specific prompt (explain, draft comment, exercise, challenge).</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>AI Tutor Tab</h3>
+      <p>Chat interface with Claude. Messages persist across sessions via Zustand/AsyncStorage.</p>
+      <p><strong>User messages:</strong> Right-aligned, violet background.</p>
+      <p><strong>Assistant messages:</strong> Left-aligned, dark card with border. Supports markdown.</p>
+      <p><strong>Input:</strong> Multiline text field with circular send button. Disabled if no API key.</p>
+      <p><strong>Model label:</strong> Shows which Claude model is in use.</p>
+      <p>Quick actions from Content tab auto-switch here and trigger the first message.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Cost Efficiency</h3>
+      <p>Content tab is 100% offline — loaded from bundled JSON, zero API calls.</p>
+      <p>AI Tutor uses prompt caching and response caching to minimize repeat costs.</p>
+      <p>Token usage tracked per call via <code>recordUsage()</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Navigation</h3>
+      <p><strong>From:</strong> Checklist item (expanded) → Deep Dive nudge, Gaps screen → card tap, Session Summary → item rows</p>
+      <p><strong>Quick action "Draft a comment":</strong> Navigates to Comment Drafter (Screen 9)</p>
+      <p><strong>Back:</strong> Returns to previous screen</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

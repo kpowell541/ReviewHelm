@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 9: Comment Drafter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 620px; margin: 0 auto; line-height: 1.5; }
+
+  .design-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .variant-label {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; border: 1px solid #5a5a7833; color: #5a5a78;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px; min-height: 812px; background: #0a0a1a;
+    border-radius: 44px; border: 3px solid #242442;
+    overflow: hidden; position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch { width: 160px; height: 34px; background: #050510; border-radius: 0 0 20px 20px; margin: 0 auto; }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; height: 44px; font-size: 12px; font-weight: 600; color: #e4e4ec;
+    position: absolute; top: 0; left: 0; right: 0;
+  }
+  .phone-content { padding: 52px 20px 20px; }
+  .phone-home-indicator { width: 134px; height: 5px; background: #e4e4ec; border-radius: 3px; margin: 20px auto 8px; opacity: 0.2; }
+
+  /* Annotations */
+  .annotations { max-width: 380px; flex: 1; min-width: 300px; }
+  .annotation-section {
+    background: #111122; border: 1px solid #242442; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .annotation-section h3 { font-size: 13px; font-weight: 700; color: #8b5cf6; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .annotation-section p { font-size: 13px; color: #9898b0; line-height: 1.6; margin-bottom: 6px; }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px; color: #a78bfa; background: #1a1a30; padding: 2px 6px; border-radius: 4px;
+  }
+
+  /* ============ COMMENT DRAFTER COMPONENTS ============ */
+
+  .nav-back {
+    width: 36px; height: 36px; background: #1a1a30; border: 1px solid #242442;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #e4e4ec;
+  }
+
+  /* Item context card */
+  .item-context {
+    background: #111122;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #1a1a30;
+    border-left: 4px solid #3b82f6;
+    margin-bottom: 20px;
+  }
+  .item-context-label {
+    font-size: 10px; font-weight: 600; color: #5a5a78;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .item-context-text {
+    font-size: 14px; font-weight: 600; color: #e4e4ec;
+    line-height: 1.4; margin-bottom: 4px;
+  }
+  .item-context-breadcrumb {
+    font-size: 10px; color: #5a5a78;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 13px; font-weight: 700; color: #e4e4ec;
+    margin-bottom: 4px;
+  }
+  .section-hint {
+    font-size: 11px; color: #5a5a78; line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  /* Text area */
+  .text-area {
+    background: #0a0a1a;
+    border: 1px solid #242442;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 13px;
+    color: #5a5a78;
+    font-family: 'Quicksand', sans-serif;
+    width: 100%;
+    min-height: 80px;
+    line-height: 1.4;
+  }
+  .text-area.filled { color: #c0c0d0; }
+
+  /* Generate button */
+  .generate-btn {
+    background: #8b5cf6;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+
+  /* Draft output */
+  .draft-card {
+    background: #111122;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #1a1a30;
+    margin-bottom: 12px;
+  }
+  .draft-text {
+    font-size: 13px;
+    color: #c0c0d0;
+    line-height: 1.5;
+  }
+  .draft-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: #050510;
+    border: 1px solid #1a1a30;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 8px 0;
+    color: #a78bfa;
+    line-height: 1.5;
+  }
+
+  /* Refine buttons */
+  .refine-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .refine-btn {
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #242442;
+    background: #0a0a1a;
+    color: #9898b0;
+    cursor: pointer;
+  }
+  .refine-btn.primary {
+    border-color: #8b5cf633;
+    color: #a78bfa;
+    background: #8b5cf610;
+  }
+  .refine-btn.green {
+    border-color: #34d39933;
+    color: #34d399;
+    background: #34d39910;
+  }
+
+  /* Preview */
+  .preview-card {
+    background: #050510;
+    border: 1px solid #1a1a30;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .preview-label {
+    font-size: 9px; font-weight: 700; color: #5a5a78;
+    letter-spacing: 1px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .preview-text {
+    font-size: 13px; color: #c0c0d0; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 9 of 11</div>
+  <h1>Comment Drafter</h1>
+  <p class="desc">AI-assisted PR comment drafting. Describe the issue you found, get a professional review comment generated, then refine it (shorter, more detail, softer tone) before copying.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ PHONE 1: Input & Generate ============ -->
+  <div class="variant">
+    <div class="variant-label">Input & Generate</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
+          <div class="nav-back">‹</div>
+          <span style="font-size:18px; font-weight:700; color:#e4e4ec">Comment Drafter</span>
+        </div>
+
+        <!-- Item context -->
+        <div class="item-context">
+          <div class="item-context-label">Drafting comment for:</div>
+          <div class="item-context-text">Verify retry logic includes exponential backoff and jitter</div>
+          <div class="item-context-breadcrumb">Go › Error Handling</div>
+        </div>
+
+        <!-- What did you find -->
+        <div class="section-label">What did you find?</div>
+        <div class="section-hint">Describe the specific issue you noticed (optional — helps generate a more targeted comment)</div>
+        <div class="text-area filled">The retry logic on line 142 uses a fixed 1s delay instead of exponential backoff. Under load, this will hammer the downstream service.</div>
+
+        <!-- Generate button -->
+        <div class="generate-btn">Generate Draft with Sonnet</div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHONE 2: Draft Output ============ -->
+  <div class="variant">
+    <div class="variant-label">Draft & Refine</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
+          <div class="nav-back">‹</div>
+          <span style="font-size:18px; font-weight:700; color:#e4e4ec">Comment Drafter</span>
+        </div>
+
+        <!-- Drafted comment section -->
+        <div class="section-label">Drafted Comment</div>
+
+        <div class="draft-card">
+          <div class="draft-text">The retry logic here uses a fixed 1-second delay, which can cause a retry storm under load. Consider using exponential backoff with jitter:</div>
+          <div class="draft-code">delay := baseDelay * math.Pow(2, attempt)
+jitter := rand.Float64() * delay * 0.1
+time.Sleep(delay + jitter)</div>
+          <div class="draft-text">This distributes retries over time and prevents thundering herd issues when the downstream service recovers.</div>
+        </div>
+
+        <!-- Refine actions -->
+        <div class="refine-row">
+          <div class="refine-btn primary">📋 Copy</div>
+          <div class="refine-btn">✂️ Shorter</div>
+          <div class="refine-btn">📝 More detail</div>
+          <div class="refine-btn">🤝 Softer tone</div>
+          <div class="refine-btn green">💾 Save to session</div>
+        </div>
+
+        <div class="refine-btn" style="width:100%; text-align:center; margin-bottom:16px">🔄 Regenerate from scratch</div>
+
+        <!-- Rendered preview -->
+        <div class="preview-card">
+          <div class="preview-label">Rendered Preview</div>
+          <div class="preview-text">
+            The retry logic here uses a fixed 1-second delay, which can cause a <strong>retry storm</strong> under load. Consider using exponential backoff with jitter:
+            <div style="background:#0a0a1a; border:1px solid #1a1a30; border-radius:4px; padding:6px 8px; margin:6px 0; font-family:'JetBrains Mono',monospace; font-size:10px; color:#a78bfa; line-height:1.5">delay := baseDelay * math.Pow(2, attempt)<br>jitter := rand.Float64() * delay * 0.1<br>time.Sleep(delay + jitter)</div>
+            This distributes retries over time and prevents thundering herd issues when the downstream service recovers.
+          </div>
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Purpose</h3>
+      <p>Helps draft professional PR review comments. User describes what they found, AI generates a well-structured comment with code suggestions, then the user can refine and copy it.</p>
+      <p>Navigated to from the checklist session's "Found an issue — tap to draft a comment" nudge.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Item Context Card</h3>
+      <p>Blue left border. Shows which checklist item the comment is for, with stack/section breadcrumb.</p>
+      <p>Provides context to the AI so the generated comment is relevant.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Input Flow</h3>
+      <p><strong>"What did you find?":</strong> Optional freeform text describing the specific issue. More detail = better generated comment.</p>
+      <p><strong>Generate button:</strong> Shows the model name ("Generate Draft with Sonnet"). Disabled if no API key. Spinner while generating.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Draft Output</h3>
+      <p>Generated comment displayed in an editable card. Can include inline code blocks rendered in JetBrains Mono.</p>
+      <p>The draft is directly editable — user can tweak wording before copying.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Refinement Actions</h3>
+      <p><strong>📋 Copy:</strong> Copies to clipboard. Shows "✅ Copied!" feedback. Also auto-saves to session.</p>
+      <p><strong>✂️ Shorter:</strong> Sends "Make this more concise" instruction to AI.</p>
+      <p><strong>📝 More detail:</strong> Sends "Make more detailed with a code suggestion" instruction.</p>
+      <p><strong>🤝 Softer tone:</strong> Sends "Make the tone softer and more encouraging" instruction.</p>
+      <p><strong>💾 Save to session:</strong> Saves draft to the current review session (green, only visible when in a session).</p>
+      <p><strong>🔄 Regenerate:</strong> Discards current draft and generates fresh from original context.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Rendered Preview</h3>
+      <p>Shows what the comment will look like as formatted markdown — bold text, code blocks with syntax highlighting, etc.</p>
+      <p>Helps verify the comment reads well before pasting into GitHub/GitLab.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Cost Efficiency</h3>
+      <p>Uses the smallest role-specific output cap (600 tokens for comment-drafter role) to keep costs low.</p>
+      <p>Refinements reuse the existing context, avoiding full regeneration cost.</p>
+      <p>Response caching serves identical drafts for the same item + context.</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

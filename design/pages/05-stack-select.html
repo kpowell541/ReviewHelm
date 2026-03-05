@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 5: Stack Select</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+
+  .design-row {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .variant-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  .variant-label.review { color: #a78bfa; border-color: #8b5cf633; }
+  .variant-label.learn { color: #34d399; border-color: #34d39933; }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #0a0a1a;
+    border-radius: 44px;
+    border: 3px solid #242442;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch { width: 160px; height: 34px; background: #050510; border-radius: 0 0 20px 20px; margin: 0 auto; }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; height: 44px; font-size: 12px; font-weight: 600; color: #e4e4ec;
+    position: absolute; top: 0; left: 0; right: 0;
+  }
+  .phone-content { padding: 52px 20px 20px; }
+  .phone-home-indicator { width: 134px; height: 5px; background: #e4e4ec; border-radius: 3px; margin: 20px auto 8px; opacity: 0.2; }
+
+  /* Annotations */
+  .annotations { max-width: 380px; flex: 1; min-width: 300px; }
+  .annotation-section {
+    background: #111122; border: 1px solid #242442; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .annotation-section h3 { font-size: 13px; font-weight: 700; color: #8b5cf6; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .annotation-section p { font-size: 13px; color: #9898b0; line-height: 1.6; margin-bottom: 6px; }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px; color: #a78bfa; background: #1a1a30; padding: 2px 6px; border-radius: 4px;
+  }
+  .color-ref { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+  .color-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  /* ============ STACK SELECT COMPONENTS ============ */
+
+  .nav-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 6px; padding: 0 4px;
+  }
+  .nav-back {
+    width: 36px; height: 36px; background: #1a1a30; border: 1px solid #242442;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #e4e4ec;
+  }
+  .screen-heading {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e4e4ec;
+  }
+  .screen-subtitle {
+    font-size: 13px;
+    color: #5a5a78;
+    padding: 0 4px;
+    margin-bottom: 24px;
+    line-height: 1.4;
+  }
+
+  /* Stack card */
+  .stack-card {
+    background: #111122;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #1a1a30;
+    border-left: 4px solid;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .stack-card:hover { border-right-color: #333355; }
+
+  .stack-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .stack-icon {
+    width: 44px;
+    height: 44px;
+    background: #0a0a1a;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    border: 1px solid #1a1a30;
+  }
+  .stack-info { flex: 1; min-width: 0; }
+  .stack-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e4e4ec;
+    margin-bottom: 2px;
+  }
+  .stack-desc {
+    font-size: 11px;
+    color: #5a5a78;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Confidence badge (review mode) */
+  .conf-badge {
+    background: #8b5cf620;
+    border: 1px solid #8b5cf633;
+    border-radius: 8px;
+    padding: 6px 10px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .conf-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #a78bfa;
+  }
+  .conf-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: #5a5a78;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  /* Gap badges (learn mode) */
+  .gap-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+    align-items: flex-end;
+  }
+  .gap-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .gap-badge.red {
+    color: #ef4444;
+    background: #ef444415;
+  }
+  .gap-badge.green {
+    color: #34d399;
+    background: #34d39915;
+  }
+  .gap-badge.muted {
+    color: #5a5a78;
+    background: #1a1a30;
+  }
+
+  /* Stack bottom row: item count + export button */
+  .stack-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #1a1a2a;
+  }
+  .stack-meta {
+    font-size: 11px;
+    color: #3a3a52;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .item-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    color: #5a5a78;
+  }
+  .export-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fbbf24;
+    background: #f59e0b10;
+    border: 1px solid #f59e0b25;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .export-btn:hover { background: #f59e0b20; }
+  .export-icon {
+    font-size: 12px;
+  }
+
+  /* All stacks card (learn mode) */
+  .all-stacks-card {
+    background: #111122;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #1a1a30;
+    border-left: 4px solid #34d399;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .all-stacks-card .stack-icon {
+    border-color: #34d39933;
+  }
+  .all-stacks-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #34d399;
+  }
+  .all-stacks-desc {
+    font-size: 11px;
+    color: #5a5a78;
+    line-height: 1.3;
+  }
+  .all-stacks-arrow {
+    color: #34d399;
+    font-size: 18px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 5 of 11</div>
+  <h1>Stack Select</h1>
+  <p class="desc">Shared screen used by both Review and Learn flows. Lists available tech stacks with confidence data. Each checklist can be exported to PDF for offline use.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ REVIEW MODE ============ -->
+  <div class="variant">
+    <div class="variant-label review">Review Mode</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <!-- Header -->
+        <div class="nav-header">
+          <div class="nav-back">‹</div>
+          <span style="font-size:22px">📋</span>
+          <div class="screen-heading">Choose a Stack</div>
+        </div>
+        <div class="screen-subtitle">Select the stack that matches the PR you're reviewing</div>
+
+        <!-- Java/Kotlin + Protobuf -->
+        <div class="stack-card" style="border-left-color:#ff8c42">
+          <div class="stack-top">
+            <div class="stack-icon">☕</div>
+            <div class="stack-info">
+              <div class="stack-title">Java/Kotlin + Protobuf</div>
+              <div class="stack-desc">Monorepo with Java, Kotlin, and Protobuf</div>
+            </div>
+            <div class="conf-badge">
+              <div class="conf-value">4.2</div>
+              <div class="conf-label">Avg</div>
+            </div>
+          </div>
+          <div class="stack-bottom">
+            <div class="stack-meta">
+              <span class="item-count">42 items · 6 sections</span>
+            </div>
+            <div class="export-btn">
+              <span class="export-icon">📄</span>
+              Export PDF
+            </div>
+          </div>
+        </div>
+
+        <!-- JS/TS + React + Node -->
+        <div class="stack-card" style="border-left-color:#54a0ff">
+          <div class="stack-top">
+            <div class="stack-icon">⚛️</div>
+            <div class="stack-info">
+              <div class="stack-title">JS/TS + React + Node</div>
+              <div class="stack-desc">JavaScript, TypeScript, React, Node</div>
+            </div>
+            <div class="conf-badge">
+              <div class="conf-value">3.1</div>
+              <div class="conf-label">Avg</div>
+            </div>
+          </div>
+          <div class="stack-bottom">
+            <div class="stack-meta">
+              <span class="item-count">38 items · 5 sections</span>
+            </div>
+            <div class="export-btn">
+              <span class="export-icon">📄</span>
+              Export PDF
+            </div>
+          </div>
+        </div>
+
+        <!-- Go -->
+        <div class="stack-card" style="border-left-color:#00b894">
+          <div class="stack-top">
+            <div class="stack-icon">🐹</div>
+            <div class="stack-info">
+              <div class="stack-title">Go</div>
+              <div class="stack-desc">Go services and libraries</div>
+            </div>
+            <div class="conf-badge">
+              <div class="conf-value">2.8</div>
+              <div class="conf-label">Avg</div>
+            </div>
+          </div>
+          <div class="stack-bottom">
+            <div class="stack-meta">
+              <span class="item-count">45 items · 7 sections</span>
+            </div>
+            <div class="export-btn">
+              <span class="export-icon">📄</span>
+              Export PDF
+            </div>
+          </div>
+        </div>
+
+        <!-- Polish My PR -->
+        <div class="stack-card" style="border-left-color:#8b5cf6">
+          <div class="stack-top">
+            <div class="stack-icon">✨</div>
+            <div class="stack-info">
+              <div class="stack-title">Polish My PR</div>
+              <div class="stack-desc">Language-agnostic self-review checklist</div>
+            </div>
+            <div class="conf-badge">
+              <div class="conf-value">3.7</div>
+              <div class="conf-label">Avg</div>
+            </div>
+          </div>
+          <div class="stack-bottom">
+            <div class="stack-meta">
+              <span class="item-count">28 items · 4 sections</span>
+            </div>
+            <div class="export-btn">
+              <span class="export-icon">📄</span>
+              Export PDF
+            </div>
+          </div>
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LEARN MODE ============ -->
+  <div class="variant">
+    <div class="variant-label learn">Learn Mode</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <!-- Header -->
+        <div class="nav-header">
+          <div class="nav-back">‹</div>
+          <span style="font-size:22px">📖</span>
+          <div class="screen-heading">Study Gaps</div>
+        </div>
+        <div class="screen-subtitle">Choose a stack to study your weak areas</div>
+
+        <!-- Java/Kotlin + Protobuf -->
+        <div class="stack-card" style="border-left-color:#ff8c42">
+          <div class="stack-top">
+            <div class="stack-icon">☕</div>
+            <div class="stack-info">
+              <div class="stack-title">Java/Kotlin + Protobuf</div>
+              <div class="stack-desc">Monorepo with Java, Kotlin, and Protobuf</div>
+            </div>
+            <div class="gap-badges">
+              <span class="gap-badge red">2 gaps</span>
+              <span class="gap-badge green">1 improving</span>
+            </div>
+          </div>
+          <div class="stack-bottom">
+            <div class="stack-meta">
+              <span class="item-count">42 items · 6 sections</span>
+            </div>
+            <div class="export-btn">
+              <span class="export-icon">📄</span>
+              Export PDF
+            </div>
+          </div>
+        </div>
+
+        <!-- JS/TS + React + Node -->
+        <div class="stack-card" style="border-left-color:#54a0ff">
+          <div class="stack-top">
+            <div class="stack-icon">⚛️</div>
+            <div class="stack-info">
+              <div class="stack-title">JS/TS + React + Node</div>
+              <div class="stack-desc">JavaScript, TypeScript, React, Node</div>
+            </div>
+            <div class="gap-badges">
+              <span class="gap-badge red">5 gaps</span>
+              <span class="gap-badge green">2 improving</span>
+            </div>
+          </div>
+          <div class="stack-bottom">
+            <div class="stack-meta">
+              <span class="item-count">38 items · 5 sections</span>
+            </div>
+            <div class="export-btn">
+              <span class="export-icon">📄</span>
+              Export PDF
+            </div>
+          </div>
+        </div>
+
+        <!-- Go -->
+        <div class="stack-card" style="border-left-color:#00b894">
+          <div class="stack-top">
+            <div class="stack-icon">🐹</div>
+            <div class="stack-info">
+              <div class="stack-title">Go</div>
+              <div class="stack-desc">Go services and libraries</div>
+            </div>
+            <div class="gap-badges">
+              <span class="gap-badge red">3 gaps</span>
+            </div>
+          </div>
+          <div class="stack-bottom">
+            <div class="stack-meta">
+              <span class="item-count">45 items · 7 sections</span>
+            </div>
+            <div class="export-btn">
+              <span class="export-icon">📄</span>
+              Export PDF
+            </div>
+          </div>
+        </div>
+
+        <!-- All Stacks -->
+        <div class="all-stacks-card">
+          <div class="stack-icon" style="font-size:22px">📚</div>
+          <div class="stack-info">
+            <div class="all-stacks-title">All Stacks</div>
+            <div class="all-stacks-desc">Study gaps across all stacks combined</div>
+          </div>
+          <span class="gap-badge red" style="margin-right:4px">10 total</span>
+          <span class="all-stacks-arrow">›</span>
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Purpose</h3>
+      <p>Entry point for both Review and Learn flows. User picks a tech stack before starting a session or studying gaps.</p>
+      <p>Same base layout, different data: Review shows confidence averages, Learn shows gap/improving counts.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Stack Cards</h3>
+      <p><strong>Left border:</strong> Colored per stack — <span style="color:#ff8c42">orange</span> Java, <span style="color:#54a0ff">blue</span> JS/TS, <span style="color:#00b894">green</span> Go, <span style="color:#8b5cf6">violet</span> Polish.</p>
+      <p><strong>Icon:</strong> Stack emoji in a rounded square. 44×44px container.</p>
+      <p><strong>Title + description:</strong> From <code>STACKS</code> registry in <code>checklistRegistry.ts</code>.</p>
+      <p><strong>Bottom row:</strong> Item count + section count on the left, PDF export button on the right.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Review Mode Badges</h3>
+      <p>Shows confidence average (e.g., "4.2") in a violet pill on each card.</p>
+      <p>Calculated from <code>getSectionAverages()</code> in <code>useConfidenceStore</code>. Only shown if the user has rated items in that stack.</p>
+      <p>Tapping a card navigates to <code>/review/sessions?stack={id}</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Learn Mode Badges</h3>
+      <p><span class="color-ref"><span class="color-dot" style="background:#ef4444"></span></span> Red badge: count of items with confidence ≤ 2 (active gaps).</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#34d399"></span></span> Green badge: count of items at confidence 3 with upward trend (improving).</p>
+      <p>Badges hidden if zero. If no gaps at all, shows "No gaps yet" message.</p>
+      <p><strong>All Stacks card:</strong> Green-accented special card at the bottom. Shows total gap count. Routes to <code>/learn/all</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>PDF Export</h3>
+      <p><strong>Export PDF button:</strong> Amber-styled button on every stack card. Generates a printable PDF of the full checklist for that stack.</p>
+      <p>PDF includes: stack title, all sections, all checklist items with their text, and empty checkboxes for offline use.</p>
+      <p>Uses <code>expo-print</code> to generate HTML → PDF, then <code>expo-sharing</code> to share/save.</p>
+      <p>Tapping the export button does <em>not</em> navigate — only the card body navigates to the session flow.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Changes from Current</h3>
+      <p>1. Added back button in header</p>
+      <p>2. Stack cards redesigned with icon container, left border, and bottom row</p>
+      <p>3. Added item/section count metadata on each card</p>
+      <p>4. Added PDF export button on every card (NEW)</p>
+      <p>5. Polish My PR stack included in Review mode list</p>
+      <p>6. Learn mode shows "All Stacks" combined option</p>
+      <p>7. Font: Quicksand throughout, JetBrains Mono for counts</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Navigation</h3>
+      <p><strong>Review card tap:</strong> <code>/review/sessions?stack={id}</code></p>
+      <p><strong>Learn card tap:</strong> <code>/learn/{stackId}</code></p>
+      <p><strong>All Stacks tap:</strong> <code>/learn/all</code></p>
+      <p><strong>Export PDF tap:</strong> No navigation — generates and shares PDF inline</p>
+      <p><strong>Back button:</strong> Returns to Home</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Colors</h3>
+      <p><span class="color-ref"><span class="color-dot" style="background:#ff8c42"></span></span> <code>#ff8c42</code> Java/Kotlin stack</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#54a0ff"></span></span> <code>#54a0ff</code> JS/TS stack</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#00b894"></span></span> <code>#00b894</code> Go stack</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#8b5cf6"></span></span> <code>#8b5cf6</code> Polish My PR / primary</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span></span> <code>#fbbf24</code> Export button</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

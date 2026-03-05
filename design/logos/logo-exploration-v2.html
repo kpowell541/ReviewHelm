@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Logo Exploration v2: Compass + Shield + Code + Checkmark</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #6c63ff;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .brief {
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    max-width: 600px;
+    margin: 0 auto 48px;
+    line-height: 1.6;
+  }
+
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+  .concept-card {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 32px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .concept-card:hover {
+    border-color: #6c63ff;
+    transform: translateY(-2px);
+  }
+  .concept-number {
+    color: #6c63ff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .concept-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+  }
+  .svg-container {
+    background: #0a0a14;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .svg-container img {
+    width: 300px;
+    height: 300px;
+  }
+  .concept-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #a0a0b0;
+    margin-bottom: 12px;
+  }
+  .elements {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .element-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .tag-compass { background: #6c63ff22; color: #9b93ff; border: 1px solid #6c63ff44; }
+  .tag-shield { background: #6c63ff22; color: #9b93ff; border: 1px solid #6c63ff44; }
+  .tag-code { background: #ffffff11; color: #d0d0e0; border: 1px solid #ffffff22; }
+  .tag-check { background: #22c55e18; color: #4ade80; border: 1px solid #22c55e33; }
+
+  .strengths {
+    font-size: 13px;
+    color: #22c55e;
+    line-height: 1.5;
+  }
+  .strengths strong { color: #4ade80; }
+
+  /* Side by side at different sizes */
+  .size-comparison {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+  .size-comparison h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+  .size-comparison .note {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 24px;
+  }
+  .sizes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .size-col {
+    text-align: center;
+  }
+  .size-col .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c63ff;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .size-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .size-item {
+    text-align: center;
+  }
+  .size-item img {
+    border-radius: 8px;
+  }
+  .size-item .dim {
+    font-size: 10px;
+    color: #4a4a6a;
+    margin-top: 4px;
+  }
+
+  /* Dark/light simulation */
+  .context-row {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+  .context-row h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 20px;
+  }
+  .phone-frames {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .phone-frame {
+    width: 200px;
+    border-radius: 24px;
+    padding: 16px;
+    text-align: center;
+  }
+  .phone-frame.dark { background: #0f0f1a; border: 2px solid #2a2a4a; }
+  .phone-frame.light { background: #f5f5f7; border: 2px solid #e0e0e0; }
+  .phone-frame .frame-label {
+    font-size: 11px;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .phone-frame.dark .frame-label { color: #6b7280; }
+  .phone-frame.light .frame-label { color: #9ca3af; }
+  .phone-frame img {
+    border-radius: 16px;
+  }
+</style>
+</head>
+<body>
+
+<h1>ReviewHelm</h1>
+<div class="subtitle">Logo Exploration v2</div>
+<p class="brief">Four concepts combining all four elements: compass rose (learning navigation), shield (quality protection), code symbols (developer identity), and green checkmark (review approved).</p>
+
+<div class="concepts-grid">
+
+  <!-- Concept 6 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 06</div>
+    <div class="concept-title">Compass Shield</div>
+    <div class="elements">
+      <span class="element-tag tag-compass">Compass</span>
+      <span class="element-tag tag-shield">Shield</span>
+      <span class="element-tag tag-code">&lt; &gt; Code</span>
+      <span class="element-tag tag-check">Checkmark</span>
+    </div>
+    <div class="svg-container">
+      <img src="concept-6-compass-shield.svg" alt="Compass Shield">
+    </div>
+    <p class="concept-description">
+      Compass rose nested inside a shield outline. Code brackets <code>&lt; &gt;</code> in the center hub. Green checkmark at the shield's base. Clean layering — shield frames the compass, compass frames the code.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Most balanced integration of all four elements. Clear visual hierarchy. Each element has its own space without competing.</p>
+  </div>
+
+  <!-- Concept 7 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 07</div>
+    <div class="concept-title">Integrated Crest</div>
+    <div class="elements">
+      <span class="element-tag tag-compass">Compass</span>
+      <span class="element-tag tag-shield">Shield</span>
+      <span class="element-tag tag-code">/ Code</span>
+      <span class="element-tag tag-check">Checkmark Badge</span>
+    </div>
+    <div class="svg-container">
+      <img src="concept-7-integrated-crest.svg" alt="Integrated Crest">
+    </div>
+    <p class="concept-description">
+      Double-bordered shield with an 8-point compass star inside. Forward slash <code>/</code> in the center hub. Green checkmark in a circular badge at the shield's base. Feels like a professional certification crest.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Most prestigious/authoritative feel. The badge-style checkmark feels like an earned certification. Intercardinal compass points add sophistication.</p>
+  </div>
+
+  <!-- Concept 8 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 08</div>
+    <div class="concept-title">Bold Navigator</div>
+    <div class="elements">
+      <span class="element-tag tag-compass">Compass</span>
+      <span class="element-tag tag-shield">Shield</span>
+      <span class="element-tag tag-code">&lt;/&gt; Code</span>
+      <span class="element-tag tag-check">Checkmark Badge</span>
+    </div>
+    <div class="svg-container">
+      <img src="concept-8-compass-shield-bold.svg" alt="Bold Navigator">
+    </div>
+    <p class="concept-description">
+      Bolder treatment — thicker shield stroke, prominent white north pointer, and a larger center hub with <code>&lt;/&gt;</code> where the slash is green. The green slash does double duty as both code symbol and approval color. Split "Review" / "Helm" wordmark.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Most impactful at a glance. The green slash is a clever dual-meaning element. Split wordmark reinforces the brand. Reads well at small sizes due to bold strokes.</p>
+  </div>
+
+  <!-- Concept 9 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 09</div>
+    <div class="concept-title">Navigator Badge</div>
+    <div class="elements">
+      <span class="element-tag tag-compass">8-Point Compass</span>
+      <span class="element-tag tag-shield">Shield</span>
+      <span class="element-tag tag-code">&lt; &gt; Code</span>
+      <span class="element-tag tag-check">Large Checkmark</span>
+    </div>
+    <div class="svg-container">
+      <img src="concept-9-navigator-badge.svg" alt="Navigator Badge">
+    </div>
+    <p class="concept-description">
+      Taller shield with a horizontal divider separating the compass (upper) from the checkmark (lower). Full 8-point star compass with intercardinal points. Purple code brackets in the hub. Large green checkmark below the divider line — given prominent space.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> The divider creates a clear "two-part" story: navigate (top) + approve (bottom). Largest checkmark of the four — emphasizes the review outcome. Most badge/emblem-like.</p>
+  </div>
+
+</div>
+
+<!-- Size comparison -->
+<div class="size-comparison">
+  <h2>Icon Size Comparison</h2>
+  <p class="note">How each concept reads at Android app icon sizes</p>
+  <div class="sizes-grid">
+    <div class="size-col">
+      <div class="label">Concept 6</div>
+      <div class="size-row">
+        <div class="size-item">
+          <img src="concept-6-compass-shield.svg" width="128" height="128">
+          <div class="dim">128px</div>
+        </div>
+        <div class="size-item">
+          <img src="concept-6-compass-shield.svg" width="48" height="48">
+          <div class="dim">48px</div>
+        </div>
+      </div>
+    </div>
+    <div class="size-col">
+      <div class="label">Concept 7</div>
+      <div class="size-row">
+        <div class="size-item">
+          <img src="concept-7-integrated-crest.svg" width="128" height="128">
+          <div class="dim">128px</div>
+        </div>
+        <div class="size-item">
+          <img src="concept-7-integrated-crest.svg" width="48" height="48">
+          <div class="dim">48px</div>
+        </div>
+      </div>
+    </div>
+    <div class="size-col">
+      <div class="label">Concept 8</div>
+      <div class="size-row">
+        <div class="size-item">
+          <img src="concept-8-compass-shield-bold.svg" width="128" height="128">
+          <div class="dim">128px</div>
+        </div>
+        <div class="size-item">
+          <img src="concept-8-compass-shield-bold.svg" width="48" height="48">
+          <div class="dim">48px</div>
+        </div>
+      </div>
+    </div>
+    <div class="size-col">
+      <div class="label">Concept 9</div>
+      <div class="size-row">
+        <div class="size-item">
+          <img src="concept-9-navigator-badge.svg" width="128" height="128">
+          <div class="dim">128px</div>
+        </div>
+        <div class="size-item">
+          <img src="concept-9-navigator-badge.svg" width="48" height="48">
+          <div class="dim">48px</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Context simulation -->
+<div class="context-row">
+  <h2>In Context</h2>
+  <div class="phone-frames">
+    <div class="phone-frame dark">
+      <div class="frame-label">Dark App Drawer</div>
+      <img src="concept-8-compass-shield-bold.svg" width="64" height="64">
+      <div style="color:#ffffff; font-size:11px; margin-top:8px;">ReviewHelm</div>
+    </div>
+    <div class="phone-frame dark">
+      <div class="frame-label">Dark App Drawer</div>
+      <img src="concept-9-navigator-badge.svg" width="64" height="64">
+      <div style="color:#ffffff; font-size:11px; margin-top:8px;">ReviewHelm</div>
+    </div>
+    <div class="phone-frame light">
+      <div class="frame-label">Light App Drawer</div>
+      <img src="concept-8-compass-shield-bold.svg" width="64" height="64">
+      <div style="color:#1a1a2e; font-size:11px; margin-top:8px;">ReviewHelm</div>
+    </div>
+    <div class="phone-frame light">
+      <div class="frame-label">Light App Drawer</div>
+      <img src="concept-9-navigator-badge.svg" width="64" height="64">
+      <div style="color:#1a1a2e; font-size:11px; margin-top:8px;">ReviewHelm</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

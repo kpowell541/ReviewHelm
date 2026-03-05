@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Font Exploration</title>
+<!-- Load Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&family=Nunito+Sans:wght@400;500;600;700;800&family=Rubik:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&family=Comfortaa:wght@400;500;600;700&family=Lexend:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: -apple-system, sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  h1 { text-align: center; font-size: 36px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+  .brief { text-align: center; color: #6b7280; font-size: 14px; max-width: 650px; margin: 0 auto 48px; line-height: 1.6; }
+
+  .font-section {
+    background: #111122;
+    border: 1px solid #242442;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    transition: border-color 0.2s;
+  }
+  .font-section:hover { border-color: #4a4a6a; }
+  .font-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .font-name { font-size: 20px; font-weight: 700; color: #fff; }
+  .font-tag { font-size: 10px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .tag-top { background: #8b5cf620; color: #a78bfa; border: 1px solid #8b5cf633; }
+  .tag-code { background: #10b98120; color: #34d399; border: 1px solid #10b98133; }
+  .tag-alt { background: #ffffff10; color: #9ca3af; border: 1px solid #ffffff15; }
+  .font-meta { font-size: 12px; color: #5a5a78; margin-bottom: 20px; }
+
+  /* Logo specimen */
+  .logo-specimen {
+    background: #0a0a1a;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 16px;
+    border: 1px solid #1a1a30;
+  }
+  .logo-text {
+    font-size: 36px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .logo-text .helm { color: #8b5cf6; }
+  .logo-text .review-green { color: #34d399; }
+  .logo-text .review-amber { color: #fbbf24; }
+  .logo-text-sm {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+  .logo-text-sm .helm { color: #8b5cf6; }
+  .logo-text-sm .review-green { color: #34d399; }
+  .logo-text-sm .review-amber { color: #fbbf24; }
+  .logo-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .logo-variant-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .logo-tagline {
+    font-size: 13px;
+    color: #5a5a78;
+    margin-top: 4px;
+  }
+
+  /* UI specimen */
+  .ui-specimen {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .ui-phone {
+    width: 260px;
+    background: #0a0a1a;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #1a1a30;
+    flex-shrink: 0;
+  }
+  .ui-heading { font-size: 18px; color: #fff; margin-bottom: 4px; }
+  .ui-subheading { font-size: 13px; color: #5a5a78; margin-bottom: 14px; }
+  .ui-card {
+    background: #111122;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border: 1px solid #1a1a30;
+  }
+  .ui-card-title { font-size: 14px; color: #e4e4ec; margin-bottom: 2px; }
+  .ui-card-desc { font-size: 11px; color: #5a5a78; line-height: 1.4; }
+  .ui-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    margin-top: 6px;
+  }
+  .ui-btn {
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 13px;
+    color: #fff;
+    background: #8b5cf6;
+    margin-top: 4px;
+  }
+
+  /* Text specimens */
+  .text-specimens {
+    flex: 1;
+    min-width: 300px;
+  }
+  .specimen-row {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #1a1a30;
+  }
+  .specimen-row:last-child { border-bottom: none; }
+  .specimen-label {
+    font-family: -apple-system, sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: #5a5a78;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .specimen-text { color: #e4e4ec; line-height: 1.5; }
+
+  /* Accessibility info */
+  .a11y-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .a11y-item {
+    background: #0a0a1a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 1px solid #1a1a30;
+    font-size: 11px;
+  }
+  .a11y-label { color: #5a5a78; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 2px; }
+  .a11y-value { color: #e4e4ec; font-weight: 600; }
+  .a11y-good { color: #34d399; }
+  .a11y-ok { color: #fbbf24; }
+
+  /* Comparison grid */
+  .comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .comparison-card {
+    background: #0a0a1a;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #1a1a30;
+    text-align: center;
+  }
+  .comparison-card .logo-text { font-size: 28px; margin-bottom: 8px; }
+  .comparison-card .sample-text { font-size: 13px; color: #9898b0; line-height: 1.5; margin-bottom: 8px; }
+  .comparison-card .font-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #5a5a78; }
+
+  hr { border: none; border-top: 1px solid #1a1a30; margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<h1>ReviewHelm</h1>
+<div class="subtitle">Font Exploration v2 — Rounded & Elegant</div>
+<p class="brief">
+  Softer, more rounded fonts that feel polished and approachable while keeping developer credibility.
+  All available via Google Fonts / expo-google-fonts. Each shown with logo wordmark, UI mockup, text specimens, and accessibility ratings.
+</p>
+
+<!-- ==================== FONT 1: NUNITO ==================== -->
+<div class="font-section">
+  <div class="font-header">
+    <span class="font-name" style="font-family:'Nunito'">Nunito</span>
+    <span class="font-tag tag-top">Top Pick</span>
+  </div>
+  <div class="font-meta">Rounded sans-serif with balanced proportions. Soft terminal rounds give warmth without sacrificing readability. Great weight range (400-800). Used by many modern apps.</div>
+
+  <div class="logo-specimen">
+    <div class="logo-row">
+      <div>
+        <div class="logo-variant-label" style="color:#34d399">Emerald</div>
+        <div class="logo-text" style="font-family:'Nunito'; font-weight:800"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Nunito'; font-weight:700"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      </div>
+      <div>
+        <div class="logo-variant-label" style="color:#fbbf24">Amber</div>
+        <div class="logo-text" style="font-family:'Nunito'; font-weight:800"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Nunito'; font-weight:700"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      </div>
+    </div>
+    <div class="logo-tagline" style="font-family:'Nunito'; font-weight:400">Review with confidence. Learn as you go.</div>
+  </div>
+
+  <div class="ui-specimen">
+    <div class="ui-phone" style="font-family:'Nunito'">
+      <div class="ui-heading" style="font-family:'Nunito'; font-weight:700">Error Handling</div>
+      <div class="ui-subheading" style="font-family:'Nunito'; font-weight:500">Go Stack · 14 items</div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Nunito'; font-weight:700">Check error wrapping</div>
+        <div class="ui-card-desc" style="font-family:'Nunito'; font-weight:400">Verify fmt.Errorf uses %w for wrappable errors</div>
+        <div class="ui-badge" style="background:#10b98120; color:#34d399; font-family:'Nunito'; font-weight:700">Looks Good</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Nunito'; font-weight:700">Verify retry logic</div>
+        <div class="ui-card-desc" style="font-family:'Nunito'; font-weight:400">Check exponential backoff and max retries</div>
+        <div class="ui-badge" style="background:#f59e0b20; color:#fbbf24; font-family:'Nunito'; font-weight:700">Needs Attention</div>
+      </div>
+      <div class="ui-btn" style="font-family:'Nunito'; font-weight:700">Complete Session</div>
+    </div>
+    <div class="text-specimens">
+      <div class="specimen-row">
+        <div class="specimen-label">Heading — 18px / 700</div>
+        <div class="specimen-text" style="font-family:'Nunito'; font-weight:700; font-size:18px">Error Handling & Recovery</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Body — 14px / 400</div>
+        <div class="specimen-text" style="font-family:'Nunito'; font-weight:400; font-size:14px">Verify that all error paths properly wrap errors using fmt.Errorf with %w, and that retry logic uses exponential backoff with appropriate max attempts.</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Small — 11px / 500</div>
+        <div class="specimen-text" style="font-family:'Nunito'; font-weight:500; font-size:11px">Confidence: 3 · Severity: Major · Last reviewed: 2 days ago</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Disambiguation — Il1| 0Oo Zz2</div>
+        <div class="specimen-text" style="font-family:'Nunito'; font-weight:400; font-size:16px">Il1| 0Oo Zz2 Ss5 rn vs m</div>
+      </div>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <div class="a11y-item"><div class="a11y-label">Roundness</div><div class="a11y-value a11y-good">Soft rounded terminals</div></div>
+    <div class="a11y-item"><div class="a11y-label">Readability</div><div class="a11y-value a11y-good">Excellent at all sizes</div></div>
+    <div class="a11y-item"><div class="a11y-label">Char Distinction</div><div class="a11y-value a11y-good">Good — clear Il1 0O</div></div>
+    <div class="a11y-item"><div class="a11y-label">Expo Package</div><div class="a11y-value">@expo-google-fonts/nunito</div></div>
+  </div>
+</div>
+
+<!-- ==================== FONT 2: QUICKSAND ==================== -->
+<div class="font-section">
+  <div class="font-header">
+    <span class="font-name" style="font-family:'Quicksand'">Quicksand</span>
+    <span class="font-tag tag-top">Top Pick</span>
+  </div>
+  <div class="font-meta">Fully rounded geometric sans-serif. Elegant and distinctive with circular letter shapes. Feels premium and modern — think high-end app design. Light enough to be graceful, bold enough to anchor a brand.</div>
+
+  <div class="logo-specimen">
+    <div class="logo-row">
+      <div>
+        <div class="logo-variant-label" style="color:#34d399">Emerald</div>
+        <div class="logo-text" style="font-family:'Quicksand'; font-weight:700"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Quicksand'; font-weight:600"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      </div>
+      <div>
+        <div class="logo-variant-label" style="color:#fbbf24">Amber</div>
+        <div class="logo-text" style="font-family:'Quicksand'; font-weight:700"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Quicksand'; font-weight:600"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      </div>
+    </div>
+    <div class="logo-tagline" style="font-family:'Quicksand'; font-weight:400">Review with confidence. Learn as you go.</div>
+  </div>
+
+  <div class="ui-specimen">
+    <div class="ui-phone" style="font-family:'Quicksand'">
+      <div class="ui-heading" style="font-family:'Quicksand'; font-weight:700">Error Handling</div>
+      <div class="ui-subheading" style="font-family:'Quicksand'; font-weight:500">Go Stack · 14 items</div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Quicksand'; font-weight:600">Check error wrapping</div>
+        <div class="ui-card-desc" style="font-family:'Quicksand'; font-weight:400">Verify fmt.Errorf uses %w for wrappable errors</div>
+        <div class="ui-badge" style="background:#10b98120; color:#34d399; font-family:'Quicksand'; font-weight:700">Looks Good</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Quicksand'; font-weight:600">Verify retry logic</div>
+        <div class="ui-card-desc" style="font-family:'Quicksand'; font-weight:400">Check exponential backoff and max retries</div>
+        <div class="ui-badge" style="background:#f59e0b20; color:#fbbf24; font-family:'Quicksand'; font-weight:700">Needs Attention</div>
+      </div>
+      <div class="ui-btn" style="font-family:'Quicksand'; font-weight:700">Complete Session</div>
+    </div>
+    <div class="text-specimens">
+      <div class="specimen-row">
+        <div class="specimen-label">Heading — 18px / 700</div>
+        <div class="specimen-text" style="font-family:'Quicksand'; font-weight:700; font-size:18px">Error Handling & Recovery</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Body — 14px / 400</div>
+        <div class="specimen-text" style="font-family:'Quicksand'; font-weight:400; font-size:14px">Verify that all error paths properly wrap errors using fmt.Errorf with %w, and that retry logic uses exponential backoff with appropriate max attempts.</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Small — 11px / 500</div>
+        <div class="specimen-text" style="font-family:'Quicksand'; font-weight:500; font-size:11px">Confidence: 3 · Severity: Major · Last reviewed: 2 days ago</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Disambiguation — Il1| 0Oo Zz2</div>
+        <div class="specimen-text" style="font-family:'Quicksand'; font-weight:400; font-size:16px">Il1| 0Oo Zz2 Ss5 rn vs m</div>
+      </div>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <div class="a11y-item"><div class="a11y-label">Roundness</div><div class="a11y-value a11y-good">Fully rounded geometric</div></div>
+    <div class="a11y-item"><div class="a11y-label">Readability</div><div class="a11y-value a11y-good">Very good — high x-height</div></div>
+    <div class="a11y-item"><div class="a11y-label">Char Distinction</div><div class="a11y-value a11y-ok">Moderate — watch Il at small sizes</div></div>
+    <div class="a11y-item"><div class="a11y-label">Expo Package</div><div class="a11y-value">@expo-google-fonts/quicksand</div></div>
+  </div>
+</div>
+
+<!-- ==================== FONT 3: URBANIST ==================== -->
+<div class="font-section">
+  <div class="font-header">
+    <span class="font-name" style="font-family:'Urbanist'">Urbanist</span>
+    <span class="font-tag tag-top">Top Pick</span>
+  </div>
+  <div class="font-meta">Modern geometric with softened corners and open apertures. Sits perfectly between rounded and structured — elegant without being playful. Popular with premium app designs.</div>
+
+  <div class="logo-specimen">
+    <div class="logo-row">
+      <div>
+        <div class="logo-variant-label" style="color:#34d399">Emerald</div>
+        <div class="logo-text" style="font-family:'Urbanist'; font-weight:800"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Urbanist'; font-weight:700"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      </div>
+      <div>
+        <div class="logo-variant-label" style="color:#fbbf24">Amber</div>
+        <div class="logo-text" style="font-family:'Urbanist'; font-weight:800"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Urbanist'; font-weight:700"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      </div>
+    </div>
+    <div class="logo-tagline" style="font-family:'Urbanist'; font-weight:400">Review with confidence. Learn as you go.</div>
+  </div>
+
+  <div class="ui-specimen">
+    <div class="ui-phone" style="font-family:'Urbanist'">
+      <div class="ui-heading" style="font-family:'Urbanist'; font-weight:700">Error Handling</div>
+      <div class="ui-subheading" style="font-family:'Urbanist'; font-weight:500">Go Stack · 14 items</div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Urbanist'; font-weight:600">Check error wrapping</div>
+        <div class="ui-card-desc" style="font-family:'Urbanist'; font-weight:400">Verify fmt.Errorf uses %w for wrappable errors</div>
+        <div class="ui-badge" style="background:#10b98120; color:#34d399; font-family:'Urbanist'; font-weight:700">Looks Good</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Urbanist'; font-weight:600">Verify retry logic</div>
+        <div class="ui-card-desc" style="font-family:'Urbanist'; font-weight:400">Check exponential backoff and max retries</div>
+        <div class="ui-badge" style="background:#f59e0b20; color:#fbbf24; font-family:'Urbanist'; font-weight:700">Needs Attention</div>
+      </div>
+      <div class="ui-btn" style="font-family:'Urbanist'; font-weight:700">Complete Session</div>
+    </div>
+    <div class="text-specimens">
+      <div class="specimen-row">
+        <div class="specimen-label">Heading — 18px / 700</div>
+        <div class="specimen-text" style="font-family:'Urbanist'; font-weight:700; font-size:18px">Error Handling & Recovery</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Body — 14px / 400</div>
+        <div class="specimen-text" style="font-family:'Urbanist'; font-weight:400; font-size:14px">Verify that all error paths properly wrap errors using fmt.Errorf with %w, and that retry logic uses exponential backoff with appropriate max attempts.</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Small — 11px / 500</div>
+        <div class="specimen-text" style="font-family:'Urbanist'; font-weight:500; font-size:11px">Confidence: 3 · Severity: Major · Last reviewed: 2 days ago</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Disambiguation — Il1| 0Oo Zz2</div>
+        <div class="specimen-text" style="font-family:'Urbanist'; font-weight:400; font-size:16px">Il1| 0Oo Zz2 Ss5 rn vs m</div>
+      </div>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <div class="a11y-item"><div class="a11y-label">Roundness</div><div class="a11y-value a11y-good">Softened geometric — balanced</div></div>
+    <div class="a11y-item"><div class="a11y-label">Readability</div><div class="a11y-value a11y-good">Excellent — open apertures</div></div>
+    <div class="a11y-item"><div class="a11y-label">Char Distinction</div><div class="a11y-value a11y-good">Good — clean differentiation</div></div>
+    <div class="a11y-item"><div class="a11y-label">Expo Package</div><div class="a11y-value">@expo-google-fonts/urbanist</div></div>
+  </div>
+</div>
+
+<!-- ==================== FONT 4: LEXEND ==================== -->
+<div class="font-section">
+  <div class="font-header">
+    <span class="font-name" style="font-family:'Lexend'">Lexend</span>
+    <span class="font-tag tag-alt">Accessibility Champion</span>
+  </div>
+  <div class="font-meta">Designed by researchers to improve reading proficiency. Slightly expanded letterforms with rounded touches. Scientifically optimized for readability — the most accessible option here.</div>
+
+  <div class="logo-specimen">
+    <div class="logo-row">
+      <div>
+        <div class="logo-variant-label" style="color:#34d399">Emerald</div>
+        <div class="logo-text" style="font-family:'Lexend'; font-weight:800"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Lexend'; font-weight:700"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      </div>
+      <div>
+        <div class="logo-variant-label" style="color:#fbbf24">Amber</div>
+        <div class="logo-text" style="font-family:'Lexend'; font-weight:800"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Lexend'; font-weight:700"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      </div>
+    </div>
+    <div class="logo-tagline" style="font-family:'Lexend'; font-weight:400">Review with confidence. Learn as you go.</div>
+  </div>
+
+  <div class="ui-specimen">
+    <div class="ui-phone" style="font-family:'Lexend'">
+      <div class="ui-heading" style="font-family:'Lexend'; font-weight:700">Error Handling</div>
+      <div class="ui-subheading" style="font-family:'Lexend'; font-weight:400">Go Stack · 14 items</div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Lexend'; font-weight:600">Check error wrapping</div>
+        <div class="ui-card-desc" style="font-family:'Lexend'; font-weight:400">Verify fmt.Errorf uses %w for wrappable errors</div>
+        <div class="ui-badge" style="background:#10b98120; color:#34d399; font-family:'Lexend'; font-weight:600">Looks Good</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Lexend'; font-weight:600">Verify retry logic</div>
+        <div class="ui-card-desc" style="font-family:'Lexend'; font-weight:400">Check exponential backoff and max retries</div>
+        <div class="ui-badge" style="background:#f59e0b20; color:#fbbf24; font-family:'Lexend'; font-weight:600">Needs Attention</div>
+      </div>
+      <div class="ui-btn" style="font-family:'Lexend'; font-weight:600">Complete Session</div>
+    </div>
+    <div class="text-specimens">
+      <div class="specimen-row">
+        <div class="specimen-label">Heading — 18px / 700</div>
+        <div class="specimen-text" style="font-family:'Lexend'; font-weight:700; font-size:18px">Error Handling & Recovery</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Body — 14px / 400</div>
+        <div class="specimen-text" style="font-family:'Lexend'; font-weight:400; font-size:14px">Verify that all error paths properly wrap errors using fmt.Errorf with %w, and that retry logic uses exponential backoff with appropriate max attempts.</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Disambiguation — Il1| 0Oo Zz2</div>
+        <div class="specimen-text" style="font-family:'Lexend'; font-weight:400; font-size:16px">Il1| 0Oo Zz2 Ss5 rn vs m</div>
+      </div>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <div class="a11y-item"><div class="a11y-label">Roundness</div><div class="a11y-value a11y-good">Subtle rounds — research-backed</div></div>
+    <div class="a11y-item"><div class="a11y-label">Readability</div><div class="a11y-value a11y-good">Best-in-class — scientifically designed</div></div>
+    <div class="a11y-item"><div class="a11y-label">Char Distinction</div><div class="a11y-value a11y-good">Excellent — wide spacing</div></div>
+    <div class="a11y-item"><div class="a11y-label">Expo Package</div><div class="a11y-value">@expo-google-fonts/lexend</div></div>
+  </div>
+</div>
+
+<!-- ==================== FONT 5: SORA ==================== -->
+<div class="font-section">
+  <div class="font-header">
+    <span class="font-name" style="font-family:'Sora'">Sora</span>
+    <span class="font-tag tag-alt">Modern Dev</span>
+  </div>
+  <div class="font-meta">Contemporary geometric with subtly rounded edges and a tech-forward feel. Bridges the gap between soft and structured — like a rounded font that grew up to work at a tech company.</div>
+
+  <div class="logo-specimen">
+    <div class="logo-row">
+      <div>
+        <div class="logo-variant-label" style="color:#34d399">Emerald</div>
+        <div class="logo-text" style="font-family:'Sora'; font-weight:800"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Sora'; font-weight:700"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      </div>
+      <div>
+        <div class="logo-variant-label" style="color:#fbbf24">Amber</div>
+        <div class="logo-text" style="font-family:'Sora'; font-weight:800"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Sora'; font-weight:700"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      </div>
+    </div>
+    <div class="logo-tagline" style="font-family:'Sora'; font-weight:400">Review with confidence. Learn as you go.</div>
+  </div>
+
+  <div class="ui-specimen">
+    <div class="ui-phone" style="font-family:'Sora'">
+      <div class="ui-heading" style="font-family:'Sora'; font-weight:700">Error Handling</div>
+      <div class="ui-subheading" style="font-family:'Sora'; font-weight:400">Go Stack · 14 items</div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Sora'; font-weight:600">Check error wrapping</div>
+        <div class="ui-card-desc" style="font-family:'Sora'; font-weight:400">Verify fmt.Errorf uses %w for wrappable errors</div>
+        <div class="ui-badge" style="background:#10b98120; color:#34d399; font-family:'Sora'; font-weight:600">Looks Good</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Sora'; font-weight:600">Verify retry logic</div>
+        <div class="ui-card-desc" style="font-family:'Sora'; font-weight:400">Check exponential backoff and max retries</div>
+        <div class="ui-badge" style="background:#f59e0b20; color:#fbbf24; font-family:'Sora'; font-weight:600">Needs Attention</div>
+      </div>
+      <div class="ui-btn" style="font-family:'Sora'; font-weight:600">Complete Session</div>
+    </div>
+    <div class="text-specimens">
+      <div class="specimen-row">
+        <div class="specimen-label">Heading — 18px / 700</div>
+        <div class="specimen-text" style="font-family:'Sora'; font-weight:700; font-size:18px">Error Handling & Recovery</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Body — 14px / 400</div>
+        <div class="specimen-text" style="font-family:'Sora'; font-weight:400; font-size:14px">Verify that all error paths properly wrap errors using fmt.Errorf with %w, and that retry logic uses exponential backoff with appropriate max attempts.</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Disambiguation — Il1| 0Oo Zz2</div>
+        <div class="specimen-text" style="font-family:'Sora'; font-weight:400; font-size:16px">Il1| 0Oo Zz2 Ss5 rn vs m</div>
+      </div>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <div class="a11y-item"><div class="a11y-label">Roundness</div><div class="a11y-value a11y-good">Subtle soft edges</div></div>
+    <div class="a11y-item"><div class="a11y-label">Readability</div><div class="a11y-value a11y-good">Very good — modern proportions</div></div>
+    <div class="a11y-item"><div class="a11y-label">Char Distinction</div><div class="a11y-value a11y-good">Good</div></div>
+    <div class="a11y-item"><div class="a11y-label">Expo Package</div><div class="a11y-value">@expo-google-fonts/sora</div></div>
+  </div>
+</div>
+
+<!-- ==================== FONT 6: POPPINS ==================== -->
+<div class="font-section">
+  <div class="font-header">
+    <span class="font-name" style="font-family:'Poppins'">Poppins</span>
+    <span class="font-tag tag-alt">Classic Rounded</span>
+  </div>
+  <div class="font-meta">Geometric rounded sans-serif with perfect circles and clean proportions. One of the most popular Google Fonts — familiar yet refined. Slightly wider than the others, giving it a confident, open feel.</div>
+
+  <div class="logo-specimen">
+    <div class="logo-row">
+      <div>
+        <div class="logo-variant-label" style="color:#34d399">Emerald</div>
+        <div class="logo-text" style="font-family:'Poppins'; font-weight:700"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Poppins'; font-weight:600"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      </div>
+      <div>
+        <div class="logo-variant-label" style="color:#fbbf24">Amber</div>
+        <div class="logo-text" style="font-family:'Poppins'; font-weight:700"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+        <div class="logo-text-sm" style="font-family:'Poppins'; font-weight:600"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      </div>
+    </div>
+    <div class="logo-tagline" style="font-family:'Poppins'; font-weight:400">Review with confidence. Learn as you go.</div>
+  </div>
+
+  <div class="ui-specimen">
+    <div class="ui-phone" style="font-family:'Poppins'">
+      <div class="ui-heading" style="font-family:'Poppins'; font-weight:600">Error Handling</div>
+      <div class="ui-subheading" style="font-family:'Poppins'; font-weight:400">Go Stack · 14 items</div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Poppins'; font-weight:600">Check error wrapping</div>
+        <div class="ui-card-desc" style="font-family:'Poppins'; font-weight:400">Verify fmt.Errorf uses %w for wrappable errors</div>
+        <div class="ui-badge" style="background:#10b98120; color:#34d399; font-family:'Poppins'; font-weight:600">Looks Good</div>
+      </div>
+      <div class="ui-card">
+        <div class="ui-card-title" style="font-family:'Poppins'; font-weight:600">Verify retry logic</div>
+        <div class="ui-card-desc" style="font-family:'Poppins'; font-weight:400">Check exponential backoff and max retries</div>
+        <div class="ui-badge" style="background:#f59e0b20; color:#fbbf24; font-family:'Poppins'; font-weight:600">Needs Attention</div>
+      </div>
+      <div class="ui-btn" style="font-family:'Poppins'; font-weight:600">Complete Session</div>
+    </div>
+    <div class="text-specimens">
+      <div class="specimen-row">
+        <div class="specimen-label">Heading — 18px / 700</div>
+        <div class="specimen-text" style="font-family:'Poppins'; font-weight:700; font-size:18px">Error Handling & Recovery</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Body — 14px / 400</div>
+        <div class="specimen-text" style="font-family:'Poppins'; font-weight:400; font-size:14px">Verify that all error paths properly wrap errors using fmt.Errorf with %w, and that retry logic uses exponential backoff with appropriate max attempts.</div>
+      </div>
+      <div class="specimen-row">
+        <div class="specimen-label">Disambiguation — Il1| 0Oo Zz2</div>
+        <div class="specimen-text" style="font-family:'Poppins'; font-weight:400; font-size:16px">Il1| 0Oo Zz2 Ss5 rn vs m</div>
+      </div>
+    </div>
+  </div>
+  <div class="a11y-row">
+    <div class="a11y-item"><div class="a11y-label">Roundness</div><div class="a11y-value a11y-good">Geometric circles — clean</div></div>
+    <div class="a11y-item"><div class="a11y-label">Readability</div><div class="a11y-value a11y-good">Very good</div></div>
+    <div class="a11y-item"><div class="a11y-label">Char Distinction</div><div class="a11y-value a11y-ok">Moderate — Il similar at small sizes</div></div>
+    <div class="a11y-item"><div class="a11y-label">Expo Package</div><div class="a11y-value">@expo-google-fonts/poppins</div></div>
+  </div>
+</div>
+
+<!-- ==================== MONOSPACE ==================== -->
+<div class="font-section">
+  <div class="font-header">
+    <span class="font-name" style="font-family:'JetBrains Mono'">JetBrains Mono</span>
+    <span class="font-tag tag-code">Code Font — Keep</span>
+  </div>
+  <div class="font-meta">Already bundled. Purpose-built for code with increased height and ligatures. Pairs well with all rounded fonts above — the contrast between soft UI text and crisp monospace adds visual hierarchy.</div>
+
+  <div class="logo-specimen">
+    <div style="font-family:'JetBrains Mono'; font-size:14px; color:#e4e4ec; line-height:1.6">
+      <span style="color:#5a5a78">// Code example rendering</span><br>
+      <span style="color:#a78bfa">func</span> <span style="color:#34d399">handleError</span>(err <span style="color:#a78bfa">error</span>) {<br>
+      &nbsp;&nbsp;<span style="color:#a78bfa">if</span> errors.<span style="color:#34d399">Is</span>(err, ErrNotFound) {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#a78bfa">return</span> <span style="color:#fbbf24">nil</span><br>
+      &nbsp;&nbsp;}<br>
+      &nbsp;&nbsp;<span style="color:#a78bfa">return</span> fmt.<span style="color:#34d399">Errorf</span>(<span style="color:#fbbf24">"handle: %w"</span>, err)<br>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SIDE BY SIDE ==================== -->
+<div class="font-section">
+  <div class="font-name" style="margin-bottom:16px">Side-by-Side: Logo Wordmark — Emerald "Review"</div>
+  <div class="comparison-grid">
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Nunito'; font-weight:800; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Nunito — 800</div>
+    </div>
+    <div class="comparison-card" style="border-color:#8b5cf633">
+      <div class="logo-text" style="font-family:'Quicksand'; font-weight:700; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Quicksand — 700</div>
+    </div>
+    <div class="comparison-card" style="border-color:#8b5cf633">
+      <div class="logo-text" style="font-family:'Urbanist'; font-weight:800; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Urbanist — 800</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Lexend'; font-weight:800; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Lexend — 800</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Sora'; font-weight:800; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Sora — 800</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Poppins'; font-weight:700; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Poppins — 700</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Comfortaa'; font-weight:700; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Comfortaa — 700</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Varela Round'; font-weight:400; font-size:28px"><span class="review-green">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Varela Round — 400</div>
+    </div>
+  </div>
+
+  <div class="font-name" style="margin-bottom:16px; margin-top:24px">Side-by-Side: Logo Wordmark — Amber "Review"</div>
+  <div class="comparison-grid">
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Nunito'; font-weight:800; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Nunito — 800</div>
+    </div>
+    <div class="comparison-card" style="border-color:#8b5cf633">
+      <div class="logo-text" style="font-family:'Quicksand'; font-weight:700; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Quicksand — 700</div>
+    </div>
+    <div class="comparison-card" style="border-color:#8b5cf633">
+      <div class="logo-text" style="font-family:'Urbanist'; font-weight:800; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Urbanist — 800</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Lexend'; font-weight:800; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Lexend — 800</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Sora'; font-weight:800; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Sora — 800</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Poppins'; font-weight:700; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Poppins — 700</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Comfortaa'; font-weight:700; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Comfortaa — 700</div>
+    </div>
+    <div class="comparison-card">
+      <div class="logo-text" style="font-family:'Varela Round'; font-weight:400; font-size:28px"><span class="review-amber">Review</span><span class="helm">Helm</span></div>
+      <div class="font-id">Varela Round — 400</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== RECOMMENDATION ==================== -->
+<div class="font-section" style="border-color:#8b5cf644">
+  <div class="font-header">
+    <span class="font-name">Recommended Combinations</span>
+    <span class="font-tag tag-top">Pick One</span>
+  </div>
+  <div class="font-meta" style="margin-bottom:20px">Three combos from most rounded to most structured — all with JetBrains Mono for code.</div>
+
+  <div style="font-size:13px; font-weight:600; color:#34d399; margin-bottom:12px">With Emerald "Review"</div>
+  <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:28px">
+    <div style="flex:1; min-width:240px; background:#0a0a1a; border-radius:12px; padding:20px; border:1px solid #1a1a30">
+      <div style="font-size:11px; font-weight:700; color:#34d399; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px">A: Most Rounded</div>
+      <div style="font-family:'Quicksand'; font-weight:700; font-size:26px; margin-bottom:4px"><span style="color:#34d399">Review</span><span style="color:#8b5cf6">Helm</span></div>
+      <div style="font-family:'Quicksand'; font-weight:400; font-size:12px; color:#5a5a78; margin-bottom:12px">Quicksand for everything</div>
+      <div style="font-family:'Quicksand'; font-weight:700; font-size:15px; color:#e4e4ec; margin-bottom:4px">Error Handling & Recovery</div>
+      <div style="font-family:'Quicksand'; font-weight:400; font-size:12px; color:#9898b0; line-height:1.5">Verify that all errors are properly wrapped.</div>
+      <div style="font-family:'JetBrains Mono'; font-size:11px; color:#a78bfa; background:#111122; padding:8px; border-radius:6px; margin-top:8px">fmt.Errorf("wrap: %w", err)</div>
+    </div>
+    <div style="flex:1; min-width:240px; background:#0a0a1a; border-radius:12px; padding:20px; border:2px solid #8b5cf633">
+      <div style="font-size:11px; font-weight:700; color:#8b5cf6; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px">B: Sweet Spot ★</div>
+      <div style="font-family:'Urbanist'; font-weight:800; font-size:26px; margin-bottom:4px"><span style="color:#34d399">Review</span><span style="color:#8b5cf6">Helm</span></div>
+      <div style="font-family:'Nunito'; font-weight:400; font-size:12px; color:#5a5a78; margin-bottom:12px">Urbanist headings + Nunito body</div>
+      <div style="font-family:'Urbanist'; font-weight:700; font-size:15px; color:#e4e4ec; margin-bottom:4px">Error Handling & Recovery</div>
+      <div style="font-family:'Nunito'; font-weight:400; font-size:12px; color:#9898b0; line-height:1.5">Verify that all errors are properly wrapped.</div>
+      <div style="font-family:'JetBrains Mono'; font-size:11px; color:#a78bfa; background:#111122; padding:8px; border-radius:6px; margin-top:8px">fmt.Errorf("wrap: %w", err)</div>
+    </div>
+    <div style="flex:1; min-width:240px; background:#0a0a1a; border-radius:12px; padding:20px; border:1px solid #1a1a30">
+      <div style="font-size:11px; font-weight:700; color:#fbbf24; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px">C: Tech-Refined</div>
+      <div style="font-family:'Sora'; font-weight:800; font-size:26px; margin-bottom:4px"><span style="color:#34d399">Review</span><span style="color:#8b5cf6">Helm</span></div>
+      <div style="font-family:'Lexend'; font-weight:400; font-size:12px; color:#5a5a78; margin-bottom:12px">Sora headings + Lexend body</div>
+      <div style="font-family:'Sora'; font-weight:700; font-size:15px; color:#e4e4ec; margin-bottom:4px">Error Handling & Recovery</div>
+      <div style="font-family:'Lexend'; font-weight:400; font-size:12px; color:#9898b0; line-height:1.5">Verify that all errors are properly wrapped.</div>
+      <div style="font-family:'JetBrains Mono'; font-size:11px; color:#a78bfa; background:#111122; padding:8px; border-radius:6px; margin-top:8px">fmt.Errorf("wrap: %w", err)</div>
+    </div>
+  </div>
+
+  <div style="font-size:13px; font-weight:600; color:#fbbf24; margin-bottom:12px">With Amber "Review"</div>
+  <div style="display:flex; gap:20px; flex-wrap:wrap">
+    <div style="flex:1; min-width:240px; background:#0a0a1a; border-radius:12px; padding:20px; border:1px solid #1a1a30">
+      <div style="font-size:11px; font-weight:700; color:#34d399; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px">A: Most Rounded</div>
+      <div style="font-family:'Quicksand'; font-weight:700; font-size:26px; margin-bottom:4px"><span style="color:#fbbf24">Review</span><span style="color:#8b5cf6">Helm</span></div>
+      <div style="font-family:'Quicksand'; font-weight:400; font-size:12px; color:#5a5a78; margin-bottom:12px">Quicksand for everything</div>
+      <div style="font-family:'Quicksand'; font-weight:700; font-size:15px; color:#e4e4ec; margin-bottom:4px">Error Handling & Recovery</div>
+      <div style="font-family:'Quicksand'; font-weight:400; font-size:12px; color:#9898b0; line-height:1.5">Verify that all errors are properly wrapped.</div>
+      <div style="font-family:'JetBrains Mono'; font-size:11px; color:#a78bfa; background:#111122; padding:8px; border-radius:6px; margin-top:8px">fmt.Errorf("wrap: %w", err)</div>
+    </div>
+    <div style="flex:1; min-width:240px; background:#0a0a1a; border-radius:12px; padding:20px; border:2px solid #8b5cf633">
+      <div style="font-size:11px; font-weight:700; color:#8b5cf6; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px">B: Sweet Spot ★</div>
+      <div style="font-family:'Urbanist'; font-weight:800; font-size:26px; margin-bottom:4px"><span style="color:#fbbf24">Review</span><span style="color:#8b5cf6">Helm</span></div>
+      <div style="font-family:'Nunito'; font-weight:400; font-size:12px; color:#5a5a78; margin-bottom:12px">Urbanist headings + Nunito body</div>
+      <div style="font-family:'Urbanist'; font-weight:700; font-size:15px; color:#e4e4ec; margin-bottom:4px">Error Handling & Recovery</div>
+      <div style="font-family:'Nunito'; font-weight:400; font-size:12px; color:#9898b0; line-height:1.5">Verify that all errors are properly wrapped.</div>
+      <div style="font-family:'JetBrains Mono'; font-size:11px; color:#a78bfa; background:#111122; padding:8px; border-radius:6px; margin-top:8px">fmt.Errorf("wrap: %w", err)</div>
+    </div>
+    <div style="flex:1; min-width:240px; background:#0a0a1a; border-radius:12px; padding:20px; border:1px solid #1a1a30">
+      <div style="font-size:11px; font-weight:700; color:#fbbf24; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px">C: Tech-Refined</div>
+      <div style="font-family:'Sora'; font-weight:800; font-size:26px; margin-bottom:4px"><span style="color:#fbbf24">Review</span><span style="color:#8b5cf6">Helm</span></div>
+      <div style="font-family:'Lexend'; font-weight:400; font-size:12px; color:#5a5a78; margin-bottom:12px">Sora headings + Lexend body</div>
+      <div style="font-family:'Sora'; font-weight:700; font-size:15px; color:#e4e4ec; margin-bottom:4px">Error Handling & Recovery</div>
+      <div style="font-family:'Lexend'; font-weight:400; font-size:12px; color:#9898b0; line-height:1.5">Verify that all errors are properly wrapped.</div>
+      <div style="font-family:'JetBrains Mono'; font-size:11px; color:#a78bfa; background:#111122; padding:8px; border-radius:6px; margin-top:8px">fmt.Errorf("wrap: %w", err)</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

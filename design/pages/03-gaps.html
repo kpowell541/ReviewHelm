@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 3: Learning Gaps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 560px; margin: 0 auto; line-height: 1.5; }
+
+  .design-row {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #0a0a1a;
+    border-radius: 44px;
+    border: 3px solid #242442;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch { width: 160px; height: 34px; background: #050510; border-radius: 0 0 20px 20px; margin: 0 auto; }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; height: 44px; font-size: 12px; font-weight: 600; color: #e4e4ec;
+    position: absolute; top: 0; left: 0; right: 0;
+  }
+  .phone-content { padding: 52px 20px 20px; }
+  .phone-home-indicator { width: 134px; height: 5px; background: #e4e4ec; border-radius: 3px; margin: 20px auto 8px; opacity: 0.2; }
+
+  /* Annotations */
+  .annotations { max-width: 380px; flex: 1; min-width: 300px; }
+  .annotation-section {
+    background: #111122; border: 1px solid #242442; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .annotation-section h3 { font-size: 13px; font-weight: 700; color: #8b5cf6; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .annotation-section p { font-size: 13px; color: #9898b0; line-height: 1.6; margin-bottom: 6px; }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px; color: #a78bfa; background: #1a1a30; padding: 2px 6px; border-radius: 4px;
+  }
+  .color-ref { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+  .color-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  /* ============ GAPS SCREEN COMPONENTS ============ */
+
+  /* Header */
+  .gaps-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+    padding: 0 4px;
+  }
+  .nav-back {
+    width: 36px; height: 36px; background: #1a1a30; border: 1px solid #242442;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #e4e4ec; cursor: pointer;
+  }
+  .gaps-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e4e4ec;
+  }
+  .gaps-subtitle {
+    font-size: 13px;
+    color: #5a5a78;
+    padding: 0 4px;
+    margin-bottom: 20px;
+  }
+
+  /* Summary strip */
+  .summary-strip {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .summary-chip {
+    flex: 1;
+    padding: 10px 8px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid;
+  }
+  .summary-chip-value {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .summary-chip-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-count {
+    background: #1a1a30;
+    color: #9898b0;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* Gap cards */
+  .gap-card {
+    background: #111122;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 1px solid #1a1a30;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .gap-card:hover { border-color: #333355; }
+
+  .gap-confidence {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .gap-info { flex: 1; min-width: 0; }
+  .gap-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e4e4ec;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gap-meta {
+    font-size: 11px;
+    color: #5a5a78;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .gap-stack-tag {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    background: #8b5cf615;
+    color: #a78bfa;
+  }
+  .gap-arrow {
+    color: #3a3a52;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  /* Improving card variation */
+  .gap-card.improving { border-color: #10b98122; }
+  .gap-card.improving .gap-text { color: #9898b0; }
+
+  /* Mastered card variation */
+  .gap-card.mastered { border-color: #34d39922; opacity: 0.7; }
+  .gap-card.mastered .gap-text { color: #5a5a78; }
+
+  /* Trend indicators */
+  .trend-up { color: #34d399; font-size: 12px; font-weight: 700; }
+  .trend-down { color: #ef4444; font-size: 12px; font-weight: 700; }
+  .trend-flat { color: #5a5a78; font-size: 12px; }
+
+  /* Review button on mastered items */
+  .review-btn {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fbbf24;
+    background: #f59e0b15;
+    border: 1px solid #f59e0b33;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 3 of 11</div>
+  <h1>Learning Gaps</h1>
+  <p class="desc">Tracks knowledge gaps based on confidence self-ratings (1-5) from review sessions. Items are sorted by confidence level. Tapping any card opens the Deep Dive screen for that topic.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ PHONE MOCKUP ============ -->
+  <div class="phone">
+    <div class="phone-notch"></div>
+    <div class="phone-status">
+      <span>9:41</span>
+      <span style="display:flex; gap:6px; font-size:11px">
+        <span>&#9679;&#9679;&#9679;&#9679;</span>
+        <span>&#128267;</span>
+      </span>
+    </div>
+
+    <div class="phone-content">
+      <!-- Header -->
+      <div class="gaps-header">
+        <div class="nav-back">‹</div>
+        <span style="font-size:24px">📊</span>
+        <div class="gaps-title">My Gaps</div>
+      </div>
+      <div class="gaps-subtitle">Track and close your knowledge gaps</div>
+
+      <!-- Summary strip -->
+      <div class="summary-strip">
+        <div class="summary-chip" style="background:#ef444415; border-color:#ef444433">
+          <div class="summary-chip-value" style="color:#ef4444">4</div>
+          <div class="summary-chip-label" style="color:#ef4444">Active</div>
+        </div>
+        <div class="summary-chip" style="background:#fbbf2415; border-color:#fbbf2433">
+          <div class="summary-chip-value" style="color:#fbbf24">2</div>
+          <div class="summary-chip-label" style="color:#fbbf24">Improving</div>
+        </div>
+        <div class="summary-chip" style="background:#34d39915; border-color:#34d39933">
+          <div class="summary-chip-value" style="color:#34d399">3</div>
+          <div class="summary-chip-label" style="color:#34d399">Mastered</div>
+        </div>
+      </div>
+
+      <!-- Active Gaps -->
+      <div class="section-label" style="color:#ef4444">
+        Active Gaps
+        <span class="section-count">4</span>
+      </div>
+
+      <div class="gap-card">
+        <div class="gap-confidence" style="background:#ef444420; color:#ef4444">1</div>
+        <div class="gap-info">
+          <div class="gap-text">Check error wrapping with %w</div>
+          <div class="gap-meta">
+            <span class="gap-stack-tag">Go</span>
+            <span>3 sessions</span>
+          </div>
+        </div>
+        <span class="gap-arrow">›</span>
+      </div>
+
+      <div class="gap-card">
+        <div class="gap-confidence" style="background:#ef444420; color:#ef4444">1</div>
+        <div class="gap-info">
+          <div class="gap-text">Verify context cancellation</div>
+          <div class="gap-meta">
+            <span class="gap-stack-tag">Go</span>
+            <span>2 sessions</span>
+          </div>
+        </div>
+        <span class="gap-arrow">›</span>
+      </div>
+
+      <div class="gap-card">
+        <div class="gap-confidence" style="background:#ef444420; color:#ef4444">2</div>
+        <div class="gap-info">
+          <div class="gap-text">Check N+1 query patterns</div>
+          <div class="gap-meta">
+            <span class="gap-stack-tag">JS/TS</span>
+            <span>4 sessions</span>
+            <span class="trend-down">↓ was 3</span>
+          </div>
+        </div>
+        <span class="gap-arrow">›</span>
+      </div>
+
+      <div class="gap-card">
+        <div class="gap-confidence" style="background:#f59e0b20; color:#fbbf24">2</div>
+        <div class="gap-info">
+          <div class="gap-text">Validate protobuf field masks</div>
+          <div class="gap-meta">
+            <span class="gap-stack-tag">Java</span>
+            <span>1 session</span>
+          </div>
+        </div>
+        <span class="gap-arrow">›</span>
+      </div>
+
+      <!-- Improving -->
+      <div style="margin-top:20px">
+        <div class="section-label" style="color:#fbbf24">
+          Improving
+          <span class="section-count">2</span>
+          <span class="trend-up">↑</span>
+        </div>
+
+        <div class="gap-card improving">
+          <div class="gap-confidence" style="background:#fbbf2420; color:#fbbf24">3</div>
+          <div class="gap-info">
+            <div class="gap-text">Check retry logic with backoff</div>
+            <div class="gap-meta">
+              <span class="gap-stack-tag">Go</span>
+              <span>5 sessions</span>
+              <span class="trend-up">↑ was 1</span>
+            </div>
+          </div>
+          <span class="gap-arrow">›</span>
+        </div>
+
+        <div class="gap-card improving">
+          <div class="gap-confidence" style="background:#fbbf2420; color:#fbbf24">3</div>
+          <div class="gap-info">
+            <div class="gap-text">Verify input sanitization</div>
+            <div class="gap-meta">
+              <span class="gap-stack-tag">JS/TS</span>
+              <span>3 sessions</span>
+              <span class="trend-up">↑ was 2</span>
+            </div>
+          </div>
+          <span class="gap-arrow">›</span>
+        </div>
+      </div>
+
+      <!-- Mastered -->
+      <div style="margin-top:20px">
+        <div class="section-label" style="color:#34d399">
+          Mastered
+          <span class="section-count">3</span>
+        </div>
+
+        <div class="gap-card mastered">
+          <div class="gap-confidence" style="background:#34d39920; color:#34d399">4</div>
+          <div class="gap-info">
+            <div class="gap-text">Check interface compliance</div>
+            <div class="gap-meta">
+              <span class="gap-stack-tag">Go</span>
+              <span>6 sessions</span>
+              <span class="trend-up">↑ was 2</span>
+            </div>
+          </div>
+          <span class="review-btn">Review</span>
+        </div>
+
+        <div class="gap-card mastered">
+          <div class="gap-confidence" style="background:#34d39920; color:#34d399">5</div>
+          <div class="gap-info">
+            <div class="gap-text">Verify mutex usage</div>
+            <div class="gap-meta">
+              <span class="gap-stack-tag">Go</span>
+              <span>4 sessions</span>
+              <span class="trend-up">↑ was 1</span>
+            </div>
+          </div>
+          <span class="review-btn">Review</span>
+        </div>
+      </div>
+
+      <div class="phone-home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Purpose</h3>
+      <p>Central dashboard for tracking knowledge gaps discovered during review/polish sessions.</p>
+      <p>Items appear here when users rate their confidence low (1-2) on checklist items. As they practice and improve, items move through Active → Improving → Mastered.</p>
+      <p>Tapping any gap card opens the <strong>Deep Dive</strong> screen (Screen 8) for that topic.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Summary Strip</h3>
+      <p>Three count chips at the top give an instant overview:</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#ef4444"></span> Red</span> Active — confidence 1-2, needs work</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span> Amber</span> Improving — confidence 3, trending up</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#34d399"></span> Green</span> Mastered — confidence 4-5, previously a gap</p>
+      <p>New addition — the current implementation only shows Active and Improving.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Gap Card Design</h3>
+      <p><strong>Confidence number:</strong> Replaces emoji with a numeric badge (1-5) in a tinted circle. More scannable and accessible than emojis.</p>
+      <p><strong>Item text:</strong> Shows the actual checklist item text via <code>findItemById()</code>, truncated with ellipsis.</p>
+      <p><strong>Stack tag:</strong> Small pill showing which stack (Go, JS/TS, Java) the item belongs to.</p>
+      <p><strong>Session count:</strong> How many sessions this item has appeared in.</p>
+      <p><strong>Trend indicator:</strong> Shows direction of change. "↑ was X" (green) for improvement, "↓ was X" (red) for regression. Helps users spot items slipping back.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Three Sections</h3>
+      <p><strong>Active Gaps:</strong> Confidence 1-2. Red-tinted confidence badges. Sorted by confidence level then session count.</p>
+      <p><strong>Improving:</strong> Confidence 3 with upward trend. Amber-tinted. Shows where the user came from ("was 1").</p>
+      <p><strong>Mastered:</strong> Confidence 4-5, items that <em>were</em> gaps. Green-tinted, slightly dimmed. Celebrates progress. "Review" button opens Deep Dive to revisit the topic — if confidence drops after re-rating, the item moves back to Active.</p>
+      <p>Current implementation only has Active and Improving. Mastered section is new.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Colors Used</h3>
+      <p><span class="color-ref"><span class="color-dot" style="background:#ef4444"></span></span> <code>#ef4444</code> Active gap badges (confidence 1-2, or any regression)</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span></span> <code>#fbbf24</code> Improving badges (confidence 3, trending up)</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#34d399"></span></span> <code>#34d399</code> Mastered badges (confidence 4-5)</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#a78bfa"></span></span> <code>#a78bfa</code> Stack tags</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Changes from Current</h3>
+      <p>1. Added back button in header</p>
+      <p>2. Added summary strip with counts</p>
+      <p>3. Replaced emoji confidence indicators with numeric badges</p>
+      <p>4. Added stack tag pills on each card</p>
+      <p>5. Added "Mastered" section for celebrating progress</p>
+      <p>7. Added trend indicators ("↑ was X") on improving/mastered items</p>
+      <p>8. Added "Review" button on mastered items to revisit topics</p>
+      <p>9. Cards now tappable → navigate to Deep Dive (already implemented)</p>
+      <p>10. Single rating system: confidence 1-5 only (no separate priority score)</p>
+      <p>11. Font: Quicksand throughout</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Data Source</h3>
+      <p>All data from <code>useConfidenceStore</code>:</p>
+      <p><code>getWeakestItems(20)</code> returns items sorted by learning priority.</p>
+      <p>Each item has: <code>itemId</code>, <code>stackId</code>, <code>currentConfidence</code>, <code>trend</code>, <code>learningPriority</code>, <code>ratings[]</code>.</p>
+      <p>Item text resolved via <code>findItemById(gap.itemId)</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Interactions</h3>
+      <p><strong>Gap cards:</strong> <code>Pressable</code> → navigates to <code>/deep-dive/{itemId}</code></p>
+      <p><strong>Summary chips:</strong> Could scroll to respective section on tap (enhancement)</p>
+      <p><strong>Back button:</strong> Returns to Home</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

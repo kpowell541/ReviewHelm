@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Color & Theme Exploration</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #6c63ff;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .brief {
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    max-width: 700px;
+    margin: 0 auto 48px;
+    line-height: 1.6;
+  }
+
+  /* Palette section */
+  .palette-section {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 40px;
+    transition: border-color 0.2s;
+  }
+  .palette-section:hover {
+    border-color: #4a4a6a;
+  }
+  .palette-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .palette-number {
+    color: #6c63ff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .palette-tag {
+    font-size: 11px;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .tag-recommended { background: #22c55e20; color: #4ade80; border: 1px solid #22c55e33; }
+  .tag-alternative { background: #ffffff10; color: #9ca3af; border: 1px solid #ffffff15; }
+  .tag-bold { background: #f59e0b20; color: #fbbf24; border: 1px solid #f59e0b33; }
+  .palette-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+  }
+  .palette-desc {
+    font-size: 14px;
+    color: #8888a0;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* Swatch strips */
+  .swatch-group {
+    margin-bottom: 20px;
+  }
+  .swatch-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b7280;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .swatch-strip {
+    display: flex;
+    gap: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .swatch {
+    flex: 1;
+    height: 56px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 6px;
+    position: relative;
+  }
+  .swatch-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+  }
+  .swatch-hex {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    opacity: 0.7;
+    text-align: center;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* UI Mockup */
+  .mockup-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 24px;
+    flex-wrap: wrap;
+  }
+  .phone-mockup {
+    width: 220px;
+    border-radius: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .phone-status-bar {
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .phone-header {
+    padding: 12px 16px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .phone-card {
+    margin: 0 12px 8px;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .phone-card-title {
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .phone-btn {
+    margin: 8px 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .phone-tab-bar {
+    display: flex;
+    height: 44px;
+    align-items: center;
+    justify-content: space-around;
+    font-size: 9px;
+    font-weight: 600;
+    border-top-width: 1px;
+    border-top-style: solid;
+  }
+  .phone-tab {
+    text-align: center;
+    line-height: 1.3;
+  }
+  .phone-chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-right: 4px;
+    margin-bottom: 4px;
+  }
+  .phone-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  /* Semantic colors block */
+  .semantic-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .semantic-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .semantic-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+  }
+  .semantic-info {
+    font-size: 11px;
+  }
+  .semantic-name {
+    font-weight: 600;
+    color: #c0c0d0;
+  }
+  .semantic-hex {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    color: #6b7280;
+  }
+
+  /* Divider */
+  hr {
+    border: none;
+    border-top: 1px solid #2a2a4a;
+    margin: 24px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>ReviewHelm</h1>
+<div class="subtitle">Color & Theme Exploration</div>
+<p class="brief">
+  Color palettes built around the Concept 8 logo (purple compass-shield with green code brackets).
+  Each palette includes backgrounds, surfaces, primary/accent colors, text hierarchy, and semantic status colors,
+  with a UI mockup preview.
+</p>
+
+<!-- ==================== LOGO VARIANTS ==================== -->
+<div class="palette-section">
+  <div class="palette-title">Logo in Each Palette</div>
+  <div class="palette-desc">The winning Concept 8 logo rendered with each palette's colors</div>
+  <div style="display:flex; gap:24px; flex-wrap:wrap; justify-content:center; margin-top:20px">
+    <div style="text-align:center">
+      <div style="color:#6c63ff; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:10px">A — DEEP SPACE</div>
+      <img src="logos/logo-palette-a.svg" width="200" height="200" style="border-radius:16px">
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:10px">
+        <img src="logos/logo-palette-a.svg" width="96" height="96" style="border-radius:10px">
+        <img src="logos/logo-palette-a.svg" width="48" height="48" style="border-radius:6px">
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div style="color:#6366f1; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:10px">B — MIDNIGHT</div>
+      <img src="logos/logo-palette-b.svg" width="200" height="200" style="border-radius:16px">
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:10px">
+        <img src="logos/logo-palette-b.svg" width="96" height="96" style="border-radius:10px">
+        <img src="logos/logo-palette-b.svg" width="48" height="48" style="border-radius:6px">
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div style="color:#8b5cf6; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:10px">C — ELECTRIC</div>
+      <img src="logos/logo-palette-c.svg" width="200" height="200" style="border-radius:16px">
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:10px">
+        <img src="logos/logo-palette-c.svg" width="96" height="96" style="border-radius:10px">
+        <img src="logos/logo-palette-c.svg" width="48" height="48" style="border-radius:6px">
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div style="color:#f59e0b; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:10px">D — SLATE</div>
+      <img src="logos/logo-palette-d.svg" width="200" height="200" style="border-radius:16px">
+      <div style="display:flex; gap:8px; justify-content:center; margin-top:10px">
+        <img src="logos/logo-palette-d.svg" width="96" height="96" style="border-radius:10px">
+        <img src="logos/logo-palette-d.svg" width="48" height="48" style="border-radius:6px">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PALETTE A ==================== -->
+<div class="palette-section">
+  <div class="palette-header">
+    <div class="palette-number">Palette A</div>
+    <span class="palette-tag tag-recommended">Recommended</span>
+  </div>
+  <div class="palette-title">Deep Space Purple</div>
+  <div class="palette-desc">
+    The natural extension of our logo. Rich purple primary on very dark blue-black backgrounds.
+    Green accent for positive actions and approval states. High contrast, easy on the eyes during long review sessions.
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Backgrounds</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#08081a"><span class="swatch-label" style="color:#6b7280">Base<span class="swatch-hex">#08081a</span></span></div>
+      <div class="swatch" style="background:#0f0f1a"><span class="swatch-label" style="color:#6b7280">Primary<span class="swatch-hex">#0f0f1a</span></span></div>
+      <div class="swatch" style="background:#161625"><span class="swatch-label" style="color:#6b7280">Elevated<span class="swatch-hex">#161625</span></span></div>
+      <div class="swatch" style="background:#1e1e32"><span class="swatch-label" style="color:#8888a0">Surface<span class="swatch-hex">#1e1e32</span></span></div>
+      <div class="swatch" style="background:#282845"><span class="swatch-label" style="color:#a0a0b0">Card<span class="swatch-hex">#282845</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Primary & Accent</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#4a42cc"><span class="swatch-label" style="color:#c0bbff">Dark<span class="swatch-hex">#4a42cc</span></span></div>
+      <div class="swatch" style="background:#5a52dd"><span class="swatch-label" style="color:#e0ddff">Mid<span class="swatch-hex">#5a52dd</span></span></div>
+      <div class="swatch" style="background:#6c63ff"><span class="swatch-label" style="color:#ffffff">Primary<span class="swatch-hex">#6c63ff</span></span></div>
+      <div class="swatch" style="background:#8b83ff"><span class="swatch-label" style="color:#ffffff">Light<span class="swatch-hex">#8b83ff</span></span></div>
+      <div class="swatch" style="background:#b0aaff"><span class="swatch-label" style="color:#1a1a2e">Lighter<span class="swatch-hex">#b0aaff</span></span></div>
+    </div>
+    <div class="swatch-strip" style="margin-top:6px">
+      <div class="swatch" style="background:#16a34a"><span class="swatch-label" style="color:#bbf7d0">Dark<span class="swatch-hex">#16a34a</span></span></div>
+      <div class="swatch" style="background:#22c55e"><span class="swatch-label" style="color:#ffffff">Accent<span class="swatch-hex">#22c55e</span></span></div>
+      <div class="swatch" style="background:#4ade80"><span class="swatch-label" style="color:#0a0a14">Light<span class="swatch-hex">#4ade80</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Text Hierarchy</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#0f0f1a; border:1px solid #2a2a4a"><span class="swatch-label" style="color:#ffffff">Heading<span class="swatch-hex">#ffffff</span></span></div>
+      <div class="swatch" style="background:#0f0f1a; border:1px solid #2a2a4a"><span class="swatch-label" style="color:#e0e0e8">Body<span class="swatch-hex">#e0e0e8</span></span></div>
+      <div class="swatch" style="background:#0f0f1a; border:1px solid #2a2a4a"><span class="swatch-label" style="color:#a0a0b8">Secondary<span class="swatch-hex">#a0a0b8</span></span></div>
+      <div class="swatch" style="background:#0f0f1a; border:1px solid #2a2a4a"><span class="swatch-label" style="color:#6b7280">Muted<span class="swatch-hex">#6b7280</span></span></div>
+      <div class="swatch" style="background:#0f0f1a; border:1px solid #2a2a4a"><span class="swatch-label" style="color:#3a3a52">Disabled<span class="swatch-hex">#3a3a52</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Semantic / Status</div>
+    <div class="semantic-row">
+      <div class="semantic-item"><div class="semantic-dot" style="background:#22c55e"></div><div class="semantic-info"><div class="semantic-name">Success</div><div class="semantic-hex">#22c55e</div></div></div>
+      <div class="semantic-item"><div class="semantic-dot" style="background:#f59e0b"></div><div class="semantic-info"><div class="semantic-name">Warning</div><div class="semantic-hex">#f59e0b</div></div></div>
+      <div class="semantic-item"><div class="semantic-dot" style="background:#ef4444"></div><div class="semantic-info"><div class="semantic-name">Error</div><div class="semantic-hex">#ef4444</div></div></div>
+      <div class="semantic-item"><div class="semantic-dot" style="background:#3b82f6"></div><div class="semantic-info"><div class="semantic-name">Info</div><div class="semantic-hex">#3b82f6</div></div></div>
+      <div class="semantic-item"><div class="semantic-dot" style="background:#6b7280"></div><div class="semantic-info"><div class="semantic-name">N/A</div><div class="semantic-hex">#6b7280</div></div></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="mockup-row">
+    <!-- Home screen mockup -->
+    <div class="phone-mockup" style="background:#0f0f1a; border:2px solid #2a2a4a;">
+      <div class="phone-status-bar" style="background:#08081a; color:#6b7280">9:41</div>
+      <div class="phone-header" style="color:#ffffff">ReviewHelm</div>
+      <div class="phone-card" style="background:#1e1e32; color:#e0e0e8; border:1px solid #282845">
+        <div class="phone-card-title" style="color:#ffffff">Go Stack</div>
+        <span class="phone-chip" style="background:#6c63ff22; color:#8b83ff">176 items</span>
+        <span class="phone-chip" style="background:#22c55e18; color:#4ade80">14 sections</span>
+      </div>
+      <div class="phone-card" style="background:#1e1e32; color:#e0e0e8; border:1px solid #282845">
+        <div class="phone-card-title" style="color:#ffffff">Java / Protobuf</div>
+        <span class="phone-chip" style="background:#6c63ff22; color:#8b83ff">129 items</span>
+        <span class="phone-chip" style="background:#22c55e18; color:#4ade80">12 sections</span>
+      </div>
+      <div class="phone-btn" style="background:#6c63ff; color:#ffffff">Start Review Session</div>
+      <div style="flex:1"></div>
+      <div class="phone-tab-bar" style="background:#08081a; border-top-color:#1e1e32; color:#6b7280">
+        <div class="phone-tab" style="color:#6c63ff">Home</div>
+        <div class="phone-tab">Sessions</div>
+        <div class="phone-tab">Learn</div>
+        <div class="phone-tab">Settings</div>
+      </div>
+    </div>
+
+    <!-- Checklist screen mockup -->
+    <div class="phone-mockup" style="background:#0f0f1a; border:2px solid #2a2a4a;">
+      <div class="phone-status-bar" style="background:#08081a; color:#6b7280">9:41</div>
+      <div class="phone-header" style="color:#ffffff; font-size:14px">Error Handling & Recovery</div>
+      <div class="phone-card" style="background:#1e1e32; color:#a0a0b8; border:1px solid #282845; font-size:11px">
+        <div class="phone-card-title" style="color:#e0e0e8">Check error wrapping</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#22c55e22; color:#4ade80">Looks Good</span>
+          <span class="phone-badge" style="background:#6c63ff22; color:#8b83ff">Conf: 4</span>
+        </div>
+      </div>
+      <div class="phone-card" style="background:#1e1e32; color:#a0a0b8; border:1px solid #282845; font-size:11px">
+        <div class="phone-card-title" style="color:#e0e0e8">Verify retry logic</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#f59e0b22; color:#fbbf24">Needs Attention</span>
+          <span class="phone-badge" style="background:#6c63ff22; color:#8b83ff">Conf: 2</span>
+        </div>
+      </div>
+      <div class="phone-card" style="background:#1e1e32; color:#a0a0b8; border:1px solid #282845; font-size:11px">
+        <div class="phone-card-title" style="color:#e0e0e8">Graceful degradation</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#6b728022; color:#6b7280">Skipped</span>
+        </div>
+      </div>
+      <div class="phone-btn" style="background:#22c55e; color:#0a0a14">Complete Session</div>
+    </div>
+
+    <!-- Session summary mockup -->
+    <div class="phone-mockup" style="background:#0f0f1a; border:2px solid #2a2a4a;">
+      <div class="phone-status-bar" style="background:#08081a; color:#6b7280">9:41</div>
+      <div class="phone-header" style="color:#ffffff; font-size:14px">Session Summary</div>
+      <div style="display:flex; gap:6px; padding:0 12px; margin-bottom:8px">
+        <div style="flex:1; background:#1e1e32; border-radius:8px; padding:8px; text-align:center; border:1px solid #282845">
+          <div style="color:#4ade80; font-size:20px; font-weight:800">87%</div>
+          <div style="color:#6b7280; font-size:9px">Coverage</div>
+        </div>
+        <div style="flex:1; background:#1e1e32; border-radius:8px; padding:8px; text-align:center; border:1px solid #282845">
+          <div style="color:#8b83ff; font-size:20px; font-weight:800">3.8</div>
+          <div style="color:#6b7280; font-size:9px">Avg Conf</div>
+        </div>
+        <div style="flex:1; background:#1e1e32; border-radius:8px; padding:8px; text-align:center; border:1px solid #282845">
+          <div style="color:#fbbf24; font-size:20px; font-weight:800">5</div>
+          <div style="color:#6b7280; font-size:9px">Issues</div>
+        </div>
+      </div>
+      <div class="phone-card" style="background:#ef444415; color:#ef4444; border:1px solid #ef444433; font-size:10px">
+        <div style="font-weight:700; margin-bottom:2px">Critical: Race condition in handler</div>
+        <div style="color:#fca5a5">Confidence: 1 — Tap to learn more</div>
+      </div>
+      <div class="phone-card" style="background:#f59e0b12; color:#fbbf24; border:1px solid #f59e0b33; font-size:10px">
+        <div style="font-weight:700; margin-bottom:2px">Warning: Missing input validation</div>
+        <div style="color:#fde68a">Confidence: 2 — Tap to learn more</div>
+      </div>
+      <div class="phone-btn" style="background:#6c63ff; color:#ffffff; font-size:11px">Export PDF Report</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PALETTE B ==================== -->
+<div class="palette-section">
+  <div class="palette-header">
+    <div class="palette-number">Palette B</div>
+    <span class="palette-tag tag-alternative">Alternative</span>
+  </div>
+  <div class="palette-title">Midnight Indigo</div>
+  <div class="palette-desc">
+    Shifts the purple toward a cooler blue-indigo. Feels more professional and corporate.
+    Same green accent system. Slightly warmer surface tones for better card separation.
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Backgrounds</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#060612"><span class="swatch-label" style="color:#6b7280">Base<span class="swatch-hex">#060612</span></span></div>
+      <div class="swatch" style="background:#0c0c1e"><span class="swatch-label" style="color:#6b7280">Primary<span class="swatch-hex">#0c0c1e</span></span></div>
+      <div class="swatch" style="background:#14142b"><span class="swatch-label" style="color:#6b7280">Elevated<span class="swatch-hex">#14142b</span></span></div>
+      <div class="swatch" style="background:#1c1c38"><span class="swatch-label" style="color:#8888a0">Surface<span class="swatch-hex">#1c1c38</span></span></div>
+      <div class="swatch" style="background:#26264a"><span class="swatch-label" style="color:#a0a0b0">Card<span class="swatch-hex">#26264a</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Primary & Accent</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#3730a3"><span class="swatch-label" style="color:#c7c4ff">Dark<span class="swatch-hex">#3730a3</span></span></div>
+      <div class="swatch" style="background:#4f46e5"><span class="swatch-label" style="color:#e0ddff">Mid<span class="swatch-hex">#4f46e5</span></span></div>
+      <div class="swatch" style="background:#6366f1"><span class="swatch-label" style="color:#ffffff">Primary<span class="swatch-hex">#6366f1</span></span></div>
+      <div class="swatch" style="background:#818cf8"><span class="swatch-label" style="color:#ffffff">Light<span class="swatch-hex">#818cf8</span></span></div>
+      <div class="swatch" style="background:#a5b4fc"><span class="swatch-label" style="color:#1a1a2e">Lighter<span class="swatch-hex">#a5b4fc</span></span></div>
+    </div>
+    <div class="swatch-strip" style="margin-top:6px">
+      <div class="swatch" style="background:#16a34a"><span class="swatch-label" style="color:#bbf7d0">Dark<span class="swatch-hex">#16a34a</span></span></div>
+      <div class="swatch" style="background:#22c55e"><span class="swatch-label" style="color:#ffffff">Accent<span class="swatch-hex">#22c55e</span></span></div>
+      <div class="swatch" style="background:#4ade80"><span class="swatch-label" style="color:#0a0a14">Light<span class="swatch-hex">#4ade80</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Text Hierarchy</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#0c0c1e; border:1px solid #26264a"><span class="swatch-label" style="color:#f8fafc">Heading<span class="swatch-hex">#f8fafc</span></span></div>
+      <div class="swatch" style="background:#0c0c1e; border:1px solid #26264a"><span class="swatch-label" style="color:#e2e8f0">Body<span class="swatch-hex">#e2e8f0</span></span></div>
+      <div class="swatch" style="background:#0c0c1e; border:1px solid #26264a"><span class="swatch-label" style="color:#94a3b8">Secondary<span class="swatch-hex">#94a3b8</span></span></div>
+      <div class="swatch" style="background:#0c0c1e; border:1px solid #26264a"><span class="swatch-label" style="color:#64748b">Muted<span class="swatch-hex">#64748b</span></span></div>
+      <div class="swatch" style="background:#0c0c1e; border:1px solid #26264a"><span class="swatch-label" style="color:#334155">Disabled<span class="swatch-hex">#334155</span></span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="mockup-row">
+    <div class="phone-mockup" style="background:#0c0c1e; border:2px solid #26264a;">
+      <div class="phone-status-bar" style="background:#060612; color:#64748b">9:41</div>
+      <div class="phone-header" style="color:#f8fafc">ReviewHelm</div>
+      <div class="phone-card" style="background:#1c1c38; color:#e2e8f0; border:1px solid #26264a">
+        <div class="phone-card-title" style="color:#f8fafc">Go Stack</div>
+        <span class="phone-chip" style="background:#6366f122; color:#818cf8">176 items</span>
+        <span class="phone-chip" style="background:#22c55e18; color:#4ade80">14 sections</span>
+      </div>
+      <div class="phone-card" style="background:#1c1c38; color:#e2e8f0; border:1px solid #26264a">
+        <div class="phone-card-title" style="color:#f8fafc">Java / Protobuf</div>
+        <span class="phone-chip" style="background:#6366f122; color:#818cf8">129 items</span>
+        <span class="phone-chip" style="background:#22c55e18; color:#4ade80">12 sections</span>
+      </div>
+      <div class="phone-btn" style="background:#6366f1; color:#ffffff">Start Review Session</div>
+      <div class="phone-tab-bar" style="background:#060612; border-top-color:#1c1c38; color:#64748b">
+        <div class="phone-tab" style="color:#6366f1">Home</div>
+        <div class="phone-tab">Sessions</div>
+        <div class="phone-tab">Learn</div>
+        <div class="phone-tab">Settings</div>
+      </div>
+    </div>
+
+    <div class="phone-mockup" style="background:#0c0c1e; border:2px solid #26264a;">
+      <div class="phone-status-bar" style="background:#060612; color:#64748b">9:41</div>
+      <div class="phone-header" style="color:#f8fafc; font-size:14px">Error Handling</div>
+      <div class="phone-card" style="background:#1c1c38; color:#94a3b8; border:1px solid #26264a; font-size:11px">
+        <div class="phone-card-title" style="color:#e2e8f0">Check error wrapping</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#22c55e22; color:#4ade80">Looks Good</span>
+          <span class="phone-badge" style="background:#6366f122; color:#818cf8">Conf: 4</span>
+        </div>
+      </div>
+      <div class="phone-card" style="background:#1c1c38; color:#94a3b8; border:1px solid #26264a; font-size:11px">
+        <div class="phone-card-title" style="color:#e2e8f0">Verify retry logic</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#f59e0b22; color:#fbbf24">Needs Attention</span>
+          <span class="phone-badge" style="background:#6366f122; color:#818cf8">Conf: 2</span>
+        </div>
+      </div>
+      <div class="phone-btn" style="background:#22c55e; color:#060612">Complete Session</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PALETTE C ==================== -->
+<div class="palette-section">
+  <div class="palette-header">
+    <div class="palette-number">Palette C</div>
+    <span class="palette-tag tag-bold">Bold</span>
+  </div>
+  <div class="palette-title">Electric Violet</div>
+  <div class="palette-desc">
+    Cranks up the saturation and contrast. More vibrant purple, brighter greens, deeper blacks.
+    High energy, feels modern and premium. Best for standing out, but demands careful balance.
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Backgrounds</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#050510"><span class="swatch-label" style="color:#6b7280">Base<span class="swatch-hex">#050510</span></span></div>
+      <div class="swatch" style="background:#0a0a1a"><span class="swatch-label" style="color:#6b7280">Primary<span class="swatch-hex">#0a0a1a</span></span></div>
+      <div class="swatch" style="background:#111122"><span class="swatch-label" style="color:#6b7280">Elevated<span class="swatch-hex">#111122</span></span></div>
+      <div class="swatch" style="background:#1a1a30"><span class="swatch-label" style="color:#8888a0">Surface<span class="swatch-hex">#1a1a30</span></span></div>
+      <div class="swatch" style="background:#242442"><span class="swatch-label" style="color:#a0a0b0">Card<span class="swatch-hex">#242442</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Primary & Accent</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#5b21b6"><span class="swatch-label" style="color:#c4b5fd">Dark<span class="swatch-hex">#5b21b6</span></span></div>
+      <div class="swatch" style="background:#7c3aed"><span class="swatch-label" style="color:#ede9fe">Mid<span class="swatch-hex">#7c3aed</span></span></div>
+      <div class="swatch" style="background:#8b5cf6"><span class="swatch-label" style="color:#ffffff">Primary<span class="swatch-hex">#8b5cf6</span></span></div>
+      <div class="swatch" style="background:#a78bfa"><span class="swatch-label" style="color:#ffffff">Light<span class="swatch-hex">#a78bfa</span></span></div>
+      <div class="swatch" style="background:#c4b5fd"><span class="swatch-label" style="color:#1a1a2e">Lighter<span class="swatch-hex">#c4b5fd</span></span></div>
+    </div>
+    <div class="swatch-strip" style="margin-top:6px">
+      <div class="swatch" style="background:#059669"><span class="swatch-label" style="color:#a7f3d0">Dark<span class="swatch-hex">#059669</span></span></div>
+      <div class="swatch" style="background:#10b981"><span class="swatch-label" style="color:#ffffff">Accent<span class="swatch-hex">#10b981</span></span></div>
+      <div class="swatch" style="background:#34d399"><span class="swatch-label" style="color:#050510">Light<span class="swatch-hex">#34d399</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Text Hierarchy</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#0a0a1a; border:1px solid #242442"><span class="swatch-label" style="color:#ffffff">Heading<span class="swatch-hex">#ffffff</span></span></div>
+      <div class="swatch" style="background:#0a0a1a; border:1px solid #242442"><span class="swatch-label" style="color:#e4e4ec">Body<span class="swatch-hex">#e4e4ec</span></span></div>
+      <div class="swatch" style="background:#0a0a1a; border:1px solid #242442"><span class="swatch-label" style="color:#9898b0">Secondary<span class="swatch-hex">#9898b0</span></span></div>
+      <div class="swatch" style="background:#0a0a1a; border:1px solid #242442"><span class="swatch-label" style="color:#5a5a78">Muted<span class="swatch-hex">#5a5a78</span></span></div>
+      <div class="swatch" style="background:#0a0a1a; border:1px solid #242442"><span class="swatch-label" style="color:#2e2e48">Disabled<span class="swatch-hex">#2e2e48</span></span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="mockup-row">
+    <div class="phone-mockup" style="background:#0a0a1a; border:2px solid #242442;">
+      <div class="phone-status-bar" style="background:#050510; color:#5a5a78">9:41</div>
+      <div class="phone-header" style="color:#ffffff">ReviewHelm</div>
+      <div class="phone-card" style="background:#1a1a30; color:#e4e4ec; border:1px solid #242442">
+        <div class="phone-card-title" style="color:#ffffff">Go Stack</div>
+        <span class="phone-chip" style="background:#8b5cf622; color:#a78bfa">176 items</span>
+        <span class="phone-chip" style="background:#10b98118; color:#34d399">14 sections</span>
+      </div>
+      <div class="phone-card" style="background:#1a1a30; color:#e4e4ec; border:1px solid #242442">
+        <div class="phone-card-title" style="color:#ffffff">Java / Protobuf</div>
+        <span class="phone-chip" style="background:#8b5cf622; color:#a78bfa">129 items</span>
+        <span class="phone-chip" style="background:#10b98118; color:#34d399">12 sections</span>
+      </div>
+      <div class="phone-btn" style="background:#8b5cf6; color:#ffffff">Start Review Session</div>
+      <div class="phone-tab-bar" style="background:#050510; border-top-color:#1a1a30; color:#5a5a78">
+        <div class="phone-tab" style="color:#8b5cf6">Home</div>
+        <div class="phone-tab">Sessions</div>
+        <div class="phone-tab">Learn</div>
+        <div class="phone-tab">Settings</div>
+      </div>
+    </div>
+
+    <div class="phone-mockup" style="background:#0a0a1a; border:2px solid #242442;">
+      <div class="phone-status-bar" style="background:#050510; color:#5a5a78">9:41</div>
+      <div class="phone-header" style="color:#ffffff; font-size:14px">Error Handling</div>
+      <div class="phone-card" style="background:#1a1a30; color:#9898b0; border:1px solid #242442; font-size:11px">
+        <div class="phone-card-title" style="color:#e4e4ec">Check error wrapping</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#10b98122; color:#34d399">Looks Good</span>
+          <span class="phone-badge" style="background:#8b5cf622; color:#a78bfa">Conf: 4</span>
+        </div>
+      </div>
+      <div class="phone-card" style="background:#1a1a30; color:#9898b0; border:1px solid #242442; font-size:11px">
+        <div class="phone-card-title" style="color:#e4e4ec">Verify retry logic</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#f59e0b22; color:#fbbf24">Needs Attention</span>
+          <span class="phone-badge" style="background:#8b5cf622; color:#a78bfa">Conf: 2</span>
+        </div>
+      </div>
+      <div class="phone-btn" style="background:#10b981; color:#050510">Complete Session</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PALETTE D ==================== -->
+<div class="palette-section">
+  <div class="palette-header">
+    <div class="palette-number">Palette D</div>
+    <span class="palette-tag tag-alternative">Alternative</span>
+  </div>
+  <div class="palette-title">Slate & Amethyst</div>
+  <div class="palette-desc">
+    Warmer slate-gray backgrounds instead of pure blue-black. The purple stays but feels softer against the warmer tones.
+    Amber replaces green as the secondary accent — giving a more distinguished, less "code editor" feel. Green is reserved for success states only.
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Backgrounds</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#0f0e13"><span class="swatch-label" style="color:#6b7280">Base<span class="swatch-hex">#0f0e13</span></span></div>
+      <div class="swatch" style="background:#17161d"><span class="swatch-label" style="color:#6b7280">Primary<span class="swatch-hex">#17161d</span></span></div>
+      <div class="swatch" style="background:#1f1e28"><span class="swatch-label" style="color:#6b7280">Elevated<span class="swatch-hex">#1f1e28</span></span></div>
+      <div class="swatch" style="background:#282733"><span class="swatch-label" style="color:#8888a0">Surface<span class="swatch-hex">#282733</span></span></div>
+      <div class="swatch" style="background:#333240"><span class="swatch-label" style="color:#a0a0b0">Card<span class="swatch-hex">#333240</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Primary & Accent</div>
+    <div class="swatch-strip">
+      <div class="swatch" style="background:#5a4fc7"><span class="swatch-label" style="color:#c0bbff">Dark<span class="swatch-hex">#5a4fc7</span></span></div>
+      <div class="swatch" style="background:#6c63ff"><span class="swatch-label" style="color:#ffffff">Primary<span class="swatch-hex">#6c63ff</span></span></div>
+      <div class="swatch" style="background:#8b83ff"><span class="swatch-label" style="color:#ffffff">Light<span class="swatch-hex">#8b83ff</span></span></div>
+    </div>
+    <div class="swatch-strip" style="margin-top:6px">
+      <div class="swatch" style="background:#d97706"><span class="swatch-label" style="color:#fef3c7">Dark<span class="swatch-hex">#d97706</span></span></div>
+      <div class="swatch" style="background:#f59e0b"><span class="swatch-label" style="color:#ffffff">Accent<span class="swatch-hex">#f59e0b</span></span></div>
+      <div class="swatch" style="background:#fbbf24"><span class="swatch-label" style="color:#0f0e13">Light<span class="swatch-hex">#fbbf24</span></span></div>
+    </div>
+  </div>
+
+  <div class="swatch-group">
+    <div class="swatch-group-label">Semantic / Status</div>
+    <div class="semantic-row">
+      <div class="semantic-item"><div class="semantic-dot" style="background:#22c55e"></div><div class="semantic-info"><div class="semantic-name">Success</div><div class="semantic-hex">#22c55e</div></div></div>
+      <div class="semantic-item"><div class="semantic-dot" style="background:#f59e0b"></div><div class="semantic-info"><div class="semantic-name">Warning</div><div class="semantic-hex">#f59e0b</div></div></div>
+      <div class="semantic-item"><div class="semantic-dot" style="background:#ef4444"></div><div class="semantic-info"><div class="semantic-name">Error</div><div class="semantic-hex">#ef4444</div></div></div>
+      <div class="semantic-item"><div class="semantic-dot" style="background:#6c63ff"></div><div class="semantic-info"><div class="semantic-name">Info</div><div class="semantic-hex">#6c63ff</div></div></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="mockup-row">
+    <div class="phone-mockup" style="background:#17161d; border:2px solid #333240;">
+      <div class="phone-status-bar" style="background:#0f0e13; color:#6b7280">9:41</div>
+      <div class="phone-header" style="color:#ffffff">ReviewHelm</div>
+      <div class="phone-card" style="background:#282733; color:#d4d4dc; border:1px solid #333240">
+        <div class="phone-card-title" style="color:#ffffff">Go Stack</div>
+        <span class="phone-chip" style="background:#6c63ff22; color:#8b83ff">176 items</span>
+        <span class="phone-chip" style="background:#f59e0b18; color:#fbbf24">14 sections</span>
+      </div>
+      <div class="phone-card" style="background:#282733; color:#d4d4dc; border:1px solid #333240">
+        <div class="phone-card-title" style="color:#ffffff">Java / Protobuf</div>
+        <span class="phone-chip" style="background:#6c63ff22; color:#8b83ff">129 items</span>
+        <span class="phone-chip" style="background:#f59e0b18; color:#fbbf24">12 sections</span>
+      </div>
+      <div class="phone-btn" style="background:#6c63ff; color:#ffffff">Start Review Session</div>
+      <div class="phone-tab-bar" style="background:#0f0e13; border-top-color:#282733; color:#6b7280">
+        <div class="phone-tab" style="color:#f59e0b">Home</div>
+        <div class="phone-tab">Sessions</div>
+        <div class="phone-tab">Learn</div>
+        <div class="phone-tab">Settings</div>
+      </div>
+    </div>
+
+    <div class="phone-mockup" style="background:#17161d; border:2px solid #333240;">
+      <div class="phone-status-bar" style="background:#0f0e13; color:#6b7280">9:41</div>
+      <div class="phone-header" style="color:#ffffff; font-size:14px">Error Handling</div>
+      <div class="phone-card" style="background:#282733; color:#9898a8; border:1px solid #333240; font-size:11px">
+        <div class="phone-card-title" style="color:#d4d4dc">Check error wrapping</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#22c55e22; color:#4ade80">Looks Good</span>
+          <span class="phone-badge" style="background:#6c63ff22; color:#8b83ff">Conf: 4</span>
+        </div>
+      </div>
+      <div class="phone-card" style="background:#282733; color:#9898a8; border:1px solid #333240; font-size:11px">
+        <div class="phone-card-title" style="color:#d4d4dc">Verify retry logic</div>
+        <div style="display:flex; gap:4px; margin-top:6px">
+          <span class="phone-badge" style="background:#f59e0b22; color:#fbbf24">Needs Attention</span>
+          <span class="phone-badge" style="background:#6c63ff22; color:#8b83ff">Conf: 2</span>
+        </div>
+      </div>
+      <div class="phone-btn" style="background:#22c55e; color:#0f0e13">Complete Session</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== COMPARISON ==================== -->
+<div class="palette-section">
+  <div class="palette-title">Side-by-Side Comparison</div>
+  <div class="palette-desc">All four palettes showing the same card component</div>
+  <div style="display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-top:20px">
+    <!-- A -->
+    <div style="width:200px">
+      <div style="text-align:center; color:#6c63ff; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:8px">A — DEEP SPACE</div>
+      <div style="background:#0f0f1a; border-radius:12px; padding:14px; border:1px solid #2a2a4a">
+        <div style="color:#ffffff; font-size:13px; font-weight:700; margin-bottom:8px">Session Card</div>
+        <div style="background:#1e1e32; border-radius:8px; padding:10px; border:1px solid #282845; margin-bottom:6px">
+          <div style="color:#e0e0e8; font-size:11px; font-weight:600">Go Review</div>
+          <div style="color:#6b7280; font-size:9px; margin-top:2px">87% coverage</div>
+          <div style="display:flex; gap:4px; margin-top:6px">
+            <span style="background:#6c63ff; color:#fff; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Review</span>
+            <span style="background:#22c55e22; color:#4ade80; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- B -->
+    <div style="width:200px">
+      <div style="text-align:center; color:#6366f1; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:8px">B — MIDNIGHT</div>
+      <div style="background:#0c0c1e; border-radius:12px; padding:14px; border:1px solid #26264a">
+        <div style="color:#f8fafc; font-size:13px; font-weight:700; margin-bottom:8px">Session Card</div>
+        <div style="background:#1c1c38; border-radius:8px; padding:10px; border:1px solid #26264a; margin-bottom:6px">
+          <div style="color:#e2e8f0; font-size:11px; font-weight:600">Go Review</div>
+          <div style="color:#64748b; font-size:9px; margin-top:2px">87% coverage</div>
+          <div style="display:flex; gap:4px; margin-top:6px">
+            <span style="background:#6366f1; color:#fff; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Review</span>
+            <span style="background:#22c55e22; color:#4ade80; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- C -->
+    <div style="width:200px">
+      <div style="text-align:center; color:#8b5cf6; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:8px">C — ELECTRIC</div>
+      <div style="background:#0a0a1a; border-radius:12px; padding:14px; border:1px solid #242442">
+        <div style="color:#ffffff; font-size:13px; font-weight:700; margin-bottom:8px">Session Card</div>
+        <div style="background:#1a1a30; border-radius:8px; padding:10px; border:1px solid #242442; margin-bottom:6px">
+          <div style="color:#e4e4ec; font-size:11px; font-weight:600">Go Review</div>
+          <div style="color:#5a5a78; font-size:9px; margin-top:2px">87% coverage</div>
+          <div style="display:flex; gap:4px; margin-top:6px">
+            <span style="background:#8b5cf6; color:#fff; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Review</span>
+            <span style="background:#10b98122; color:#34d399; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- D -->
+    <div style="width:200px">
+      <div style="text-align:center; color:#f59e0b; font-size:11px; font-weight:700; letter-spacing:1px; margin-bottom:8px">D — SLATE</div>
+      <div style="background:#17161d; border-radius:12px; padding:14px; border:1px solid #333240">
+        <div style="color:#ffffff; font-size:13px; font-weight:700; margin-bottom:8px">Session Card</div>
+        <div style="background:#282733; border-radius:8px; padding:10px; border:1px solid #333240; margin-bottom:6px">
+          <div style="color:#d4d4dc; font-size:11px; font-weight:600">Go Review</div>
+          <div style="color:#6b7280; font-size:9px; margin-top:2px">87% coverage</div>
+          <div style="display:flex; gap:4px; margin-top:6px">
+            <span style="background:#6c63ff; color:#fff; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Review</span>
+            <span style="background:#f59e0b22; color:#fbbf24; padding:3px 8px; border-radius:6px; font-size:9px; font-weight:700">Done</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
