@@ -1,0 +1,52 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { HealthModule } from './health/health.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { validateEnv } from './config/env.schema';
+import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
+import { AdminGuard } from './common/auth/admin.guard';
+import { RedisModule } from './common/redis/redis.module';
+import { RateLimitGuard } from './common/redis/rate-limit.guard';
+import { MeModule } from './me/me.module';
+import { BudgetModule } from './common/budget/budget.module';
+import { BudgetGuard } from './common/budget/budget.guard';
+import { UsageModule } from './usage/usage.module';
+import { AdminSecurityModule } from './admin/security/admin-security.module';
+import { AuditModule } from './common/audit/audit.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: validateEnv,
+    }),
+    PrismaModule,
+    RedisModule,
+    BudgetModule,
+    AuditModule,
+    HealthModule,
+    MeModule,
+    UsageModule,
+    AdminSecurityModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AdminGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RateLimitGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: BudgetGuard,
+    },
+  ],
+})
+export class AppModule {}
