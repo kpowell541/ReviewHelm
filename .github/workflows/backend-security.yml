@@ -32,6 +32,9 @@ jobs:
         run: npm ci
 
       - name: Prisma validate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/reviewhelm
+          DIRECT_URL: postgresql://postgres:postgres@localhost:5432/reviewhelm
         run: npx prisma validate
 
       - name: Typecheck
