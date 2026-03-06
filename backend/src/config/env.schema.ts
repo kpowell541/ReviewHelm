@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+const PostgresUrlSchema = z
+  .string()
+  .min(10)
+  .regex(/^postgres(ql)?:\/\//i, 'must start with postgresql:// or postgres://');
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -13,8 +18,8 @@ const EnvSchema = z.object({
   SUPABASE_JWT_AUDIENCE: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional().default(''),
 
-  DATABASE_URL: z.string().min(10),
-  DIRECT_URL: z.string().min(10),
+  DATABASE_URL: PostgresUrlSchema,
+  DIRECT_URL: PostgresUrlSchema,
 
   UPSTASH_REDIS_REST_URL: z.string().url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(10),
