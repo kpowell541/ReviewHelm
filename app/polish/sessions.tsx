@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,12 +13,16 @@ import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function PolishSessionsScreen() {
   const router = useRouter();
-  const sessions = useSessionStore((s) => s.getSessionsByMode('polish'));
+  const allSessions = useSessionStore((s) => s.sessions);
   const createSession = useSessionStore((s) => s.createSession);
   const deleteSession = useSessionStore((s) => s.deleteSession);
 
-  const activeSessions = sessions.filter((s) => !s.isComplete);
-  const completedSessions = sessions.filter((s) => s.isComplete);
+  const sessions = useMemo(
+    () => Object.values(allSessions).filter((s) => s.mode === 'polish'),
+    [allSessions],
+  );
+  const activeSessions = useMemo(() => sessions.filter((s) => !s.isComplete), [sessions]);
+  const completedSessions = useMemo(() => sessions.filter((s) => s.isComplete), [sessions]);
 
   const handleNewSession = () => {
     const id = createSession('polish');

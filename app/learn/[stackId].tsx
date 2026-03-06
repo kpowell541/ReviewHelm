@@ -34,16 +34,18 @@ export default function LearnSessionScreen() {
   const aiModel = usePreferencesStore((s) => s.aiModel);
   const recordUsage = useUsageStore((s) => s.recordUsage);
 
-  const weakestItems = useConfidenceStore((s) =>
-    stackId === 'all'
-      ? s.getWeakestItems(20)
-      : s.getWeakestItems(20, stackId),
-  );
+  const histories = useConfidenceStore((s) => s.histories);
 
-  const gaps = useMemo(
-    () => weakestItems.filter((w) => w.currentConfidence <= 3),
-    [weakestItems],
-  );
+  const gaps = useMemo(() => {
+    let items = Object.values(histories);
+    if (stackId !== 'all') {
+      items = items.filter((h) => h.stackId === stackId);
+    }
+    return items
+      .filter((w) => w.currentConfidence <= 3)
+      .sort((a, b) => a.learningPriority - b.learningPriority)
+      .slice(0, 20);
+  }, [histories, stackId]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [messages, setMessages] = useState<TutorMessage[]>([]);
