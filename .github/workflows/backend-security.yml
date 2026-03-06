@@ -74,4 +74,4 @@ jobs:
       - name: Gitleaks (workspace scan)
         run: |
           set -euo pipefail
-          /tmp/gitleaks dir --source . --config .gitleaks.toml --redact --exit-code 1
+          /tmp/gitleaks dir . --config .gitleaks.toml --redact --exit-code 1
