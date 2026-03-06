@@ -18,9 +18,37 @@ interface SyncResult {
   errors: string[];
 }
 
+interface SessionListResponse {
+  items: Session[];
+  nextCursor: string | null;
+}
+
 async function isOnlineAndAuthenticated(): Promise<boolean> {
   const token = await useAuthStore.getState().getAccessToken();
   return token !== null;
+}
+
+async function pushSessionSnapshot(session: Session): Promise<void> {
+  await api.patch(`/sessions/${session.id}`, {
+    title: session.title,
+  });
+
+  for (const [itemId, itemResponse] of Object.entries(session.itemResponses)) {
+    await api.patch(
+      `/sessions/${session.id}/items/${encodeURIComponent(itemId)}`,
+      itemResponse,
+    );
+  }
+
+  await api.patch(`/sessions/${session.id}/notes`, {
+    sessionNotes: session.sessionNotes,
+  });
+
+  if (session.isComplete) {
+    await api.post(`/sessions/${session.id}/complete`, {
+      confirmLowCoverage: true,
+    });
+  }
 }
 
 async function pushSessions(): Promise<{ pushed: number; errors: string[] }> {
@@ -37,33 +65,21 @@ async function pushSessions(): Promise<{ pushed: number; errors: string[] }> {
         );
         // If local is newer, push update
         if (new Date(session.updatedAt) > new Date(remote.updatedAt)) {
-          await api.patch(`/sessions/${session.id}`, {
-            itemResponses: session.itemResponses,
-            sessionNotes: session.sessionNotes,
-            isComplete: session.isComplete,
-            completedAt: session.completedAt,
-          });
+          await pushSessionSnapshot(session);
           pushed++;
         }
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
           // Session doesn't exist remotely — create it
           await api.post('/sessions', {
+            id: session.id,
             mode: session.mode,
             stackId: session.stackId,
             stackIds: session.stackIds,
             selectedSections: session.selectedSections,
             title: session.title,
           });
-          // Then push item responses
-          if (Object.keys(session.itemResponses).length > 0) {
-            await api.patch(`/sessions/${session.id}`, {
-              itemResponses: session.itemResponses,
-              sessionNotes: session.sessionNotes,
-              isComplete: session.isComplete,
-              completedAt: session.completedAt,
-            });
-          }
+          await pushSessionSnapshot(session);
           pushed++;
         } else {
           throw err;
@@ -82,7 +98,20 @@ async function pullSessions(): Promise<{ pulled: number; errors: string[] }> {
   let pulled = 0;
 
   try {
-    const remoteSessions = await api.get<Session[]>('/sessions');
+    const remoteSessions: Session[] = [];
+    let cursor: string | null = null;
+
+    do {
+      const requestPath: string = cursor
+        ? `/sessions?limit=100&cursor=${encodeURIComponent(cursor)}`
+        : '/sessions?limit=100';
+      const response: SessionListResponse = await api.get<SessionListResponse>(
+        requestPath,
+      );
+      remoteSessions.push(...response.items);
+      cursor = response.nextCursor;
+    } while (cursor);
+
     const localSessions = useSessionStore.getState().sessions;
 
     for (const remote of remoteSessions) {
@@ -199,8 +228,12 @@ export async function runSync(): Promise<SyncResult> {
     await syncPreferences();
     await syncConfidence();
 
-    const version = new Date().toISOString();
-    syncStore.markSyncSuccess(version);
+    if (allErrors.length > 0) {
+      syncStore.markSyncFailure(allErrors.slice(0, 3).join(' | '));
+    } else {
+      const version = new Date().toISOString();
+      syncStore.markSyncSuccess(version);
+    }
   } catch (err: any) {
     allErrors.push(err.message);
     syncStore.markSyncFailure(err.message);

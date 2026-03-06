@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { STACKS, getStackInfo } from '../../src/data/checklistRegistry';
@@ -12,9 +12,18 @@ export default function StackSelectScreen() {
   const router = useRouter();
   const { repo } = useLocalSearchParams<{ repo?: string }>();
   const getSectionAverages = useConfidenceStore((s) => s.getSectionAverages);
-  const templates = useTemplateStore((s) => s.getTemplates());
+  const templateMap = useTemplateStore((s) => s.templates);
   const deleteTemplate = useTemplateStore((s) => s.deleteTemplate);
-  const repoConfig = useRepoConfigStore((s) => repo ? s.getRepoConfig(repo) : undefined);
+  const repoConfigs = useRepoConfigStore((s) => s.configs);
+
+  const templates = useMemo(
+    () => Object.values(templateMap).sort((a, b) => a.name.localeCompare(b.name)),
+    [templateMap],
+  );
+  const repoConfig = useMemo(
+    () => (repo ? repoConfigs[repo] : undefined),
+    [repo, repoConfigs],
+  );
   const [selectedStacks, setSelectedStacks] = useState<StackId[]>([]);
 
   const toggleStack = (stackId: StackId) => {

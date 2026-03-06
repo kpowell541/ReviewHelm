@@ -21,7 +21,7 @@ import type {
   PRPriority,
   TrackedPR,
 } from '../src/data/types';
-import { PR_STATUS_LABELS, PR_SIZE_LABELS } from '../src/data/types';
+import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_ACTIVE_STATUSES } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 
 const STATUS_COLORS: Record<PRStatus, string> = {
@@ -57,22 +57,66 @@ const EMPTY_FORM = {
 
 export default function PRTrackerScreen() {
   const router = useRouter();
-  const store = usePRTrackerStore();
+  const prs = usePRTrackerStore((s) => s.prs);
+  const wipLimit = usePRTrackerStore((s) => s.wipLimit);
+  const emergencySlotEnabled = usePRTrackerStore((s) => s.emergencySlotEnabled);
+  const addPR = usePRTrackerStore((s) => s.addPR);
+  const updatePR = usePRTrackerStore((s) => s.updatePR);
+  const deletePR = usePRTrackerStore((s) => s.deletePR);
+  const markReviewed = usePRTrackerStore((s) => s.markReviewed);
+  const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
-  const wipStatus = store.getWipStatus();
-  const dailyProgress = store.getDailyReviewProgress();
+  const allPRs = useMemo(() => Object.values(prs), [prs]);
+
+  const wipStatus = useMemo(() => {
+    const authored = allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status) && pr.role === 'author');
+    const regularCount = authored.filter((pr) => !pr.isEmergency).length;
+    const emergencyCount = authored.filter((pr) => pr.isEmergency).length;
+    return {
+      regularCount,
+      emergencyCount,
+      wipLimit,
+      emergencySlotEnabled,
+      isAtLimit: regularCount >= wipLimit,
+      isOverLimit: regularCount > wipLimit,
+      emergencySlotUsed: emergencyCount >= 1,
+      totalActive: regularCount + emergencyCount,
+    };
+  }, [allPRs, wipLimit, emergencySlotEnabled]);
+
+  const dailyProgress = useMemo(() => {
+    const reviewerPRs = allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status) && pr.role === 'reviewer');
+    const small = reviewerPRs.filter((pr) => pr.size === 'small');
+    const medium = reviewerPRs.filter((pr) => pr.size === 'medium');
+    const large = reviewerPRs.filter((pr) => pr.size === 'large');
+    const isToday = (d: string) => new Date(d).toDateString() === new Date().toDateString();
+    const smallReviewed = small.filter((pr) => pr.lastReviewedAt && isToday(pr.lastReviewedAt)).length;
+    const mediumReviewed = medium.filter((pr) => pr.lastReviewedAt && isToday(pr.lastReviewedAt)).length;
+    const largeReviewed = large.filter((pr) => pr.lastReviewedAt && isToday(pr.lastReviewedAt)).length;
+    const suggestions: string[] = [];
+    if (small.length - smallReviewed > 0) suggestions.push(`${small.length - smallReviewed} small`);
+    const medTarget = Math.min(5, medium.length);
+    if (mediumReviewed < medTarget) suggestions.push(`${medTarget - mediumReviewed} medium`);
+    const lgTarget = Math.min(2, large.length);
+    if (largeReviewed < lgTarget) suggestions.push(`${lgTarget - largeReviewed} large`);
+    return {
+      smallTotal: small.length, smallReviewed,
+      mediumTotal: medium.length, mediumReviewed,
+      largeTotal: large.length, largeReviewed,
+      suggestion: suggestions.length === 0 ? 'All caught up!' : `Try to review ${suggestions.join(', ')} today`,
+    };
+  }, [allPRs]);
 
   const filteredPRs = useMemo(() => {
-    if (filter === 'all') return store.getActivePRs();
-    if (filter === 'resolved') return store.getResolvedPRs();
-    return store.getPRsByStatus(filter).filter((pr) =>
-      filter === 'approved' ? true : true,
-    );
-  }, [filter, store.prs]);
+    const sorted = (list: TrackedPR[]) => [...list].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    if (filter === 'all') return sorted(allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status)));
+    if (filter === 'resolved') return sorted(allPRs.filter((pr) => !PR_ACTIVE_STATUSES.includes(pr.status)));
+    return sorted(allPRs.filter((pr) => pr.status === filter));
+  }, [filter, allPRs]);
 
   const authoredPRs = useMemo(
     () => filteredPRs.filter((pr) => pr.role === 'author'),
@@ -124,12 +168,12 @@ export default function PRTrackerScreen() {
     };
 
     if (editingId) {
-      store.updatePR(editingId, prData);
+      updatePR(editingId, prData);
     } else {
-      store.addPR(prData);
+      addPR(prData);
     }
     setShowModal(false);
-  }, [form, editingId, store]);
+  }, [form, editingId, updatePR, addPR]);
 
   const handleDelete = useCallback(
     (pr: TrackedPR) => {
@@ -140,20 +184,20 @@ export default function PRTrackerScreen() {
           style: 'destructive',
           onPress: () => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            store.deletePR(pr.id);
+            deletePR(pr.id);
           },
         },
       ]);
     },
-    [store],
+    [deletePR],
   );
 
   const handleMarkReviewed = useCallback(
     (pr: TrackedPR) => {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      store.markReviewed(pr.id);
+      markReviewed(pr.id);
     },
-    [store],
+    [markReviewed],
   );
 
   const handleStartReview = useCallback(
@@ -178,9 +222,9 @@ export default function PRTrackerScreen() {
       const idx = order.indexOf(pr.status);
       const next = order[(idx + 1) % order.length];
       void Haptics.selectionAsync();
-      store.setStatus(pr.id, next);
+      setStatus(pr.id, next);
     },
-    [store],
+    [setStatus],
   );
 
   // --- Render Helpers ---

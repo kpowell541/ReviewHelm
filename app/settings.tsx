@@ -119,12 +119,10 @@ export default function SettingsScreen() {
   );
   const clearResponseCache = useTutorStore((s) => s.clearResponseCache);
   const replaceConversations = useTutorStore((s) => s.replaceConversations);
-  const syncSnapshot = useSyncStore((s) => ({
-    lastChecked: s.lastChecked,
-    lastSyncedVersion: s.lastSyncedVersion,
-    lastError: s.lastError,
-    syncing: s.syncing,
-  }));
+  const syncLastChecked = useSyncStore((s) => s.lastChecked);
+  const syncLastSyncedVersion = useSyncStore((s) => s.lastSyncedVersion);
+  const syncLastError = useSyncStore((s) => s.lastError);
+  const syncSyncing = useSyncStore((s) => s.syncing);
   const replaceSyncState = useSyncStore((s) => s.replaceSyncState);
   const wipLimit = usePRTrackerStore((s) => s.wipLimit);
   const setWipLimit = usePRTrackerStore((s) => s.setWipLimit);
@@ -329,7 +327,7 @@ export default function SettingsScreen() {
           cooldownSeconds,
         },
         tutor: conversations,
-        sync: syncSnapshot,
+        sync: { lastChecked: syncLastChecked, lastSyncedVersion: syncLastSyncedVersion, lastError: syncLastError, syncing: syncSyncing },
         preferences: {
           aiModel,
           antiBiasMode,
@@ -363,7 +361,7 @@ export default function SettingsScreen() {
     byDay,
     bySession,
     conversations,
-    syncSnapshot,
+    syncLastChecked, syncLastSyncedVersion, syncLastError, syncSyncing,
     aiModel,
     antiBiasMode,
     autoExportPdf,
@@ -905,16 +903,16 @@ export default function SettingsScreen() {
             {checkingUpdates ? 'Checking...' : 'Check for Updates'}
           </Text>
         </Pressable>
-        {syncSnapshot.lastChecked && (
+        {syncLastChecked && (
           <Text style={styles.subtle}>
-            Last checked: {new Date(syncSnapshot.lastChecked).toLocaleString()}
+            Last checked: {new Date(syncLastChecked).toLocaleString()}
           </Text>
         )}
-        {syncSnapshot.lastSyncedVersion && (
-          <Text style={styles.subtle}>Checklist version: v{syncSnapshot.lastSyncedVersion}</Text>
+        {syncLastSyncedVersion && (
+          <Text style={styles.subtle}>Checklist version: v{syncLastSyncedVersion}</Text>
         )}
-        {syncSnapshot.lastError && (
-          <Text style={styles.errorText}>{syncSnapshot.lastError}</Text>
+        {syncLastError && (
+          <Text style={styles.errorText}>{syncLastError}</Text>
         )}
 
         <View style={styles.backupButtons}>

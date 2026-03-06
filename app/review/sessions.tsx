@@ -42,9 +42,12 @@ export default function ReviewSessionsScreen() {
     : firstStackInfo?.title ?? 'Review';
   const headerIcon = isMultiStack ? '📚' : firstStackInfo?.icon ?? '🔍';
 
-  const allSessions = useSessionStore((s) => {
-    // For multi-stack, show sessions that match ALL selected stacks
-    return Object.values(s.sessions)
+  const rawSessions = useSessionStore((s) => s.sessions);
+  const createSession = useSessionStore((s) => s.createSession);
+  const deleteSession = useSessionStore((s) => s.deleteSession);
+
+  const allSessions = useMemo(() => {
+    return Object.values(rawSessions)
       .filter((sess) => {
         if (sess.mode !== 'review') return false;
         const effective = sess.stackIds?.length
@@ -64,13 +67,10 @@ export default function ReviewSessionsScreen() {
         (a, b) =>
           new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
       );
-  });
+  }, [rawSessions, stackIds, isMultiStack]);
 
-  const createSession = useSessionStore((s) => s.createSession);
-  const deleteSession = useSessionStore((s) => s.deleteSession);
-
-  const activeSessions = allSessions.filter((s) => !s.isComplete);
-  const completedSessions = allSessions.filter((s) => s.isComplete);
+  const activeSessions = useMemo(() => allSessions.filter((s) => !s.isComplete), [allSessions]);
+  const completedSessions = useMemo(() => allSessions.filter((s) => s.isComplete), [allSessions]);
 
   const handleNewSession = () => {
     const id = createSession('review', stackIds, undefined, selectedSections);
