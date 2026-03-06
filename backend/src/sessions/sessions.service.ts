@@ -32,11 +32,19 @@ export class SessionsService {
 
   async createSession(authUser: AuthenticatedUser, input: CreateSessionDto) {
     const user = await this.ensureUser(authUser);
-    if (input.mode === ChecklistMode.review && !input.stackId) {
-      throw new BadRequestException('stackId is required for review sessions');
+
+    // Resolve stackIds from either field
+    const stackIds = input.stackIds?.length
+      ? input.stackIds
+      : input.stackId
+        ? [input.stackId]
+        : [];
+
+    if (input.mode === ChecklistMode.review && stackIds.length === 0) {
+      throw new BadRequestException('At least one stackId is required for review sessions');
     }
-    if (input.mode === ChecklistMode.polish && input.stackId) {
-      throw new BadRequestException('stackId must be omitted for polish sessions');
+    if (input.mode === ChecklistMode.polish && stackIds.length > 0) {
+      throw new BadRequestException('stackIds must be empty for polish sessions');
     }
 
     const now = new Date();
@@ -50,7 +58,9 @@ export class SessionsService {
       data: {
         userId: user.id,
         mode: input.mode,
-        stackId: input.stackId ?? null,
+        stackId: stackIds[0] ?? null,
+        stackIds,
+        selectedSections: input.selectedSections ?? [],
         title,
         itemResponses: {},
       },
@@ -406,6 +416,8 @@ export class SessionsService {
       id: session.id,
       mode: session.mode,
       stackId: session.stackId,
+      stackIds: session.stackIds,
+      selectedSections: session.selectedSections,
       title: session.title,
       itemResponses: this.parseItemResponses(session.itemResponses),
       sessionNotes: session.sessionNotes,

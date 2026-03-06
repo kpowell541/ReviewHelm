@@ -11,6 +11,7 @@ import type {
   Session,
 } from '../data/types';
 import { SEVERITY_WEIGHTS } from '../data/types';
+import { computeNextReview, isDueForReview } from '../utils/spacedRepetition';
 
 interface ConfidenceState {
   histories: Record<string, ItemConfidenceHistory>;
@@ -26,6 +27,7 @@ interface ConfidenceState {
   ) => void;
   getItemHistory: (itemId: string) => ItemConfidenceHistory | undefined;
   getWeakestItems: (limit: number, stackId?: string) => ItemConfidenceHistory[];
+  getDueItems: (stackId?: string) => ItemConfidenceHistory[];
   getSectionAverages: (
     stackId: string
   ) => Array<{ sectionId: string; average: number }>;
@@ -73,7 +75,9 @@ export const useConfidenceStore = create<ConfidenceState>()(
         set((state) => {
           const newHistories = { ...state.histories };
           const now = new Date().toISOString();
-          const stackId = session.stackId || 'polish';
+          const isMultiStack =
+            session.stackIds && session.stackIds.length > 1;
+          const defaultStackId = session.stackId || 'polish';
 
           for (const [itemId, response] of Object.entries(
             session.itemResponses
@@ -82,6 +86,11 @@ export const useConfidenceStore = create<ConfidenceState>()(
 
             const meta = itemSeverities[itemId];
             if (!meta) continue;
+
+            // For multi-stack sessions, derive stackId from item ID prefix
+            const stackId = isMultiStack
+              ? itemId.split('.')[0]
+              : defaultStackId;
 
             const existing = newHistories[itemId] || {
               itemId,
@@ -118,6 +127,10 @@ export const useConfidenceStore = create<ConfidenceState>()(
                 meta.severity,
                 now
               ),
+              repetitionState: computeNextReview(
+                existing.repetitionState ?? null,
+                response.confidence,
+              ),
             };
           }
 
@@ -139,6 +152,16 @@ export const useConfidenceStore = create<ConfidenceState>()(
         return filtered
           .sort((a, b) => b.learningPriority - a.learningPriority)
           .slice(0, limit);
+      },
+
+      getDueItems: (stackId) => {
+        const all = Object.values(get().histories);
+        const filtered = stackId
+          ? all.filter((h) => h.stackId === stackId)
+          : all;
+        return filtered
+          .filter((h) => isDueForReview(h.repetitionState))
+          .sort((a, b) => b.learningPriority - a.learningPriority);
       },
 
       getSectionAverages: (stackId) => {

@@ -21,6 +21,7 @@ import { useUsageStore } from '../../src/store/useUsageStore';
 import { sendTutorMessage, AiClientError } from '../../src/ai';
 import type { TutorMessage, ConfidenceLevel } from '../../src/data/types';
 import { CLAUDE_MODEL_LABELS } from '../../src/data/types';
+import { CalibrationFeedback } from '../../src/components/comment/CalibrationFeedback';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function CommentDrafterScreen() {
@@ -50,6 +51,7 @@ export default function CommentDrafterScreen() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [wasAutoDowngraded, setWasAutoDowngraded] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const confidence: ConfidenceLevel = history?.currentConfidence ?? 3;
 
@@ -87,6 +89,7 @@ export default function CommentDrafterScreen() {
         allowResponseCache: false,
       });
       setDraftedComment(response.content);
+      setShowFeedback(false);
       if (!response.cached) {
         recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
           feature: 'comment-drafter',
@@ -94,6 +97,8 @@ export default function CommentDrafterScreen() {
         });
       }
       setWasAutoDowngraded(response.autoDowngraded);
+      // Show feedback after a short delay
+      setTimeout(() => setShowFeedback(true), 500);
     } catch (err) {
       if (err instanceof AiClientError) {
         setError(err.message);
@@ -336,6 +341,17 @@ export default function CommentDrafterScreen() {
               <Text style={styles.previewTitle}>Rendered preview</Text>
               <Markdown style={markdownStyles}>{draftedComment}</Markdown>
             </View>
+
+            {showFeedback && (
+              <CalibrationFeedback
+                draftText={draftedComment}
+                itemId={itemId}
+                feature="comment-drafter"
+                model={aiModel}
+                sessionId={decodedSessionId}
+                onDismiss={() => setShowFeedback(false)}
+              />
+            )}
           </View>
         )}
       </ScrollView>

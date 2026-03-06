@@ -6,27 +6,75 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import { useMemo } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSessionStore } from '../../src/store/useSessionStore';
+import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { getStackInfo } from '../../src/data/checklistRegistry';
 import type { StackId } from '../../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function ReviewSessionsScreen() {
   const router = useRouter();
-  const { stack } = useLocalSearchParams<{ stack: string }>();
-  const stackId = stack as StackId;
-  const stackInfo = getStackInfo(stackId);
+  const { stack, stacks, sections, repo } = useLocalSearchParams<{
+    stack?: string;
+    stacks?: string;
+    sections?: string;
+    repo?: string;
+  }>();
+  const saveRepoConfig = useRepoConfigStore((s) => s.saveRepoConfig);
 
-  const sessions = useSessionStore((s) => s.getSessionsByMode('review', stackId));
+  const stackIds: StackId[] = useMemo(() => {
+    if (stacks) return stacks.split(',') as StackId[];
+    if (stack) return [stack as StackId];
+    return [];
+  }, [stack, stacks]);
+
+  const selectedSections = useMemo(
+    () => (sections ? sections.split(',') : undefined),
+    [sections],
+  );
+
+  const isMultiStack = stackIds.length > 1;
+  const firstStackInfo = stackIds.length > 0 ? getStackInfo(stackIds[0]) : null;
+  const headerTitle = isMultiStack
+    ? stackIds.map((id) => getStackInfo(id).shortTitle).join(' + ')
+    : firstStackInfo?.title ?? 'Review';
+  const headerIcon = isMultiStack ? '📚' : firstStackInfo?.icon ?? '🔍';
+
+  const allSessions = useSessionStore((s) => {
+    // For multi-stack, show sessions that match ALL selected stacks
+    return Object.values(s.sessions)
+      .filter((sess) => {
+        if (sess.mode !== 'review') return false;
+        const effective = sess.stackIds?.length
+          ? sess.stackIds
+          : sess.stackId
+            ? [sess.stackId]
+            : [];
+        if (isMultiStack) {
+          return (
+            stackIds.length === effective.length &&
+            stackIds.every((id) => effective.includes(id))
+          );
+        }
+        return effective.includes(stackIds[0]);
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+  });
+
   const createSession = useSessionStore((s) => s.createSession);
   const deleteSession = useSessionStore((s) => s.deleteSession);
 
-  const activeSessions = sessions.filter((s) => !s.isComplete);
-  const completedSessions = sessions.filter((s) => s.isComplete);
+  const activeSessions = allSessions.filter((s) => !s.isComplete);
+  const completedSessions = allSessions.filter((s) => s.isComplete);
 
   const handleNewSession = () => {
-    const id = createSession('review', stackId);
+    const id = createSession('review', stackIds, undefined, selectedSections);
+    if (repo) saveRepoConfig(repo, stackIds, selectedSections);
     router.push(`/review/${id}`);
   };
 
@@ -47,8 +95,8 @@ export default function ReviewSessionsScreen() {
       contentContainerStyle={styles.content}
     >
       <View style={styles.header}>
-        <Text style={styles.stackIcon}>{stackInfo.icon}</Text>
-        <Text style={styles.heading}>{stackInfo.title}</Text>
+        <Text style={styles.stackIcon}>{headerIcon}</Text>
+        <Text style={styles.heading}>{headerTitle}</Text>
       </View>
 
       <Pressable
@@ -110,7 +158,7 @@ export default function ReviewSessionsScreen() {
         </View>
       )}
 
-      {sessions.length === 0 && (
+      {allSessions.length === 0 && (
         <Text style={styles.empty}>
           No sessions yet. Tap above to start your first review!
         </Text>

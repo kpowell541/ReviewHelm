@@ -1,31 +1,33 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { colors, spacing, fontSizes, radius } from '../theme';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
+  onGoHome?: () => void;
 }
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  errorMessage: string | null;
 }
 
 export class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
 > {
-  state: ErrorBoundaryState = { hasError: false };
+  state: ErrorBoundaryState = { hasError: false, errorMessage: null };
 
-  static getDerivedStateFromError(): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, errorMessage: error.message };
   }
 
-  componentDidCatch(): void {
-    // Could be wired to remote logging in the future.
+  componentDidCatch(error: Error): void {
+    console.error('[ErrorBoundary]', error);
   }
 
   handleRetry = () => {
-    this.setState({ hasError: false });
+    this.setState({ hasError: false, errorMessage: null });
   };
 
   render() {
@@ -39,9 +41,26 @@ export class ErrorBoundary extends React.Component<
         <Text style={styles.body}>
           ReviewHelm hit an unexpected error. You can safely retry.
         </Text>
-        <Pressable style={styles.button} onPress={this.handleRetry}>
-          <Text style={styles.buttonText}>Try again</Text>
-        </Pressable>
+        {this.state.errorMessage && (
+          <Text style={styles.errorDetail} numberOfLines={3}>
+            {this.state.errorMessage}
+          </Text>
+        )}
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.button} onPress={this.handleRetry}>
+            <Text style={styles.buttonText}>Try again</Text>
+          </Pressable>
+          {this.props.onGoHome && (
+            <Pressable
+              style={[styles.button, styles.secondaryButton]}
+              onPress={this.props.onGoHome}
+            >
+              <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+                Go Home
+              </Text>
+            </Pressable>
+          )}
+        </View>
       </View>
     );
   }
@@ -65,8 +84,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     lineHeight: 22,
+  },
+  errorDetail: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
   },
   button: {
     backgroundColor: colors.primary,
@@ -74,9 +104,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xl,
   },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   buttonText: {
     color: '#fff',
     fontSize: fontSizes.md,
     fontWeight: '600',
+  },
+  secondaryButtonText: {
+    color: colors.textSecondary,
   },
 });

@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
+import { usePreferencesStore } from '../src/store/usePreferencesStore';
+import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 
 interface ModeCardProps {
   title: string;
@@ -65,9 +68,20 @@ function RecentSessionCard({ session }: { session: { id: string; title: string; 
 
 export default function HomeScreen() {
   const router = useRouter();
+  const hasCompletedOnboarding = usePreferencesStore(
+    (s) => s.hasCompletedOnboarding,
+  );
   const recentSessions = useSessionStore((s) => s.getRecentSessions(3));
   const weakest = useConfidenceStore((s) => s.getWeakestItems(5));
+  const dueItems = useConfidenceStore((s) => s.getDueItems());
   const gapCount = weakest.filter((w) => w.currentConfidence <= 2).length;
+  const activePRCount = usePRTrackerStore((s) => s.getActivePRs().length);
+
+  useEffect(() => {
+    if (!hasCompletedOnboarding) {
+      router.replace('/onboarding');
+    }
+  }, [hasCompletedOnboarding, router]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,9 +124,60 @@ export default function HomeScreen() {
             color={colors.gapsMode}
             onPress={() => router.push('/gaps')}
             badge={
-              gapCount > 0 ? `${gapCount} to learn` : undefined
+              gapCount > 0 || dueItems.length > 0
+                ? [
+                    gapCount > 0 ? `${gapCount} gaps` : '',
+                    dueItems.length > 0 ? `${dueItems.length} due` : '',
+                  ].filter(Boolean).join(' · ')
+                : undefined
             }
           />
+        </View>
+
+        <View style={styles.quickLinks}>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/search')}
+          >
+            <Text style={styles.quickLinkText}>🔎 Search</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/dashboard')}
+          >
+            <Text style={styles.quickLinkText}>📈 Dashboard</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/bookmarks')}
+          >
+            <Text style={styles.quickLinkText}>⭐ Bookmarks</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.quickLinks}>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/pr-tracker')}
+          >
+            <Text style={styles.quickLinkText}>
+              🔀 PRs{activePRCount > 0 ? ` (${activePRCount})` : ''}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/trends')}
+          >
+            <Text style={styles.quickLinkText}>📊 Trends</Text>
+          </Pressable>
+          {dueItems.length > 0 && (
+            <Pressable
+              style={styles.quickLink}
+              onPress={() => router.push('/review/due-items')}
+            >
+              <Text style={styles.quickLinkText}>🔁 Due ({dueItems.length})</Text>
+            </Pressable>
+          )}
         </View>
 
         {recentSessions.length > 0 && (
@@ -195,8 +260,25 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     fontWeight: '600',
   },
+  quickLinks: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+  },
+  quickLink: {
+    flex: 1,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+  },
+  quickLinkText: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
   recentSection: {
-    marginTop: spacing['3xl'],
+    marginTop: spacing['2xl'],
   },
   sectionTitle: {
     fontSize: fontSizes.lg,

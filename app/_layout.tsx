@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, fontSizes } from '../src/theme';
+import { colors, spacing, fontSizes, ThemeProvider, useThemeColors } from '../src/theme';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { useUsageStore } from '../src/store/useUsageStore';
 import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
+import { useAuthStore } from '../src/store/useAuthStore';
+import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
+import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
 import { initializeChecklistCache } from '../src/data/checklistLoader';
+import { runSync } from '../src/sync/syncEngine';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 export default function RootLayout() {
@@ -29,12 +33,17 @@ export default function RootLayout() {
   const acknowledgeAlertThreshold = useUsageStore((s) => s.acknowledgeAlertThreshold);
   const tutorHydrated = useTutorStore((s) => s.hasHydrated);
   const syncHydrated = useSyncStore((s) => s.hasHydrated);
+  const prTrackerHydrated = usePRTrackerStore((s) => s.hasHydrated);
+  const repoConfigHydrated = useRepoConfigStore((s) => s.hasHydrated);
+  const initAuth = useAuthStore((s) => s.initialize);
+  const authUser = useAuthStore((s) => s.user);
 
   const [cacheReady, setCacheReady] = useState(false);
 
   useEffect(() => {
     void loadApiKey();
-  }, [loadApiKey]);
+    void initAuth();
+  }, [loadApiKey, initAuth]);
 
   useEffect(() => {
     initializeChecklistCache()
@@ -49,6 +58,8 @@ export default function RootLayout() {
     usageHydrated &&
     tutorHydrated &&
     syncHydrated &&
+    prTrackerHydrated &&
+    repoConfigHydrated &&
     isApiKeyLoaded &&
     cacheReady;
 
@@ -76,6 +87,12 @@ export default function RootLayout() {
     acknowledgeAlertThreshold,
   ]);
 
+  // Background sync when authenticated
+  useEffect(() => {
+    if (!storesReady || !authUser) return;
+    void runSync();
+  }, [storesReady, authUser]);
+
   if (!storesReady) {
     return (
       <View style={styles.loadingScreen}>
@@ -87,7 +104,8 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <StatusBar style="light" />
+    <ThemeProvider>
+      <StatusBar style="auto" />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
@@ -108,6 +126,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="review/sessions"
           options={{ title: 'Review Sessions' }}
+        />
+        <Stack.Screen
+          name="review/section-select"
+          options={{ title: 'Select Sections' }}
         />
         <Stack.Screen
           name="review/[sessionId]"
@@ -152,10 +174,55 @@ export default function RootLayout() {
           options={{ title: 'My Knowledge Gaps' }}
         />
         <Stack.Screen
+          name="search"
+          options={{ title: 'Search' }}
+        />
+        <Stack.Screen
+          name="dashboard"
+          options={{ title: 'Dashboard' }}
+        />
+        <Stack.Screen
+          name="bookmarks"
+          options={{ title: 'Bookmarks' }}
+        />
+        <Stack.Screen
+          name="onboarding"
+          options={{ headerShown: false, animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="auth/login"
+          options={{ title: 'Sign In', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="auth/signup"
+          options={{ title: 'Sign Up', presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="diffs"
+          options={{ title: 'Diff Artifacts' }}
+        />
+        <Stack.Screen
+          name="comment-profiles"
+          options={{ title: 'Comment Profiles' }}
+        />
+        <Stack.Screen
+          name="review/due-items"
+          options={{ title: 'Review Due Items' }}
+        />
+        <Stack.Screen
+          name="trends"
+          options={{ title: 'Session Comparison' }}
+        />
+        <Stack.Screen
+          name="pr-tracker"
+          options={{ title: 'PR Tracker' }}
+        />
+        <Stack.Screen
           name="settings"
           options={{ title: 'Settings' }}
         />
       </Stack>
+    </ThemeProvider>
     </ErrorBoundary>
   );
 }

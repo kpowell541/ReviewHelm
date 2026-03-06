@@ -15,12 +15,16 @@ import Constants from 'expo-constants';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
+import { useRouter } from 'expo-router';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 import { useUsageStore } from '../src/store/useUsageStore';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
+import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
+import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
 import { syncChecklistsFromGithub } from '../src/data/checklistSync';
 import { fetchMonthlyCostFromAdminApi } from '../src/ai/costApi';
 import {
@@ -43,6 +47,8 @@ interface BackupPayload {
   tutor: unknown;
   sync: unknown;
   preferences: unknown;
+  prTracker?: unknown;
+  repoConfigs?: unknown;
 }
 
 function maskToken(token: string | null): string {
@@ -52,6 +58,9 @@ function maskToken(token: string | null): string {
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
+  const authUser = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
   const apiKeyToken = usePreferencesStore((s) => s.apiKeyToken);
   const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
   const adminApiKeyToken = usePreferencesStore((s) => s.adminApiKeyToken);
@@ -71,6 +80,8 @@ export default function SettingsScreen() {
   const setFontSize = usePreferencesStore((s) => s.setFontSize);
   const autoExportPdf = usePreferencesStore((s) => s.autoExportPdf);
   const setAutoExportPdf = usePreferencesStore((s) => s.setAutoExportPdf);
+  const themeMode = usePreferencesStore((s) => s.themeMode);
+  const setThemeMode = usePreferencesStore((s) => s.setThemeMode);
 
   const byDay = useUsageStore((s) => s.byDay);
   const bySession = useUsageStore((s) => s.bySession);
@@ -115,6 +126,14 @@ export default function SettingsScreen() {
     syncing: s.syncing,
   }));
   const replaceSyncState = useSyncStore((s) => s.replaceSyncState);
+  const wipLimit = usePRTrackerStore((s) => s.wipLimit);
+  const setWipLimit = usePRTrackerStore((s) => s.setWipLimit);
+  const emergencySlotEnabled = usePRTrackerStore((s) => s.emergencySlotEnabled);
+  const setEmergencySlotEnabled = usePRTrackerStore((s) => s.setEmergencySlotEnabled);
+  const prTrackerPRs = usePRTrackerStore((s) => s.prs);
+  const replacePRs = usePRTrackerStore((s) => s.replacePRs);
+  const repoConfigs = useRepoConfigStore((s) => s.configs);
+  const replaceRepoConfigs = useRepoConfigStore((s) => s.replaceConfigs);
   const markSyncStart = useSyncStore((s) => s.markSyncStart);
   const markSyncSuccess = useSyncStore((s) => s.markSyncSuccess);
   const markSyncFailure = useSyncStore((s) => s.markSyncFailure);
@@ -316,6 +335,8 @@ export default function SettingsScreen() {
           antiBiasMode,
           autoExportPdf,
         },
+        prTracker: prTrackerPRs,
+        repoConfigs,
       };
 
       const dir = FileSystem.cacheDirectory;
@@ -346,6 +367,8 @@ export default function SettingsScreen() {
     aiModel,
     antiBiasMode,
     autoExportPdf,
+    prTrackerPRs,
+    repoConfigs,
     monthlyBudgetUsd,
     alertThresholds,
     hardStopAtBudget,
@@ -396,6 +419,13 @@ export default function SettingsScreen() {
       replaceUsage(nextUsage as Parameters<typeof replaceUsage>[0]);
       replaceConversations(nextTutor as Parameters<typeof replaceConversations>[0]);
       replaceSyncState(nextSync as Parameters<typeof replaceSyncState>[0]);
+
+      if (parsed.prTracker && typeof parsed.prTracker === 'object') {
+        replacePRs(parsed.prTracker as Parameters<typeof replacePRs>[0]);
+      }
+      if (parsed.repoConfigs && typeof parsed.repoConfigs === 'object') {
+        replaceRepoConfigs(parsed.repoConfigs as Parameters<typeof replaceRepoConfigs>[0]);
+      }
 
       const usageConfig = parsed.usageConfig as
         | {
@@ -461,6 +491,8 @@ export default function SettingsScreen() {
     replaceUsage,
     replaceConversations,
     replaceSyncState,
+    replacePRs,
+    replaceRepoConfigs,
     replacePreferences,
     setMonthlyBudget,
     setAlertThresholds,
@@ -796,6 +828,70 @@ export default function SettingsScreen() {
             </Pressable>
           ))}
         </View>
+        <Text style={[styles.label, styles.inlineLabel]}>Theme</Text>
+        <View style={styles.inlineChoices}>
+          {(['dark', 'light', 'system'] as const).map((mode) => (
+            <Pressable
+              key={mode}
+              style={[
+                styles.inlineChoiceButton,
+                themeMode === mode && styles.inlineChoiceButtonActive,
+              ]}
+              onPress={() => setThemeMode(mode)}
+            >
+              <Text
+                style={[
+                  styles.inlineChoiceText,
+                  themeMode === mode && styles.inlineChoiceTextActive,
+                ]}
+              >
+                {mode[0].toUpperCase() + mode.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <Text style={styles.sectionTitle}>PR Tracker</Text>
+      <View style={styles.card}>
+        <Text style={[styles.label, styles.inlineLabel]}>My PR WIP Limit</Text>
+        <Text style={styles.hint}>
+          Maximum active personal PRs before showing a warning.
+        </Text>
+        <View style={styles.inlineChoices}>
+          {[2, 3, 4, 5].map((n) => (
+            <Pressable
+              key={n}
+              style={[
+                styles.inlineChoiceButton,
+                wipLimit === n && styles.inlineChoiceButtonActive,
+              ]}
+              onPress={() => setWipLimit(n)}
+            >
+              <Text
+                style={[
+                  styles.inlineChoiceText,
+                  wipLimit === n && styles.inlineChoiceTextActive,
+                ]}
+              >
+                {n}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.label}>Emergency Slot</Text>
+            <Text style={styles.hint}>
+              Reserve one extra slot for emergency/hotfix PRs.
+            </Text>
+          </View>
+          <Switch
+            value={emergencySlotEnabled}
+            onValueChange={setEmergencySlotEnabled}
+            trackColor={{ false: colors.border, true: colors.primary }}
+          />
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Data</Text>
@@ -854,6 +950,65 @@ export default function SettingsScreen() {
             trackColor={{ false: colors.border, true: colors.primary }}
           />
         </View>
+      </View>
+
+      <Text style={styles.sectionTitle}>Account</Text>
+      <View style={styles.card}>
+        {authUser ? (
+          <>
+            <Text style={styles.label}>{authUser.email}</Text>
+            <Text style={styles.hint}>
+              Signed in. Your data syncs across devices.
+            </Text>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={async () => {
+                await signOut();
+                Alert.alert('Signed out', 'You can continue using the app offline.');
+              }}
+            >
+              <Text style={styles.secondaryButtonText}>Sign Out</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={styles.hint}>
+              Sign in to sync your sessions, preferences, and progress
+              across devices.
+            </Text>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => router.push('/auth/login')}
+            >
+              <Text style={styles.primaryButtonText}>Sign In / Sign Up</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
+
+      <Text style={styles.sectionTitle}>Connected Features</Text>
+      <View style={styles.card}>
+        <Pressable
+          style={styles.connectedLink}
+          onPress={() => router.push('/pr-tracker')}
+        >
+          <Text style={styles.connectedLinkText}>PR Tracker</Text>
+          <Text style={styles.connectedLinkArrow}>{'>'}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.connectedLink}
+          onPress={() => router.push('/comment-profiles')}
+        >
+          <Text style={styles.connectedLinkText}>Comment Style Profiles</Text>
+          <Text style={styles.connectedLinkArrow}>{'>'}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.connectedLink}
+          onPress={() => router.push('/diffs')}
+        >
+          <Text style={styles.connectedLinkText}>Diff Artifacts</Text>
+          <Text style={styles.connectedLinkArrow}>{'>'}</Text>
+        </Pressable>
       </View>
 
       <Text style={styles.footer}>ReviewHelm v{appVersion}</Text>
@@ -1059,6 +1214,22 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  connectedLink: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  connectedLinkText: {
+    fontSize: fontSizes.md,
+    color: colors.textPrimary,
+  },
+  connectedLinkArrow: {
+    fontSize: fontSizes.md,
+    color: colors.textMuted,
   },
   footer: {
     textAlign: 'center',

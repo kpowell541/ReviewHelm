@@ -58,6 +58,7 @@ export const colors = {
   polishMode: '#ff6b81',
   learnMode: '#ffc107',
   gapsMode: '#a29bfe',
+  prTrackerMode: '#ff6348',
 } as const;
 
 export type ColorKey = keyof typeof colors;

@@ -121,6 +121,8 @@ export interface Session {
   id: string;
   mode: ChecklistMode;
   stackId?: StackId;
+  stackIds?: StackId[];
+  selectedSections?: string[];
   title: string;
   itemResponses: Record<string, ItemResponse>;
   sessionNotes: string;
@@ -128,6 +130,21 @@ export interface Session {
   updatedAt: string;
   completedAt?: string;
   isComplete: boolean;
+}
+
+/** Resolve effective stack IDs from either `stackIds` or legacy `stackId` */
+export function getEffectiveStackIds(session: Session): StackId[] {
+  if (session.stackIds && session.stackIds.length > 0) return session.stackIds;
+  if (session.stackId) return [session.stackId];
+  return [];
+}
+
+export interface SessionTemplate {
+  id: string;
+  name: string;
+  stackIds: StackId[];
+  selectedSections?: string[];
+  createdAt: string;
 }
 
 // ============================================
@@ -143,6 +160,13 @@ export interface ConfidenceRating {
   date: string;
 }
 
+export interface RepetitionState {
+  interval: number;
+  easeFactor: number;
+  nextReviewDate: string;
+  repetitions: number;
+}
+
 export interface ItemConfidenceHistory {
   itemId: string;
   stackId: string;
@@ -153,6 +177,7 @@ export interface ItemConfidenceHistory {
   averageConfidence: number;
   trend: ConfidenceTrend;
   learningPriority: number;
+  repetitionState?: RepetitionState;
 }
 
 // ============================================
@@ -230,6 +255,71 @@ export interface SessionScores {
   itemsResponded: number;
   applicableItems: number;
 }
+
+// ============================================
+// PR Tracker
+// ============================================
+
+export type PRStatus =
+  | 'needs-review'
+  | 'in-review'
+  | 'changes-requested'
+  | 'approved'
+  | 'merged'
+  | 'closed';
+
+export type PRRole = 'author' | 'reviewer';
+
+export type PRPriority = 'low' | 'normal' | 'high' | 'emergency';
+
+export type PRSize = 'small' | 'medium' | 'large';
+
+export interface TrackedPR {
+  id: string;
+  title: string;
+  url?: string;
+  status: PRStatus;
+  role: PRRole;
+  priority: PRPriority;
+  isEmergency: boolean;
+  size?: PRSize;
+  repo?: string;
+  prNumber?: number;
+  prAuthor?: string;
+  linkedSessionId?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  lastReviewedAt?: string;
+}
+
+export const PR_ACTIVE_STATUSES: PRStatus[] = [
+  'needs-review',
+  'in-review',
+  'changes-requested',
+  'approved',
+];
+
+export const PR_STATUS_LABELS: Record<PRStatus, string> = {
+  'needs-review': 'Needs Review',
+  'in-review': 'In Review',
+  'changes-requested': 'Changes Requested',
+  approved: 'Approved',
+  merged: 'Merged',
+  closed: 'Closed',
+};
+
+export const PR_ROLE_LABELS: Record<PRRole, string> = {
+  author: 'My PR',
+  reviewer: 'Reviewing',
+};
+
+export const PR_SIZE_LABELS: Record<PRSize, string> = {
+  small: 'S',
+  medium: 'M',
+  large: 'L',
+};
 
 // ============================================
 // Helpers

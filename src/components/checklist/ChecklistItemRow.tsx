@@ -1,5 +1,8 @@
 import { useState, memo, useEffect, useMemo } from 'react';
 import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import { useBookmarkStore } from '../../store/useBookmarkStore';
 import {
   View,
   Text,
@@ -70,6 +73,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
   const [expanded, setExpanded] = useState(false);
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [notesDraft, setNotesDraft] = useState(response?.notes ?? '');
+  const isBookmarked = useBookmarkStore((s) => s.isBookmarked(item.id));
+  const toggleBookmark = useBookmarkStore((s) => s.toggleBookmark);
   const currentVerdict = response?.verdict || 'skipped';
   const currentConfidence = response?.confidence || 3;
   const sevColor = SEVERITY_COLORS[item.severity];
@@ -95,6 +100,16 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
     onSetConfidence(item.id, confidence);
   };
 
+  const handleShare = async () => {
+    const text = `[${item.severity.toUpperCase()}] ${item.text}`;
+    const file = new FileSystem.File(FileSystem.Paths.cache, 'checklist-item.txt');
+    file.write(text);
+    await Sharing.shareAsync(file.uri, {
+      mimeType: 'text/plain',
+      dialogTitle: 'Share Checklist Item',
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Item text + severity badge */}
@@ -113,6 +128,23 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         >
           {item.text}
         </Text>
+        <Pressable
+          onPress={() => {
+            void Haptics.selectionAsync();
+            toggleBookmark(item.id);
+          }}
+          hitSlop={8}
+          style={styles.deepDiveButton}
+        >
+          <Text style={styles.deepDiveIcon}>{isBookmarked ? '★' : '☆'}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => void handleShare()}
+          hitSlop={8}
+          style={styles.deepDiveButton}
+        >
+          <Text style={styles.deepDiveIcon}>↗</Text>
+        </Pressable>
         <Pressable
           onPress={() => onDeepDive(item.id)}
           hitSlop={8}

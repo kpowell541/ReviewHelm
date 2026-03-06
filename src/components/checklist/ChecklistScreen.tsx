@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,16 @@ import {
   Pressable,
   TextInput,
   Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useConfidenceStore } from '../../store/useConfidenceStore';
 import { usePreferencesStore } from '../../store/usePreferencesStore';
-import { getChecklist, getPolishChecklist } from '../../data/checklistLoader';
-import { getAllChecklistItems, getSectionItems } from '../../data/types';
+import { getChecklist, getPolishChecklist, getMergedChecklist } from '../../data/checklistLoader';
+import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../../data/types';
 import type {
   ChecklistItem,
   ChecklistSection,
@@ -88,11 +91,15 @@ export function ChecklistScreen({ sessionId }: Props) {
   const autoExportPdf = usePreferencesStore((s) => s.autoExportPdf);
   const fontSize = usePreferencesStore((s) => s.fontSize);
 
+  const sectionListRef = useRef<SectionList<ChecklistItem, ChecklistSectionListEntry>>(null);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [sessionNotesCollapsed, setSessionNotesCollapsed] = useState(true);
   const [sessionNotesDraft, setSessionNotesDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState<Severity[]>(defaultSeverityFilter);
+  const [showSectionPicker, setShowSectionPicker] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setSeverityFilter(defaultSeverityFilter);
@@ -105,8 +112,10 @@ export function ChecklistScreen({ sessionId }: Props) {
   const checklist = useMemo(() => {
     if (!session) return null;
     if (session.mode === 'polish') return getPolishChecklist();
-    if (session.stackId) return getChecklist(session.stackId);
-    return null;
+    const effectiveIds = getEffectiveStackIds(session);
+    if (effectiveIds.length === 0) return null;
+    if (effectiveIds.length === 1) return getChecklist(effectiveIds[0]);
+    return getMergedChecklist(effectiveIds, session.selectedSections);
   }, [session]);
 
   const allItems = useMemo(() => (checklist ? getAllChecklistItems(checklist) : []), [checklist]);
@@ -186,6 +195,53 @@ export function ChecklistScreen({ sessionId }: Props) {
   const persistSessionNotes = useCallback(() => {
     updateSessionNotes(sessionId, sessionNotesDraft);
   }, [updateSessionNotes, sessionId, sessionNotesDraft]);
+
+  const jumpToSection = useCallback((sectionIndex: number) => {
+    // Expand the section if collapsed
+    const section = sections[sectionIndex];
+    if (section && collapsedSections[section.section.id]) {
+      setCollapsedSections((prev) => ({
+        ...prev,
+        [section.section.id]: false,
+      }));
+    }
+    setShowSectionPicker(false);
+    setTimeout(() => {
+      sectionListRef.current?.scrollToLocation({
+        sectionIndex,
+        itemIndex: 0,
+        animated: true,
+      });
+    }, 100);
+  }, [sections, collapsedSections]);
+
+  const toggleBulkItem = useCallback((itemId: string) => {
+    setBulkSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  }, []);
+
+  const bulkSetVerdict = useCallback((verdict: Verdict) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    for (const itemId of bulkSelected) {
+      setItemResponse(sessionId, itemId, { verdict });
+    }
+    setBulkSelected(new Set());
+  }, [bulkSelected, sessionId, setItemResponse]);
+
+  const bulkSetConfidence = useCallback((confidence: ConfidenceLevel) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    for (const itemId of bulkSelected) {
+      setItemResponse(sessionId, itemId, { confidence });
+    }
+    setBulkSelected(new Set());
+  }, [bulkSelected, sessionId, setItemResponse]);
 
   const finalizeCompletion = useCallback(() => {
     if (!session || !checklist || session.isComplete) {
@@ -275,9 +331,22 @@ export function ChecklistScreen({ sessionId }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {checklist.meta.title}
-        </Text>
+        <View style={styles.headerTopRow}>
+          <Text style={[styles.headerTitle, { flex: 1 }]} numberOfLines={1}>
+            {checklist.meta.title}
+          </Text>
+          <Pressable
+            style={[styles.bulkToggle, bulkMode && styles.bulkToggleActive]}
+            onPress={() => {
+              setBulkMode((prev) => !prev);
+              setBulkSelected(new Set());
+            }}
+          >
+            <Text style={[styles.bulkToggleText, bulkMode && styles.bulkToggleTextActive]}>
+              {bulkMode ? 'Exit Bulk' : 'Bulk'}
+            </Text>
+          </Pressable>
+        </View>
         <View style={styles.scoreRow}>
           <View style={styles.scorePill}>
             <Text style={styles.scoreLabel}>Coverage</Text>
@@ -356,6 +425,7 @@ export function ChecklistScreen({ sessionId }: Props) {
       </View>
 
       <SectionList<ChecklistItem, ChecklistSectionListEntry>
+        ref={sectionListRef}
         sections={sections}
         keyExtractor={(item) => item.id}
         stickySectionHeadersEnabled
@@ -378,24 +448,43 @@ export function ChecklistScreen({ sessionId }: Props) {
           );
         }}
         renderItem={({ item }) => (
-          <ChecklistItemRow
-            item={item}
-            response={session.itemResponses[item.id]}
-            textSize={fontSize}
-            onSetVerdict={handleSetVerdict}
-            onSetConfidence={handleSetConfidence}
-            onSetNotes={handleSetNotes}
-            onDeepDive={(itemId) =>
-              router.push(
-                `/deep-dive/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
-              )
-            }
-            onDraftComment={(itemId) =>
-              router.push(
-                `/comment-drafter/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
-              )
-            }
-          />
+          <View style={bulkMode ? styles.bulkItemRow : undefined}>
+            {bulkMode && (
+              <Pressable
+                style={styles.bulkCheckbox}
+                onPress={() => toggleBulkItem(item.id)}
+              >
+                <View style={[
+                  styles.checkbox,
+                  bulkSelected.has(item.id) && styles.checkboxChecked,
+                ]}>
+                  {bulkSelected.has(item.id) && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </View>
+              </Pressable>
+            )}
+            <View style={bulkMode ? { flex: 1 } : undefined}>
+              <ChecklistItemRow
+                item={item}
+                response={session.itemResponses[item.id]}
+                textSize={fontSize}
+                onSetVerdict={handleSetVerdict}
+                onSetConfidence={handleSetConfidence}
+                onSetNotes={handleSetNotes}
+                onDeepDive={(itemId) =>
+                  router.push(
+                    `/deep-dive/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
+                  )
+                }
+                onDraftComment={(itemId) =>
+                  router.push(
+                    `/comment-drafter/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
+                  )
+                }
+              />
+            </View>
+          </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptySearch}>
@@ -423,6 +512,78 @@ export function ChecklistScreen({ sessionId }: Props) {
         }
         contentContainerStyle={styles.listContent}
       />
+
+      {/* Floating section jump-to button */}
+      <Pressable
+        style={styles.floatingButton}
+        onPress={() => setShowSectionPicker(true)}
+      >
+        <Text style={styles.floatingButtonText}>§</Text>
+      </Pressable>
+
+      {/* Section picker modal */}
+      <Modal
+        visible={showSectionPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSectionPicker(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowSectionPicker(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Jump to Section</Text>
+            <FlatList
+              data={sections}
+              keyExtractor={(entry) => entry.section.id}
+              renderItem={({ item: entry, index }) => {
+                const progress = getSectionProgress(entry.items);
+                return (
+                  <Pressable
+                    style={styles.modalSectionRow}
+                    onPress={() => jumpToSection(index)}
+                  >
+                    <Text style={styles.modalSectionTitle} numberOfLines={1}>
+                      {entry.section.title}
+                    </Text>
+                    <Text style={styles.modalSectionCount}>
+                      {progress.responded}/{progress.total}
+                    </Text>
+                  </Pressable>
+                );
+              }}
+            />
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Bulk action bar */}
+      {bulkMode && bulkSelected.size > 0 && (
+        <View style={styles.bulkActionBar}>
+          <Text style={styles.bulkActionCount}>
+            {bulkSelected.size} selected
+          </Text>
+          <Pressable
+            style={styles.bulkActionButton}
+            onPress={() => bulkSetVerdict('looks-good')}
+          >
+            <Text style={styles.bulkActionText}>✓ Good</Text>
+          </Pressable>
+          <Pressable
+            style={styles.bulkActionButton}
+            onPress={() => bulkSetVerdict('na')}
+          >
+            <Text style={styles.bulkActionText}>— N/A</Text>
+          </Pressable>
+          <Pressable
+            style={styles.bulkActionButton}
+            onPress={() => bulkSetConfidence(5)}
+          >
+            <Text style={styles.bulkActionText}>5★</Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -604,5 +765,154 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     fontWeight: '600',
     color: '#fff',
+  },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  bulkToggle: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.bg,
+  },
+  bulkToggleActive: {
+    borderColor: colors.primary,
+    backgroundColor: `${colors.primary}18`,
+  },
+  bulkToggleText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  bulkToggleTextActive: {
+    color: colors.primary,
+  },
+  bulkItemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  bulkCheckbox: {
+    paddingTop: spacing.lg,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.xs,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.sm,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  bulkActionBar: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.lg,
+    right: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  bulkActionCount: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    color: colors.primary,
+    marginRight: 'auto',
+  },
+  bulkActionButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  bulkActionText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.lg,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  floatingButtonText: {
+    fontSize: fontSizes.xl,
+    color: '#fff',
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.bgCard,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    maxHeight: '60%',
+    padding: spacing.lg,
+    paddingBottom: spacing['3xl'],
+  },
+  modalTitle: {
+    fontSize: fontSizes.lg,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  modalSectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  modalSectionTitle: {
+    flex: 1,
+    fontSize: fontSizes.md,
+    color: colors.textPrimary,
+  },
+  modalSectionCount: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    marginLeft: spacing.sm,
   },
 });

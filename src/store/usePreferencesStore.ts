@@ -60,12 +60,14 @@ interface PreferencesState {
   hasAdminApiKey: boolean;
   isApiKeyLoaded: boolean;
   hasHydrated: boolean;
+  hasCompletedOnboarding: boolean;
   aiModel: ClaudeModel;
   defaultSeverityFilter: Severity[];
   antiBiasMode: boolean;
   fontSize: 'small' | 'medium' | 'large';
   codeBlockTheme: 'dark' | 'light';
   autoExportPdf: boolean;
+  themeMode: 'dark' | 'light' | 'system';
 
   setHasHydrated: (hydrated: boolean) => void;
   loadApiKey: () => Promise<void>;
@@ -85,6 +87,7 @@ interface PreferencesState {
     fontSize: 'small' | 'medium' | 'large';
     codeBlockTheme: 'dark' | 'light';
     autoExportPdf: boolean;
+    themeMode: 'dark' | 'light' | 'system';
   }>) => void;
   setAiModel: (model: ClaudeModel) => void;
   setSeverityFilter: (filter: Severity[]) => void;
@@ -92,6 +95,7 @@ interface PreferencesState {
   setFontSize: (size: 'small' | 'medium' | 'large') => void;
   setCodeBlockTheme: (theme: 'dark' | 'light') => void;
   setAutoExportPdf: (enabled: boolean) => void;
+  setThemeMode: (mode: 'dark' | 'light' | 'system') => void;
 }
 
 export const usePreferencesStore = create<PreferencesState>()(
@@ -103,12 +107,14 @@ export const usePreferencesStore = create<PreferencesState>()(
       hasAdminApiKey: false,
       isApiKeyLoaded: false,
       hasHydrated: false,
+      hasCompletedOnboarding: false,
       aiModel: 'sonnet' as ClaudeModel,
       defaultSeverityFilter: ['blocker', 'major', 'minor', 'nit'],
       antiBiasMode: true,
       fontSize: 'medium',
       codeBlockTheme: 'dark',
       autoExportPdf: false,
+      themeMode: 'dark' as const,
 
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
@@ -218,17 +224,20 @@ export const usePreferencesStore = create<PreferencesState>()(
       setFontSize: (size) => set({ fontSize: size }),
       setCodeBlockTheme: (theme) => set({ codeBlockTheme: theme }),
       setAutoExportPdf: (enabled) => set({ autoExportPdf: enabled }),
+      setThemeMode: (mode) => set({ themeMode: mode }),
     }),
     {
       name: 'preferences-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
         aiModel: state.aiModel,
         defaultSeverityFilter: state.defaultSeverityFilter,
         antiBiasMode: state.antiBiasMode,
         fontSize: state.fontSize,
         codeBlockTheme: state.codeBlockTheme,
         autoExportPdf: state.autoExportPdf,
+        themeMode: state.themeMode,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
