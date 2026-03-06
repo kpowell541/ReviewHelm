@@ -27,7 +27,12 @@ const EnvSchema = z.object({
   SUPABASE_JWKS_URL: z.string().url(),
   SUPABASE_JWT_ISSUER: z.string().url(),
   SUPABASE_JWT_AUDIENCE: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional().default(''),
+  SUPABASE_SERVICE_ROLE_KEY: z
+    .string()
+    .default('')
+    .refine((value) => value === '' || value.length >= 20, {
+      message: 'must be empty or at least 20 characters',
+    }),
 
   DATABASE_URL: PostgresUrlSchema,
   DIRECT_URL: PostgresUrlSchema,
