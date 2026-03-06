@@ -4,11 +4,17 @@ on:
   pull_request:
     paths:
       - 'backend/**'
+      - 'assets/data/checklists/**'
+      - 'scripts/sync-backend-checklists.mjs'
+      - 'scripts/check-backend-checklists-sync.mjs'
       - '.github/workflows/backend-security.yml'
   push:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'assets/data/checklists/**'
+      - 'scripts/sync-backend-checklists.mjs'
+      - 'scripts/check-backend-checklists-sync.mjs'
       - '.github/workflows/backend-security.yml'
 
 jobs:
@@ -36,6 +42,9 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/reviewhelm
           DIRECT_URL: postgresql://postgres:postgres@localhost:5432/reviewhelm
         run: npx prisma validate
+
+      - name: Verify checklist bundle sync
+        run: npm run checklists:verify-sync
 
       - name: Typecheck
         run: npm run typecheck

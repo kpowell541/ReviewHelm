@@ -15,6 +15,8 @@
     "openapi:check-routes": "node scripts/check-openapi-routes.mjs",
     "openapi:validate": "node scripts/validate-openapi.mjs",
     "openapi:check-security": "node scripts/check-openapi-security.mjs",
+    "checklists:sync": "node ../scripts/sync-backend-checklists.mjs",
+    "checklists:verify-sync": "node ../scripts/check-backend-checklists-sync.mjs",
     "env:check": "node scripts/check-required-env.mjs",
     "smoke:health": "node scripts/smoke-health.mjs",
     "preflight": "node scripts/preflight.mjs",

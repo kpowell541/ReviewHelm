@@ -1,14 +1,14 @@
-import cLangData from '../../../assets/data/checklists/c-lang.json';
-import goData from '../../../assets/data/checklists/go.json';
-import javaData from '../../../assets/data/checklists/java-protobuf.json';
-import jsTsData from '../../../assets/data/checklists/js-ts-react-node.json';
-import luaData from '../../../assets/data/checklists/lua.json';
-import polishData from '../../../assets/data/checklists/polish-my-pr.json';
-import pythonData from '../../../assets/data/checklists/python.json';
-import rubyData from '../../../assets/data/checklists/ruby.json';
-import swiftObjcData from '../../../assets/data/checklists/swift-objc.json';
-import terraformData from '../../../assets/data/checklists/terraform-hcl.json';
-import webDevopsData from '../../../assets/data/checklists/web-devops-config.json';
+import cLangData from './data/c-lang.json';
+import goData from './data/go.json';
+import javaData from './data/java-protobuf.json';
+import jsTsData from './data/js-ts-react-node.json';
+import luaData from './data/lua.json';
+import polishData from './data/polish-my-pr.json';
+import pythonData from './data/python.json';
+import rubyData from './data/ruby.json';
+import swiftObjcData from './data/swift-objc.json';
+import terraformData from './data/terraform-hcl.json';
+import webDevopsData from './data/web-devops-config.json';
 
 export type ChecklistMode = 'review' | 'polish';
 export type Severity = 'blocker' | 'major' | 'minor' | 'nit';

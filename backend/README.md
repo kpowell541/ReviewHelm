@@ -76,6 +76,7 @@ npm run typecheck
 npm run build
 npm run test
 npm run test:ci
+npm run checklists:verify-sync
 npm run openapi:check-routes
 npm run openapi:validate
 npm run openapi:check-security
@@ -83,6 +84,13 @@ npm run preflight
 ```
 
 The OpenAPI route check verifies implemented controller routes against `../docs/openapi.yaml`.
+
+Checklist JSON source-of-truth lives at `../assets/data/checklists`.
+If checklist files change, sync them into backend with:
+
+```bash
+npm run checklists:sync
+```
 
 ## Test Coverage Focus
 
