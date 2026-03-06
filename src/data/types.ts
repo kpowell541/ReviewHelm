@@ -121,6 +121,8 @@ export interface Session {
   id: string;
   mode: ChecklistMode;
   stackId?: StackId;
+  stackIds?: StackId[];
+  selectedSections?: string[];
   title: string;
   itemResponses: Record<string, ItemResponse>;
   sessionNotes: string;
@@ -128,6 +130,21 @@ export interface Session {
   updatedAt: string;
   completedAt?: string;
   isComplete: boolean;
+}
+
+/** Resolve effective stack IDs from either `stackIds` or legacy `stackId` */
+export function getEffectiveStackIds(session: Session): StackId[] {
+  if (session.stackIds && session.stackIds.length > 0) return session.stackIds;
+  if (session.stackId) return [session.stackId];
+  return [];
+}
+
+export interface SessionTemplate {
+  id: string;
+  name: string;
+  stackIds: StackId[];
+  selectedSections?: string[];
+  createdAt: string;
 }
 
 // ============================================
@@ -143,6 +160,13 @@ export interface ConfidenceRating {
   date: string;
 }
 
+export interface RepetitionState {
+  interval: number;
+  easeFactor: number;
+  nextReviewDate: string;
+  repetitions: number;
+}
+
 export interface ItemConfidenceHistory {
   itemId: string;
   stackId: string;
@@ -153,6 +177,7 @@ export interface ItemConfidenceHistory {
   averageConfidence: number;
   trend: ConfidenceTrend;
   learningPriority: number;
+  repetitionState?: RepetitionState;
 }
 
 // ============================================

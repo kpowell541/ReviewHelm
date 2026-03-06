@@ -15,7 +15,9 @@ import Constants from 'expo-constants';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
+import { useRouter } from 'expo-router';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 import { useUsageStore } from '../src/store/useUsageStore';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
@@ -52,6 +54,9 @@ function maskToken(token: string | null): string {
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
+  const authUser = useAuthStore((s) => s.user);
+  const signOut = useAuthStore((s) => s.signOut);
   const apiKeyToken = usePreferencesStore((s) => s.apiKeyToken);
   const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
   const adminApiKeyToken = usePreferencesStore((s) => s.adminApiKeyToken);
@@ -71,6 +76,8 @@ export default function SettingsScreen() {
   const setFontSize = usePreferencesStore((s) => s.setFontSize);
   const autoExportPdf = usePreferencesStore((s) => s.autoExportPdf);
   const setAutoExportPdf = usePreferencesStore((s) => s.setAutoExportPdf);
+  const themeMode = usePreferencesStore((s) => s.themeMode);
+  const setThemeMode = usePreferencesStore((s) => s.setThemeMode);
 
   const byDay = useUsageStore((s) => s.byDay);
   const bySession = useUsageStore((s) => s.bySession);
@@ -796,6 +803,28 @@ export default function SettingsScreen() {
             </Pressable>
           ))}
         </View>
+        <Text style={[styles.label, styles.inlineLabel]}>Theme</Text>
+        <View style={styles.inlineChoices}>
+          {(['dark', 'light', 'system'] as const).map((mode) => (
+            <Pressable
+              key={mode}
+              style={[
+                styles.inlineChoiceButton,
+                themeMode === mode && styles.inlineChoiceButtonActive,
+              ]}
+              onPress={() => setThemeMode(mode)}
+            >
+              <Text
+                style={[
+                  styles.inlineChoiceText,
+                  themeMode === mode && styles.inlineChoiceTextActive,
+                ]}
+              >
+                {mode[0].toUpperCase() + mode.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       <Text style={styles.sectionTitle}>Data</Text>
@@ -854,6 +883,58 @@ export default function SettingsScreen() {
             trackColor={{ false: colors.border, true: colors.primary }}
           />
         </View>
+      </View>
+
+      <Text style={styles.sectionTitle}>Account</Text>
+      <View style={styles.card}>
+        {authUser ? (
+          <>
+            <Text style={styles.label}>{authUser.email}</Text>
+            <Text style={styles.hint}>
+              Signed in. Your data syncs across devices.
+            </Text>
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={async () => {
+                await signOut();
+                Alert.alert('Signed out', 'You can continue using the app offline.');
+              }}
+            >
+              <Text style={styles.secondaryButtonText}>Sign Out</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={styles.hint}>
+              Sign in to sync your sessions, preferences, and progress
+              across devices.
+            </Text>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => router.push('/auth/login')}
+            >
+              <Text style={styles.primaryButtonText}>Sign In / Sign Up</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
+
+      <Text style={styles.sectionTitle}>Connected Features</Text>
+      <View style={styles.card}>
+        <Pressable
+          style={styles.connectedLink}
+          onPress={() => router.push('/comment-profiles')}
+        >
+          <Text style={styles.connectedLinkText}>Comment Style Profiles</Text>
+          <Text style={styles.connectedLinkArrow}>{'>'}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.connectedLink}
+          onPress={() => router.push('/diffs')}
+        >
+          <Text style={styles.connectedLinkText}>Diff Artifacts</Text>
+          <Text style={styles.connectedLinkArrow}>{'>'}</Text>
+        </Pressable>
       </View>
 
       <Text style={styles.footer}>ReviewHelm v{appVersion}</Text>
@@ -1059,6 +1140,22 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  connectedLink: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  connectedLinkText: {
+    fontSize: fontSizes.md,
+    color: colors.textPrimary,
+  },
+  connectedLinkArrow: {
+    fontSize: fontSizes.md,
+    color: colors.textMuted,
   },
   footer: {
     textAlign: 'center',

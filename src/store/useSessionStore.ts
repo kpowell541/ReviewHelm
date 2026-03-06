@@ -10,6 +10,7 @@ import type {
   Verdict,
   ConfidenceLevel,
 } from '../data/types';
+import { getEffectiveStackIds } from '../data/types';
 
 interface SessionState {
   sessions: Record<string, Session>;
@@ -18,8 +19,9 @@ interface SessionState {
 
   createSession: (
     mode: ChecklistMode,
-    stackId?: StackId,
-    title?: string
+    stackIds?: StackId[],
+    title?: string,
+    selectedSections?: string[]
   ) => string;
   setItemResponse: (
     sessionId: string,
@@ -43,7 +45,7 @@ export const useSessionStore = create<SessionState>()(
       hasHydrated: false,
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
-      createSession: (mode, stackId, title) => {
+      createSession: (mode, stackIds, title, selectedSections) => {
         const id = uuidv4();
         const now = new Date().toISOString();
         const defaultTitle =
@@ -53,7 +55,9 @@ export const useSessionStore = create<SessionState>()(
         const session: Session = {
           id,
           mode,
-          stackId,
+          stackId: stackIds?.[0],
+          stackIds: stackIds ?? [],
+          selectedSections,
           title: defaultTitle,
           itemResponses: {},
           sessionNotes: '',
@@ -159,9 +163,12 @@ export const useSessionStore = create<SessionState>()(
 
       getSessionsByMode: (mode, stackId) => {
         return Object.values(get().sessions)
-          .filter(
-            (s) => s.mode === mode && (!stackId || s.stackId === stackId)
-          )
+          .filter((s) => {
+            if (s.mode !== mode) return false;
+            if (!stackId) return true;
+            const effective = getEffectiveStackIds(s);
+            return effective.includes(stackId);
+          })
           .sort(
             (a, b) =>
               new Date(b.updatedAt).getTime() -

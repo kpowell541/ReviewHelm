@@ -26,6 +26,15 @@
       "expo-font",
       "expo-sharing",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "apiBaseUrl": "",
+      "apiBasePath": "",
+      "supabaseUrl": "",
+      "supabaseAnonKey": "",
+      "eas": {
+        "projectId": ""
+      }
+    }
   }
 }

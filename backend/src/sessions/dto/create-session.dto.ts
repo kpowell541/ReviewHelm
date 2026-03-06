@@ -1,5 +1,11 @@
 import { ChecklistMode } from '@prisma/client';
-import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateSessionDto {
   @IsEnum(ChecklistMode)
@@ -8,6 +14,16 @@ export class CreateSessionDto {
   @IsOptional()
   @IsString()
   stackId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  stackIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  selectedSections?: string[];
 
   @IsOptional()
   @IsString()

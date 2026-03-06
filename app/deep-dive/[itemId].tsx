@@ -12,7 +12,9 @@ import {
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { findItemById } from '../../src/data/checklistFinder';
+import { useBookmarkStore } from '../../src/store/useBookmarkStore';
 import { usePreferencesStore } from '../../src/store/usePreferencesStore';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { useTutorStore } from '../../src/store/useTutorStore';
@@ -49,6 +51,8 @@ export default function DeepDiveScreen() {
   const decodedSessionId = sessionId ? decodeURIComponent(sessionId) : undefined;
 
   const found = useMemo(() => findItemById(itemId), [itemId]);
+  const isBookmarked = useBookmarkStore((s) => s.isBookmarked(itemId));
+  const toggleBookmark = useBookmarkStore((s) => s.toggleBookmark);
   const history = useConfidenceStore((s) => s.getItemHistory(itemId));
   const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
   const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
@@ -194,6 +198,16 @@ export default function DeepDiveScreen() {
           <Text style={styles.stackLabel}>
             {stackTitle} · {sectionTitle}
           </Text>
+          <Pressable
+            onPress={() => {
+              void Haptics.selectionAsync();
+              toggleBookmark(itemId);
+            }}
+            hitSlop={8}
+            style={styles.bookmarkButton}
+          >
+            <Text style={styles.bookmarkIcon}>{isBookmarked ? '★' : '☆'}</Text>
+          </Pressable>
         </View>
         <Text style={styles.itemText}>{item.text}</Text>
         {history && (
@@ -225,14 +239,23 @@ export default function DeepDiveScreen() {
           style={[styles.tab, activeTab === 'tutor' && styles.tabActive]}
           onPress={() => setActiveTab('tutor')}
         >
-          <Text
-            style={[
-              styles.tabText,
-              activeTab === 'tutor' && styles.tabTextActive,
-            ]}
-          >
-            🎓 AI Tutor
-          </Text>
+          <View style={styles.tabWithBadge}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'tutor' && styles.tabTextActive,
+              ]}
+            >
+              🎓 AI Tutor
+            </Text>
+            {persistedMessages.length > 0 && activeTab !== 'tutor' && (
+              <View style={styles.chatBadge}>
+                <Text style={styles.chatBadgeText}>
+                  {persistedMessages.length}
+                </Text>
+              </View>
+            )}
+          </View>
         </Pressable>
       </View>
 
@@ -638,6 +661,14 @@ const styles = StyleSheet.create({
   stackLabel: {
     fontSize: fontSizes.xs,
     color: colors.textMuted,
+    flex: 1,
+  },
+  bookmarkButton: {
+    padding: spacing.xs,
+  },
+  bookmarkIcon: {
+    fontSize: 22,
+    color: colors.warning,
   },
   itemText: {
     fontSize: fontSizes.lg,
@@ -677,6 +708,25 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: colors.primary,
+  },
+  tabWithBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  chatBadge: {
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  chatBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
   },
 
   // Base Content

@@ -15,9 +15,11 @@ import { useUsageStore } from '../../src/store/useUsageStore';
 import {
   getChecklist,
   getPolishChecklist,
+  getMergedChecklist,
 } from '../../src/data/checklistLoader';
 import {
   getAllChecklistItems,
+  getEffectiveStackIds,
   CONFIDENCE_LABELS,
   CONFIDENCE_EMOJI,
   AI_FEATURE_LABELS,
@@ -25,6 +27,8 @@ import {
 import type { ConfidenceLevel } from '../../src/data/types';
 import { computeSessionScores } from '../../src/utils/scoring';
 import { generateReportCardHtml } from '../../src/pdf/generateReportCard';
+import { generateSessionMarkdown } from '../../src/utils/exportMarkdown';
+import * as FileSystem from 'expo-file-system';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function SessionSummaryScreen() {
@@ -44,11 +48,11 @@ export default function SessionSummaryScreen() {
 
   const checklist = useMemo(() => {
     if (!session) return null;
-    return session.mode === 'polish'
-      ? getPolishChecklist()
-      : session.stackId
-        ? getChecklist(session.stackId)
-        : null;
+    if (session.mode === 'polish') return getPolishChecklist();
+    const effectiveIds = getEffectiveStackIds(session);
+    if (effectiveIds.length === 0) return null;
+    if (effectiveIds.length === 1) return getChecklist(effectiveIds[0]);
+    return getMergedChecklist(effectiveIds, session.selectedSections);
   }, [session]);
 
   const allItems = useMemo(
@@ -103,6 +107,29 @@ export default function SessionSummaryScreen() {
       });
     } catch {
       // User cancelled sharing — not an error
+    } finally {
+      setExporting(false);
+    }
+  }, [session, scores, allItems, checklist]);
+
+  const handleExportMarkdown = useCallback(async () => {
+    if (!session || !scores) return;
+    setExporting(true);
+    try {
+      const md = generateSessionMarkdown(
+        session,
+        scores,
+        allItems,
+        checklist?.meta.title ?? 'Review',
+      );
+      const file = new FileSystem.File(FileSystem.Paths.cache, 'reviewhelm-report.md');
+      file.write(md);
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'text/markdown',
+        dialogTitle: 'Share Markdown Report',
+      });
+    } catch {
+      // User cancelled sharing
     } finally {
       setExporting(false);
     }
@@ -277,20 +304,29 @@ export default function SessionSummaryScreen() {
         )}
       </View>
 
-      {/* Export Button */}
-      <Pressable
-        style={[styles.exportButton, exporting && styles.buttonDisabled]}
-        onPress={handleExportPdf}
-        disabled={exporting}
-      >
-        {exporting ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={styles.exportButtonText}>
-            📄 Export as PDF Report Card
+      {/* Export Buttons */}
+      <View style={styles.exportRow}>
+        <Pressable
+          style={[styles.exportButton, exporting && styles.buttonDisabled]}
+          onPress={handleExportPdf}
+          disabled={exporting}
+        >
+          {exporting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.exportButtonText}>📄 Export PDF</Text>
+          )}
+        </Pressable>
+        <Pressable
+          style={[styles.exportButton, styles.exportButtonSecondary, exporting && styles.buttonDisabled]}
+          onPress={handleExportMarkdown}
+          disabled={exporting}
+        >
+          <Text style={[styles.exportButtonText, styles.exportButtonSecondaryText]}>
+            📝 Export Markdown
           </Text>
-        )}
-      </Pressable>
+        </Pressable>
+      </View>
 
       <View style={{ height: spacing['4xl'] }} />
     </ScrollView>
@@ -494,19 +530,32 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
   },
+  exportRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
   exportButton: {
+    flex: 1,
     backgroundColor: colors.primary,
     borderRadius: radius.md,
-    padding: spacing.lg,
+    padding: spacing.md,
     alignItems: 'center',
-    marginTop: spacing.md,
+  },
+  exportButtonSecondary: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   exportButtonText: {
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.sm,
     fontWeight: '600',
     color: '#fff',
+  },
+  exportButtonSecondaryText: {
+    color: colors.textSecondary,
   },
 });

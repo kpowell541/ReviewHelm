@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Checklist, StackId } from './types';
+import type { Checklist, ChecklistSection, StackId } from './types';
+import { getSectionItems } from './types';
+import { getStackInfo } from './checklistRegistry';
 
 import javaProtobufData from '../../assets/data/checklists/java-protobuf.json';
 import jsTsReactNodeData from '../../assets/data/checklists/js-ts-react-node.json';
@@ -143,4 +145,52 @@ export function getAllChecklists(): Checklist[] {
 
 export function getChecklistMap(): ChecklistMap {
   return { ...loadedChecklists };
+}
+
+/**
+ * Merge multiple stack checklists into a single combined checklist.
+ * Section titles are prefixed with [StackShortTitle] for clarity.
+ * Optionally filter to specific sections via selectedSections.
+ */
+export function getMergedChecklist(
+  stackIds: StackId[],
+  selectedSections?: string[],
+): Checklist {
+  const checklists = stackIds.map((id) => getChecklist(id));
+
+  const mergedSections: ChecklistSection[] = [];
+  let totalItems = 0;
+
+  for (const checklist of checklists) {
+    const stackInfo = getStackInfo(checklist.meta.id as StackId);
+    for (const section of checklist.sections) {
+      if (
+        selectedSections &&
+        selectedSections.length > 0 &&
+        !selectedSections.includes(section.id)
+      ) {
+        continue;
+      }
+      mergedSections.push({
+        ...section,
+        title: `[${stackInfo.shortTitle}] ${section.title}`,
+      });
+      totalItems += getSectionItems(section).length;
+    }
+  }
+
+  const first = checklists[0];
+  return {
+    meta: {
+      id: stackIds.join('+'),
+      mode: 'review',
+      title: checklists.map((c) => c.meta.shortTitle).join(' + '),
+      shortTitle: checklists.map((c) => c.meta.shortTitle).join('+'),
+      description: `Combined: ${checklists.map((c) => c.meta.title).join(', ')}`,
+      icon: first.meta.icon,
+      totalItems,
+      version: first.meta.version,
+    },
+    sections: mergedSections,
+  };
 }
