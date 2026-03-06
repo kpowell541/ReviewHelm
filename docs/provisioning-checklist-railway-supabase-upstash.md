@@ -91,7 +91,6 @@ Set these in Railway service variables:
 
 ```bash
 NODE_ENV=production
-PORT=3000
 API_BASE_PATH=api/v1
 API_PUBLIC_URL=https://YOUR_RAILWAY_DOMAIN
 APP_VERSION=0.1.0
@@ -117,6 +116,12 @@ OPUS_OUTPUT_COST_PER_MILLION_USD=75
 KEY_ENCRYPTION_MASTER_KEY=REPLACE_ME
 ALLOWED_ORIGINS=reviewhelm://auth/callback,exp://127.0.0.1:19000
 ```
+
+Port note:
+
+- Do not hardcode `PORT` in Railway unless absolutely needed.
+- Railway injects the runtime `PORT` automatically.
+- If a manual listener port is configured in Railway networking, it must match the app runtime port exactly.
 
 ## 6.3 Deploy checks
 

@@ -9,6 +9,7 @@ Use this checklist before opening the app beyond a single-user test.
 - [ ] `GET /api/v1/health` returns `200` on staging.
 - [ ] `GET /api/v1/health/ready` returns `ok: true` with both checks healthy.
 - [ ] Railway healthcheck path is explicitly set to `/` (or `/api/v1/health`).
+- [ ] Railway listener target port matches app runtime listen port in logs.
 - [ ] Railway deploy logs show `Environment check passed` before app start.
 - [ ] Railway restart count is stable (no crash loop after startup).
 
