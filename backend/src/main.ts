@@ -20,6 +20,17 @@ async function bootstrap() {
   const isProduction = config.get('NODE_ENV') === 'production';
   const strictStartupChecks = config.get('STRICT_STARTUP_CHECKS');
   const bodyLimit = config.get('REQUEST_BODY_LIMIT');
+  const expressApp = app.getHttpAdapter().getInstance() as express.Express;
+
+  // Keep root liveness outside the API prefix for platform probes.
+  expressApp.get('/', (_req: express.Request, res: express.Response) => {
+    res.status(200).json({
+      ok: true,
+      service: 'reviewhelm-api',
+      status: 'live',
+      time: new Date().toISOString(),
+    });
+  });
 
   app.setGlobalPrefix(config.get('API_BASE_PATH'));
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
