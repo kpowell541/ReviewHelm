@@ -606,7 +606,7 @@ module.exports = {
     howToVerify: "- Search the diff for hardcoded API keys, passwords, or tokens\n- Check that secrets use `ENV['KEY']` or `Rails.application.credentials`\n- Verify `.env` files are in `.gitignore`",
     exampleComment: "This API key is hardcoded in the source. Could you move it to `Rails.application.credentials` or an environment variable?",
     codeExamples: [
-      { label: "Bad", language: "ruby", code: "STRIPE_KEY = 'sk_live_abc123def456'\nDATABASE_URL = 'postgres://user:pass@host/db'" },
+      { label: "Bad", language: "ruby", code: "STRIPE_KEY = '<hardcoded-secret>'\nDATABASE_URL = 'postgres://user:pass@host/db'" },
       { label: "Good", language: "ruby", code: "STRIPE_KEY = ENV.fetch('STRIPE_KEY')\n# or\nSTRIPE_KEY = Rails.application.credentials.stripe[:secret_key]" }
     ],
     keyTakeaway: "Never hardcode secrets — use environment variables or Rails encrypted credentials.",

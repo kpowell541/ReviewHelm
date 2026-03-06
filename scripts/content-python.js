@@ -895,7 +895,7 @@ module.exports = {
     howToVerify: "- Search for hardcoded API keys, passwords, or tokens in the diff\n- Check that secrets use `os.environ` or a secret manager\n- Verify `.env` files are in `.gitignore`",
     exampleComment: "This API key is hardcoded. Could you move it to an environment variable: `api_key = os.environ['STRIPE_KEY']`?",
     codeExamples: [
-      { label: "Bad", language: "python", code: "STRIPE_KEY = 'sk_live_abc123def456'\nDATABASE_URL = 'postgres://user:pass@host/db'" },
+      { label: "Bad", language: "python", code: "STRIPE_KEY = '<hardcoded-secret>'\nDATABASE_URL = 'postgres://user:pass@host/db'" },
       { label: "Good", language: "python", code: "STRIPE_KEY = os.environ['STRIPE_KEY']\nDATABASE_URL = os.environ['DATABASE_URL']" }
     ],
     keyTakeaway: "Never hardcode secrets — use environment variables or secret managers.",

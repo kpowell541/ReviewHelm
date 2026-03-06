@@ -1341,7 +1341,7 @@
               {
                 "label": "Bad",
                 "language": "ruby",
-                "code": "STRIPE_KEY = 'sk_live_abc123def456'\nDATABASE_URL = 'postgres://user:pass@host/db'"
+                "code": "STRIPE_KEY = '<hardcoded-secret>'\nDATABASE_URL = 'postgres://user:pass@host/db'"
               },
               {
                 "label": "Good",

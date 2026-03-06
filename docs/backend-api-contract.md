@@ -219,7 +219,7 @@ Common `error.code` values:
 ```json
 {
   "configured": true,
-  "tokenHint": "atk_ab12cd...89ef",
+  "tokenHint": "token_hint_...89ef",
   "updatedAt": "2026-03-05T12:00:00.000Z",
   "keySource": "byok",
   "keyVersion": 2

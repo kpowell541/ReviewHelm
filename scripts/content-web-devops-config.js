@@ -586,9 +586,9 @@ module.exports = {
     whatItMeans: "Passwords, API keys, and tokens are not hardcoded in shell scripts. They're loaded from environment variables or secret managers.",
     whyItMatters: "Shell scripts are often committed to version control. Hardcoded secrets in scripts end up in git history and are easily discovered.",
     howToVerify: "- Search for hardcoded passwords, API keys, tokens in scripts\n- Check that secrets use environment variables\n- Verify `.env` files are in `.gitignore`",
-    exampleComment: "The `API_KEY='sk_live_...'` is hardcoded in the deploy script. Move it to an environment variable or CI secret.",
+    exampleComment: "The `API_KEY='<secret>...'` is hardcoded in the deploy script. Move it to an environment variable or CI secret.",
     codeExamples: [
-      { label: "Bad", language: "bash", code: "API_KEY=\"sk_live_abc123\"\ncurl -H \"Authorization: Bearer $API_KEY\" https://api.example.com" },
+      { label: "Bad", language: "bash", code: "API_KEY=\"<hardcoded-secret>\"\ncurl -H \"Authorization: Bearer $API_KEY\" https://api.example.com" },
       { label: "Good", language: "bash", code: "if [[ -z \"${API_KEY:-}\" ]]; then\n  echo \"Error: API_KEY not set\" >&2\n  exit 1\nfi\ncurl -H \"Authorization: Bearer $API_KEY\" https://api.example.com" }
     ],
     keyTakeaway: "Never hardcode secrets in scripts — use environment variables and verify they're set.",
@@ -748,10 +748,10 @@ module.exports = {
     whatItMeans: "Secrets are not embedded in Docker images via ENV, ARG, or COPY. They're injected at runtime or use BuildKit secrets.",
     whyItMatters: "Anyone with image access can extract secrets from ENV variables and layers. Secrets baked into images end up in registries and CI caches.",
     howToVerify: "- Check for `ENV SECRET=...` or `ARG SECRET=...` with real values\n- Look for COPY of `.env` or credential files into the image\n- Verify secrets use runtime injection or BuildKit `--mount=type=secret`",
-    exampleComment: "The `ENV API_KEY=sk_live_...` bakes the secret into every layer of the image. Use runtime environment variables or Docker secrets instead.",
+    exampleComment: "The `ENV API_KEY=<secret>...` bakes the secret into every layer of the image. Use runtime environment variables or Docker secrets instead.",
     codeExamples: [
-      { label: "Bad", language: "dockerfile", code: "ENV API_KEY=sk_live_abc123  # Baked into image!\nCOPY .env /app/.env  # Secrets in image!" },
-      { label: "Good", language: "dockerfile", code: "# Secrets injected at runtime:\n# docker run -e API_KEY=sk_live_abc123 myapp\n\n# Or with BuildKit secrets (build-time only):\nRUN --mount=type=secret,id=api_key cat /run/secrets/api_key" }
+      { label: "Bad", language: "dockerfile", code: "ENV API_KEY=<hardcoded-secret>  # Baked into image!\nCOPY .env /app/.env  # Secrets in image!" },
+      { label: "Good", language: "dockerfile", code: "# Secrets injected at runtime:\n# docker run -e API_KEY=<hardcoded-secret> myapp\n\n# Or with BuildKit secrets (build-time only):\nRUN --mount=type=secret,id=api_key cat /run/secrets/api_key" }
     ],
     keyTakeaway: "Never bake secrets into images — use runtime environment variables or Docker secrets.",
     references: []
@@ -900,7 +900,7 @@ module.exports = {
     howToVerify: "- Check for hardcoded passwords, tokens, or API keys in Jenkinsfiles\n- Verify `credentials()` or `withCredentials()` is used\n- Look for credentials echoed in log output",
     exampleComment: "The API token is hardcoded in the Jenkinsfile. Use `credentials('api-token-id')` to load it from Jenkins' secure credential store.",
     codeExamples: [
-      { label: "Bad", language: "groovy", code: "sh \"curl -H 'Authorization: Bearer sk_live_abc123' ...\"" },
+      { label: "Bad", language: "groovy", code: "sh \"curl -H 'Authorization: Bearer <hardcoded-secret>' ...\"" },
       { label: "Good", language: "groovy", code: "environment {\n  API_TOKEN = credentials('api-token-id')\n}\nsteps {\n  sh 'curl -H \"Authorization: Bearer $API_TOKEN\" ...'\n}" }
     ],
     keyTakeaway: "Use Jenkins credentials store — it masks secrets in logs and supports rotation.",

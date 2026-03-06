@@ -2275,7 +2275,7 @@ module.exports = {
     {
       label: "Bad",
       language: "java",
-      code: "private static final String API_KEY = \"sk_live_abc123def456\";\nprivate static final String DB_PASSWORD = \"p@ssw0rd\";"
+      code: "private static final String API_KEY = \"<hardcoded-secret>\";\nprivate static final String DB_PASSWORD = \"p@ssw0rd\";"
     },
     {
       label: "Good",
