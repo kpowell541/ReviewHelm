@@ -33,8 +33,9 @@
       "supabaseUrl": "",
       "supabaseAnonKey": "",
       "eas": {
-        "projectId": ""
-      }
+        "projectId": "ea27d76e-bd46-4b37-adfc-a175def827ba"
+      },
+      "router": {}
     }
   }
 }
