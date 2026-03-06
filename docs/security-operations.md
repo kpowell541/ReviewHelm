@@ -20,7 +20,10 @@
   - `AWS_KMS_KEY_ID`
 - Set `ADMIN_USER_IDS` for allowed security admins.
 - Keep Swagger docs disabled in production (`ENABLE_SWAGGER_DOCS=false`).
-- Health and readiness probes are authenticated; uptime checks must include OAuth bearer tokens.
+- Keep public liveness/readiness endpoints monitored:
+  - `GET /`
+  - `GET /api/v1/health`
+  - `GET /api/v1/health/ready`
 - Run backend preflight (`npm run preflight`) before production cutovers.
 
 ## Rotation Procedure

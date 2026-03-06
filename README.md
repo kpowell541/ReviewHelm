@@ -59,3 +59,9 @@ npm run openapi:check-routes
 npm run openapi:validate
 npm run openapi:check-security
 ```
+
+## Operational Docs
+
+- Provisioning: [`docs/provisioning-checklist-railway-supabase-upstash.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/provisioning-checklist-railway-supabase-upstash.md)
+- Security baseline: [`docs/security-operations.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/security-operations.md)
+- Release gate: [`docs/release-readiness-checklist.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/release-readiness-checklist.md)

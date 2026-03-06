@@ -122,9 +122,10 @@ ALLOWED_ORIGINS=reviewhelm://auth/callback,exp://127.0.0.1:19000
 
 After deploy:
 
-1. `GET https://YOUR_RAILWAY_DOMAIN/api/v1/health` with `Authorization: Bearer <supabase_jwt>` should return `ok: true`
-2. `GET https://YOUR_RAILWAY_DOMAIN/api/v1/health/ready` with JWT should return DB/Redis readiness
-3. Keep `ENABLE_SWAGGER_DOCS=false` in production
+1. `GET https://YOUR_RAILWAY_DOMAIN/` should return `ok: true`
+2. `GET https://YOUR_RAILWAY_DOMAIN/api/v1/health` should return `ok: true`
+3. `GET https://YOUR_RAILWAY_DOMAIN/api/v1/health/ready` should return DB/Redis readiness
+4. Keep `ENABLE_SWAGGER_DOCS=false` in production
 
 ## 7. Prisma Setup and Migrations
 
