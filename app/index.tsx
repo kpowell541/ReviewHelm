@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -71,11 +71,33 @@ export default function HomeScreen() {
   const hasCompletedOnboarding = usePreferencesStore(
     (s) => s.hasCompletedOnboarding,
   );
-  const recentSessions = useSessionStore((s) => s.getRecentSessions(3));
-  const weakest = useConfidenceStore((s) => s.getWeakestItems(5));
-  const dueItems = useConfidenceStore((s) => s.getDueItems());
-  const gapCount = weakest.filter((w) => w.currentConfidence <= 2).length;
-  const activePRCount = usePRTrackerStore((s) => s.getActivePRs().length);
+  const sessions = useSessionStore((s) => s.sessions);
+  const histories = useConfidenceStore((s) => s.histories);
+  const prs = usePRTrackerStore((s) => s.prs);
+
+  const recentSessions = useMemo(() => {
+    return Object.values(sessions)
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+      .slice(0, 3);
+  }, [sessions]);
+
+  const { gapCount, dueCount } = useMemo(() => {
+    const items = Object.values(histories);
+    const weakCount = items
+      .filter((h) => h.currentConfidence <= 2)
+      .length;
+    const due = items.filter((h) => {
+      if (!h.repetitionState?.nextReviewDate) return false;
+      return new Date(h.repetitionState.nextReviewDate).getTime() <= Date.now();
+    }).length;
+    return { gapCount: Math.min(weakCount, 5), dueCount: due };
+  }, [histories]);
+
+  const activePRCount = useMemo(() => {
+    return Object.values(prs).filter(
+      (pr) => ['open', 'in-review', 'changes-requested', 'approved'].includes(pr.status),
+    ).length;
+  }, [prs]);
 
   useEffect(() => {
     if (!hasCompletedOnboarding) {
@@ -124,10 +146,10 @@ export default function HomeScreen() {
             color={colors.gapsMode}
             onPress={() => router.push('/gaps')}
             badge={
-              gapCount > 0 || dueItems.length > 0
+              gapCount > 0 || dueCount > 0
                 ? [
                     gapCount > 0 ? `${gapCount} gaps` : '',
-                    dueItems.length > 0 ? `${dueItems.length} due` : '',
+                    dueCount > 0 ? `${dueCount} due` : '',
                   ].filter(Boolean).join(' · ')
                 : undefined
             }
@@ -170,12 +192,12 @@ export default function HomeScreen() {
           >
             <Text style={styles.quickLinkText}>📊 Trends</Text>
           </Pressable>
-          {dueItems.length > 0 && (
+          {dueCount > 0 && (
             <Pressable
               style={styles.quickLink}
               onPress={() => router.push('/review/due-items')}
             >
-              <Text style={styles.quickLinkText}>🔁 Due ({dueItems.length})</Text>
+              <Text style={styles.quickLinkText}>🔁 Due ({dueCount})</Text>
             </Pressable>
           )}
         </View>

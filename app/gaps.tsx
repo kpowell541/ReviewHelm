@@ -72,9 +72,22 @@ function GapCard({ gap, onPress }: { gap: ItemConfidenceHistory; onPress: () => 
 
 export default function GapsScreen() {
   const router = useRouter();
-  const weakest = useConfidenceStore((s) => s.getWeakestItems(50));
-  const dueItems = useConfidenceStore((s) => s.getDueItems());
+  const histories = useConfidenceStore((s) => s.histories);
   const [filter, setFilter] = useState<GapFilter>('all');
+
+  const weakest = useMemo(() => {
+    return Object.values(histories)
+      .sort((a, b) => a.learningPriority - b.learningPriority)
+      .slice(0, 50);
+  }, [histories]);
+
+  const dueItems = useMemo(() => {
+    const now = Date.now();
+    return Object.values(histories).filter((h) => {
+      if (!h.repetitionState?.nextReviewDate) return false;
+      return new Date(h.repetitionState.nextReviewDate).getTime() <= now;
+    });
+  }, [histories]);
 
   const activeGaps = useMemo(
     () => weakest.filter((w) => w.currentConfidence <= 2),

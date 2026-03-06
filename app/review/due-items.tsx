@@ -37,8 +37,15 @@ const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
 
 export default function DueItemsScreen() {
   const router = useRouter();
-  const dueItems = useConfidenceStore((s) => s.getDueItems());
   const histories = useConfidenceStore((s) => s.histories);
+
+  const dueItems = useMemo(() => {
+    const now = Date.now();
+    return Object.values(histories).filter((h) => {
+      if (!h.repetitionState?.nextReviewDate) return false;
+      return new Date(h.repetitionState.nextReviewDate).getTime() <= now;
+    });
+  }, [histories]);
   const [reviewed, setReviewed] = useState<Record<string, ConfidenceLevel>>({});
   const [revealedId, setRevealedId] = useState<string | null>(null);
 
