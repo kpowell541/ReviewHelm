@@ -9,17 +9,20 @@ import {
 import { useMemo } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSessionStore } from '../../src/store/useSessionStore';
+import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { getStackInfo } from '../../src/data/checklistRegistry';
 import type { StackId } from '../../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function ReviewSessionsScreen() {
   const router = useRouter();
-  const { stack, stacks, sections } = useLocalSearchParams<{
+  const { stack, stacks, sections, repo } = useLocalSearchParams<{
     stack?: string;
     stacks?: string;
     sections?: string;
+    repo?: string;
   }>();
+  const saveRepoConfig = useRepoConfigStore((s) => s.saveRepoConfig);
 
   const stackIds: StackId[] = useMemo(() => {
     if (stacks) return stacks.split(',') as StackId[];
@@ -71,6 +74,7 @@ export default function ReviewSessionsScreen() {
 
   const handleNewSession = () => {
     const id = createSession('review', stackIds, undefined, selectedSections);
+    if (repo) saveRepoConfig(repo, stackIds, selectedSections);
     router.push(`/review/${id}`);
   };
 

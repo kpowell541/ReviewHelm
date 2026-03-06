@@ -6,12 +6,14 @@ import { getStackInfo } from '../../src/data/checklistRegistry';
 import { getSectionItems } from '../../src/data/types';
 import type { StackId } from '../../src/data/types';
 import { useTemplateStore } from '../../src/store/useTemplateStore';
+import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function SectionSelectScreen() {
   const router = useRouter();
   const saveTemplate = useTemplateStore((s) => s.saveTemplate);
-  const { stacks } = useLocalSearchParams<{ stacks: string }>();
+  const saveRepoConfig = useRepoConfigStore((s) => s.saveRepoConfig);
+  const { stacks, repo } = useLocalSearchParams<{ stacks: string; repo?: string }>();
   const stackIds = useMemo(
     () => (stacks ? (stacks.split(',') as StackId[]) : []),
     [stacks],
@@ -74,13 +76,15 @@ export default function SectionSelectScreen() {
     });
   };
 
+  const repoParam = repo ? `&repo=${encodeURIComponent(repo)}` : '';
+
   const handleContinue = () => {
     if (selected.size === 0) return;
     const selectedArray = [...selected];
     const isAllSelected = selectedArray.length === allSectionIds.length;
     const params = `stacks=${stackIds.join(',')}${
       isAllSelected ? '' : `&sections=${selectedArray.join(',')}`
-    }`;
+    }${repoParam}`;
     router.push(`/review/sessions?${params}` as '/review/sessions');
   };
 
@@ -207,6 +211,7 @@ export default function SectionSelectScreen() {
               onSubmitEditing={() => {
                 if (templateName.trim()) {
                   saveTemplate(templateName.trim(), stackIds, [...selected]);
+                  if (repo) saveRepoConfig(repo, stackIds, [...selected]);
                   setShowNameModal(false);
                   Alert.alert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
                 }
@@ -223,6 +228,7 @@ export default function SectionSelectScreen() {
                 onPress={() => {
                   if (templateName.trim()) {
                     saveTemplate(templateName.trim(), stackIds, [...selected]);
+                    if (repo) saveRepoConfig(repo, stackIds, [...selected]);
                     setShowNameModal(false);
                     Alert.alert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
                   }

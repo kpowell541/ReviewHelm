@@ -11,6 +11,7 @@ import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
+import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
 import { initializeChecklistCache } from '../src/data/checklistLoader';
 import { runSync } from '../src/sync/syncEngine';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -33,6 +34,7 @@ export default function RootLayout() {
   const tutorHydrated = useTutorStore((s) => s.hasHydrated);
   const syncHydrated = useSyncStore((s) => s.hasHydrated);
   const prTrackerHydrated = usePRTrackerStore((s) => s.hasHydrated);
+  const repoConfigHydrated = useRepoConfigStore((s) => s.hasHydrated);
   const initAuth = useAuthStore((s) => s.initialize);
   const authUser = useAuthStore((s) => s.user);
 
@@ -57,6 +59,7 @@ export default function RootLayout() {
     tutorHydrated &&
     syncHydrated &&
     prTrackerHydrated &&
+    repoConfigHydrated &&
     isApiKeyLoaded &&
     cacheReady;
 

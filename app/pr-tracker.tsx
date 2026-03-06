@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import type {
@@ -55,6 +56,7 @@ const EMPTY_FORM = {
 };
 
 export default function PRTrackerScreen() {
+  const router = useRouter();
   const store = usePRTrackerStore();
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -152,6 +154,16 @@ export default function PRTrackerScreen() {
       store.markReviewed(pr.id);
     },
     [store],
+  );
+
+  const handleStartReview = useCallback(
+    (pr: TrackedPR) => {
+      const route = pr.repo
+        ? `/review/stack-select?repo=${encodeURIComponent(pr.repo)}`
+        : '/review/stack-select';
+      router.push(route as '/review/stack-select');
+    },
+    [router],
   );
 
   const cycleStatus = useCallback(
@@ -311,15 +323,24 @@ export default function PRTrackerScreen() {
           </View>
         </View>
         {pr.role === 'reviewer' && (
-          <Pressable
-            style={styles.reviewButton}
-            onPress={() => handleMarkReviewed(pr)}
-            hitSlop={6}
-          >
-            <Text style={styles.reviewButtonText}>
-              {pr.lastReviewedAt && isToday(pr.lastReviewedAt) ? '✓' : '○'}
-            </Text>
-          </Pressable>
+          <View style={styles.reviewActions}>
+            <Pressable
+              style={styles.startReviewButton}
+              onPress={() => handleStartReview(pr)}
+              hitSlop={6}
+            >
+              <Text style={styles.startReviewText}>Review</Text>
+            </Pressable>
+            <Pressable
+              style={styles.reviewButton}
+              onPress={() => handleMarkReviewed(pr)}
+              hitSlop={6}
+            >
+              <Text style={styles.reviewButtonText}>
+                {pr.lastReviewedAt && isToday(pr.lastReviewedAt) ? '✓' : '○'}
+              </Text>
+            </Pressable>
+          </View>
         )}
       </Pressable>
     );
@@ -784,6 +805,25 @@ const styles = StyleSheet.create({
   emergencyBadge: {
     backgroundColor: colors.error + '25',
     color: colors.error,
+  },
+
+  // Review actions
+  reviewActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginLeft: spacing.sm,
+  },
+  startReviewButton: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    backgroundColor: colors.reviewMode + '20',
+  },
+  startReviewText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+    color: colors.reviewMode,
   },
 
   // Review button

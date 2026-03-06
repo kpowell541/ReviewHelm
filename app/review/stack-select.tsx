@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { STACKS, getStackInfo } from '../../src/data/checklistRegistry';
 import type { StackId } from '../../src/data/types';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { useTemplateStore } from '../../src/store/useTemplateStore';
+import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
 export default function StackSelectScreen() {
   const router = useRouter();
+  const { repo } = useLocalSearchParams<{ repo?: string }>();
   const getSectionAverages = useConfidenceStore((s) => s.getSectionAverages);
   const templates = useTemplateStore((s) => s.getTemplates());
   const deleteTemplate = useTemplateStore((s) => s.deleteTemplate);
+  const repoConfig = useRepoConfigStore((s) => repo ? s.getRepoConfig(repo) : undefined);
   const [selectedStacks, setSelectedStacks] = useState<StackId[]>([]);
 
   const toggleStack = (stackId: StackId) => {
@@ -22,20 +25,60 @@ export default function StackSelectScreen() {
     );
   };
 
+  const repoParam = repo ? `&repo=${encodeURIComponent(repo)}` : '';
+
   const handleContinue = () => {
     if (selectedStacks.length === 0) return;
     if (selectedStacks.length === 1) {
-      router.push(`/review/sessions?stack=${selectedStacks[0]}`);
+      router.push(`/review/sessions?stack=${selectedStacks[0]}${repoParam}` as '/review/sessions');
     } else {
       router.push(
-        `/review/sessions?stacks=${selectedStacks.join(',')}` as '/review/sessions',
+        `/review/sessions?stacks=${selectedStacks.join(',')}${repoParam}` as '/review/sessions',
       );
     }
+  };
+
+  const handleUseRepoConfig = () => {
+    if (!repoConfig) return;
+    const params = repoConfig.selectedSections?.length
+      ? `stacks=${repoConfig.stackIds.join(',')}&sections=${repoConfig.selectedSections.join(',')}${repoParam}`
+      : repoConfig.stackIds.length === 1
+        ? `stack=${repoConfig.stackIds[0]}${repoParam}`
+        : `stacks=${repoConfig.stackIds.join(',')}${repoParam}`;
+    router.push(`/review/sessions?${params}` as '/review/sessions');
   };
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
+        {repo && repoConfig && (
+          <Pressable
+            onPress={handleUseRepoConfig}
+            style={({ pressed }) => [
+              styles.repoBanner,
+              { opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <View style={styles.repoBannerContent}>
+              <Text style={styles.repoBannerTitle}>
+                Saved config for {repo}
+              </Text>
+              <Text style={styles.repoBannerMeta}>
+                {repoConfig.stackIds
+                  .map((id) => {
+                    try { return getStackInfo(id).shortTitle; }
+                    catch { return id; }
+                  })
+                  .join(' + ')}
+                {repoConfig.selectedSections
+                  ? ` · ${repoConfig.selectedSections.length} sections`
+                  : ''}
+              </Text>
+            </View>
+            <Text style={styles.repoBannerAction}>Use this ›</Text>
+          </Pressable>
+        )}
+
         {templates.length > 0 && (
           <>
             <Text style={styles.heading}>Saved Templates</Text>
@@ -146,7 +189,7 @@ export default function StackSelectScreen() {
             <Pressable
               onPress={() =>
                 router.push(
-                  `/review/section-select?stacks=${selectedStacks.join(',')}` as '/review/section-select',
+                  `/review/section-select?stacks=${selectedStacks.join(',')}${repoParam}` as '/review/section-select',
                 )
               }
               style={styles.sectionPickerLink}
@@ -292,5 +335,33 @@ const styles = StyleSheet.create({
   templateArrow: {
     fontSize: fontSizes.xl,
     color: colors.textMuted,
+  },
+  repoBanner: {
+    backgroundColor: colors.reviewMode + '15',
+    borderRadius: radius.lg,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.reviewMode,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  repoBannerContent: {
+    flex: 1,
+  },
+  repoBannerTitle: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  repoBannerMeta: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  repoBannerAction: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.reviewMode,
   },
 });

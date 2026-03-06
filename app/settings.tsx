@@ -24,6 +24,7 @@ import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
+import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
 import { syncChecklistsFromGithub } from '../src/data/checklistSync';
 import { fetchMonthlyCostFromAdminApi } from '../src/ai/costApi';
 import {
@@ -47,6 +48,7 @@ interface BackupPayload {
   sync: unknown;
   preferences: unknown;
   prTracker?: unknown;
+  repoConfigs?: unknown;
 }
 
 function maskToken(token: string | null): string {
@@ -130,6 +132,8 @@ export default function SettingsScreen() {
   const setEmergencySlotEnabled = usePRTrackerStore((s) => s.setEmergencySlotEnabled);
   const prTrackerPRs = usePRTrackerStore((s) => s.prs);
   const replacePRs = usePRTrackerStore((s) => s.replacePRs);
+  const repoConfigs = useRepoConfigStore((s) => s.configs);
+  const replaceRepoConfigs = useRepoConfigStore((s) => s.replaceConfigs);
   const markSyncStart = useSyncStore((s) => s.markSyncStart);
   const markSyncSuccess = useSyncStore((s) => s.markSyncSuccess);
   const markSyncFailure = useSyncStore((s) => s.markSyncFailure);
@@ -332,6 +336,7 @@ export default function SettingsScreen() {
           autoExportPdf,
         },
         prTracker: prTrackerPRs,
+        repoConfigs,
       };
 
       const dir = FileSystem.cacheDirectory;
@@ -363,6 +368,7 @@ export default function SettingsScreen() {
     antiBiasMode,
     autoExportPdf,
     prTrackerPRs,
+    repoConfigs,
     monthlyBudgetUsd,
     alertThresholds,
     hardStopAtBudget,
@@ -416,6 +422,9 @@ export default function SettingsScreen() {
 
       if (parsed.prTracker && typeof parsed.prTracker === 'object') {
         replacePRs(parsed.prTracker as Parameters<typeof replacePRs>[0]);
+      }
+      if (parsed.repoConfigs && typeof parsed.repoConfigs === 'object') {
+        replaceRepoConfigs(parsed.repoConfigs as Parameters<typeof replaceRepoConfigs>[0]);
       }
 
       const usageConfig = parsed.usageConfig as
@@ -483,6 +492,7 @@ export default function SettingsScreen() {
     replaceConversations,
     replaceSyncState,
     replacePRs,
+    replaceRepoConfigs,
     replacePreferences,
     setMonthlyBudget,
     setAlertThresholds,
