@@ -133,7 +133,16 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
-  await app.listen(config.get('PORT'));
+  const port = config.get('PORT');
+  await app.listen(port, '0.0.0.0');
+  console.info(
+    JSON.stringify({
+      level: 'info',
+      type: 'startup',
+      message: `ReviewHelm API listening on 0.0.0.0:${port}`,
+      at: new Date().toISOString(),
+    }),
+  );
 }
 
 void bootstrap();
