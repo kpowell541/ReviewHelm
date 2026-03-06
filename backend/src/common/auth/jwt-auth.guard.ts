@@ -62,7 +62,7 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractBearerToken(authHeader);
     if (!token) {
       this.logAuthFailure(req, 'Missing bearer token');
-      await this.audit.write({
+      void this.audit.write({
         eventType: 'auth_failed',
         eventScope: 'security.auth',
         severity: 'warn',
@@ -84,7 +84,7 @@ export class JwtAuthGuard implements CanActivate {
         : undefined;
     if (!userPayload || !userId) {
       this.logAuthFailure(req, 'Invalid token');
-      await this.audit.write({
+      void this.audit.write({
         eventType: 'auth_failed',
         eventScope: 'security.auth',
         severity: 'warn',

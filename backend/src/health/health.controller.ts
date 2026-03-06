@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { AppEnv } from '../config/env.schema';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../common/redis/redis.service';
+import { Public } from '../common/auth/public.decorator';
 
 @Controller('health')
 export class HealthController {
@@ -12,6 +13,7 @@ export class HealthController {
     private readonly redis: RedisService,
   ) {}
 
+  @Public()
   @Get()
   getHealth() {
     return {
@@ -22,6 +24,7 @@ export class HealthController {
     };
   }
 
+  @Public()
   @Get('ready')
   async getReadiness() {
     const checks = {
