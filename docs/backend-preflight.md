@@ -18,7 +18,8 @@ npm run preflight
 3. Migration status is healthy.
 4. Typecheck passes.
 5. OpenAPI route drift + schema + security checks pass.
-6. Optional authenticated health smoke checks pass when `SMOKE_BEARER_TOKEN` is set.
+6. Public health smoke checks pass.
+7. Optional authenticated smoke check (`GET /me`) passes when `SMOKE_BEARER_TOKEN` is set.
 
 ## Optional authenticated smoke check
 
@@ -31,5 +32,6 @@ npm run smoke:health
 
 ## Notes
 
-- Health endpoints are authenticated, so smoke checks require a valid bearer token.
+- Public health endpoints do not require a bearer token.
+- Authenticated smoke check targets `/me` when `SMOKE_BEARER_TOKEN` is set.
 - `preflight` skips smoke checks if `SMOKE_BEARER_TOKEN` is not set.

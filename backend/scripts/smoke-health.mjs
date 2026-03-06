@@ -3,27 +3,23 @@ import process from 'node:process';
 
 const baseUrl = process.env.API_PUBLIC_URL;
 const token = process.env.SMOKE_BEARER_TOKEN;
-const basePath = process.env.API_BASE_PATH || 'api/v1';
+const rawBasePath = process.env.API_BASE_PATH || 'api/v1';
+const basePath = rawBasePath.replace(/^\/+|\/+$/g, '');
+const normalizedBaseUrl = baseUrl?.replace(/\/+$/g, '');
 
 if (!baseUrl) {
   console.error('API_PUBLIC_URL is required for smoke health checks.');
   process.exit(1);
 }
-if (!token) {
-  console.error(
-    'SMOKE_BEARER_TOKEN is required because health endpoints are authenticated.',
-  );
-  process.exit(1);
-}
 
-const targets = [`${baseUrl}/${basePath}/health`, `${baseUrl}/${basePath}/health/ready`];
+const publicTargets = [
+  `${normalizedBaseUrl}/${basePath}/health`,
+  `${normalizedBaseUrl}/${basePath}/health/ready`,
+];
 
-for (const target of targets) {
+for (const target of publicTargets) {
   const response = await fetch(target, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'x-request-id': `smoke-${Date.now()}`,
-    },
+    headers: { 'x-request-id': `smoke-${Date.now()}` },
   });
 
   if (!response.ok) {
@@ -40,3 +36,24 @@ for (const target of targets) {
 
   console.log(`Smoke check passed: ${target}`);
 }
+
+if (!token) {
+  console.log('Skipping authenticated smoke checks (SMOKE_BEARER_TOKEN not set).');
+  process.exit(0);
+}
+
+const authenticatedTarget = `${normalizedBaseUrl}/${basePath}/me`;
+const authenticatedResponse = await fetch(authenticatedTarget, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'x-request-id': `smoke-auth-${Date.now()}`,
+  },
+});
+if (!authenticatedResponse.ok) {
+  const body = await authenticatedResponse.text().catch(() => '');
+  console.error(
+    `Authenticated smoke check failed for ${authenticatedTarget} (${authenticatedResponse.status}) ${body}`,
+  );
+  process.exit(1);
+}
+console.log(`Authenticated smoke check passed: ${authenticatedTarget}`);

@@ -65,3 +65,7 @@ npm run openapi:check-security
 - Provisioning: [`docs/provisioning-checklist-railway-supabase-upstash.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/provisioning-checklist-railway-supabase-upstash.md)
 - Security baseline: [`docs/security-operations.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/security-operations.md)
 - Release gate: [`docs/release-readiness-checklist.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/release-readiness-checklist.md)
+- Frontend kickoff: [`docs/frontend-kickoff-checklist.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/frontend-kickoff-checklist.md)
+- Claude prompt: [`docs/claude-frontend-kickoff-prompt.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/claude-frontend-kickoff-prompt.md)
+- Contract freeze: [`docs/backend-contract-freeze.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/backend-contract-freeze.md)
+- API delta log: [`docs/api-delta-log.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/api-delta-log.md)

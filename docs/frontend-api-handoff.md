@@ -6,7 +6,11 @@ This document is the frontend integration guide for current backend scope.
 
 - Base URL: `https://<api-domain>/api/v1`
 - Auth: OAuth2 bearer token in `Authorization: Bearer <token>`
-- All endpoints are authenticated.
+- Public endpoints:
+  - `GET /`
+  - `GET /health`
+  - `GET /health/ready`
+- All other endpoints are authenticated.
 
 ## Priority Endpoints (Current Scope)
 

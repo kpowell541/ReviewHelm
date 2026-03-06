@@ -51,14 +51,17 @@ You need one of these options for key encryption master material:
 ## Optional but Recommended
 
 1. Uptime monitor
-- Must attach OAuth2 bearer token to health probes now that health endpoints require auth.
+- Monitor:
+  - `GET /`
+  - `GET /api/v1/health`
+  - `GET /api/v1/health/ready`
 
 2. Error monitoring (Sentry)
 - For backend runtime exception tracking and alerting.
 
 ## Private-Only API Posture
 
-- All API routes are auth-protected (OAuth2 JWT required).
-- No unauthenticated public endpoints are exposed.
+- All business/data routes are auth-protected (OAuth2 JWT required).
+- Public liveness/readiness routes exist for platform probes only.
 - Swagger should remain disabled in production (`ENABLE_SWAGGER_DOCS=false`).
 - For stricter app-only access, add app attestation at the edge (Play Integrity/App Check) in front of OAuth2.
