@@ -4,10 +4,15 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
 } from 'class-validator';
 
 export class CreateSessionDto {
+  @IsOptional()
+  @IsUUID('4')
+  id?: string;
+
   @IsEnum(ChecklistMode)
   mode!: ChecklistMode;
 

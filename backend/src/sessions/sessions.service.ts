@@ -56,6 +56,7 @@ export class SessionsService {
 
     const created = await this.prisma.session.create({
       data: {
+        id: input.id,
         userId: user.id,
         mode: input.mode,
         stackId: stackIds[0] ?? null,
