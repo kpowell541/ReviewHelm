@@ -23,6 +23,7 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
+import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { syncChecklistsFromGithub } from '../src/data/checklistSync';
 import { fetchMonthlyCostFromAdminApi } from '../src/ai/costApi';
 import {
@@ -45,6 +46,7 @@ interface BackupPayload {
   tutor: unknown;
   sync: unknown;
   preferences: unknown;
+  prTracker?: unknown;
 }
 
 function maskToken(token: string | null): string {
@@ -122,6 +124,12 @@ export default function SettingsScreen() {
     syncing: s.syncing,
   }));
   const replaceSyncState = useSyncStore((s) => s.replaceSyncState);
+  const wipLimit = usePRTrackerStore((s) => s.wipLimit);
+  const setWipLimit = usePRTrackerStore((s) => s.setWipLimit);
+  const emergencySlotEnabled = usePRTrackerStore((s) => s.emergencySlotEnabled);
+  const setEmergencySlotEnabled = usePRTrackerStore((s) => s.setEmergencySlotEnabled);
+  const prTrackerPRs = usePRTrackerStore((s) => s.prs);
+  const replacePRs = usePRTrackerStore((s) => s.replacePRs);
   const markSyncStart = useSyncStore((s) => s.markSyncStart);
   const markSyncSuccess = useSyncStore((s) => s.markSyncSuccess);
   const markSyncFailure = useSyncStore((s) => s.markSyncFailure);
@@ -323,6 +331,7 @@ export default function SettingsScreen() {
           antiBiasMode,
           autoExportPdf,
         },
+        prTracker: prTrackerPRs,
       };
 
       const dir = FileSystem.cacheDirectory;
@@ -353,6 +362,7 @@ export default function SettingsScreen() {
     aiModel,
     antiBiasMode,
     autoExportPdf,
+    prTrackerPRs,
     monthlyBudgetUsd,
     alertThresholds,
     hardStopAtBudget,
@@ -403,6 +413,10 @@ export default function SettingsScreen() {
       replaceUsage(nextUsage as Parameters<typeof replaceUsage>[0]);
       replaceConversations(nextTutor as Parameters<typeof replaceConversations>[0]);
       replaceSyncState(nextSync as Parameters<typeof replaceSyncState>[0]);
+
+      if (parsed.prTracker && typeof parsed.prTracker === 'object') {
+        replacePRs(parsed.prTracker as Parameters<typeof replacePRs>[0]);
+      }
 
       const usageConfig = parsed.usageConfig as
         | {
@@ -468,6 +482,7 @@ export default function SettingsScreen() {
     replaceUsage,
     replaceConversations,
     replaceSyncState,
+    replacePRs,
     replacePreferences,
     setMonthlyBudget,
     setAlertThresholds,
@@ -827,6 +842,48 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      <Text style={styles.sectionTitle}>PR Tracker</Text>
+      <View style={styles.card}>
+        <Text style={[styles.label, styles.inlineLabel]}>My PR WIP Limit</Text>
+        <Text style={styles.hint}>
+          Maximum active personal PRs before showing a warning.
+        </Text>
+        <View style={styles.inlineChoices}>
+          {[2, 3, 4, 5].map((n) => (
+            <Pressable
+              key={n}
+              style={[
+                styles.inlineChoiceButton,
+                wipLimit === n && styles.inlineChoiceButtonActive,
+              ]}
+              onPress={() => setWipLimit(n)}
+            >
+              <Text
+                style={[
+                  styles.inlineChoiceText,
+                  wipLimit === n && styles.inlineChoiceTextActive,
+                ]}
+              >
+                {n}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.label}>Emergency Slot</Text>
+            <Text style={styles.hint}>
+              Reserve one extra slot for emergency/hotfix PRs.
+            </Text>
+          </View>
+          <Switch
+            value={emergencySlotEnabled}
+            onValueChange={setEmergencySlotEnabled}
+            trackColor={{ false: colors.border, true: colors.primary }}
+          />
+        </View>
+      </View>
+
       <Text style={styles.sectionTitle}>Data</Text>
       <View style={styles.card}>
         <Pressable
@@ -921,6 +978,13 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionTitle}>Connected Features</Text>
       <View style={styles.card}>
+        <Pressable
+          style={styles.connectedLink}
+          onPress={() => router.push('/pr-tracker')}
+        >
+          <Text style={styles.connectedLinkText}>PR Tracker</Text>
+          <Text style={styles.connectedLinkArrow}>{'>'}</Text>
+        </Pressable>
         <Pressable
           style={styles.connectedLink}
           onPress={() => router.push('/comment-profiles')}

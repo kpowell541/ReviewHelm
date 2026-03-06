@@ -257,6 +257,71 @@ export interface SessionScores {
 }
 
 // ============================================
+// PR Tracker
+// ============================================
+
+export type PRStatus =
+  | 'needs-review'
+  | 'in-review'
+  | 'changes-requested'
+  | 'approved'
+  | 'merged'
+  | 'closed';
+
+export type PRRole = 'author' | 'reviewer';
+
+export type PRPriority = 'low' | 'normal' | 'high' | 'emergency';
+
+export type PRSize = 'small' | 'medium' | 'large';
+
+export interface TrackedPR {
+  id: string;
+  title: string;
+  url?: string;
+  status: PRStatus;
+  role: PRRole;
+  priority: PRPriority;
+  isEmergency: boolean;
+  size?: PRSize;
+  repo?: string;
+  prNumber?: number;
+  prAuthor?: string;
+  linkedSessionId?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  lastReviewedAt?: string;
+}
+
+export const PR_ACTIVE_STATUSES: PRStatus[] = [
+  'needs-review',
+  'in-review',
+  'changes-requested',
+  'approved',
+];
+
+export const PR_STATUS_LABELS: Record<PRStatus, string> = {
+  'needs-review': 'Needs Review',
+  'in-review': 'In Review',
+  'changes-requested': 'Changes Requested',
+  approved: 'Approved',
+  merged: 'Merged',
+  closed: 'Closed',
+};
+
+export const PR_ROLE_LABELS: Record<PRRole, string> = {
+  author: 'My PR',
+  reviewer: 'Reviewing',
+};
+
+export const PR_SIZE_LABELS: Record<PRSize, string> = {
+  small: 'S',
+  medium: 'M',
+  large: 'L',
+};
+
+// ============================================
 // Helpers
 // ============================================
 

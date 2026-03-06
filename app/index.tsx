@@ -6,6 +6,7 @@ import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
+import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 
 interface ModeCardProps {
   title: string;
@@ -74,6 +75,7 @@ export default function HomeScreen() {
   const weakest = useConfidenceStore((s) => s.getWeakestItems(5));
   const dueItems = useConfidenceStore((s) => s.getDueItems());
   const gapCount = weakest.filter((w) => w.currentConfidence <= 2).length;
+  const activePRCount = usePRTrackerStore((s) => s.getActivePRs().length);
 
   useEffect(() => {
     if (!hasCompletedOnboarding) {
@@ -154,6 +156,14 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.quickLinks}>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/pr-tracker')}
+          >
+            <Text style={styles.quickLinkText}>
+              🔀 PRs{activePRCount > 0 ? ` (${activePRCount})` : ''}
+            </Text>
+          </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => router.push('/trends')}

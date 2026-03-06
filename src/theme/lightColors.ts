@@ -58,4 +58,5 @@ export const lightColors = {
   polishMode: '#e85d75',
   learnMode: '#e6a800',
   gapsMode: '#7c6cf0',
+  prTrackerMode: '#e85540',
 } as const;

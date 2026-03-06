@@ -10,6 +10,7 @@ import { useUsageStore } from '../src/store/useUsageStore';
 import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
 import { useAuthStore } from '../src/store/useAuthStore';
+import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { initializeChecklistCache } from '../src/data/checklistLoader';
 import { runSync } from '../src/sync/syncEngine';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -31,6 +32,7 @@ export default function RootLayout() {
   const acknowledgeAlertThreshold = useUsageStore((s) => s.acknowledgeAlertThreshold);
   const tutorHydrated = useTutorStore((s) => s.hasHydrated);
   const syncHydrated = useSyncStore((s) => s.hasHydrated);
+  const prTrackerHydrated = usePRTrackerStore((s) => s.hasHydrated);
   const initAuth = useAuthStore((s) => s.initialize);
   const authUser = useAuthStore((s) => s.user);
 
@@ -54,6 +56,7 @@ export default function RootLayout() {
     usageHydrated &&
     tutorHydrated &&
     syncHydrated &&
+    prTrackerHydrated &&
     isApiKeyLoaded &&
     cacheReady;
 
@@ -206,6 +209,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="trends"
           options={{ title: 'Session Comparison' }}
+        />
+        <Stack.Screen
+          name="pr-tracker"
+          options={{ title: 'PR Tracker' }}
         />
         <Stack.Screen
           name="settings"
