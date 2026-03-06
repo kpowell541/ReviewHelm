@@ -14,8 +14,62 @@ interface RequestWithMeta extends express.Request {
   requestId?: string;
 }
 
+function installProcessSignalLogging(): void {
+  process.on('uncaughtException', (error: Error) => {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        type: 'process',
+        event: 'uncaught_exception',
+        message: error.message,
+        stack: error.stack,
+        at: new Date().toISOString(),
+      }),
+    );
+  });
+
+  process.on('unhandledRejection', (reason: unknown) => {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        type: 'process',
+        event: 'unhandled_rejection',
+        reason: reason instanceof Error ? reason.message : String(reason),
+        stack: reason instanceof Error ? reason.stack : undefined,
+        at: new Date().toISOString(),
+      }),
+    );
+  });
+
+  process.on('SIGTERM', () => {
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        type: 'process',
+        event: 'sigterm',
+        message: 'Received SIGTERM',
+        at: new Date().toISOString(),
+      }),
+    );
+  });
+
+  process.on('SIGINT', () => {
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        type: 'process',
+        event: 'sigint',
+        message: 'Received SIGINT',
+        at: new Date().toISOString(),
+      }),
+    );
+  });
+}
+
 async function bootstrap() {
+  installProcessSignalLogging();
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   const config = app.get(ConfigService<AppEnv, true>);
   const isProduction = config.get('NODE_ENV') === 'production';
   const strictStartupChecks = config.get('STRICT_STARTUP_CHECKS');
