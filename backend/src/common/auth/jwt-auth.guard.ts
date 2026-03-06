@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
-import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { AppEnv } from '../../config/env.schema';
 import { AuditService } from '../audit/audit.service';
 import { IS_PUBLIC_KEY } from './constants';
@@ -20,19 +19,24 @@ interface RequestLike {
   requestId?: string;
 }
 
+type JoseModule = typeof import('jose');
+type RemoteJwkSet = ReturnType<JoseModule['createRemoteJWKSet']>;
+
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
-  private readonly jwks: ReturnType<typeof createRemoteJWKSet>;
+  private readonly jwksUrl: string;
   private readonly issuer: string;
   private readonly audience: string;
   private readonly adminUserIds: Set<string>;
+  private joseModulePromise: Promise<JoseModule> | null = null;
+  private jwks: RemoteJwkSet | null = null;
 
   constructor(
     private readonly reflector: Reflector,
     private readonly config: ConfigService<AppEnv, true>,
     private readonly audit: AuditService,
   ) {
-    this.jwks = createRemoteJWKSet(new URL(this.config.get('SUPABASE_JWKS_URL')));
+    this.jwksUrl = this.config.get('SUPABASE_JWKS_URL');
     this.issuer = this.config.get('SUPABASE_JWT_ISSUER');
     this.audience = this.config.get('SUPABASE_JWT_AUDIENCE');
     this.adminUserIds = new Set(
@@ -109,7 +113,9 @@ export class JwtAuthGuard implements CanActivate {
 
   private async verifyToken(token: string): Promise<Record<string, unknown> | null> {
     try {
-      const verified = await jwtVerify(token, this.jwks, {
+      const jose = await this.loadJose();
+      const jwks = await this.getJwks();
+      const verified = await jose.jwtVerify(token, jwks, {
         issuer: this.issuer,
         audience: this.audience,
         algorithms: ['RS256'],
@@ -118,6 +124,23 @@ export class JwtAuthGuard implements CanActivate {
     } catch {
       return null;
     }
+  }
+
+  private async loadJose(): Promise<JoseModule> {
+    if (!this.joseModulePromise) {
+      this.joseModulePromise = Function(
+        'return import("jose")',
+      )() as Promise<JoseModule>;
+    }
+    return this.joseModulePromise;
+  }
+
+  private async getJwks(): Promise<RemoteJwkSet> {
+    if (!this.jwks) {
+      const jose = await this.loadJose();
+      this.jwks = jose.createRemoteJWKSet(new URL(this.jwksUrl));
+    }
+    return this.jwks;
   }
 
   private extractRoles(payload: Record<string, unknown>): string[] {
