@@ -56,7 +56,7 @@ export function computeSessionScores(
   return {
     coverage: Math.round(coverage),
     confidence: Math.round(confidence),
-    issuesByServerity: issuesBySeverity,
+    issuesBySeverity: issuesBySeverity,
     totalIssues,
     itemsResponded,
     applicableItems,

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 6: Checklist Session</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 650px; margin: 0 auto; line-height: 1.5; }
+
+  .design-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .variant-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid #5a5a7833;
+    color: #5a5a78;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #0a0a1a;
+    border-radius: 44px;
+    border: 3px solid #242442;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch { width: 160px; height: 34px; background: #050510; border-radius: 0 0 20px 20px; margin: 0 auto; }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; height: 44px; font-size: 12px; font-weight: 600; color: #e4e4ec;
+    position: absolute; top: 0; left: 0; right: 0;
+  }
+  .phone-content { padding: 52px 20px 20px; }
+  .phone-home-indicator { width: 134px; height: 5px; background: #e4e4ec; border-radius: 3px; margin: 20px auto 8px; opacity: 0.2; }
+
+  /* Annotations */
+  .annotations { max-width: 380px; flex: 1; min-width: 300px; }
+  .annotation-section {
+    background: #111122; border: 1px solid #242442; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .annotation-section h3 { font-size: 13px; font-weight: 700; color: #8b5cf6; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .annotation-section p { font-size: 13px; color: #9898b0; line-height: 1.6; margin-bottom: 6px; }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px; color: #a78bfa; background: #1a1a30; padding: 2px 6px; border-radius: 4px;
+  }
+  .color-ref { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+  .color-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  /* ============ CHECKLIST SESSION COMPONENTS ============ */
+
+  /* Nav header */
+  .nav-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px; padding: 0 4px;
+  }
+  .nav-back {
+    width: 36px; height: 36px; background: #1a1a30; border: 1px solid #242442;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #e4e4ec;
+  }
+  .nav-title-area { flex: 1; }
+  .nav-title { font-size: 18px; font-weight: 700; color: #e4e4ec; }
+  .nav-subtitle { font-size: 11px; color: #5a5a78; }
+
+  /* Score pills */
+  .score-pills {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .score-pill {
+    flex: 1;
+    background: #111122;
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+    border: 1px solid #1a1a30;
+  }
+  .score-value {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 1px;
+  }
+  .score-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: #5a5a78;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    background: #111122;
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+  }
+
+  /* Session notes */
+  .session-notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #111122;
+    border-radius: 10px;
+    border: 1px solid #1a1a30;
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+  .session-notes-left {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: #9898b0;
+  }
+  .session-notes-chevron {
+    font-size: 10px; color: #5a5a78;
+  }
+
+  /* Search + filter */
+  .search-bar {
+    background: #111122;
+    border: 1px solid #1a1a30;
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #5a5a78;
+    font-size: 13px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .search-icon { font-size: 14px; }
+  .severity-chips {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .sev-chip {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    border: 1px solid;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sev-chip.active { opacity: 1; }
+  .sev-chip.inactive { opacity: 0.35; }
+  .sev-blocker { color: #ef4444; border-color: #ef4444; background: #ef444415; }
+  .sev-major { color: #f59e0b; border-color: #f59e0b; background: #f59e0b15; }
+  .sev-minor { color: #3b82f6; border-color: #3b82f6; background: #3b82f615; }
+  .sev-nit { color: #6b7280; border-color: #6b7280; background: #6b728015; }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #111122;
+    border-radius: 10px 10px 0 0;
+    border: 1px solid #1a1a30;
+    border-bottom: none;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .section-header:first-of-type { margin-top: 0; }
+  .section-chevron { font-size: 10px; color: #5a5a78; }
+  .section-name { font-size: 13px; font-weight: 700; color: #e4e4ec; flex: 1; }
+  .section-progress {
+    font-size: 11px;
+    font-weight: 600;
+    color: #5a5a78;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Checklist item - collapsed */
+  .cl-item {
+    background: #0d0d1a;
+    border: 1px solid #1a1a30;
+    border-top: none;
+    padding: 12px;
+    cursor: pointer;
+  }
+  .cl-item:last-child { border-radius: 0 0 10px 10px; }
+  .cl-item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .cl-sev {
+    font-size: 8px;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .cl-sev.blocker { color: #ef4444; background: #ef444418; }
+  .cl-sev.major { color: #f59e0b; background: #f59e0b18; }
+  .cl-sev.minor { color: #3b82f6; background: #3b82f618; }
+  .cl-sev.nit { color: #6b7280; background: #6b728018; }
+  .cl-text {
+    font-size: 13px;
+    color: #c0c0d0;
+    line-height: 1.4;
+    flex: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cl-text.full {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+  .cl-deepdive-btn {
+    width: 28px; height: 28px;
+    background: #1a1a30; border: 1px solid #242442;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0; cursor: pointer;
+  }
+
+  /* Checklist item - expanded area */
+  .cl-expanded {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #1a1a2a;
+  }
+
+  /* Verdict buttons */
+  .verdict-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .verdict-btn {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    border: 1.5px solid #242442;
+    background: #0a0a1a;
+    color: #5a5a78;
+    cursor: pointer;
+  }
+  .verdict-btn.good.selected {
+    border-color: #34d399;
+    background: #34d39912;
+    color: #34d399;
+  }
+  .verdict-btn.attn.selected {
+    border-color: #f59e0b;
+    background: #f59e0b12;
+    color: #fbbf24;
+  }
+  .verdict-btn.na.selected {
+    border-color: #5a5a78;
+    background: #5a5a7812;
+    color: #9898b0;
+  }
+
+  /* Confidence scale */
+  .conf-section {
+    margin-bottom: 8px;
+  }
+  .conf-label-row {
+    font-size: 11px;
+    font-weight: 600;
+    color: #5a5a78;
+    margin-bottom: 6px;
+  }
+  .conf-scale {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .conf-btn {
+    flex: 1;
+    padding: 6px 2px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1.5px solid #242442;
+    background: #0a0a1a;
+    color: #5a5a78;
+    cursor: pointer;
+  }
+  .conf-btn.c1.selected { border-color: #ef4444; background: #ef444415; color: #ef4444; }
+  .conf-btn.c2.selected { border-color: #ef4444; background: #ef444415; color: #ef4444; }
+  .conf-btn.c3.selected { border-color: #fbbf24; background: #fbbf2415; color: #fbbf24; }
+  .conf-btn.c4.selected { border-color: #34d399; background: #34d39915; color: #34d399; }
+  .conf-btn.c5.selected { border-color: #34d399; background: #34d39915; color: #34d399; }
+  .conf-hint {
+    font-size: 10px;
+    color: #3a3a52;
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* Notes toggle */
+  .notes-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #5a5a78;
+    cursor: pointer;
+    padding: 6px 0;
+  }
+
+  /* AI nudge */
+  .ai-nudge {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .ai-nudge.tutor {
+    background: #34d39912;
+    border: 1px solid #34d39925;
+    color: #34d399;
+  }
+  .ai-nudge.comment {
+    background: #fbbf2412;
+    border: 1px solid #fbbf2425;
+    color: #fbbf24;
+  }
+
+  /* Complete button */
+  .complete-btn {
+    background: #34d399;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0a0a1a;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+
+  /* Responded indicator */
+  .responded-dot {
+    width: 10px; height: 10px;
+    border-radius: 5px;
+    background: #34d399;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .responded-dot.pending {
+    background: #242442;
+    border: 1.5px solid #3a3a52;
+  }
+
+  /* Item chevron */
+  .cl-chevron {
+    font-size: 9px;
+    color: #3a3a52;
+    flex-shrink: 0;
+    margin-top: 4px;
+    transition: transform 0.15s;
+  }
+  .cl-chevron.open {
+    color: #5a5a78;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 6 of 11</div>
+  <h1>Checklist Session</h1>
+  <p class="desc">The core review experience. Users work through checklist items, setting verdicts (Good / Attention / N/A), rating their confidence (1-5), and optionally adding notes. Shared by both Review and Polish modes.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ PHONE 1: Header, Filters, Collapsed Items ============ -->
+  <div class="variant">
+    <div class="variant-label">Header & Item List</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <!-- Nav header -->
+        <div class="nav-header">
+          <div class="nav-back">‹</div>
+          <div class="nav-title-area">
+            <div class="nav-title">Go Code Review</div>
+            <div class="nav-subtitle">Session #4 · Started Mar 4</div>
+          </div>
+        </div>
+
+        <!-- Score pills -->
+        <div class="score-pills">
+          <div class="score-pill">
+            <div class="score-value" style="color:#a78bfa">42%</div>
+            <div class="score-label">Coverage</div>
+          </div>
+          <div class="score-pill">
+            <div class="score-value" style="color:#fbbf24">3.2</div>
+            <div class="score-label">Confidence</div>
+          </div>
+          <div class="score-pill">
+            <div class="score-value" style="color:#ef4444">2</div>
+            <div class="score-label">Issues</div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-wrap">
+          <div class="progress-fill" style="width:42%"></div>
+        </div>
+
+        <!-- Session notes (collapsed) -->
+        <div class="session-notes-header">
+          <div class="session-notes-left">
+            <span>📝</span>
+            <span>Session Notes</span>
+          </div>
+          <span class="session-notes-chevron">▶</span>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <span>Search checklist items...</span>
+        </div>
+
+        <!-- Severity filter chips -->
+        <div class="severity-chips">
+          <div class="sev-chip sev-blocker active">BLK</div>
+          <div class="sev-chip sev-major active">MAJ</div>
+          <div class="sev-chip sev-minor active">MIN</div>
+          <div class="sev-chip sev-nit inactive">NIT</div>
+        </div>
+
+        <!-- Section 1: Error Handling -->
+        <div class="section-header">
+          <span class="section-chevron">▼</span>
+          <span class="section-name">Error Handling</span>
+          <span class="section-progress">3/5</span>
+        </div>
+
+        <!-- Item 1 — responded -->
+        <div class="cl-item">
+          <div class="cl-item-row">
+            <span class="responded-dot"></span>
+            <span class="cl-sev blocker">BLK</span>
+            <span class="cl-text">Check error wrapping with %w for proper error chain propagation</span>
+            <span class="cl-chevron">▶</span>
+          </div>
+        </div>
+
+        <!-- Item 2 — responded -->
+        <div class="cl-item">
+          <div class="cl-item-row">
+            <span class="responded-dot"></span>
+            <span class="cl-sev major">MAJ</span>
+            <span class="cl-text">Verify context cancellation is handled correctly in goroutines</span>
+            <span class="cl-chevron">▶</span>
+          </div>
+        </div>
+
+        <!-- Item 3 — pending -->
+        <div class="cl-item">
+          <div class="cl-item-row">
+            <span class="responded-dot pending"></span>
+            <span class="cl-sev minor">MIN</span>
+            <span class="cl-text">Check sentinel error definitions follow naming conventions</span>
+            <span class="cl-chevron">▶</span>
+          </div>
+        </div>
+
+        <!-- Item 4 — responded -->
+        <div class="cl-item">
+          <div class="cl-item-row">
+            <span class="responded-dot"></span>
+            <span class="cl-sev major">MAJ</span>
+            <span class="cl-text">Verify retry logic includes exponential backoff and jitter</span>
+            <span class="cl-chevron">▶</span>
+          </div>
+        </div>
+
+        <!-- Item 5 — pending -->
+        <div class="cl-item" style="border-radius: 0 0 10px 10px">
+          <div class="cl-item-row">
+            <span class="responded-dot pending"></span>
+            <span class="cl-sev minor">MIN</span>
+            <span class="cl-text">Check for panic recovery in HTTP handlers and background workers</span>
+            <span class="cl-chevron">▶</span>
+          </div>
+        </div>
+
+        <!-- Section 2: Concurrency (collapsed) -->
+        <div class="section-header" style="border-radius:10px; border-bottom: 1px solid #1a1a30; margin-top:10px">
+          <span class="section-chevron">▶</span>
+          <span class="section-name">Concurrency</span>
+          <span class="section-progress">1/7</span>
+        </div>
+
+        <!-- Section 3: API Design (collapsed) -->
+        <div class="section-header" style="border-radius:10px; border-bottom: 1px solid #1a1a30; margin-top:10px">
+          <span class="section-chevron">▶</span>
+          <span class="section-name">API Design</span>
+          <span class="section-progress">0/6</span>
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHONE 2: Expanded Item Detail ============ -->
+  <div class="variant">
+    <div class="variant-label">Expanded Item</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <!-- Showing an expanded item in context -->
+        <div class="section-header">
+          <span class="section-chevron">▼</span>
+          <span class="section-name">Error Handling</span>
+          <span class="section-progress">3/5</span>
+        </div>
+
+        <!-- Collapsed item above for context -->
+        <div class="cl-item">
+          <div class="cl-item-row">
+            <span class="responded-dot"></span>
+            <span class="cl-sev blocker">BLK</span>
+            <span class="cl-text">Check error wrapping with %w for proper error chain propagation</span>
+            <span class="cl-chevron">▶</span>
+          </div>
+        </div>
+
+        <!-- ★ EXPANDED ITEM ★ -->
+        <div class="cl-item" style="background:#0f0f22; border-color:#242442">
+          <div class="cl-item-row">
+            <span class="responded-dot pending"></span>
+            <span class="cl-sev major">MAJ</span>
+            <span class="cl-text full">Verify context cancellation is handled correctly in goroutines and long-running operations</span>
+            <span class="cl-chevron open">▼</span>
+          </div>
+
+          <div class="cl-expanded">
+            <!-- Verdict buttons -->
+            <div class="verdict-row">
+              <div class="verdict-btn good selected">✓ Good</div>
+              <div class="verdict-btn attn">⚠ Attn</div>
+              <div class="verdict-btn na">— N/A</div>
+            </div>
+
+            <!-- Confidence scale -->
+            <div class="conf-section">
+              <div class="conf-label-row">Confidence:</div>
+              <div class="conf-scale">
+                <div class="conf-btn c1">1</div>
+                <div class="conf-btn c2 selected">2</div>
+                <div class="conf-btn c3">3</div>
+                <div class="conf-btn c4">4</div>
+                <div class="conf-btn c5">5</div>
+              </div>
+              <div class="conf-hint">Somewhat uncertain</div>
+            </div>
+
+            <!-- Notes toggle -->
+            <div class="notes-toggle">📝 Add per-item notes</div>
+
+            <!-- Deep dive button (only shown when expanded) -->
+            <div class="ai-nudge tutor">
+              📚 Deep Dive — learn more about this topic
+            </div>
+
+            <!-- AI tutor nudge (shows because confidence ≤ 2) -->
+            <div class="ai-nudge tutor" style="margin-top:6px">
+              🎓 Want a refresher on this concept?
+            </div>
+          </div>
+        </div>
+
+        <!-- Another expanded item — with "Attention" verdict -->
+        <div class="cl-item" style="background:#0f0f22; border-color:#242442">
+          <div class="cl-item-row">
+            <span class="responded-dot"></span>
+            <span class="cl-sev blocker">BLK</span>
+            <span class="cl-text full">Verify retry logic includes exponential backoff and jitter for transient failures</span>
+            <span class="cl-chevron open">▼</span>
+          </div>
+
+          <div class="cl-expanded">
+            <!-- Verdict buttons — Attention selected -->
+            <div class="verdict-row">
+              <div class="verdict-btn good">✓ Good</div>
+              <div class="verdict-btn attn selected">⚠ Attn</div>
+              <div class="verdict-btn na">— N/A</div>
+            </div>
+
+            <!-- Confidence scale -->
+            <div class="conf-section">
+              <div class="conf-label-row">Confidence:</div>
+              <div class="conf-scale">
+                <div class="conf-btn c1">1</div>
+                <div class="conf-btn c2">2</div>
+                <div class="conf-btn c3">3</div>
+                <div class="conf-btn c4 selected">4</div>
+                <div class="conf-btn c5">5</div>
+              </div>
+              <div class="conf-hint">Mostly confident</div>
+            </div>
+
+            <!-- Notes toggle (with saved state) -->
+            <div class="notes-toggle">📝 Notes (saved)</div>
+
+            <!-- Deep dive button (only shown when expanded) -->
+            <div class="ai-nudge tutor">
+              📚 Deep Dive — learn more about this topic
+            </div>
+
+            <!-- Comment drafter nudge (shows because verdict is Attention) -->
+            <div class="ai-nudge comment" style="margin-top:6px">
+              ✍️ Found an issue — tap to draft a comment
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsed item below for context -->
+        <div class="cl-item" style="border-radius: 0 0 10px 10px">
+          <div class="cl-item-row">
+            <span class="responded-dot pending"></span>
+            <span class="cl-sev minor">MIN</span>
+            <span class="cl-text">Check for panic recovery in HTTP handlers</span>
+            <span class="cl-chevron">▶</span>
+          </div>
+        </div>
+
+        <!-- Complete session button -->
+        <div class="complete-btn">Complete Session</div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Purpose</h3>
+      <p>The core screen of the app. Users work through a checklist section-by-section, rating each item. Used identically for Review and Polish modes — only the loaded checklist differs.</p>
+      <p>Polish mode with anti-bias enabled shuffles section order using a seeded PRNG (consistent per session).</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Header</h3>
+      <p><strong>Title:</strong> Stack name + "Code Review" or "Polish My PR".</p>
+      <p><strong>Subtitle:</strong> Session number and start date.</p>
+      <p><strong>Score pills:</strong> Three metrics updated in real-time:</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#a78bfa"></span></span> Coverage — % of items with a verdict</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span></span> Confidence — average confidence across rated items</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#ef4444"></span></span> Issues — count of "Attention" verdicts</p>
+      <p><strong>Progress bar:</strong> Violet gradient, fills with coverage %.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Session Notes & Search</h3>
+      <p><strong>Session notes:</strong> Collapsible. Captures context for the session summary. Auto-saves on blur.</p>
+      <p><strong>Search:</strong> Filters items by text match across all sections.</p>
+      <p><strong>Severity chips:</strong> Toggle filters. At least one must stay active. Active chips show full color; inactive are dimmed.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Section Headers</h3>
+      <p>Sticky section headers with collapse/expand toggle.</p>
+      <p><strong>Chevron:</strong> ▼ expanded, ▶ collapsed.</p>
+      <p><strong>Progress:</strong> "responded/total" in JetBrains Mono.</p>
+      <p>Collapsed sections show only the header row.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Checklist Item — Collapsed</h3>
+      <p><strong>Status dot:</strong> Green = responded, dark outline = pending. 10px diameter.</p>
+      <p><strong>Severity badge:</strong> BLK (red), MAJ (amber), MIN (blue), NIT (gray).</p>
+      <p><strong>Item text:</strong> 2-line clamp with ellipsis.</p>
+      <p><strong>Chevron:</strong> ▶ collapsed, ▼ expanded. Signals tappability.</p>
+      <p>No action buttons on collapsed rows — keeps the list clean and scannable.</p>
+      <p>Tap anywhere on the row to expand/collapse.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Checklist Item — Expanded</h3>
+      <p><strong>Verdict buttons:</strong> Three options with haptic feedback:</p>
+      <p>✓ Good (green) — item looks correct in the PR</p>
+      <p>⚠ Attn (amber) — found an issue worth flagging</p>
+      <p>— N/A (gray) — not applicable to this PR</p>
+      <p><strong>Confidence scale:</strong> 1-5 buttons. Default 3. Color progresses red → green. Hint text below shows label ("Not confident", "Somewhat uncertain", etc.).</p>
+      <p><strong>Notes toggle:</strong> Expands a text input for per-item notes. Shows "(saved)" when notes exist.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Contextual Nudges</h3>
+      <p><strong>📚 Deep Dive</strong> (green): Always visible when expanded. Opens the Deep Dive screen to read base content and chat with the AI tutor.</p>
+      <p><strong>🎓 AI Tutor nudge</strong> (green): Extra prompt when confidence ≤ 2. Also navigates to Deep Dive.</p>
+      <p>Confidence 1: "Let me teach you this from scratch"</p>
+      <p>Confidence 2: "Want a refresher on this concept?"</p>
+      <p><strong>✍️ Comment Drafter nudge</strong> (amber): Appears when verdict is "Attention". Opens Comment Drafter (Screen 9) where you describe the issue and get an AI-drafted review comment with refinement options (shorter, more detail, softer tone).</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Complete Session</h3>
+      <p>Green button at the bottom. Triggers confirmation alert.</p>
+      <p>If coverage &lt; 70%, the alert warns: "Only X% covered — are you sure?"</p>
+      <p>On confirm: locks all scores, records completion, navigates to Session Summary (Screen 7).</p>
+      <p>Shows "Session Completed" (disabled) if already completed.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Changes from Current</h3>
+      <p>1. Added responded-status dots on each item row</p>
+      <p>2. Score pills redesigned as compact card grid</p>
+      <p>3. Session notes section added (collapsible)</p>
+      <p>4. Per-item notes with save indicator</p>
+      <p>5. Severity filter chips with visual active/inactive states</p>
+      <p>6. Contextual nudge cards for tutor and comment drafter</p>
+      <p>7. Font: Quicksand throughout, JetBrains Mono for progress counts</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

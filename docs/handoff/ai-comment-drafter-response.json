@@ -1,0 +1,12 @@
+{
+  "content": "In service.go (@@ -10,6 +10,7 @@), return the error from process() so failures are propagated instead of ignored.",
+  "requestedModel": "haiku",
+  "resolvedModel": "sonnet",
+  "autoDowngraded": false,
+  "autoEscalated": true,
+  "cached": false,
+  "inputTokens": 812,
+  "outputTokens": 226,
+  "costUsd": 0.00521,
+  "cooldownRemainingMs": 0
+}

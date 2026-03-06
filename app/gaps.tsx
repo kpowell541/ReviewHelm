@@ -1,10 +1,19 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { CONFIDENCE_EMOJI } from '../src/data/types';
 import type { ConfidenceLevel } from '../src/data/types';
+import { findItemById } from '../src/data/checklistFinder';
 
 export default function GapsScreen() {
+  const router = useRouter();
   const weakest = useConfidenceStore((s) => s.getWeakestItems(20));
 
   const activeGaps = weakest.filter((w) => w.currentConfidence <= 2);
@@ -29,22 +38,34 @@ export default function GapsScreen() {
           <Text style={styles.sectionTitle}>
             🔴 Active Gaps ({activeGaps.length})
           </Text>
-          {activeGaps.map((gap) => (
-            <View key={gap.itemId} style={styles.gapCard}>
+          {activeGaps.map((gap) => {
+            const item = findItemById(gap.itemId);
+            return (
+              <Pressable
+                key={gap.itemId}
+                style={({ pressed }) => [
+                  styles.gapCard,
+                  { opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={() =>
+                  router.push(`/deep-dive/${encodeURIComponent(gap.itemId)}`)
+                }
+              >
               <Text style={styles.gapEmoji}>
                 {CONFIDENCE_EMOJI[gap.currentConfidence as ConfidenceLevel]}
               </Text>
               <View style={styles.gapInfo}>
                 <Text style={styles.gapItemId} numberOfLines={1}>
-                  {gap.itemId.split('.').slice(-1)[0].replace(/-/g, ' ')}
+                  {item?.item.text ?? gap.itemId}
                 </Text>
                 <Text style={styles.gapMeta}>
                   {gap.stackId} · {gap.ratings.length} sessions · priority{' '}
                   {gap.learningPriority.toFixed(0)}
                 </Text>
               </View>
-            </View>
-          ))}
+              </Pressable>
+            );
+          })}
         </View>
       )}
 
@@ -53,19 +74,31 @@ export default function GapsScreen() {
           <Text style={styles.sectionTitle}>
             📈 Improving ({improving.length})
           </Text>
-          {improving.map((gap) => (
-            <View key={gap.itemId} style={styles.gapCard}>
+          {improving.map((gap) => {
+            const item = findItemById(gap.itemId);
+            return (
+              <Pressable
+                key={gap.itemId}
+                style={({ pressed }) => [
+                  styles.gapCard,
+                  { opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={() =>
+                  router.push(`/deep-dive/${encodeURIComponent(gap.itemId)}`)
+                }
+              >
               <Text style={styles.gapEmoji}>🤔</Text>
               <View style={styles.gapInfo}>
                 <Text style={styles.gapItemId} numberOfLines={1}>
-                  {gap.itemId.split('.').slice(-1)[0].replace(/-/g, ' ')}
+                  {item?.item.text ?? gap.itemId}
                 </Text>
                 <Text style={styles.gapMeta}>
                   {gap.stackId} · trending up
                 </Text>
               </View>
-            </View>
-          ))}
+              </Pressable>
+            );
+          })}
         </View>
       )}
     </ScrollView>

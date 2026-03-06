@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg7" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#0f0f1a"/>
+    </linearGradient>
+    <linearGradient id="shield7" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b83ff"/>
+      <stop offset="50%" style="stop-color:#6c63ff"/>
+      <stop offset="100%" style="stop-color:#4a42cc"/>
+    </linearGradient>
+    <linearGradient id="north7" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b0aaff"/>
+      <stop offset="100%" style="stop-color:#6c63ff"/>
+    </linearGradient>
+    <linearGradient id="green7" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#4ade80"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="url(#bg7)"/>
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="none" stroke="#2a2a4a" stroke-width="2"/>
+
+  <!-- Shield - filled with subtle gradient -->
+  <path d="M256 52 L415 120 L415 268 Q415 378 256 448 Q97 378 97 268 L97 120 Z"
+        fill="url(#shield7)" opacity="0.12"/>
+  <path d="M256 52 L415 120 L415 268 Q415 378 256 448 Q97 378 97 268 L97 120 Z"
+        fill="none" stroke="url(#shield7)" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- Inner shield line for depth -->
+  <path d="M256 72 L395 132 L395 260 Q395 358 256 422 Q117 358 117 260 L117 132 Z"
+        fill="none" stroke="#6c63ff" stroke-width="1" stroke-linejoin="round" opacity="0.25"/>
+
+  <!-- Compass ring -->
+  <circle cx="256" cy="225" r="105" fill="none" stroke="#4a4a6a" stroke-width="2"/>
+
+  <!-- Compass rose - 4 pointed star shape -->
+  <!-- North - tall, purple -->
+  <polygon points="256,120 248,210 264,210" fill="url(#north7)" opacity="0.9"/>
+  <!-- South -->
+  <polygon points="256,330 248,240 264,240" fill="#2a2a4a" opacity="0.7"/>
+  <!-- East -->
+  <polygon points="361,225 266,217 266,233" fill="#2a2a4a" opacity="0.5"/>
+  <!-- West -->
+  <polygon points="151,225 246,217 246,233" fill="#2a2a4a" opacity="0.5"/>
+
+  <!-- Decorative compass points (small diamonds between cardinals) -->
+  <polygon points="320,157 262,218 268,224" fill="#3a3a5a" opacity="0.35"/>
+  <polygon points="192,157 250,218 244,224" fill="#3a3a5a" opacity="0.35"/>
+  <polygon points="320,293 262,232 268,226" fill="#3a3a5a" opacity="0.25"/>
+  <polygon points="192,293 250,232 244,226" fill="#3a3a5a" opacity="0.25"/>
+
+  <!-- Center hub - larger with code -->
+  <circle cx="256" cy="225" r="36" fill="#0f0f1a" stroke="#6c63ff" stroke-width="3.5"/>
+  <circle cx="256" cy="225" r="28" fill="none" stroke="#3a3a5a" stroke-width="1" stroke-dasharray="3,3"/>
+
+  <!-- Code slash in center -->
+  <text x="256" y="233" font-family="SF Mono, Menlo, Consolas, monospace" font-size="28" font-weight="800" fill="#ffffff" text-anchor="middle">/</text>
+
+  <!-- Green checkmark overlaid at bottom-center of shield -->
+  <circle cx="256" cy="385" r="22" fill="#0f0f1a" stroke="url(#green7)" stroke-width="3"/>
+  <path d="M245 385 L253 393 L269 377" fill="none" stroke="url(#green7)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- N marker with subtle glow -->
+  <circle cx="256" cy="108" r="14" fill="#0f0f1a" stroke="#6c63ff" stroke-width="2"/>
+  <text x="256" y="113" font-family="-apple-system, sans-serif" font-size="13" font-weight="800" fill="#9b93ff" text-anchor="middle">N</text>
+
+  <!-- App name -->
+  <text x="256" y="482" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif" font-size="30" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="2">ReviewHelm</text>
+</svg>

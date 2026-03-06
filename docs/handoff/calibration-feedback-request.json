@@ -1,0 +1,10 @@
+{
+  "sessionId": "b5a0d225-6ead-4d99-9fb2-5bd0c2c2bf78",
+  "itemId": "go.error-handling.check-errors",
+  "feature": "comment-drafter",
+  "model": "sonnet",
+  "draftText": "In service.go, return the error from process().",
+  "finalText": "Could we return process()'s error here to avoid swallowing failures?",
+  "outcome": "edited",
+  "editDistance": 29
+}

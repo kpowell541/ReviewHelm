@@ -1,0 +1,2294 @@
+openapi: 3.1.0
+info:
+  title: ReviewHelm API
+  version: 1.0.0
+  description: |
+    REST API contract for ReviewHelm backend.
+    Base path is /api/v1.
+servers:
+  - url: https://api.reviewhelm.com/api/v1
+    description: Production
+  - url: http://localhost:3000/api/v1
+    description: Local development
+tags:
+  - name: Health
+  - name: User
+  - name: Keys
+  - name: Checklists
+  - name: Sessions
+  - name: Gaps
+  - name: Learn
+  - name: AI
+  - name: Diffs
+  - name: Comment Profiles
+  - name: Calibration
+  - name: Risk
+  - name: Compliance
+  - name: Usage
+  - name: Exports
+  - name: Backups
+  - name: Admin
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  service:
+                    type: string
+                  version:
+                    type: string
+                  time:
+                    type: string
+                    format: date-time
+                required: [ok, service, version, time]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Dependency readiness
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  service:
+                    type: string
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: boolean
+                      redis:
+                        type: boolean
+                    required: [database, redis]
+                  time:
+                    type: string
+                    format: date-time
+                required: [ok, service, checks, time]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me:
+    get:
+      tags: [User]
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/preferences:
+    get:
+      tags: [User]
+      summary: Get user preferences
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    patch:
+      tags: [User]
+      summary: Update user preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferencesPatchRequest'
+      responses:
+        '200':
+          description: Updated preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Preferences'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /me/api-keys/anthropic:
+    get:
+      tags: [Keys]
+      summary: Get Anthropic key status for current user
+      responses:
+        '200':
+          description: Anthropic key status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnthropicKeyStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      tags: [Keys]
+      summary: Upsert encrypted Anthropic key for current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnthropicKeyUpsertRequest'
+      responses:
+        '204':
+          description: Key saved
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags: [Keys]
+      summary: Delete Anthropic key for current user
+      responses:
+        '204':
+          description: Key deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checklists:
+    get:
+      tags: [Checklists]
+      summary: List available checklists
+      responses:
+        '200':
+          description: Checklist catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChecklistListItem'
+                required: [items]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checklists/version:
+    get:
+      tags: [Checklists]
+      summary: Get checklist version snapshot
+      responses:
+        '200':
+          description: Version info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChecklistVersionSnapshot'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /checklists/{id}:
+    get:
+      tags: [Checklists]
+      summary: Get checklist by id
+      parameters:
+        - $ref: '#/components/parameters/ChecklistIdParam'
+      responses:
+        '200':
+          description: Checklist payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Checklist'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sessions:
+    post:
+      tags: [Sessions]
+      summary: Create session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    get:
+      tags: [Sessions]
+      summary: List sessions
+      parameters:
+        - in: query
+          name: mode
+          schema:
+            $ref: '#/components/schemas/ChecklistMode'
+        - in: query
+          name: stackId
+          schema:
+            $ref: '#/components/schemas/StackId'
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, completed, all]
+            default: all
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/CursorParam'
+      responses:
+        '200':
+          description: Session page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required: [items, nextCursor]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /sessions/{sessionId}:
+    get:
+      tags: [Sessions]
+      summary: Get session
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      responses:
+        '200':
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    patch:
+      tags: [Sessions]
+      summary: Update session metadata
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSessionRequest'
+      responses:
+        '200':
+          description: Updated session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Sessions]
+      summary: Delete session
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      responses:
+        '204':
+          description: Session deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sessions/{sessionId}/items/{itemId}:
+    patch:
+      tags: [Sessions]
+      summary: Upsert item response for a session item
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+        - $ref: '#/components/parameters/ItemIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemResponsePatchRequest'
+      responses:
+        '200':
+          description: Updated item response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sessions/{sessionId}/notes:
+    patch:
+      tags: [Sessions]
+      summary: Update session notes
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionNotesPatchRequest'
+      responses:
+        '200':
+          description: Notes updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionNotesResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sessions/{sessionId}/complete:
+    post:
+      tags: [Sessions]
+      summary: Complete session (idempotent)
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteSessionRequest'
+      responses:
+        '200':
+          description: Session completion status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompleteSessionResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sessions/{sessionId}/summary:
+    get:
+      tags: [Sessions]
+      summary: Get computed session summary
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      responses:
+        '200':
+          description: Session summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /gaps:
+    get:
+      tags: [Gaps]
+      summary: Get user gaps and learning states
+      parameters:
+        - in: query
+          name: stackId
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/StackId'
+              - type: string
+                enum: [all]
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Gaps grouped by status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GapsResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /learn/queue:
+    get:
+      tags: [Learn]
+      summary: Get prioritized learning queue
+      parameters:
+        - in: query
+          name: stackId
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/StackId'
+              - type: string
+                enum: [all]
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Learning queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GapItem'
+                required: [items]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /ai/tutor:
+    post:
+      tags: [AI]
+      summary: Send tutor/chat request via server-side Anthropic proxy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiTutorRequest'
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiTutorResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '402':
+          $ref: '#/components/responses/BudgetExceededError'
+        '409':
+          $ref: '#/components/responses/CooldownActiveError'
+        '429':
+          $ref: '#/components/responses/RateLimitedError'
+        '502':
+          $ref: '#/components/responses/UpstreamAiError'
+
+  /diffs:
+    post:
+      tags: [Diffs]
+      summary: Save pasted diff content for optional grounding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDiffRequest'
+      responses:
+        '200':
+          description: Stored diff metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffArtifact'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /diffs/upload:
+    post:
+      tags: [Diffs]
+      summary: Upload a patch/diff file for optional grounding
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+      responses:
+        '200':
+          description: Stored diff metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffArtifact'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /diffs/{diffId}:
+    get:
+      tags: [Diffs]
+      summary: Get stored diff by id
+      parameters:
+        - in: path
+          name: diffId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Diff detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffArtifact'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /comment-profiles:
+    get:
+      tags: [Comment Profiles]
+      summary: List comment drafting style profiles
+      responses:
+        '200':
+          description: Profile list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentProfileListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags: [Comment Profiles]
+      summary: Create a new comment drafting profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentProfileRequest'
+      responses:
+        '201':
+          description: Created profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /comment-profiles/{profileId}:
+    patch:
+      tags: [Comment Profiles]
+      summary: Update a comment profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCommentProfileRequest'
+      responses:
+        '200':
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentProfile'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    delete:
+      tags: [Comment Profiles]
+      summary: Delete a comment profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Profile deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /comment-profiles/{profileId}/activate:
+    post:
+      tags: [Comment Profiles]
+      summary: Set active comment profile
+      parameters:
+        - in: path
+          name: profileId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Active profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activeProfileId:
+                    type: string
+                required: [activeProfileId]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /calibration/feedback:
+    post:
+      tags: [Calibration]
+      summary: Submit feedback on drafted AI output for personal calibration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitCommentFeedbackRequest'
+      responses:
+        '200':
+          description: Feedback accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  createdAt:
+                    type: string
+                    format: date-time
+                required: [id, createdAt]
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /calibration/summary:
+    get:
+      tags: [Calibration]
+      summary: Get personal calibration summary
+      parameters:
+        - in: query
+          name: days
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 180
+            default: 30
+      responses:
+        '200':
+          description: Calibration summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalibrationSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /risk/sessions/{sessionId}/heatmap:
+    get:
+      tags: [Risk]
+      summary: Generate session risk heatmap
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+        - in: query
+          name: diffId
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Risk heatmap
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiskHeatmapResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /compliance/packs:
+    get:
+      tags: [Compliance]
+      summary: List available compliance packs
+      responses:
+        '200':
+          description: Compliance pack catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompliancePackListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /compliance/packs/{packId}:
+    get:
+      tags: [Compliance]
+      summary: Get compliance pack by id
+      parameters:
+        - in: path
+          name: packId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Compliance pack detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompliancePack'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /usage/summary:
+    get:
+      tags: [Usage]
+      summary: Get usage summary for month
+      parameters:
+        - in: query
+          name: month
+          schema:
+            type: string
+            pattern: '^\\d{4}-(0[1-9]|1[0-2])$'
+            example: '2026-03'
+      responses:
+        '200':
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /usage/by-feature:
+    get:
+      tags: [Usage]
+      summary: Get usage breakdown by feature for month
+      parameters:
+        - in: query
+          name: month
+          schema:
+            type: string
+            pattern: '^\\d{4}-(0[1-9]|1[0-2])$'
+            example: '2026-03'
+      responses:
+        '200':
+          description: Feature usage breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FeatureCostBreakdown'
+                required: [items]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /usage/sessions/{sessionId}:
+    get:
+      tags: [Usage]
+      summary: Get usage summary for one session
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      responses:
+        '200':
+          description: Session usage summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionUsageSummary'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /usage/budget:
+    get:
+      tags: [Usage]
+      summary: Get budget and guard configuration
+      responses:
+        '200':
+          description: Budget config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetConfig'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    patch:
+      tags: [Usage]
+      summary: Update budget and guard configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetConfigPatchRequest'
+      responses:
+        '200':
+          description: Updated budget config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetConfig'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /usage/reset:
+    post:
+      tags: [Usage]
+      summary: Reset usage counters for current user
+      responses:
+        '204':
+          description: Usage reset
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /exports/sessions/{sessionId}/pdf:
+    post:
+      tags: [Exports]
+      summary: Generate session PDF export and return signed URL
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      responses:
+        '200':
+          description: Export URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignedUrlResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /backups/export:
+    post:
+      tags: [Backups]
+      summary: Export user backup data
+      responses:
+        '200':
+          description: Backup signed URL
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SignedUrlResponse'
+                  - type: object
+                    properties:
+                      version:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /backups/import:
+    post:
+      tags: [Backups]
+      summary: Import backup from source URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupImportRequest'
+      responses:
+        '202':
+          description: Import job queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportJobResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /admin/security/rotate-provider-keys:
+    post:
+      tags: [Admin]
+      summary: Re-encrypt stored provider keys with the current KEK version
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RotateProviderKeysRequest'
+      responses:
+        '200':
+          description: Rotation summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RotateProviderKeysResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/checklists/publish:
+    post:
+      tags: [Admin]
+      summary: Publish checklist version map
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminPublishChecklistsRequest'
+      responses:
+        '200':
+          description: Publish accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  publishedAt:
+                    type: string
+                    format: date-time
+                required: [ok, publishedAt]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/ci/policy-check:
+    post:
+      tags: [Admin]
+      summary: Evaluate CI policy gate for a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CiPolicyCheckRequest'
+      responses:
+        '200':
+          description: CI policy evaluation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CiPolicyCheckResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/maintenance/policy:
+    get:
+      tags: [Admin]
+      summary: Get retention and cleanup policy
+      responses:
+        '200':
+          description: Retention policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenancePolicy'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/maintenance/cleanup:
+    post:
+      tags: [Admin]
+      summary: Run cleanup for retention-managed datasets
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunCleanupRequest'
+      responses:
+        '200':
+          description: Cleanup result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunCleanupResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    SessionIdParam:
+      in: path
+      name: sessionId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ItemIdParam:
+      in: path
+      name: itemId
+      required: true
+      schema:
+        type: string
+    ChecklistIdParam:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+    LimitParam:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    CursorParam:
+      in: query
+      name: cursor
+      schema:
+        type: string
+
+  responses:
+    UnauthorizedError:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimitedError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BudgetExceededError:
+      description: User budget exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    CooldownActiveError:
+      description: Cooldown active
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UpstreamAiError:
+      description: Upstream AI provider error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+            requestId:
+              type: string
+              format: uuid
+          required: [code, message]
+      required: [error]
+
+    StackId:
+      type: string
+      enum:
+        - java-protobuf
+        - js-ts-react-node
+        - go
+        - terraform-hcl
+        - swift-objc
+        - web-devops-config
+        - python
+        - ruby
+        - lua
+        - c-lang
+
+    ChecklistMode:
+      type: string
+      enum: [review, polish]
+
+    Severity:
+      type: string
+      enum: [blocker, major, minor, nit]
+
+    Verdict:
+      type: string
+      enum: [looks-good, needs-attention, na, skipped]
+
+    ConfidenceLevel:
+      type: integer
+      enum: [1, 2, 3, 4, 5]
+
+    ClaudeModel:
+      type: string
+      enum: [haiku, sonnet, opus]
+
+    TutorRole:
+      type: string
+      enum:
+        - concept-explainer
+        - qa
+        - comment-drafter
+        - exercise-generator
+        - anti-bias-challenger
+
+    AiFeature:
+      type: string
+      enum: [learn, deep-dive, comment-drafter]
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, createdAt]
+
+    Preferences:
+      type: object
+      properties:
+        aiModel:
+          $ref: '#/components/schemas/ClaudeModel'
+        defaultSeverityFilter:
+          type: array
+          items:
+            $ref: '#/components/schemas/Severity'
+        antiBiasMode:
+          type: boolean
+        fontSize:
+          type: string
+          enum: [small, medium, large]
+        codeBlockTheme:
+          type: string
+          enum: [dark, light]
+        autoExportPdf:
+          type: boolean
+        activeCommentStyleProfileId:
+          type: string
+          nullable: true
+      required:
+        - aiModel
+        - defaultSeverityFilter
+        - antiBiasMode
+        - fontSize
+        - codeBlockTheme
+        - autoExportPdf
+
+    PreferencesPatchRequest:
+      type: object
+      properties:
+        aiModel:
+          $ref: '#/components/schemas/ClaudeModel'
+        defaultSeverityFilter:
+          type: array
+          items:
+            $ref: '#/components/schemas/Severity'
+        antiBiasMode:
+          type: boolean
+        fontSize:
+          type: string
+          enum: [small, medium, large]
+        codeBlockTheme:
+          type: string
+          enum: [dark, light]
+        autoExportPdf:
+          type: boolean
+        activeCommentStyleProfileId:
+          type: string
+          nullable: true
+      additionalProperties: false
+
+    AnthropicKeyStatus:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        tokenHint:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        keySource:
+          type: string
+          enum: [byok, platform]
+          nullable: true
+        keyVersion:
+          type: integer
+          nullable: true
+      required: [configured]
+
+    AnthropicKeyUpsertRequest:
+      type: object
+      properties:
+        apiKey:
+          type: string
+          minLength: 10
+      required: [apiKey]
+      additionalProperties: false
+
+    ChecklistListItem:
+      type: object
+      properties:
+        id:
+          type: string
+        mode:
+          $ref: '#/components/schemas/ChecklistMode'
+        title:
+          type: string
+        shortTitle:
+          type: string
+        version:
+          type: string
+        totalItems:
+          type: integer
+      required: [id, mode, title, shortTitle, version, totalItems]
+
+    ChecklistVersionSnapshot:
+      type: object
+      properties:
+        latestVersion:
+          type: string
+        byId:
+          type: object
+          additionalProperties:
+            type: string
+      required: [latestVersion, byId]
+
+    Checklist:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            id:
+              type: string
+            mode:
+              $ref: '#/components/schemas/ChecklistMode'
+            title:
+              type: string
+            shortTitle:
+              type: string
+            description:
+              type: string
+            icon:
+              type: string
+            totalItems:
+              type: integer
+            version:
+              type: string
+          required: [id, mode, title, shortTitle, description, icon, totalItems, version]
+        sections:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required: [meta, sections]
+
+    CreateSessionRequest:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ChecklistMode'
+        stackId:
+          $ref: '#/components/schemas/StackId'
+        title:
+          type: string
+      required: [mode]
+      additionalProperties: false
+
+    UpdateSessionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+      required: [title]
+      additionalProperties: false
+
+    ItemResponse:
+      type: object
+      properties:
+        verdict:
+          $ref: '#/components/schemas/Verdict'
+        confidence:
+          $ref: '#/components/schemas/ConfidenceLevel'
+        notes:
+          type: string
+        draftedComment:
+          type: string
+      required: [verdict, confidence]
+
+    ItemResponsePatchRequest:
+      type: object
+      properties:
+        verdict:
+          $ref: '#/components/schemas/Verdict'
+        confidence:
+          $ref: '#/components/schemas/ConfidenceLevel'
+        notes:
+          type: string
+        draftedComment:
+          type: string
+      additionalProperties: false
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        mode:
+          $ref: '#/components/schemas/ChecklistMode'
+        stackId:
+          allOf:
+            - $ref: '#/components/schemas/StackId'
+          nullable: true
+        title:
+          type: string
+        itemResponses:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ItemResponse'
+        sessionNotes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        isComplete:
+          type: boolean
+      required:
+        - id
+        - mode
+        - title
+        - itemResponses
+        - sessionNotes
+        - createdAt
+        - updatedAt
+        - isComplete
+
+    SessionNotesPatchRequest:
+      type: object
+      properties:
+        sessionNotes:
+          type: string
+      required: [sessionNotes]
+      additionalProperties: false
+
+    SessionNotesResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        sessionNotes:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+      required: [sessionId, sessionNotes, updatedAt]
+
+    CompleteSessionRequest:
+      type: object
+      properties:
+        confirmLowCoverage:
+          type: boolean
+      additionalProperties: false
+
+    CompleteSessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        completedAt:
+          type: string
+          format: date-time
+        isComplete:
+          type: boolean
+      required: [sessionId, completedAt, isComplete]
+
+    SessionScores:
+      type: object
+      properties:
+        coverage:
+          type: integer
+        confidence:
+          type: integer
+        issuesBySeverity:
+          type: object
+          properties:
+            blocker:
+              type: integer
+            major:
+              type: integer
+            minor:
+              type: integer
+            nit:
+              type: integer
+          required: [blocker, major, minor, nit]
+        totalIssues:
+          type: integer
+        itemsResponded:
+          type: integer
+        applicableItems:
+          type: integer
+      required:
+        - coverage
+        - confidence
+        - issuesBySeverity
+        - totalIssues
+        - itemsResponded
+        - applicableItems
+
+    FeatureCostBreakdown:
+      type: object
+      properties:
+        feature:
+          $ref: '#/components/schemas/AiFeature'
+        calls:
+          type: integer
+        inputTokens:
+          type: integer
+        outputTokens:
+          type: integer
+        costUsd:
+          type: number
+      required: [feature, calls, inputTokens, outputTokens, costUsd]
+
+    SessionUsageSummary:
+      type: object
+      properties:
+        calls:
+          type: integer
+        inputTokens:
+          type: integer
+        outputTokens:
+          type: integer
+        costUsd:
+          type: number
+        byFeature:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureCostBreakdown'
+      required: [calls, inputTokens, outputTokens, costUsd, byFeature]
+
+    SessionSummary:
+      type: object
+      properties:
+        scores:
+          $ref: '#/components/schemas/SessionScores'
+        lowConfidenceItems:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        sessionUsage:
+          $ref: '#/components/schemas/SessionUsageSummary'
+      required: [scores, lowConfidenceItems, sessionUsage]
+
+    GapItem:
+      type: object
+      properties:
+        itemId:
+          type: string
+        stackId:
+          type: string
+        sectionId:
+          type: string
+        severity:
+          $ref: '#/components/schemas/Severity'
+        currentConfidence:
+          $ref: '#/components/schemas/ConfidenceLevel'
+        averageConfidence:
+          type: number
+        trend:
+          type: string
+          enum: [improving, stable, declining, new]
+        learningPriority:
+          type: number
+        ratingsCount:
+          type: integer
+      required:
+        - itemId
+        - stackId
+        - sectionId
+        - severity
+        - currentConfidence
+        - averageConfidence
+        - trend
+        - learningPriority
+        - ratingsCount
+
+    GapsResponse:
+      type: object
+      properties:
+        active:
+          type: array
+          items:
+            $ref: '#/components/schemas/GapItem'
+        improving:
+          type: array
+          items:
+            $ref: '#/components/schemas/GapItem'
+        strong:
+          type: array
+          items:
+            $ref: '#/components/schemas/GapItem'
+      required: [active, improving, strong]
+
+    TutorMessageInput:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+      required: [role, content]
+
+    AiTutorRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          nullable: true
+        feature:
+          $ref: '#/components/schemas/AiFeature'
+        model:
+          $ref: '#/components/schemas/ClaudeModel'
+        role:
+          $ref: '#/components/schemas/TutorRole'
+        itemId:
+          type: string
+        itemText:
+          type: string
+        stackLabel:
+          type: string
+        confidence:
+          $ref: '#/components/schemas/ConfidenceLevel'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/TutorMessageInput'
+        allowResponseCache:
+          type: boolean
+          default: true
+        allowEscalation:
+          type: boolean
+          default: true
+        diffId:
+          type: string
+          format: uuid
+        diffText:
+          type: string
+        commentStyleProfileId:
+          type: string
+          format: uuid
+      required:
+        - feature
+        - role
+        - itemId
+        - itemText
+        - stackLabel
+        - confidence
+        - messages
+      additionalProperties: false
+
+    AiTutorResponse:
+      type: object
+      properties:
+        content:
+          type: string
+        requestedModel:
+          $ref: '#/components/schemas/ClaudeModel'
+        resolvedModel:
+          $ref: '#/components/schemas/ClaudeModel'
+        autoDowngraded:
+          type: boolean
+        autoEscalated:
+          type: boolean
+        cached:
+          type: boolean
+        inputTokens:
+          type: integer
+        outputTokens:
+          type: integer
+        costUsd:
+          type: number
+        cooldownRemainingMs:
+          type: integer
+      required:
+        - content
+        - requestedModel
+        - resolvedModel
+        - autoDowngraded
+        - autoEscalated
+        - cached
+        - inputTokens
+        - outputTokens
+        - costUsd
+        - cooldownRemainingMs
+
+    CreateDiffRequest:
+      type: object
+      properties:
+        content:
+          type: string
+        label:
+          type: string
+      required: [content]
+      additionalProperties: false
+
+    DiffArtifact:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          enum: [pasted, uploaded]
+        label:
+          type: string
+          nullable: true
+        filename:
+          type: string
+          nullable: true
+        lineCount:
+          type: integer
+        preview:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, source, lineCount, preview, createdAt, updatedAt]
+
+    CommentProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tone:
+          type: string
+        strictness:
+          type: integer
+        verbosity:
+          type: integer
+        includePraise:
+          type: boolean
+        includeActionItems:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - tone
+        - strictness
+        - verbosity
+        - includePraise
+        - includeActionItems
+        - createdAt
+        - updatedAt
+
+    CreateCommentProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        tone:
+          type: string
+        strictness:
+          type: integer
+          minimum: 1
+          maximum: 5
+        verbosity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        includePraise:
+          type: boolean
+        includeActionItems:
+          type: boolean
+      required: [name, tone, strictness, verbosity]
+      additionalProperties: false
+
+    UpdateCommentProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        tone:
+          type: string
+        strictness:
+          type: integer
+          minimum: 1
+          maximum: 5
+        verbosity:
+          type: integer
+          minimum: 1
+          maximum: 5
+        includePraise:
+          type: boolean
+        includeActionItems:
+          type: boolean
+      additionalProperties: false
+
+    CommentProfileListResponse:
+      type: object
+      properties:
+        activeProfileId:
+          type: string
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentProfile'
+      required: [activeProfileId, items]
+
+    SubmitCommentFeedbackRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+        feature:
+          type: string
+          enum: [comment-drafter, deep-dive, learn]
+        model:
+          $ref: '#/components/schemas/ClaudeModel'
+        draftText:
+          type: string
+        finalText:
+          type: string
+        outcome:
+          type: string
+          enum: [accepted, edited, rejected]
+        editDistance:
+          type: integer
+          minimum: 0
+      required: [itemId, feature, model, draftText, outcome]
+      additionalProperties: false
+
+    CalibrationSummary:
+      type: object
+      properties:
+        windowDays:
+          type: integer
+        totalFeedback:
+          type: integer
+        counts:
+          type: object
+          properties:
+            accepted:
+              type: integer
+            edited:
+              type: integer
+            rejected:
+              type: integer
+          required: [accepted, edited, rejected]
+        acceptanceRate:
+          type: number
+        averageEditDistance:
+          type: number
+        byModel:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: true
+        guidance:
+          type: string
+      required:
+        - windowDays
+        - totalFeedback
+        - counts
+        - acceptanceRate
+        - averageEditDistance
+        - byModel
+        - guidance
+
+    RiskHeatmapResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        overallRisk:
+          type: number
+        respondedItems:
+          type: integer
+        bySection:
+          type: array
+          items:
+            type: object
+            properties:
+              sectionId:
+                type: string
+              score:
+                type: number
+              normalizedRisk:
+                type: number
+              issues:
+                type: integer
+              responded:
+                type: integer
+            required: [sectionId, score, normalizedRisk, issues, responded]
+        byFile:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+              added:
+                type: integer
+              removed:
+                type: integer
+              churn:
+                type: integer
+            required: [path, added, removed, churn]
+      required: [sessionId, overallRisk, respondedItems, bySection, byFile]
+
+    CompliancePackControl:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [high, medium, low]
+      required: [id, title, description, priority]
+
+    CompliancePack:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        version:
+          type: string
+        controls:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompliancePackControl'
+      required: [id, title, description, version, controls]
+
+    CompliancePackListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              title:
+                type: string
+              description:
+                type: string
+              version:
+                type: string
+              controlsCount:
+                type: integer
+            required: [id, title, description, version, controlsCount]
+      required: [items]
+
+    CiPolicyCheckRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        userSupabaseUserId:
+          type: string
+        minCoverage:
+          type: integer
+        minConfidence:
+          type: integer
+        maxBlockers:
+          type: integer
+        maxMajors:
+          type: integer
+      required: [sessionId, userSupabaseUserId]
+      additionalProperties: false
+
+    CiPolicyCheckResponse:
+      type: object
+      properties:
+        pass:
+          type: boolean
+        reasons:
+          type: array
+          items:
+            type: string
+        thresholds:
+          type: object
+          additionalProperties: true
+        metrics:
+          type: object
+          additionalProperties: true
+      required: [pass, reasons, thresholds, metrics]
+
+    MaintenancePolicy:
+      type: object
+      properties:
+        retainDiffDays:
+          type: integer
+        retainCalibrationDays:
+          type: integer
+        retainAuditDays:
+          type: integer
+      required: [retainDiffDays, retainCalibrationDays, retainAuditDays]
+
+    RunCleanupRequest:
+      type: object
+      properties:
+        dryRun:
+          type: boolean
+          default: true
+      additionalProperties: false
+
+    RunCleanupResponse:
+      type: object
+      properties:
+        dryRun:
+          type: boolean
+        policy:
+          $ref: '#/components/schemas/MaintenancePolicy'
+        targets:
+          type: object
+          properties:
+            diffArtifacts:
+              type: integer
+            commentFeedback:
+              type: integer
+            auditEvents:
+              type: integer
+          required: [diffArtifacts, commentFeedback, auditEvents]
+        cutoffs:
+          type: object
+          properties:
+            diffBefore:
+              type: string
+              format: date-time
+            calibrationBefore:
+              type: string
+              format: date-time
+            auditBefore:
+              type: string
+              format: date-time
+          required: [diffBefore, calibrationBefore, auditBefore]
+      required: [dryRun, policy, targets, cutoffs]
+
+    UsageSummary:
+      type: object
+      properties:
+        month:
+          type: string
+        calls:
+          type: integer
+        inputTokens:
+          type: integer
+        outputTokens:
+          type: integer
+        estimatedCostUsd:
+          type: number
+        officialCostUsd:
+          type: number
+          nullable: true
+        todayCalls:
+          type: integer
+      required:
+        - month
+        - calls
+        - inputTokens
+        - outputTokens
+        - estimatedCostUsd
+        - todayCalls
+
+    BudgetConfig:
+      type: object
+      properties:
+        monthlyBudgetUsd:
+          type: number
+        alertThresholds:
+          type: array
+          items:
+            type: integer
+        hardStopAtBudget:
+          type: boolean
+        autoDowngradeNearBudget:
+          type: boolean
+        autoDowngradeThresholdPct:
+          type: integer
+        cooldownSeconds:
+          type: integer
+        lastAlertThreshold:
+          type: integer
+          nullable: true
+        usage:
+          type: object
+          properties:
+            month:
+              type: string
+            calls:
+              type: integer
+            inputTokens:
+              type: integer
+            outputTokens:
+              type: integer
+            estimatedCostUsd:
+              type: number
+            spendPercent:
+              type: number
+            nearBudget:
+              type: boolean
+            overBudget:
+              type: boolean
+      required:
+        - monthlyBudgetUsd
+        - alertThresholds
+        - hardStopAtBudget
+        - autoDowngradeNearBudget
+        - autoDowngradeThresholdPct
+        - cooldownSeconds
+
+    BudgetConfigPatchRequest:
+      type: object
+      properties:
+        monthlyBudgetUsd:
+          type: number
+        alertThresholds:
+          type: array
+          items:
+            type: integer
+        hardStopAtBudget:
+          type: boolean
+        autoDowngradeNearBudget:
+          type: boolean
+        autoDowngradeThresholdPct:
+          type: integer
+        cooldownSeconds:
+          type: integer
+      additionalProperties: false
+
+    SignedUrlResponse:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        expiresAt:
+          type: string
+          format: date-time
+      required: [url, expiresAt]
+
+    BackupImportRequest:
+      type: object
+      properties:
+        sourceUrl:
+          type: string
+          format: uri
+      required: [sourceUrl]
+      additionalProperties: false
+
+    ImportJobResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+      required: [jobId, status]
+
+    AdminPublishChecklistsRequest:
+      type: object
+      properties:
+        version:
+          type: string
+        byId:
+          type: object
+          additionalProperties:
+            type: string
+      required: [version, byId]
+      additionalProperties: false
+
+    RotateProviderKeysRequest:
+      type: object
+      properties:
+        provider:
+          type: string
+        dryRun:
+          type: boolean
+          default: false
+      additionalProperties: false
+
+    RotateProviderKeysResponse:
+      type: object
+      properties:
+        currentVersion:
+          type: integer
+        scanned:
+          type: integer
+        rotated:
+          type: integer
+        failed:
+          type: integer
+        willRotate:
+          type: integer

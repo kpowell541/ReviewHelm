@@ -1,0 +1,257 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ChecklistMode {
+  review
+  polish
+}
+
+enum Severity {
+  blocker
+  major
+  minor
+  nit
+}
+
+enum Verdict {
+  looks_good
+  needs_attention
+  na
+  skipped
+}
+
+enum ClaudeModel {
+  haiku
+  sonnet
+  opus
+}
+
+enum AiFeature {
+  learn
+  deep_dive
+  comment_drafter
+}
+
+enum KeySource {
+  byok
+  platform
+}
+
+enum DiffSource {
+  pasted
+  uploaded
+}
+
+enum FeedbackOutcome {
+  accepted
+  edited
+  rejected
+}
+
+model User {
+  id             String       @id @default(uuid())
+  supabaseUserId String       @unique
+  email          String?
+  displayName    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  preference     Preference?
+  providerKeys   ProviderKey[]
+  sessions       Session[]
+  usageDays      UsageDay[]
+  usageSessions  UsageSession[]
+  auditEvents    AuditEvent[]
+  diffArtifacts  DiffArtifact[]
+  commentStyleProfiles CommentStyleProfile[]
+  commentFeedback CommentFeedback[]
+}
+
+model Preference {
+  id                       String      @id @default(uuid())
+  userId                   String      @unique
+  aiModel                  ClaudeModel @default(sonnet)
+  defaultSeverityFilter    String[]    @default(["blocker", "major", "minor", "nit"])
+  antiBiasMode             Boolean     @default(true)
+  fontSize                 String      @default("medium")
+  codeBlockTheme           String      @default("dark")
+  autoExportPdf            Boolean     @default(false)
+  activeCommentStyleProfileId String?
+
+  monthlyBudgetUsd         Decimal     @default(40)
+  alertThresholds          Int[]       @default([70, 85, 95])
+  hardStopAtBudget         Boolean     @default(false)
+  autoDowngradeNearBudget  Boolean     @default(true)
+  autoDowngradeThresholdPct Int        @default(85)
+  cooldownSeconds          Int         @default(6)
+  lastAlertThreshold       Int?
+
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
+
+  user                     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DiffArtifact {
+  id         String     @id @default(uuid())
+  userId     String
+  source     DiffSource
+  label      String?
+  filename   String?
+  content    String     @db.Text
+  lineCount  Int        @default(0)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model CommentStyleProfile {
+  id                   String   @id @default(uuid())
+  userId               String
+  name                 String
+  tone                 String
+  strictness           Int      @default(3)
+  verbosity            Int      @default(3)
+  includePraise        Boolean  @default(false)
+  includeActionItems   Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model CommentFeedback {
+  id            String          @id @default(uuid())
+  userId        String
+  sessionId     String?
+  itemId        String
+  feature       String
+  model         ClaudeModel
+  draftText     String          @db.Text
+  finalText     String?         @db.Text
+  outcome       FeedbackOutcome
+  editDistance  Int?
+  createdAt     DateTime        @default(now())
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, outcome, model, createdAt])
+}
+
+model ProviderKey {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String
+  keySource         KeySource @default(byok)
+  kekVersion        Int       @default(1)
+  kmsKeyId          String?
+  tokenHint         String?
+  encryptedDek      String
+  ciphertext        String
+  iv                String
+  authTag           String
+  lastRotatedAt     DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
+}
+
+model AuditEvent {
+  id          String   @id @default(uuid())
+  userId      String?
+  eventType   String
+  eventScope  String
+  severity    String   @default("info")
+  details     Json     @default("{}")
+  requestId   String?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Session {
+  id            String        @id @default(uuid())
+  userId        String
+  mode          ChecklistMode
+  stackId       String?
+  title         String
+  itemResponses Json          @default("{}")
+  sessionNotes  String        @default("")
+  completedAt   DateTime?
+  isComplete    Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usage         UsageSession?
+
+  @@index([userId, mode, stackId])
+  @@index([userId, isComplete, updatedAt])
+}
+
+model UsageDay {
+  id            String   @id @default(uuid())
+  userId        String
+  dateKey       String
+  calls         Int      @default(0)
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  byModel       Json     @default("{}")
+  byFeature     Json     @default("{}")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId, dateKey])
+}
+
+model UsageSession {
+  id            String   @id @default(uuid())
+  userId        String
+  sessionId     String   @unique
+  calls         Int      @default(0)
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  byModel       Json     @default("{}")
+  byFeature     Json     @default("{}")
+  lastUpdatedAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ChecklistVersion {
+  id         String   @id @default(uuid())
+  checklistId String
+  version    String
+  payload    Json
+  createdAt  DateTime @default(now())
+
+  @@unique([checklistId, version])
+  @@index([checklistId])
+}

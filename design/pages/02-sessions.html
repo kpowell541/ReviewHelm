@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 2: Sessions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Page header */
+  .page-header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+
+  /* Layout — two phones side by side */
+  .design-row {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .variant-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #0a0a1a;
+    border-radius: 44px;
+    border: 3px solid #242442;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch {
+    width: 160px;
+    height: 34px;
+    background: #050510;
+    border-radius: 0 0 20px 20px;
+    margin: 0 auto;
+  }
+  .phone-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    height: 44px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e4e4ec;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  .phone-content {
+    padding: 52px 20px 20px;
+  }
+  .phone-home-indicator {
+    width: 134px;
+    height: 5px;
+    background: #e4e4ec;
+    border-radius: 3px;
+    margin: 20px auto 8px;
+    opacity: 0.2;
+  }
+
+  /* Annotations panel */
+  .annotations {
+    max-width: 380px;
+    flex: 1;
+    min-width: 300px;
+  }
+  .annotation-section {
+    background: #111122;
+    border: 1px solid #242442;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .annotation-section h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #8b5cf6;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .annotation-section p {
+    font-size: 13px;
+    color: #9898b0;
+    line-height: 1.6;
+    margin-bottom: 6px;
+  }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px;
+    color: #a78bfa;
+    background: #1a1a30;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .color-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+  }
+  .color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+
+  /* ============ SESSIONS SCREEN COMPONENTS ============ */
+
+  /* Nav header */
+  .nav-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 0 4px;
+  }
+  .nav-back {
+    width: 36px;
+    height: 36px;
+    background: #1a1a30;
+    border: 1px solid #242442;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: #e4e4ec;
+    cursor: pointer;
+  }
+  .nav-icon {
+    font-size: 24px;
+  }
+  .nav-title-area {
+    flex: 1;
+  }
+  .nav-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #e4e4ec;
+  }
+  .nav-subtitle {
+    font-size: 12px;
+    color: #5a5a78;
+    margin-top: 1px;
+  }
+
+  /* New session button */
+  .new-session-btn {
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    cursor: pointer;
+  }
+  .new-session-btn span {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .new-session-plus {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5a5a78;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-count {
+    background: #1a1a30;
+    color: #9898b0;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  /* Session cards */
+  .session-card {
+    background: #111122;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 1px solid #1a1a30;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .session-card:hover {
+    border-color: #333355;
+  }
+  .session-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .session-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e4e4ec;
+    flex: 1;
+    margin-right: 8px;
+  }
+  .session-date {
+    font-size: 11px;
+    color: #5a5a78;
+    flex-shrink: 0;
+  }
+  .session-progress-bar {
+    height: 4px;
+    background: #1a1a30;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .session-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+  .session-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .session-meta-left {
+    font-size: 12px;
+    color: #5a5a78;
+  }
+  .session-meta-right {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* Completed card style */
+  .session-card.completed {
+    border-color: #10b98122;
+  }
+  .session-card.completed .session-title {
+    color: #9898b0;
+  }
+  .completed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+  .empty-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #5a5a78;
+    margin-bottom: 6px;
+  }
+  .empty-desc {
+    font-size: 13px;
+    color: #3a3a52;
+    line-height: 1.5;
+  }
+
+  /* Reopen button */
+  .reopen-btn {
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fbbf24;
+    background: #f59e0b15;
+    border: 1px solid #f59e0b33;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Delete hint */
+  .delete-hint {
+    text-align: center;
+    font-size: 11px;
+    color: #3a3a52;
+    margin-top: 16px;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 2 of 11</div>
+  <h1>Sessions List</h1>
+  <p class="desc">Session management for both Review and Polish modes. Shows active sessions with progress and completed sessions with scores. Both variants share the same layout — only the accent color and header change.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ REVIEW SESSIONS PHONE ============ -->
+  <div class="variant">
+    <div class="variant-label" style="color:#8b5cf6; border-color:#8b5cf633">Review Mode</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+
+      <div class="phone-content">
+        <!-- Nav header -->
+        <div class="nav-header">
+          <div class="nav-back">‹</div>
+          <span class="nav-icon">🔍</span>
+          <div class="nav-title-area">
+            <div class="nav-title">Go Stack</div>
+            <div class="nav-subtitle">Review Sessions</div>
+          </div>
+        </div>
+
+        <!-- New session button -->
+        <div class="new-session-btn" style="background:#8b5cf6">
+          <span class="new-session-plus">+</span>
+          <span>New Review Session</span>
+        </div>
+
+        <!-- Active sessions -->
+        <div class="section-label">
+          Active
+          <span class="section-count">2</span>
+        </div>
+
+        <div class="session-card">
+          <div class="session-card-top">
+            <div class="session-title">Error Handling & Recovery</div>
+            <div class="session-date">Today</div>
+          </div>
+          <div class="session-progress-bar">
+            <div class="session-progress-fill" style="width:65%; background:linear-gradient(90deg, #8b5cf6, #a78bfa)"></div>
+          </div>
+          <div class="session-meta-row">
+            <span class="session-meta-left">9 of 14 items</span>
+            <span class="session-meta-right" style="color:#a78bfa">65%</span>
+          </div>
+        </div>
+
+        <div class="session-card">
+          <div class="session-card-top">
+            <div class="session-title">Concurrency Patterns</div>
+            <div class="session-date">Yesterday</div>
+          </div>
+          <div class="session-progress-bar">
+            <div class="session-progress-fill" style="width:25%; background:linear-gradient(90deg, #8b5cf6, #a78bfa)"></div>
+          </div>
+          <div class="session-meta-row">
+            <span class="session-meta-left">3 of 12 items</span>
+            <span class="session-meta-right" style="color:#a78bfa">25%</span>
+          </div>
+        </div>
+
+        <!-- Completed sessions -->
+        <div style="margin-top:20px">
+          <div class="section-label">
+            Completed
+            <span class="section-count">2</span>
+          </div>
+
+          <div class="session-card completed">
+            <div class="session-card-top">
+              <div class="session-title">API Design & REST</div>
+              <div class="session-date">Mar 1</div>
+            </div>
+            <div class="session-meta-row">
+              <span class="session-meta-left">14 of 14 items</span>
+              <span style="display:flex; align-items:center; gap:8px">
+                <span class="completed-badge" style="background:#10b98120; color:#34d399">✓ 94%</span>
+                <span class="reopen-btn">Reopen</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="session-card completed">
+            <div class="session-card-top">
+              <div class="session-title">Testing & Mocks</div>
+              <div class="session-date">Feb 26</div>
+            </div>
+            <div class="session-meta-row">
+              <span class="session-meta-left">11 of 11 items</span>
+              <span style="display:flex; align-items:center; gap:8px">
+                <span class="completed-badge" style="background:#10b98120; color:#34d399">✓ 87%</span>
+                <span class="reopen-btn">Reopen</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="delete-hint">Long-press a session to delete</div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ POLISH SESSIONS PHONE ============ -->
+  <div class="variant">
+    <div class="variant-label" style="color:#34d399; border-color:#34d39933">Polish Mode</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+
+      <div class="phone-content">
+        <!-- Nav header -->
+        <div class="nav-header">
+          <div class="nav-back">‹</div>
+          <span class="nav-icon">✨</span>
+          <div class="nav-title-area">
+            <div class="nav-title">Polish My PR</div>
+            <div class="nav-subtitle">Self-Review Sessions</div>
+          </div>
+        </div>
+
+        <!-- New session button -->
+        <div class="new-session-btn" style="background:#10b981">
+          <span class="new-session-plus">+</span>
+          <span>New Polish Session</span>
+        </div>
+
+        <!-- Active sessions -->
+        <div class="section-label">
+          Active
+          <span class="section-count">1</span>
+        </div>
+
+        <div class="session-card">
+          <div class="session-card-top">
+            <div class="session-title">Feature: Auth Middleware</div>
+            <div class="session-date">Today</div>
+          </div>
+          <div class="session-progress-bar">
+            <div class="session-progress-fill" style="width:40%; background:linear-gradient(90deg, #10b981, #34d399)"></div>
+          </div>
+          <div class="session-meta-row">
+            <span class="session-meta-left">18 of 45 items</span>
+            <span class="session-meta-right" style="color:#34d399">40%</span>
+          </div>
+        </div>
+
+        <!-- Completed sessions -->
+        <div style="margin-top:20px">
+          <div class="section-label">
+            Completed
+            <span class="section-count">3</span>
+          </div>
+
+          <div class="session-card completed">
+            <div class="session-card-top">
+              <div class="session-title">Feature: User Dashboard</div>
+              <div class="session-date">Mar 2</div>
+            </div>
+            <div class="session-meta-row">
+              <span class="session-meta-left">45 of 45 items</span>
+              <span style="display:flex; align-items:center; gap:8px">
+                <span class="completed-badge" style="background:#10b98120; color:#34d399">✓ 91%</span>
+                <span class="reopen-btn">Reopen</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="session-card completed">
+            <div class="session-card-top">
+              <div class="session-title">Bugfix: Rate Limiter</div>
+              <div class="session-date">Feb 28</div>
+            </div>
+            <div class="session-meta-row">
+              <span class="session-meta-left">45 of 45 items</span>
+              <span style="display:flex; align-items:center; gap:8px">
+                <span class="completed-badge" style="background:#10b98120; color:#34d399">✓ 96%</span>
+                <span class="reopen-btn">Reopen</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="session-card completed">
+            <div class="session-card-top">
+              <div class="session-title">Feature: Notifications</div>
+              <div class="session-date">Feb 24</div>
+            </div>
+            <div class="session-meta-row">
+              <span class="session-meta-left">45 of 45 items</span>
+              <span style="display:flex; align-items:center; gap:8px">
+                <span class="completed-badge" style="background:#10b98120; color:#34d399">✓ 82%</span>
+                <span class="reopen-btn">Reopen</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="delete-hint">Long-press a session to delete</div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Two Variants, One Layout</h3>
+      <p>Review and Polish sessions share the same component structure. The differences:</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#8b5cf6"></span> Review</span> — filtered by stack, accent color is violet</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#10b981"></span> Polish</span> — no stack filter (universal checklist), accent color is green</p>
+      <p>Review shows stack name + icon in the header. Polish shows the mode name.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Navigation</h3>
+      <p>Back button returns to Home (Polish) or Stack Select (Review).</p>
+      <p>Header includes mode icon and title with subtitle for context.</p>
+      <p>Route: <code>/review/sessions?stack=go</code> and <code>/polish/sessions</code></p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>New Session Button</h3>
+      <p>Prominent CTA at the top — creates a new session and immediately navigates into it.</p>
+      <p>Uses the mode's accent color as background for visual consistency with the mode cards on Home.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Active Session Cards</h3>
+      <p><strong>New additions vs current:</strong></p>
+      <p>1. Progress bar — visual indicator of items completed vs total</p>
+      <p>2. Percentage shown on the right in accent color</p>
+      <p>3. "X of Y items" replaces just "X items reviewed"</p>
+      <p>4. Date shown in the top-right corner</p>
+      <p>Progress bar uses gradient from the mode's accent color.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Completed Session Cards</h3>
+      <p>Visually subdued — title text is lighter (#9898b0 vs #e4e4ec).</p>
+      <p>Green checkmark badge with final coverage percentage replaces the plain "✅" emoji.</p>
+      <p>Subtle green border tint (<code>#10b98122</code>) to indicate completion.</p>
+      <p>Tapping opens the Session Summary screen rather than the checklist.</p>
+      <p><strong>Reopen button:</strong> Amber button on each completed card. Marks session as incomplete and navigates back into the checklist so users can revise verdicts or continue reviewing.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Section Labels</h3>
+      <p>Uppercase section labels ("ACTIVE", "COMPLETED") with count badges.</p>
+      <p>Count badges help users quickly see how many sessions are in each state.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Empty State</h3>
+      <p>When no sessions exist, show a centered illustration with encouraging text.</p>
+      <p>Different messaging per mode: "Start your first review!" vs "Start polishing your next PR!"</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Deletion</h3>
+      <p>Long-press triggers an <code>Alert.alert</code> confirmation dialog.</p>
+      <p>Hint text at the bottom reminds users of this interaction.</p>
+      <p>Future enhancement: swipe-to-delete with <code>react-native-gesture-handler</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Changes from Current</h3>
+      <p>1. Added back button (was missing — relied on system back)</p>
+      <p>2. Added progress bars on active sessions</p>
+      <p>3. Added coverage % display</p>
+      <p>4. Added "X of Y" item counts</p>
+      <p>5. Added date labels on cards</p>
+      <p>6. Added section count badges</p>
+      <p>7. Completed cards use green tint border instead of opacity reduction</p>
+      <p>8. Added long-press delete hint text</p>
+      <p>9. Added "Reopen" button on completed sessions</p>
+      <p>10. Font: Quicksand throughout</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Typography</h3>
+      <p><strong>Nav title:</strong> Quicksand 700, 20px</p>
+      <p><strong>Session title:</strong> Quicksand 700, 15px</p>
+      <p><strong>Meta text:</strong> Quicksand 400, 12px</p>
+      <p><strong>Section labels:</strong> Quicksand 700, 11px, uppercase</p>
+      <p><strong>Button:</strong> Quicksand 700, 15px</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

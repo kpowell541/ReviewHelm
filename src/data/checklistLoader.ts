@@ -1,20 +1,113 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Checklist, StackId } from './types';
 
-// Bundled checklists — imported statically, always available offline
 import javaProtobufData from '../../assets/data/checklists/java-protobuf.json';
 import jsTsReactNodeData from '../../assets/data/checklists/js-ts-react-node.json';
 import goData from '../../assets/data/checklists/go.json';
+import terraformHclData from '../../assets/data/checklists/terraform-hcl.json';
 import polishMyPrData from '../../assets/data/checklists/polish-my-pr.json';
+import swiftObjcData from '../../assets/data/checklists/swift-objc.json';
+import webDevopsConfigData from '../../assets/data/checklists/web-devops-config.json';
+import pythonData from '../../assets/data/checklists/python.json';
+import rubyData from '../../assets/data/checklists/ruby.json';
+import luaData from '../../assets/data/checklists/lua.json';
+import cLangData from '../../assets/data/checklists/c-lang.json';
 
-const bundledChecklists: Record<string, Checklist> = {
+const CHECKLIST_IDS = [
+  'java-protobuf',
+  'js-ts-react-node',
+  'go',
+  'terraform-hcl',
+  'swift-objc',
+  'web-devops-config',
+  'python',
+  'ruby',
+  'lua',
+  'c-lang',
+  'polish-my-pr',
+] as const;
+
+export const CHECKLIST_CACHE_KEY = 'reviewhelm:checklists:cache:v1';
+
+type ChecklistId = (typeof CHECKLIST_IDS)[number];
+type ChecklistMap = Record<ChecklistId, Checklist>;
+
+const bundledChecklists: ChecklistMap = {
   'java-protobuf': javaProtobufData as unknown as Checklist,
   'js-ts-react-node': jsTsReactNodeData as unknown as Checklist,
-  'go': goData as unknown as Checklist,
+  go: goData as unknown as Checklist,
+  'terraform-hcl': terraformHclData as unknown as Checklist,
+  'swift-objc': swiftObjcData as unknown as Checklist,
+  'web-devops-config': webDevopsConfigData as unknown as Checklist,
+  python: pythonData as unknown as Checklist,
+  ruby: rubyData as unknown as Checklist,
+  lua: luaData as unknown as Checklist,
+  'c-lang': cLangData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
+let loadedChecklists: ChecklistMap = { ...bundledChecklists };
+let cacheHydrated = false;
+let hydrationPromise: Promise<void> | null = null;
+
+function isChecklistMap(value: unknown): value is ChecklistMap {
+  if (!value || typeof value !== 'object') return false;
+  const map = value as Record<string, unknown>;
+  return CHECKLIST_IDS.every((id) => {
+    const checklist = map[id] as Checklist | undefined;
+    return Boolean(checklist?.meta?.id && Array.isArray(checklist?.sections));
+  });
+}
+
+async function hydrateChecklistCache(): Promise<void> {
+  if (cacheHydrated) return;
+  try {
+    const raw = await AsyncStorage.getItem(CHECKLIST_CACHE_KEY);
+    if (!raw) {
+      cacheHydrated = true;
+      return;
+    }
+    const parsed = JSON.parse(raw);
+    if (isChecklistMap(parsed)) {
+      loadedChecklists = parsed;
+    }
+  } catch {
+    // Fall back to bundled checklists when cached content is invalid.
+  } finally {
+    cacheHydrated = true;
+  }
+}
+
+export async function initializeChecklistCache(): Promise<void> {
+  if (!hydrationPromise) {
+    hydrationPromise = hydrateChecklistCache();
+  }
+  await hydrationPromise;
+}
+
+void initializeChecklistCache();
+
+export function areChecklistsHydrated(): boolean {
+  return cacheHydrated;
+}
+
+export async function setCachedChecklists(
+  nextChecklists: ChecklistMap,
+): Promise<void> {
+  loadedChecklists = nextChecklists;
+  await AsyncStorage.setItem(
+    CHECKLIST_CACHE_KEY,
+    JSON.stringify(nextChecklists),
+  );
+}
+
+export async function clearChecklistCache(): Promise<void> {
+  loadedChecklists = { ...bundledChecklists };
+  await AsyncStorage.removeItem(CHECKLIST_CACHE_KEY);
+}
+
 export function getChecklist(id: string): Checklist {
-  const checklist = bundledChecklists[id];
+  const checklist = loadedChecklists[id as ChecklistId];
   if (!checklist) {
     throw new Error(`Checklist not found: ${id}`);
   }
@@ -30,11 +123,24 @@ export function getPolishChecklist(): Checklist {
 }
 
 export function getAllReviewChecklists(): Checklist[] {
-  return ['java-protobuf', 'js-ts-react-node', 'go'].map(
-    (id) => bundledChecklists[id]
-  );
+  return [
+    'java-protobuf',
+    'js-ts-react-node',
+    'go',
+    'terraform-hcl',
+    'swift-objc',
+    'web-devops-config',
+    'python',
+    'ruby',
+    'lua',
+    'c-lang',
+  ].map((id) => getChecklist(id));
 }
 
 export function getAllChecklists(): Checklist[] {
-  return Object.values(bundledChecklists);
+  return CHECKLIST_IDS.map((id) => getChecklist(id));
+}
+
+export function getChecklistMap(): ChecklistMap {
+  return { ...loadedChecklists };
 }

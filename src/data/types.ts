@@ -4,7 +4,17 @@
 
 export type Severity = 'blocker' | 'major' | 'minor' | 'nit';
 export type ChecklistMode = 'review' | 'polish';
-export type StackId = 'java-protobuf' | 'js-ts-react-node' | 'go';
+export type StackId =
+  | 'java-protobuf'
+  | 'js-ts-react-node'
+  | 'go'
+  | 'terraform-hcl'
+  | 'swift-objc'
+  | 'web-devops-config'
+  | 'python'
+  | 'ruby'
+  | 'lua'
+  | 'c-lang';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,
@@ -165,6 +175,37 @@ export interface LearningPath {
 // AI Tutor
 // ============================================
 
+export type ClaudeModel = 'sonnet' | 'opus';
+export type AiFeature = 'learn' | 'deep-dive' | 'comment-drafter';
+
+export const CLAUDE_MODEL_IDS: Record<ClaudeModel, string> = {
+  sonnet: 'claude-sonnet-4-6',
+  opus: 'claude-opus-4-6',
+};
+
+export const CLAUDE_MODEL_LABELS: Record<ClaudeModel, string> = {
+  sonnet: 'Sonnet 4.6',
+  opus: 'Opus 4.6',
+};
+
+export const CLAUDE_MODEL_DESCRIPTIONS: Record<ClaudeModel, string> = {
+  sonnet: 'Great for daily learning, explanations, and comment drafting',
+  opus: 'Best for complex topics like concurrency, architecture, and type systems',
+};
+
+export const AI_FEATURE_LABELS: Record<AiFeature, string> = {
+  learn: 'Learn',
+  'deep-dive': 'Deep Dive Tutor',
+  'comment-drafter': 'Comment Drafter',
+};
+
+export type TutorRole =
+  | 'concept-explainer'
+  | 'qa'
+  | 'comment-drafter'
+  | 'exercise-generator'
+  | 'anti-bias-challenger';
+
 export interface TutorMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -184,7 +225,7 @@ export interface TutorConversation {
 export interface SessionScores {
   coverage: number;
   confidence: number;
-  issuesByServerity: Record<Severity, number>;
+  issuesBySeverity: Record<Severity, number>;
   totalIssues: number;
   itemsResponded: number;
   applicableItems: number;

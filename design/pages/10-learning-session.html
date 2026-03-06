@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screens 10-11: Learning Session</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #34d399; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 620px; margin: 0 auto; line-height: 1.5; }
+
+  .design-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .variant-label {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px; border: 1px solid #34d39933; color: #34d399;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px; min-height: 812px; background: #0a0a1a;
+    border-radius: 44px; border: 3px solid #242442;
+    overflow: hidden; position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch { width: 160px; height: 34px; background: #050510; border-radius: 0 0 20px 20px; margin: 0 auto; }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; height: 44px; font-size: 12px; font-weight: 600; color: #e4e4ec;
+    position: absolute; top: 0; left: 0; right: 0;
+  }
+  .phone-content { padding: 52px 20px 20px; }
+  .phone-home-indicator { width: 134px; height: 5px; background: #e4e4ec; border-radius: 3px; margin: 20px auto 8px; opacity: 0.2; }
+
+  /* Annotations */
+  .annotations { max-width: 380px; flex: 1; min-width: 300px; }
+  .annotation-section {
+    background: #111122; border: 1px solid #242442; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .annotation-section h3 { font-size: 13px; font-weight: 700; color: #34d399; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .annotation-section p { font-size: 13px; color: #9898b0; line-height: 1.6; margin-bottom: 6px; }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px; color: #a78bfa; background: #1a1a30; padding: 2px 6px; border-radius: 4px;
+  }
+  .color-ref { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+  .color-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  /* ============ LEARNING SESSION COMPONENTS ============ */
+
+  .nav-back {
+    width: 36px; height: 36px; background: #1a1a30; border: 1px solid #242442;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #e4e4ec;
+  }
+
+  /* Progress bar */
+  .learn-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .learn-progress-bar {
+    flex: 1;
+    background: #111122;
+    border-radius: 6px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .learn-progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #34d399, #10b981);
+  }
+  .learn-progress-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: #34d399;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+  }
+
+  /* Item card */
+  .learn-card {
+    background: #111122;
+    border-radius: 14px;
+    border: 1px solid #1a1a30;
+    border-left: 4px solid #34d399;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .learn-card-meta {
+    font-size: 10px;
+    color: #5a5a78;
+    margin-bottom: 8px;
+  }
+  .learn-card-text {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e4e4ec;
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+  .learn-card-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .learn-stat {
+    font-size: 10px;
+    color: #5a5a78;
+  }
+  .learn-stat strong {
+    font-weight: 700;
+    color: #9898b0;
+  }
+
+  /* Confidence badge */
+  .learn-conf {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  /* Action buttons */
+  .learn-btn-primary {
+    background: #34d399;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0a0a1a;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .learn-btn-secondary {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #5a5a78;
+    cursor: pointer;
+    padding: 8px;
+  }
+  .learn-btn-outline {
+    background: #0a0a1a;
+    border: 1px solid #242442;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e4e4ec;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+  .learn-btn-green {
+    background: #34d39915;
+    border: 1px solid #34d39933;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #34d399;
+    cursor: pointer;
+    margin-bottom: 8px;
+  }
+
+  /* Chat section */
+  .learn-chat {
+    margin-top: 4px;
+  }
+  .learn-bubble {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .learn-bubble.assistant {
+    background: #111122;
+    border: 1px solid #1a1a30;
+    color: #c0c0d0;
+    border-bottom-left-radius: 4px;
+  }
+  .learn-bubble.assistant strong { color: #e4e4ec; }
+
+  /* Next button */
+  .next-btn {
+    background: #34d399;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0a0a1a;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  .empty-emoji { font-size: 48px; margin-bottom: 16px; }
+  .empty-title { font-size: 20px; font-weight: 700; color: #e4e4ec; margin-bottom: 8px; }
+  .empty-desc { font-size: 13px; color: #5a5a78; line-height: 1.5; max-width: 260px; margin: 0 auto 20px; }
+  .empty-btn {
+    background: #1a1a30;
+    border: 1px solid #242442;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e4e4ec;
+    cursor: pointer;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screens 10-11 of 11</div>
+  <h1>Learning Session</h1>
+  <p class="desc">Focused learning for weak areas. One concept at a time with AI-powered explanations, practice exercises, and deep dive access. Learn Stack Select was covered in Screen 5.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ PHONE 1: Before Starting ============ -->
+  <div class="variant">
+    <div class="variant-label">Before Starting</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
+          <div class="nav-back">‹</div>
+          <span style="font-size:18px; font-weight:700; color:#e4e4ec">Learn: Go</span>
+        </div>
+
+        <!-- Progress -->
+        <div class="learn-progress-wrap">
+          <div class="learn-progress-bar">
+            <div class="learn-progress-fill" style="width:20%"></div>
+          </div>
+          <span class="learn-progress-text">1 of 5</span>
+        </div>
+
+        <!-- Item card -->
+        <div class="learn-card">
+          <div class="learn-card-meta">Go · Error Handling</div>
+          <div class="learn-card-text">Verify context cancellation is handled correctly in goroutines</div>
+          <div class="learn-card-stats">
+            <div class="learn-conf" style="background:#ef444415; color:#ef4444">
+              😕 Conf 2/5
+            </div>
+            <span class="learn-stat">Severity: <strong>Major</strong></span>
+            <span class="learn-stat">Seen in <strong>3</strong> sessions</span>
+          </div>
+        </div>
+
+        <!-- Start actions -->
+        <div class="learn-btn-primary">🎓 Start Learning with Sonnet</div>
+        <div class="learn-btn-secondary">📖 View base content instead</div>
+
+        <!-- Empty space to show this is the initial state -->
+        <div style="text-align:center; margin-top:60px; color:#3a3a52; font-size:12px">
+          Tap "Start Learning" for an AI-guided lesson<br>or view the offline base content
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHONE 2: During Lesson ============ -->
+  <div class="variant">
+    <div class="variant-label">During Lesson</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
+          <div class="nav-back">‹</div>
+          <span style="font-size:18px; font-weight:700; color:#e4e4ec">Learn: Go</span>
+        </div>
+
+        <!-- Progress -->
+        <div class="learn-progress-wrap">
+          <div class="learn-progress-bar">
+            <div class="learn-progress-fill" style="width:20%"></div>
+          </div>
+          <span class="learn-progress-text">1 of 5</span>
+        </div>
+
+        <!-- Item card (compact during lesson) -->
+        <div class="learn-card" style="padding:14px 16px">
+          <div class="learn-card-meta">Go · Error Handling</div>
+          <div class="learn-card-text" style="font-size:14px; margin-bottom:4px">Verify context cancellation is handled correctly in goroutines</div>
+          <div class="learn-conf" style="background:#ef444415; color:#ef4444; font-size:10px">
+            😕 Conf 2/5
+          </div>
+        </div>
+
+        <!-- AI Lesson -->
+        <div class="learn-chat">
+          <div class="learn-bubble assistant">
+            <strong>Context cancellation in goroutines</strong> is about making sure your concurrent code can be stopped cleanly.
+
+When you launch a goroutine, it runs independently. If the caller's context gets cancelled (timeout, user abort, parent done), the goroutine needs to know — otherwise it becomes a <strong>goroutine leak</strong>.
+
+The key pattern is using <code style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#a78bfa; background:#1a1a30; padding:1px 4px; border-radius:3px">select</code> with <code style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#a78bfa; background:#1a1a30; padding:1px 4px; border-radius:3px">ctx.Done()</code>:
+
+            <div style="background:#050510; border:1px solid #1a1a30; border-radius:6px; padding:8px 10px; margin:8px 0; font-family:'JetBrains Mono',monospace; font-size:10px; color:#c0c0d0; line-height:1.5">
+select {<br>
+case &lt;-ctx.Done():<br>
+&nbsp;&nbsp;return ctx.Err()<br>
+case result := &lt;-ch:<br>
+&nbsp;&nbsp;// process result<br>
+}
+            </div>
+
+            This ensures the goroutine exits promptly when the context is cancelled.
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="learn-btn-green">🏋️ Practice exercise</div>
+        <div class="learn-btn-outline">📚 Open AI Tutor chat</div>
+
+        <!-- Next item -->
+        <div class="next-btn">Next item →</div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHONE 3: Empty State ============ -->
+  <div class="variant">
+    <div class="variant-label">Empty State</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
+          <div class="nav-back">‹</div>
+          <span style="font-size:18px; font-weight:700; color:#e4e4ec">Learn: Go</span>
+        </div>
+
+        <div class="empty-state">
+          <div class="empty-emoji">🎉</div>
+          <div class="empty-title">No gaps to study!</div>
+          <div class="empty-desc">Complete review sessions and rate your confidence to identify areas for learning.</div>
+          <div class="empty-btn">← Go Back</div>
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Purpose</h3>
+      <p>Focused learning mode for weak areas. Shows one concept at a time from the user's gaps (confidence ≤ 3). AI generates a lesson explanation, then offers practice exercises and deep dive access.</p>
+      <p>Navigated to from Learn Stack Select (Screen 5, right panel).</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Progress Bar</h3>
+      <p>Green gradient bar showing position in the gap queue (e.g., "1 of 5").</p>
+      <p>Items sourced from <code>getWeakestItems(20)</code> filtered to confidence ≤ 3 for the selected stack.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Item Card</h3>
+      <p>Green left border (learn mode accent). Shows:</p>
+      <p><strong>Breadcrumb:</strong> Stack · Section</p>
+      <p><strong>Item text:</strong> The concept to study</p>
+      <p><strong>Confidence badge:</strong> Current confidence with emoji, using standard color system (1-2 red, 3 amber)</p>
+      <p><strong>Stats:</strong> Severity level and session count</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Before Starting</h3>
+      <p>Two choices:</p>
+      <p><strong>"Start Learning with Sonnet":</strong> Green button. Calls AI to generate a concept explanation. Model name shown in button text.</p>
+      <p><strong>"View base content instead":</strong> Text link. Opens Deep Dive (Screen 8) for offline content. No API call needed.</p>
+      <p>If no API key configured, shows a prompt to visit Settings.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>During Lesson</h3>
+      <p>AI-generated explanation appears as a chat bubble with code examples. Item card compacts to save space.</p>
+      <p><strong>"Practice exercise":</strong> Green outline button. Sends a follow-up prompt asking the AI for a hands-on exercise.</p>
+      <p><strong>"Open AI Tutor chat":</strong> Navigates to Deep Dive's AI Tutor tab for free-form follow-up questions.</p>
+      <p><strong>"Next item →":</strong> Advances to next gap. Clears current messages. Only visible if more items remain.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Empty State</h3>
+      <p>Shown when the selected stack has no gaps (all items confidence ≥ 4). Celebration emoji with "No gaps to study!" message and back button.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Colors</h3>
+      <p><span class="color-ref"><span class="color-dot" style="background:#34d399"></span></span> <code>#34d399</code> Learn mode accent — progress bar, buttons, card border</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#ef4444"></span></span> <code>#ef4444</code> Confidence badge (1-2)</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span></span> <code>#fbbf24</code> Confidence badge (3)</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Changes from Current</h3>
+      <p>1. Redesigned with card-based item display and green learn mode accent</p>
+      <p>2. Confidence badge uses standard color system</p>
+      <p>3. Compact item card during lesson to maximize space for AI response</p>
+      <p>4. Clear "View base content" offline option prominent before starting</p>
+      <p>5. Font: Quicksand throughout, JetBrains Mono for code</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

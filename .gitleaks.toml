@@ -1,0 +1,33 @@
+title = "ReviewHelm gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Allow non-secret placeholders that intentionally illustrate key shapes"
+paths = [
+  '''docs/backend-api-contract\.md''',
+  '''design/pages/04-settings\.html''',
+  '''backend/test/ai\.service\.spec\.ts''',
+]
+regexes = [
+  '''sk-ant-api\.\.\.''',
+  '''sk-ant-test''',
+  '''sk-ant\.\.\.x4f2''',
+  '''sk-ant-[.•]+''',
+]
+
+[[allowlists]]
+description = "Allow educational placeholder tokens in checklist content and examples"
+paths = [
+  '''docs/backend-api-contract\.md''',
+  '''backend/\.env\.example''',
+  '''assets/data/checklists/(python|ruby|java-protobuf|web-devops-config)\.json''',
+  '''scripts/content-(python|ruby|java|web-devops-config)\.js''',
+]
+regexes = [
+  '''tokenHint":\s*"atk_[^"]+''',
+  '''KEY_ENCRYPTION_MASTER_KEY=replace_with_32_plus_char_secret''',
+  '''sk_live_[A-Za-z0-9_.-]+''',
+  '''Authorization:\s*Bearer\s+sk_live_[A-Za-z0-9_.-]+''',
+]

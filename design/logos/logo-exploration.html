@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Logo Exploration</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #6c63ff;
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 48px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .concepts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+  .concept-card {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 32px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .concept-card:hover {
+    border-color: #6c63ff;
+    transform: translateY(-2px);
+  }
+  .concept-card.featured {
+    grid-column: 1 / -1;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .concept-number {
+    color: #6c63ff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .concept-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+  }
+  .svg-container {
+    background: #0a0a14;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .svg-container img {
+    width: 280px;
+    height: 280px;
+  }
+  .concept-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #a0a0b0;
+    margin-bottom: 12px;
+  }
+  .strengths {
+    font-size: 13px;
+    color: #22c55e;
+    line-height: 1.5;
+  }
+  .strengths strong {
+    color: #4ade80;
+  }
+  .best-for {
+    font-size: 13px;
+    color: #6c63ff;
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  /* Comparison table */
+  .comparison {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+  .comparison h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 20px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th {
+    text-align: left;
+    font-size: 12px;
+    color: #6c63ff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 8px 12px;
+    border-bottom: 2px solid #2a2a4a;
+  }
+  td {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #c0c0d0;
+    border-bottom: 1px solid #1a1a2e;
+  }
+  td:first-child {
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .rating-high { color: #4ade80; }
+  .rating-mid { color: #fbbf24; }
+  .rating-low { color: #6b7280; }
+
+  /* Color palette */
+  .palette {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+  .palette h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 20px;
+  }
+  .swatches {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .swatch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .swatch-color {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid #3a3a5a;
+  }
+  .swatch-label {
+    font-size: 13px;
+    color: #a0a0b0;
+  }
+  .swatch-hex {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 12px;
+    color: #6c63ff;
+  }
+
+  /* Side by side row for icon sizes */
+  .icon-sizes {
+    background: #12121f;
+    border: 1px solid #2a2a4a;
+    border-radius: 16px;
+    padding: 32px;
+  }
+  .icon-sizes h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 20px;
+  }
+  .sizes-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .size-item {
+    text-align: center;
+  }
+  .size-item img {
+    border-radius: 12px;
+  }
+  .size-label {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<h1>ReviewHelm</h1>
+<div class="subtitle">Logo Exploration</div>
+
+<div class="concepts-grid">
+
+  <!-- Concept 1 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 01</div>
+    <div class="concept-title">Helm + Code Brackets</div>
+    <div class="svg-container">
+      <img src="concept-1-helm-code.svg" alt="Helm with code brackets">
+    </div>
+    <p class="concept-description">
+      Ship's wheel with 8 spokes and handle knobs. Code brackets <code>&lt; &gt;</code> sit in the center hub, directly fusing the "code" and "helm" identities.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Immediately reads as "developer tool." Both name words are visually represented.</p>
+    <p class="best-for"><strong>Best for:</strong> Emphasizing the code-focused identity of the app.</p>
+  </div>
+
+  <!-- Concept 2 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 02</div>
+    <div class="concept-title">Shield + Helm</div>
+    <div class="svg-container">
+      <img src="concept-2-shield-helm.svg" alt="Shield containing helm wheel">
+    </div>
+    <p class="concept-description">
+      Purple shield outline containing a white helm wheel. A small checkmark at the shield's base adds a "verified quality" accent.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Shield conveys quality gatekeeping. Elegant, professional feel. Two-layer visual hierarchy.</p>
+    <p class="best-for"><strong>Best for:</strong> Positioning as a quality guardian / code protection tool.</p>
+  </div>
+
+  <!-- Concept 3 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 03</div>
+    <div class="concept-title">Compass + Code</div>
+    <div class="svg-container">
+      <img src="concept-3-compass-code.svg" alt="Compass rose with code cursor">
+    </div>
+    <p class="concept-description">
+      Compass rose with a purple north pointer. A blinking code cursor and forward slash sit in the center. Tick marks and cardinal "N" marker complete the navigation metaphor.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Strong learning/journey metaphor. The compass says "I'll guide you." Most unique of the five.</p>
+    <p class="best-for"><strong>Best for:</strong> Emphasizing the learning journey — becoming a better reviewer over time.</p>
+  </div>
+
+  <!-- Concept 4 -->
+  <div class="concept-card">
+    <div class="concept-number">Concept 04</div>
+    <div class="concept-title">Minimal Wheel</div>
+    <div class="svg-container">
+      <img src="concept-4-minimal-wheel.svg" alt="Minimal 6-spoke helm wheel">
+    </div>
+    <p class="concept-description">
+      Clean 6-spoke helm wheel with bold purple gradient, subtle glow effect, and a white center dot. All-caps "REVIEWHELM" wordmark below.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Best scalability — reads clearly at any size. Clean, modern, uncluttered. Most icon-friendly.</p>
+    <p class="best-for"><strong>Best for:</strong> App icon primary use case. Best small-size readability.</p>
+  </div>
+
+  <!-- Concept 5 — featured -->
+  <div class="concept-card featured">
+    <div class="concept-number">Concept 05 — Recommended</div>
+    <div class="concept-title">Helm + Green Checkmark</div>
+    <div class="svg-container">
+      <img src="concept-5-helm-checkmark.svg" alt="Helm wheel with green checkmark">
+    </div>
+    <p class="concept-description">
+      8-spoke purple helm wheel with a green checkmark in the center — the universal "PR approved" symbol. Split-color wordmark: "Review" in white, "Helm" in purple. Two-color accent gives energy and distinctiveness.
+    </p>
+    <p class="strengths"><strong>Strengths:</strong> Green checkmark = PR approved. Most visually distinctive. Split wordmark reinforces the two-part name. Combines the helm metaphor with the core review action.</p>
+    <p class="best-for"><strong>Best for:</strong> Standing out in an app drawer. Conveying the satisfaction of a thorough review.</p>
+  </div>
+
+</div>
+
+<!-- Comparison Table -->
+<div class="comparison">
+  <h2>Comparison</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Concept</th>
+        <th>Icon Scalability</th>
+        <th>Code Identity</th>
+        <th>Learning Feel</th>
+        <th>Distinctiveness</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1. Helm + Code</td>
+        <td class="rating-high">Good</td>
+        <td class="rating-high">Strong</td>
+        <td class="rating-mid">Medium</td>
+        <td class="rating-mid">Medium</td>
+      </tr>
+      <tr>
+        <td>2. Shield + Helm</td>
+        <td class="rating-high">Good</td>
+        <td class="rating-low">Low</td>
+        <td class="rating-low">Low</td>
+        <td class="rating-high">High</td>
+      </tr>
+      <tr>
+        <td>3. Compass + Code</td>
+        <td class="rating-mid">Medium</td>
+        <td class="rating-mid">Medium</td>
+        <td class="rating-high">Strong</td>
+        <td class="rating-high">High</td>
+      </tr>
+      <tr>
+        <td>4. Minimal Wheel</td>
+        <td class="rating-high">Best</td>
+        <td class="rating-low">None</td>
+        <td class="rating-low">None</td>
+        <td class="rating-mid">Medium</td>
+      </tr>
+      <tr>
+        <td>5. Helm + Checkmark</td>
+        <td class="rating-high">Good</td>
+        <td class="rating-low">Low</td>
+        <td class="rating-low">Low</td>
+        <td class="rating-high">Highest</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Color Palette -->
+<div class="palette">
+  <h2>Color Palette</h2>
+  <div class="swatches">
+    <div class="swatch">
+      <div class="swatch-color" style="background: #6c63ff"></div>
+      <div>
+        <div class="swatch-label">Primary Purple</div>
+        <div class="swatch-hex">#6c63ff</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #9b93ff"></div>
+      <div>
+        <div class="swatch-label">Purple Light</div>
+        <div class="swatch-hex">#9b93ff</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #5a52dd"></div>
+      <div>
+        <div class="swatch-label">Purple Dark</div>
+        <div class="swatch-hex">#5a52dd</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #0f0f1a"></div>
+      <div>
+        <div class="swatch-label">Background</div>
+        <div class="swatch-hex">#0f0f1a</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #1a1a2e"></div>
+      <div>
+        <div class="swatch-label">Background Light</div>
+        <div class="swatch-hex">#1a1a2e</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background: #22c55e"></div>
+      <div>
+        <div class="swatch-label">Green Accent</div>
+        <div class="swatch-hex">#22c55e</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Icon Size Preview -->
+<div class="icon-sizes">
+  <h2>Icon Size Preview</h2>
+  <p style="color: #6b7280; font-size: 13px; margin-bottom: 20px;">How each concept reads at different Android icon sizes</p>
+  <div class="sizes-row">
+    <div class="size-item">
+      <img src="concept-5-helm-checkmark.svg" width="192" height="192" alt="192px">
+      <div class="size-label">192px (xxxhdpi)</div>
+    </div>
+    <div class="size-item">
+      <img src="concept-5-helm-checkmark.svg" width="96" height="96" alt="96px">
+      <div class="size-label">96px (xhdpi)</div>
+    </div>
+    <div class="size-item">
+      <img src="concept-5-helm-checkmark.svg" width="48" height="48" alt="48px">
+      <div class="size-label">48px (mdpi)</div>
+    </div>
+    <div class="size-item" style="margin-left: 32px;">
+      <img src="concept-4-minimal-wheel.svg" width="192" height="192" alt="192px">
+      <div class="size-label">192px (xxxhdpi)</div>
+    </div>
+    <div class="size-item">
+      <img src="concept-4-minimal-wheel.svg" width="96" height="96" alt="96px">
+      <div class="size-label">96px (xhdpi)</div>
+    </div>
+    <div class="size-item">
+      <img src="concept-4-minimal-wheel.svg" width="48" height="48" alt="48px">
+      <div class="size-label">48px (mdpi)</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

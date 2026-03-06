@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReviewHelm — Screen 7: Session Summary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a14;
+    color: #e0e0e0;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .page-header { text-align: center; margin-bottom: 40px; }
+  .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  .page-header .screen-label { color: #8b5cf6; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .page-header .desc { color: #6b7280; font-size: 14px; max-width: 620px; margin: 0 auto; line-height: 1.5; }
+
+  .design-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .variant-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid #5a5a7833;
+    color: #5a5a78;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    min-height: 812px;
+    background: #0a0a1a;
+    border-radius: 44px;
+    border: 3px solid #242442;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+  }
+  .phone-notch { width: 160px; height: 34px; background: #050510; border-radius: 0 0 20px 20px; margin: 0 auto; }
+  .phone-status {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 24px; height: 44px; font-size: 12px; font-weight: 600; color: #e4e4ec;
+    position: absolute; top: 0; left: 0; right: 0;
+  }
+  .phone-content { padding: 52px 20px 20px; }
+  .phone-home-indicator { width: 134px; height: 5px; background: #e4e4ec; border-radius: 3px; margin: 20px auto 8px; opacity: 0.2; }
+
+  /* Annotations */
+  .annotations { max-width: 380px; flex: 1; min-width: 300px; }
+  .annotation-section {
+    background: #111122; border: 1px solid #242442; border-radius: 12px;
+    padding: 20px; margin-bottom: 16px;
+  }
+  .annotation-section h3 { font-size: 13px; font-weight: 700; color: #8b5cf6; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .annotation-section p { font-size: 13px; color: #9898b0; line-height: 1.6; margin-bottom: 6px; }
+  .annotation-section code {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 11px; color: #a78bfa; background: #1a1a30; padding: 2px 6px; border-radius: 4px;
+  }
+  .color-ref { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; }
+  .color-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  /* ============ SESSION SUMMARY COMPONENTS ============ */
+
+  .nav-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 4px; padding: 0 4px;
+  }
+  .nav-back {
+    width: 36px; height: 36px; background: #1a1a30; border: 1px solid #242442;
+    border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #e4e4ec;
+  }
+
+  .summary-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e4e4ec;
+    padding: 0 4px;
+    margin-bottom: 2px;
+  }
+  .summary-subtitle {
+    font-size: 12px;
+    color: #5a5a78;
+    padding: 0 4px;
+    margin-bottom: 16px;
+  }
+
+  /* Score cards */
+  .score-cards {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .score-card {
+    flex: 1;
+    background: #111122;
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    border: 1px solid #1a1a30;
+  }
+  .score-card-value {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .score-card-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: #5a5a78;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Progress card */
+  .progress-card {
+    background: #111122;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #1a1a30;
+    margin-bottom: 16px;
+  }
+  .progress-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .progress-label { font-size: 13px; font-weight: 600; color: #9898b0; }
+  .progress-fraction {
+    font-size: 14px;
+    font-weight: 700;
+    color: #a78bfa;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .progress-bar {
+    background: #0a0a1a;
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 11px; font-weight: 700; color: #5a5a78;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 8px; margin-top: 4px; padding: 0 4px;
+  }
+
+  /* Severity breakdown */
+  .severity-card {
+    background: #111122;
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid #1a1a30;
+    margin-bottom: 12px;
+  }
+  .severity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+  .severity-row + .severity-row { border-top: 1px solid #1a1a2a; }
+  .severity-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #9898b0;
+  }
+  .severity-dot {
+    width: 8px; height: 8px;
+    border-radius: 4px;
+  }
+  .severity-count {
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Item list */
+  .item-list-card {
+    background: #111122;
+    border-radius: 12px;
+    padding: 4px 0;
+    border: 1px solid #1a1a30;
+    margin-bottom: 12px;
+  }
+  .item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+  }
+  .item-row + .item-row { border-top: 1px solid #1a1a2a; }
+  .item-dot {
+    width: 8px; height: 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .item-text {
+    font-size: 12px;
+    color: #c0c0d0;
+    flex: 1;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .item-arrow {
+    color: #3a3a52;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* AI usage / session cost */
+  .usage-card {
+    background: #111122;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #1a1a30;
+    margin-bottom: 12px;
+  }
+  .usage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .usage-header-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e4e4ec;
+  }
+  .usage-header-cost {
+    font-size: 16px;
+    font-weight: 700;
+    color: #34d399;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .usage-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .usage-mini {
+    font-size: 11px;
+    color: #5a5a78;
+  }
+  .usage-mini strong {
+    color: #9898b0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .usage-breakdown {
+    border-top: 1px solid #1a1a2a;
+    padding-top: 8px;
+  }
+  .usage-feature-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 11px;
+  }
+  .usage-feature-name { color: #5a5a78; font-weight: 600; }
+  .usage-feature-calls { color: #3a3a52; font-size: 10px; }
+  .usage-feature-cost {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  /* Export button */
+  .export-btn {
+    background: #8b5cf6;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="screen-label">Screen 7 of 11</div>
+  <h1>Session Summary</h1>
+  <p class="desc">Report card shown after completing a session. Displays coverage, confidence, issues, and per-session AI cost. Items needing attention and learning opportunities are tappable to navigate to Deep Dive.</p>
+</div>
+
+<div class="design-row">
+
+  <!-- ============ PHONE 1: Scores & Issues ============ -->
+  <div class="variant">
+    <div class="variant-label">Top · Scores & Issues</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <!-- Nav -->
+        <div class="nav-header">
+          <div class="nav-back">‹</div>
+          <span style="font-size:20px">📋</span>
+        </div>
+
+        <!-- Title -->
+        <div class="summary-title">Session Complete</div>
+        <div class="summary-subtitle">Go Code Review · Completed Mar 4, 2026</div>
+
+        <!-- Score cards -->
+        <div class="score-cards">
+          <div class="score-card">
+            <div class="score-card-value" style="color:#34d399">87%</div>
+            <div class="score-card-label">Coverage</div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-value" style="color:#fbbf24">3.2</div>
+            <div class="score-card-label">Confidence</div>
+          </div>
+          <div class="score-card">
+            <div class="score-card-value" style="color:#ef4444">4</div>
+            <div class="score-card-label">Issues</div>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-card">
+          <div class="progress-top">
+            <span class="progress-label">Items reviewed</span>
+            <span class="progress-fraction">39 / 45</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:87%"></div>
+          </div>
+        </div>
+
+        <!-- Issues by severity -->
+        <div class="section-title">Issues by Severity</div>
+        <div class="severity-card">
+          <div class="severity-row">
+            <div class="severity-left">
+              <span class="severity-dot" style="background:#ef4444"></span>
+              <span>Blockers</span>
+            </div>
+            <span class="severity-count" style="color:#ef4444">1</span>
+          </div>
+          <div class="severity-row">
+            <div class="severity-left">
+              <span class="severity-dot" style="background:#f59e0b"></span>
+              <span>Majors</span>
+            </div>
+            <span class="severity-count" style="color:#f59e0b">2</span>
+          </div>
+          <div class="severity-row">
+            <div class="severity-left">
+              <span class="severity-dot" style="background:#3b82f6"></span>
+              <span>Minors</span>
+            </div>
+            <span class="severity-count" style="color:#3b82f6">1</span>
+          </div>
+          <div class="severity-row">
+            <div class="severity-left">
+              <span class="severity-dot" style="background:#6b7280"></span>
+              <span>Nits</span>
+            </div>
+            <span class="severity-count" style="color:#6b7280">0</span>
+          </div>
+        </div>
+
+        <!-- Items needing attention -->
+        <div class="section-title">Items Needing Attention</div>
+        <div class="item-list-card">
+          <div class="item-row">
+            <span class="item-dot" style="background:#ef4444"></span>
+            <span class="item-text">Check error wrapping with %w</span>
+            <span class="item-arrow">›</span>
+          </div>
+          <div class="item-row">
+            <span class="item-dot" style="background:#f59e0b"></span>
+            <span class="item-text">Verify retry logic with backoff</span>
+            <span class="item-arrow">›</span>
+          </div>
+          <div class="item-row">
+            <span class="item-dot" style="background:#f59e0b"></span>
+            <span class="item-text">Check mutex contention in hot paths</span>
+            <span class="item-arrow">›</span>
+          </div>
+          <div class="item-row">
+            <span class="item-dot" style="background:#3b82f6"></span>
+            <span class="item-text">Validate protobuf field masks</span>
+            <span class="item-arrow">›</span>
+          </div>
+        </div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PHONE 2: Learning + Cost + Export ============ -->
+  <div class="variant">
+    <div class="variant-label">Bottom · Cost & Export</div>
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span>9:41</span>
+        <span style="display:flex; gap:6px; font-size:11px">
+          <span>&#9679;&#9679;&#9679;&#9679;</span>
+          <span>&#128267;</span>
+        </span>
+      </div>
+      <div class="phone-content">
+
+        <!-- Learning opportunities -->
+        <div class="section-title" style="margin-top:0">Learning Opportunities</div>
+        <div class="item-list-card">
+          <div class="item-row">
+            <span class="item-dot" style="background:#ef4444"></span>
+            <span class="item-text">Verify context cancellation in goroutines</span>
+            <span class="item-badge" style="color:#ef4444; background:#ef444415">Conf 1</span>
+            <span class="item-arrow">›</span>
+          </div>
+          <div class="item-row">
+            <span class="item-dot" style="background:#ef4444"></span>
+            <span class="item-text">Check N+1 query patterns</span>
+            <span class="item-badge" style="color:#ef4444; background:#ef444415">Conf 2</span>
+            <span class="item-arrow">›</span>
+          </div>
+          <div class="item-row">
+            <span class="item-dot" style="background:#ef4444"></span>
+            <span class="item-text">Validate protobuf field masks</span>
+            <span class="item-badge" style="color:#ef4444; background:#ef444415">Conf 2</span>
+            <span class="item-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- Session AI Cost -->
+        <div class="section-title">Session AI Cost</div>
+        <div class="usage-card">
+          <div class="usage-header">
+            <span class="usage-header-label">This Session</span>
+            <span class="usage-header-cost">$0.03</span>
+          </div>
+          <div class="usage-stats">
+            <span class="usage-mini"><strong>4</strong> calls</span>
+            <span class="usage-mini"><strong>8.2k</strong> tokens</span>
+            <span class="usage-mini">model: <strong>Sonnet</strong></span>
+          </div>
+          <div class="usage-breakdown">
+            <div class="usage-feature-row">
+              <span class="usage-feature-name">Tutor Chat</span>
+              <span class="usage-feature-calls">2 calls</span>
+              <span class="usage-feature-cost" style="color:#a78bfa">$0.02</span>
+            </div>
+            <div class="usage-feature-row">
+              <span class="usage-feature-name">Comment Draft</span>
+              <span class="usage-feature-calls">1 call</span>
+              <span class="usage-feature-cost" style="color:#fbbf24">$0.01</span>
+            </div>
+            <div class="usage-feature-row">
+              <span class="usage-feature-name">Learn Mode</span>
+              <span class="usage-feature-calls">1 call</span>
+              <span class="usage-feature-cost" style="color:#34d399">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Budget context -->
+        <div class="usage-card" style="padding:12px 16px">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px">
+            <span style="font-size:11px; color:#5a5a78">Monthly budget used</span>
+            <span style="font-size:12px; font-weight:700; color:#34d399; font-family:'JetBrains Mono',monospace">$0.15 / $40</span>
+          </div>
+          <div class="progress-bar" style="height:6px">
+            <div class="progress-fill" style="width:0.4%; background:linear-gradient(90deg, #34d399, #fbbf24)"></div>
+          </div>
+        </div>
+
+        <!-- Export button -->
+        <div class="export-btn">📄 Export as PDF Report Card</div>
+
+        <div class="phone-home-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANNOTATIONS ============ -->
+  <div class="annotations">
+
+    <div class="annotation-section">
+      <h3>Purpose</h3>
+      <p>Report card shown after completing a checklist session. Provides an at-a-glance summary of performance and highlights areas for follow-up.</p>
+      <p>Navigated to automatically when "Complete Session" is tapped on Screen 6.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Score Cards</h3>
+      <p>Three top-level metrics:</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#34d399"></span></span> Coverage — % of items reviewed. Green ≥ 70%, amber 50-69%, red &lt; 50%.</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#fbbf24"></span></span> Confidence — average across all rated items. Same color scale as Gaps (1-2 red, 3 amber, 4-5 green).</p>
+      <p><span class="color-ref"><span class="color-dot" style="background:#ef4444"></span></span> Issues — total "Attention" verdicts. Always red to draw the eye.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Issues by Severity</h3>
+      <p>Breakdown of the issue count by severity level: Blocker (red), Major (amber), Minor (blue), Nit (gray).</p>
+      <p>Matches the severity chip colors from the checklist session screen.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Items Needing Attention</h3>
+      <p>List of items with "needs-attention" verdict. Each row shows a severity-colored dot and the item text.</p>
+      <p>Tapping any row navigates to Deep Dive (Screen 8) for that item.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Learning Opportunities</h3>
+      <p>Items where the user rated confidence ≤ 2, sorted lowest first.</p>
+      <p>Each row shows a confidence badge (red, matching the Gaps color system).</p>
+      <p>Tapping navigates to Deep Dive for focused learning.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Session AI Cost</h3>
+      <p>NEW. Per-session cost display showing:</p>
+      <p><strong>Total cost:</strong> Large green number in the header.</p>
+      <p><strong>Stats:</strong> Call count, token count, model used.</p>
+      <p><strong>Feature breakdown:</strong> Cost attributed to Tutor Chat, Comment Draft, and Learn Mode with individual call counts.</p>
+      <p><strong>Budget context:</strong> Small card below showing how this session's spend fits within the monthly budget. Uses the same green→amber gradient bar from Settings.</p>
+      <p>Uses <code>estimateCost()</code> from <code>pricing.ts</code>. Per-call usage tracked via <code>recordUsage()</code>.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>PDF Export</h3>
+      <p>Violet button at the bottom. Generates HTML → PDF via <code>expo-print</code>, then shares via native share sheet.</p>
+      <p>If "Auto-Export PDF" is enabled in Settings, triggers automatically on navigation to this screen.</p>
+      <p>PDF report includes: scores, issues, items needing attention, session cost.</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Changes from Current</h3>
+      <p>1. Added per-session AI cost card with feature breakdown (NEW)</p>
+      <p>2. Added monthly budget context bar (NEW)</p>
+      <p>3. Score cards redesigned as larger, more prominent cards</p>
+      <p>4. Severity breakdown uses color dots instead of emojis</p>
+      <p>5. Learning opportunities show confidence badge</p>
+      <p>6. Font: Quicksand throughout, JetBrains Mono for numbers</p>
+    </div>
+
+    <div class="annotation-section">
+      <h3>Navigation</h3>
+      <p><strong>Back button:</strong> Returns to Sessions list</p>
+      <p><strong>Item rows:</strong> Navigate to <code>/deep-dive/{itemId}?sessionId={id}</code></p>
+      <p><strong>Export:</strong> Opens native share sheet with PDF</p>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
