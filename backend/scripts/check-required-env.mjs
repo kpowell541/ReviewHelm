@@ -32,4 +32,26 @@ if ((process.env.KEY_ENCRYPTION_MASTER_KEY || '').length < 32) {
   process.exit(1);
 }
 
+const postgresVars = ['DATABASE_URL', 'DIRECT_URL'];
+for (const key of postgresVars) {
+  const value = String(process.env[key] || '').trim();
+  if (!/^postgres(ql)?:\/\//i.test(value)) {
+    console.error(`${key} must start with postgresql:// or postgres://`);
+    process.exit(1);
+  }
+}
+
+const isProduction = `${process.env.NODE_ENV || ''}`.toLowerCase() === 'production';
+const strictStartupChecks =
+  `${process.env.STRICT_STARTUP_CHECKS ?? 'true'}`.toLowerCase() === 'true';
+if (isProduction && strictStartupChecks) {
+  const allowedOrigins = String(process.env.ALLOWED_ORIGINS || '').trim();
+  if (!allowedOrigins) {
+    console.error(
+      'ALLOWED_ORIGINS is required when NODE_ENV=production and STRICT_STARTUP_CHECKS=true.',
+    );
+    process.exit(1);
+  }
+}
+
 console.log(`Environment check passed (${required.length} required variables).`);

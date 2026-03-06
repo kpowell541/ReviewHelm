@@ -38,8 +38,8 @@ npm run start:dev
 
 ## Available Endpoints
 
-- `GET /api/v1/health` (authenticated)
-- `GET /api/v1/health/ready` (authenticated)
+- `GET /api/v1/health` (public liveness)
+- `GET /api/v1/health/ready` (public readiness; checks DB/Redis)
 - `GET/PATCH /api/v1/me/preferences`
 - `GET/PUT/DELETE /api/v1/me/api-keys/anthropic`
 - `GET /api/v1/checklists`, `GET /api/v1/checklists/version`, `GET /api/v1/checklists/:id`
@@ -114,3 +114,8 @@ The backend tests are intended to catch real regressions in critical paths:
 
 Configured for Railway with `railway.json`.
 Set all required environment variables from `.env.example` in Railway.
+
+Production notes:
+- `STRICT_STARTUP_CHECKS=true` is the secure default.
+- `ALLOWED_ORIGINS` should be set in production; with strict checks enabled, startup fails when empty.
+- `API_BASE_PATH` is normalized automatically (leading/trailing slashes are stripped).

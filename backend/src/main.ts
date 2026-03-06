@@ -18,6 +18,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService<AppEnv, true>);
   const isProduction = config.get('NODE_ENV') === 'production';
+  const strictStartupChecks = config.get('STRICT_STARTUP_CHECKS');
   const bodyLimit = config.get('REQUEST_BODY_LIMIT');
 
   app.setGlobalPrefix(config.get('API_BASE_PATH'));
@@ -49,7 +50,20 @@ async function bootstrap() {
     .filter(Boolean);
 
   if (isProduction && allowedOrigins.length === 0) {
-    throw new Error('ALLOWED_ORIGINS must be configured in production.');
+    if (strictStartupChecks) {
+      throw new Error(
+        'ALLOWED_ORIGINS is required in production when STRICT_STARTUP_CHECKS=true.',
+      );
+    }
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        type: 'startup',
+        message:
+          'ALLOWED_ORIGINS is empty in production; browser requests will fail CORS.',
+        at: new Date().toISOString(),
+      }),
+    );
   }
 
   app.enableCors({
@@ -145,4 +159,16 @@ async function bootstrap() {
   );
 }
 
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  console.error(
+    JSON.stringify({
+      level: 'error',
+      type: 'startup',
+      message: 'Bootstrap failed',
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      at: new Date().toISOString(),
+    }),
+  );
+  process.exit(1);
+});

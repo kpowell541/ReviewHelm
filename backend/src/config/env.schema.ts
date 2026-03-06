@@ -5,11 +5,22 @@ const PostgresUrlSchema = z
   .min(10)
   .regex(/^postgres(ql)?:\/\//i, 'must start with postgresql:// or postgres://');
 
+const ApiBasePathSchema = z
+  .string()
+  .min(1)
+  .transform((value) => value.replace(/^\/+|\/+$/g, ''))
+  .refine((value) => value.length > 0, {
+    message: 'must include at least one path segment (for example: api/v1)',
+  });
+
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
-  API_BASE_PATH: z.string().default('api/v1'),
-  API_PUBLIC_URL: z.string().url(),
+  API_BASE_PATH: ApiBasePathSchema.default('api/v1'),
+  API_PUBLIC_URL: z
+    .string()
+    .url()
+    .transform((value) => value.replace(/\/+$/g, '')),
   APP_VERSION: z.string().default('0.1.0'),
 
   SUPABASE_URL: z.string().url(),
@@ -33,6 +44,10 @@ const EnvSchema = z.object({
 
   ADMIN_USER_IDS: z.string().optional().default(''),
   ALLOWED_ORIGINS: z.string().optional().default(''),
+  STRICT_STARTUP_CHECKS: z.preprocess(
+    (value) => `${value ?? 'true'}`.toLowerCase() === 'true',
+    z.boolean(),
+  ),
   ENABLE_SWAGGER_DOCS: z.preprocess(
     (value) => `${value ?? 'false'}`.toLowerCase() === 'true',
     z.boolean(),
