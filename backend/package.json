@@ -5,9 +5,10 @@
   "description": "ReviewHelm backend API (NestJS + Prisma + Supabase + Upstash)",
   "scripts": {
     "build": "nest build",
-    "start": "node dist/main.js",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
+    "start": "infisical run -- node dist/main.js",
+    "start:dev": "infisical run -- nest start --watch",
+    "start:debug": "infisical run -- nest start --debug --watch",
+    "start:local": "nest start --watch",
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
@@ -20,10 +21,10 @@
     "env:check": "node scripts/check-required-env.mjs",
     "smoke:health": "node scripts/smoke-health.mjs",
     "preflight": "node scripts/preflight.mjs",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio"
+    "prisma:generate": "infisical run -- prisma generate",
+    "prisma:migrate:dev": "infisical run -- prisma migrate dev",
+    "prisma:migrate:deploy": "infisical run -- prisma migrate deploy",
+    "prisma:studio": "infisical run -- prisma studio"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "^3.1002.0",
