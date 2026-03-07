@@ -3,8 +3,9 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useConfidenceStore } from '../store/useConfidenceStore';
 import { usePreferencesStore } from '../store/usePreferencesStore';
+import { usePRTrackerStore } from '../store/usePRTrackerStore';
 import { useSyncStore } from '../store/useSyncStore';
-import type { Session } from '../data/types';
+import type { Session, TrackedPR } from '../data/types';
 
 /**
  * Local-first sync engine.
@@ -197,6 +198,59 @@ async function syncConfidence(): Promise<void> {
   }
 }
 
+async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
+  const errors: string[] = [];
+  let pushed = 0;
+  let pulled = 0;
+
+  try {
+    // Pull remote PRs
+    const remotePRs = await api.get<TrackedPR[]>('/tracked-prs');
+    const localPRs = usePRTrackerStore.getState().prs;
+    const mergedPRs = { ...localPRs };
+
+    // Merge remote into local (last-write-wins)
+    for (const remote of remotePRs) {
+      const local = mergedPRs[remote.id];
+      if (!local || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
+        mergedPRs[remote.id] = remote;
+        pulled++;
+      }
+    }
+
+    // Push local PRs that are newer or don't exist remotely
+    const remoteById = new Map(remotePRs.map((pr) => [pr.id, pr]));
+    for (const local of Object.values(localPRs)) {
+      const remote = remoteById.get(local.id);
+      if (!remote || new Date(local.updatedAt) > new Date(remote.updatedAt)) {
+        try {
+          await api.put(`/tracked-prs/${local.id}`, local);
+          pushed++;
+        } catch (err: any) {
+          errors.push(`PR ${local.id}: ${err.message}`);
+        }
+      }
+    }
+
+    // Delete remote PRs that were deleted locally
+    for (const remote of remotePRs) {
+      if (!localPRs[remote.id]) {
+        try {
+          await api.delete(`/tracked-prs/${remote.id}`);
+        } catch {
+          // Ignore delete errors
+        }
+      }
+    }
+
+    usePRTrackerStore.getState().replacePRs(mergedPRs);
+  } catch (err: any) {
+    errors.push(`Sync PRs: ${err.message}`);
+  }
+
+  return { pushed, pulled, errors };
+}
+
 export async function runSync(): Promise<SyncResult> {
   const syncStore = useSyncStore.getState();
 
@@ -223,6 +277,12 @@ export async function runSync(): Promise<SyncResult> {
     const pullResult = await pullSessions();
     totalPulled += pullResult.pulled;
     allErrors.push(...pullResult.errors);
+
+    // Sync PRs
+    const prResult = await syncTrackedPRs();
+    totalPushed += prResult.pushed;
+    totalPulled += prResult.pulled;
+    allErrors.push(...prResult.errors);
 
     // Sync preferences and confidence
     await syncPreferences();

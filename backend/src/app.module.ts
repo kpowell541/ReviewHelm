@@ -29,6 +29,7 @@ import { CalibrationModule } from './calibration/calibration.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { AdminCiModule } from './admin/ci/admin-ci.module';
 import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.module';
+import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.mo
     CommentProfilesModule,
     CalibrationModule,
     ComplianceModule,
+    TrackedPRsModule,
     BackupsModule,
     ExportsModule,
     AdminSecurityModule,
