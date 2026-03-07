@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '../storage/secureStorage';
 import type { TutorConversation, TutorMessage } from '../data/types';
 
 const MAX_CACHE_ENTRIES = 200;
@@ -160,7 +160,7 @@ export const useTutorStore = create<TutorStoreState>()(
     }),
     {
       name: 'tutor-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
       partialize: (state) => ({
         conversations: pruneConversationsForPersistence(state.conversations),
         // Do not persist response cache to disk; it is recomputable and can contain sensitive text.

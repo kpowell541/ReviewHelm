@@ -7,9 +7,12 @@ import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { useTemplateStore } from '../../src/store/useTemplateStore';
 import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
+import { DesktopContainer } from '../../src/components/DesktopContainer';
+import { useResponsive } from '../../src/hooks/useResponsive';
 
 export default function StackSelectScreen() {
   const router = useRouter();
+  const { isDesktop } = useResponsive();
   const { repo } = useLocalSearchParams<{ repo?: string }>();
   const getSectionAverages = useConfidenceStore((s) => s.getSectionAverages);
   const templateMap = useTemplateStore((s) => s.templates);
@@ -59,7 +62,8 @@ export default function StackSelectScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <DesktopContainer>
+      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
         {repo && repoConfig && (
           <Pressable
             onPress={handleUseRepoConfig}
@@ -179,6 +183,7 @@ export default function StackSelectScreen() {
           );
         })}
       </ScrollView>
+      </DesktopContainer>
 
       {selectedStacks.length > 0 && (
         <View style={styles.bottomBar}>
@@ -217,6 +222,7 @@ export default function StackSelectScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: 120 },
+  contentDesktop: { paddingHorizontal: spacing['2xl'], paddingTop: spacing['2xl'] },
   heading: {
     fontSize: fontSizes.xl,
     fontWeight: '700',

@@ -3,6 +3,8 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
+import { DesktopContainer } from '../src/components/DesktopContainer';
+import { useResponsive } from '../src/hooks/useResponsive';
 
 function StatBlock({
   label,
@@ -56,6 +58,7 @@ function ConfidenceBar({
 }
 
 export default function DashboardScreen() {
+  const { isDesktop } = useResponsive();
   const sessions = useSessionStore((s) => s.sessions);
   const histories = useConfidenceStore((s) => s.histories);
 
@@ -160,9 +163,10 @@ export default function DashboardScreen() {
   const isEmpty = stats.totalSessions === 0 && stats.totalTracked === 0;
 
   return (
+    <DesktopContainer>
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
     >
       <Text style={styles.title}>Dashboard</Text>
 
@@ -267,12 +271,14 @@ export default function DashboardScreen() {
         </>
       )}
     </ScrollView>
+    </DesktopContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg },
+  contentDesktop: { paddingHorizontal: spacing['2xl'], paddingTop: spacing['2xl'] },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '700',

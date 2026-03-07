@@ -34,6 +34,8 @@ import {
   type ClaudeModel,
 } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
+import { DesktopContainer } from '../src/components/DesktopContainer';
+import { useResponsive } from '../src/hooks/useResponsive';
 
 const MODEL_OPTIONS: ClaudeModel[] = ['sonnet', 'opus'];
 
@@ -59,6 +61,7 @@ function maskToken(token: string | null): string {
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { isDesktop } = useResponsive();
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const apiKeyToken = usePreferencesStore((s) => s.apiKeyToken);
@@ -506,7 +509,8 @@ export default function SettingsScreen() {
   const featureBreakdown = getCurrentMonthFeatureBreakdown();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <DesktopContainer>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
       <Text style={styles.sectionTitle}>AI Tutor</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Claude API Key</Text>
@@ -1011,12 +1015,14 @@ export default function SettingsScreen() {
 
       <Text style={styles.footer}>ReviewHelm v{appVersion}</Text>
     </ScrollView>
+    </DesktopContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: spacing['4xl'] },
+  contentDesktop: { paddingHorizontal: spacing['2xl'], paddingTop: spacing['2xl'] },
   sectionTitle: {
     fontSize: fontSizes.md,
     fontWeight: '600',

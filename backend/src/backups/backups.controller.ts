@@ -19,6 +19,11 @@ export class BackupsController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() body: BackupImportDto,
   ) {
-    return this.backupsService.importBackup(user, body.sourceUrl);
+    return this.backupsService.importBackup(
+      user,
+      body.sourceUrl,
+      body.signature,
+      body.signatureTimestamp,
+    );
   }
 }

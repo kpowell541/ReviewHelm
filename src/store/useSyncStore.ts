@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '../storage/secureStorage';
 
 interface SyncSnapshot {
   lastChecked?: string;
@@ -51,7 +51,7 @@ export const useSyncStore = create<SyncStoreState>()(
     }),
     {
       name: 'sync-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

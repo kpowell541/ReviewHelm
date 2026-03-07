@@ -95,7 +95,9 @@ export default function DeepDiveScreen() {
         const response = await sendTutorMessage({
           apiKey,
           model: aiModel,
+          feature: 'deep-dive',
           role,
+          itemId,
           itemText: found.item.text,
           stackLabel: found.stackTitle,
           confidence,

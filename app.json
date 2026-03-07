@@ -28,10 +28,6 @@
       "expo-secure-store"
     ],
     "extra": {
-      "apiBaseUrl": "https://reviewhelm-staging.up.railway.app",
-      "apiBasePath": "/api/v1",
-      "supabaseUrl": "https://sttkomdzrzkiqioiqgti.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0dGtvbWR6cnpraXFpb2lxZ3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODIzODMsImV4cCI6MjA4ODI1ODM4M30._RmDUJrPeP-QpvwZOJlooKiuU7Svy30YovPsp8NCUC8",
       "eas": {
         "projectId": "ea27d76e-bd46-4b37-adfc-a175def827ba"
       },

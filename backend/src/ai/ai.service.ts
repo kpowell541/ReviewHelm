@@ -61,19 +61,34 @@ export class AiService {
         },
       },
     });
-    if (!key) {
-      throw new BadRequestException('No Anthropic API key configured for this user.');
+    let apiKey = (dto.apiKey ?? '').trim();
+
+    if (key) {
+      try {
+        const decrypted = await this.keyCrypto.decryptSecret({
+          keyProvider: key.kmsKeyId ? 'aws_kms' : 'local',
+          keyVersion: key.kekVersion,
+          kmsKeyId: key.kmsKeyId,
+          encryptedDek: key.encryptedDek,
+          ciphertext: key.ciphertext,
+          iv: key.iv,
+          authTag: key.authTag,
+        });
+        apiKey = decrypted.trim();
+      } catch {
+        if (!apiKey) {
+          throw new BadRequestException(
+            'Stored Anthropic API key could not be decrypted. Provide a fallback key.',
+          );
+        }
+      }
     }
 
-    const apiKey = await this.keyCrypto.decryptSecret({
-      keyProvider: key.kmsKeyId ? 'aws_kms' : 'local',
-      keyVersion: key.kekVersion,
-      kmsKeyId: key.kmsKeyId,
-      encryptedDek: key.encryptedDek,
-      ciphertext: key.ciphertext,
-      iv: key.iv,
-      authTag: key.authTag,
-    });
+    if (!apiKey) {
+      throw new BadRequestException(
+        'No Anthropic API key configured for this user and no fallback key was provided.',
+      );
+    }
 
     const fallbackModel = this.defaultModelForFeature(dto.feature);
     const requestedModel = budgetMeta?.requestedModel ?? dto.model ?? fallbackModel;

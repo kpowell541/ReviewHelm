@@ -19,10 +19,14 @@ import type {
   PRRole,
   PRSize,
   PRPriority,
+  CIPassing,
+  PRDependency,
   TrackedPR,
 } from '../src/data/types';
 import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
+import { DesktopContainer } from '../src/components/DesktopContainer';
+import { useResponsive } from '../src/hooks/useResponsive';
 
 const STATUS_COLORS: Record<PRStatus, string> = {
   'needs-review': colors.warning,
@@ -60,11 +64,16 @@ const EMPTY_FORM = {
   repo: '',
   prNumber: '',
   prAuthor: '',
+  dependencies: [] as PRDependency[],
+  ciPassing: 'unknown' as CIPassing,
   notes: '',
 };
 
+const EMPTY_DEP = { repo: '', prNumber: '', title: '' };
+
 export default function PRTrackerScreen() {
   const router = useRouter();
+  const { isDesktop } = useResponsive();
   const prs = usePRTrackerStore((s) => s.prs);
   const wipLimit = usePRTrackerStore((s) => s.wipLimit);
   const emergencySlotEnabled = usePRTrackerStore((s) => s.emergencySlotEnabled);
@@ -77,6 +86,7 @@ export default function PRTrackerScreen() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [depForm, setDepForm] = useState(EMPTY_DEP);
 
   const allPRs = useMemo(() => Object.values(prs), [prs]);
 
@@ -96,7 +106,20 @@ export default function PRTrackerScreen() {
     };
   }, [allPRs, wipLimit, emergencySlotEnabled]);
 
+  const isWeekday = useMemo(() => {
+    const day = new Date().getDay();
+    return day >= 1 && day <= 5;
+  }, []);
+
   const dailyProgress = useMemo(() => {
+    if (!isWeekday) {
+      return {
+        smallTotal: 0, smallReviewed: 0,
+        mediumTotal: 0, mediumReviewed: 0,
+        largeTotal: 0, largeReviewed: 0,
+        suggestion: 'Enjoy your weekend!',
+      };
+    }
     const reviewerPRs = allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status) && pr.role === 'reviewer');
     const small = reviewerPRs.filter((pr) => pr.size === 'small');
     const medium = reviewerPRs.filter((pr) => pr.size === 'medium');
@@ -117,9 +140,12 @@ export default function PRTrackerScreen() {
       largeTotal: large.length, largeReviewed,
       suggestion: suggestions.length === 0 ? 'All caught up!' : `Try to review ${suggestions.join(', ')} today`,
     };
-  }, [allPRs]);
+  }, [allPRs, isWeekday]);
 
   const todaysPlan = useMemo(() => {
+    if (!isWeekday) {
+      return { prs: [] as TrackedPR[], capacityNote: 'Enjoy your weekend!' };
+    }
     const reviewerPRs = allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status) && pr.role === 'reviewer');
     // Sort by priority (critical first) then oldest first
     const sorted = [...reviewerPRs].sort((a, b) => {
@@ -156,7 +182,7 @@ export default function PRTrackerScreen() {
         ? 'All caught up for today!'
         : `${parts.join(' + ')} (${plan.length} PR${plan.length > 1 ? 's' : ''})`;
     return { prs: plan, capacityNote };
-  }, [allPRs]);
+  }, [allPRs, isWeekday]);
 
   const filteredPRs = useMemo(() => {
     const sorted = (list: TrackedPR[]) => [...list].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -192,6 +218,8 @@ export default function PRTrackerScreen() {
       repo: pr.repo ?? '',
       prNumber: pr.prNumber?.toString() ?? '',
       prAuthor: pr.prAuthor ?? '',
+      dependencies: pr.dependencies ?? [],
+      ciPassing: pr.ciPassing ?? 'unknown',
       notes: pr.notes ?? '',
     });
     setShowModal(true);
@@ -208,9 +236,11 @@ export default function PRTrackerScreen() {
       priority: form.priority,
       isEmergency: form.role === 'author' ? form.isEmergency : false,
       size: form.role === 'reviewer' ? form.size : undefined,
-      repo: form.role === 'reviewer' && form.repo.trim() ? form.repo.trim() : undefined,
-      prNumber: form.role === 'reviewer' && form.prNumber ? parseInt(form.prNumber, 10) || undefined : undefined,
+      repo: form.repo.trim() || undefined,
+      prNumber: form.prNumber ? parseInt(form.prNumber, 10) || undefined : undefined,
       prAuthor: form.role === 'reviewer' && form.prAuthor.trim() ? form.prAuthor.trim() : undefined,
+      dependencies: form.dependencies.length > 0 ? form.dependencies : undefined,
+      ciPassing: form.ciPassing !== 'unknown' ? form.ciPassing : undefined,
       notes: form.notes.trim() || undefined,
     };
 
@@ -416,12 +446,12 @@ export default function PRTrackerScreen() {
 
   const renderPRCard = (pr: TrackedPR) => {
     const statusColor = STATUS_COLORS[pr.status];
-    const subtitle =
-      pr.role === 'reviewer' && (pr.repo || pr.prNumber || pr.prAuthor)
-        ? [pr.repo, pr.prNumber ? `#${pr.prNumber}` : null, pr.prAuthor ? `by @${pr.prAuthor}` : null]
-            .filter(Boolean)
-            .join(' ')
-        : null;
+    const subtitleParts = [
+      pr.repo,
+      pr.prNumber ? `#${pr.prNumber}` : null,
+      pr.role === 'reviewer' && pr.prAuthor ? `by @${pr.prAuthor}` : null,
+    ].filter(Boolean);
+    const subtitle = subtitleParts.length > 0 ? subtitleParts.join(' ') : null;
 
     return (
       <Pressable
@@ -491,7 +521,8 @@ export default function PRTrackerScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <DesktopContainer>
+      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
         {renderWipGauge()}
         {renderTodaysPlan()}
         {renderDailyProgress()}
@@ -555,19 +586,20 @@ export default function PRTrackerScreen() {
           </View>
         )}
       </ScrollView>
+      </DesktopContainer>
 
       {/* Add/Edit Modal */}
       <Modal
         visible={showModal}
         transparent
-        animationType="slide"
+        animationType={isDesktop ? 'fade' : 'slide'}
         onRequestClose={() => setShowModal(false)}
       >
         <Pressable
-          style={styles.modalOverlay}
+          style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}
           onPress={() => setShowModal(false)}
         >
-          <View style={styles.modalCard} onStartShouldSetResponder={() => true}>
+          <Pressable style={[styles.modalCard, isDesktop && styles.modalCardDesktop]} onPress={(e) => e.stopPropagation()}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>
                 {editingId ? 'Edit PR' : 'Add PR'}
@@ -638,44 +670,47 @@ export default function PRTrackerScreen() {
                 ))}
               </View>
 
+              {/* Repo & PR # (both roles) */}
+              <Text style={styles.fieldLabel}>Repo</Text>
+              <TextInput
+                style={styles.input}
+                value={form.repo}
+                onChangeText={(v) => setForm((f) => ({ ...f, repo: v }))}
+                placeholder="org/repo-name"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+              />
+
+              <View style={styles.fieldRowSplit}>
+                <View style={styles.fieldHalf}>
+                  <Text style={styles.fieldLabel}>PR #</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={form.prNumber}
+                    onChangeText={(v) => setForm((f) => ({ ...f, prNumber: v }))}
+                    placeholder="1234"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                  />
+                </View>
+                {form.role === 'reviewer' && (
+                  <View style={styles.fieldHalf}>
+                    <Text style={styles.fieldLabel}>Author</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={form.prAuthor}
+                      onChangeText={(v) => setForm((f) => ({ ...f, prAuthor: v }))}
+                      placeholder="username"
+                      placeholderTextColor={colors.textMuted}
+                      autoCapitalize="none"
+                    />
+                  </View>
+                )}
+              </View>
+
               {/* Reviewer-only fields */}
               {form.role === 'reviewer' && (
                 <>
-                  <Text style={styles.fieldLabel}>Repo</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={form.repo}
-                    onChangeText={(v) => setForm((f) => ({ ...f, repo: v }))}
-                    placeholder="org/repo-name"
-                    placeholderTextColor={colors.textMuted}
-                    autoCapitalize="none"
-                  />
-
-                  <View style={styles.fieldRowSplit}>
-                    <View style={styles.fieldHalf}>
-                      <Text style={styles.fieldLabel}>PR #</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={form.prNumber}
-                        onChangeText={(v) => setForm((f) => ({ ...f, prNumber: v }))}
-                        placeholder="1234"
-                        placeholderTextColor={colors.textMuted}
-                        keyboardType="number-pad"
-                      />
-                    </View>
-                    <View style={styles.fieldHalf}>
-                      <Text style={styles.fieldLabel}>Author</Text>
-                      <TextInput
-                        style={styles.input}
-                        value={form.prAuthor}
-                        onChangeText={(v) => setForm((f) => ({ ...f, prAuthor: v }))}
-                        placeholder="username"
-                        placeholderTextColor={colors.textMuted}
-                        autoCapitalize="none"
-                      />
-                    </View>
-                  </View>
-
                   <Text style={styles.fieldLabel}>Size</Text>
                   <View style={styles.chipRow}>
                     {(['small', 'medium', 'large'] as PRSize[]).map((s) => (
@@ -710,6 +745,71 @@ export default function PRTrackerScreen() {
                 </View>
               )}
 
+              {/* CI Passing */}
+              <Text style={styles.fieldLabel}>Build Passing?</Text>
+              <View style={styles.chipRow}>
+                {(['yes', 'no', 'unknown'] as CIPassing[]).map((v) => (
+                  <Pressable
+                    key={v}
+                    style={[styles.chip, form.ciPassing === v && styles.chipActive]}
+                    onPress={() => setForm((f) => ({ ...f, ciPassing: v }))}
+                  >
+                    <Text style={[styles.chipText, form.ciPassing === v && styles.chipTextActive]}>
+                      {v === 'yes' ? 'Yes' : v === 'no' ? 'No' : 'Unknown'}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Dependencies */}
+              <Text style={styles.fieldLabel}>Dependencies</Text>
+              {form.dependencies.map((dep, idx) => (
+                <View key={idx} style={styles.depRow}>
+                  <Text style={styles.depText}>
+                    {dep.repo} #{dep.prNumber}{dep.title ? ` — ${dep.title}` : ''}
+                  </Text>
+                  <Pressable onPress={() => setForm((f) => ({
+                    ...f,
+                    dependencies: f.dependencies.filter((_, i) => i !== idx),
+                  }))}>
+                    <Text style={styles.depRemove}>X</Text>
+                  </Pressable>
+                </View>
+              ))}
+              <View style={styles.depInputRow}>
+                <TextInput
+                  style={[styles.input, { flex: 2 }]}
+                  value={depForm.repo}
+                  onChangeText={(v) => setDepForm((f) => ({ ...f, repo: v }))}
+                  placeholder="org/repo"
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="none"
+                />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  value={depForm.prNumber}
+                  onChangeText={(v) => setDepForm((f) => ({ ...f, prNumber: v }))}
+                  placeholder="PR #"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="number-pad"
+                />
+                <Pressable
+                  style={[styles.depAddBtn, (!depForm.repo.trim() || !depForm.prNumber.trim()) && { opacity: 0.4 }]}
+                  onPress={() => {
+                    if (!depForm.repo.trim() || !depForm.prNumber.trim()) return;
+                    const num = parseInt(depForm.prNumber, 10);
+                    if (!num) return;
+                    setForm((f) => ({
+                      ...f,
+                      dependencies: [...f.dependencies, { repo: depForm.repo.trim(), prNumber: num, title: depForm.title.trim() || undefined }],
+                    }));
+                    setDepForm(EMPTY_DEP);
+                  }}
+                >
+                  <Text style={styles.depAddBtnText}>+</Text>
+                </Pressable>
+              </View>
+
               {/* Notes */}
               <Text style={styles.fieldLabel}>Notes</Text>
               <TextInput
@@ -743,7 +843,7 @@ export default function PRTrackerScreen() {
                 </Pressable>
               </View>
             </ScrollView>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </SafeAreaView>
@@ -763,6 +863,7 @@ function isToday(dateStr: string): boolean {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: spacing['3xl'] },
+  contentDesktop: { paddingHorizontal: spacing['2xl'], paddingTop: spacing['2xl'] },
 
   // WIP Gauge
   gaugeCard: {
@@ -1067,12 +1168,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
+  modalOverlayDesktop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalCard: {
     backgroundColor: colors.bgCard,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     padding: spacing.xl,
     maxHeight: '85%',
+  },
+  modalCardDesktop: {
+    width: 520,
+    maxHeight: '80%',
+    borderRadius: radius.xl,
   },
   modalTitle: {
     fontSize: fontSizes.xl,
@@ -1124,6 +1234,46 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: fontSizes.sm, color: colors.textSecondary },
   chipTextActive: { color: colors.primary, fontWeight: '600' },
+  depRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  depText: {
+    fontSize: fontSizes.sm,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+  depRemove: {
+    fontSize: fontSizes.sm,
+    color: colors.error,
+    fontWeight: '600',
+    paddingHorizontal: spacing.sm,
+  },
+  depInputRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    alignItems: 'center',
+  },
+  depAddBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  depAddBtnText: {
+    fontSize: fontSizes.lg,
+    fontWeight: '700',
+    color: '#fff',
+  },
   switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

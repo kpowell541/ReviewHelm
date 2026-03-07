@@ -126,6 +126,7 @@ export interface Session {
   title: string;
   itemResponses: Record<string, ItemResponse>;
   sessionNotes: string;
+  linkedPRId?: string;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
@@ -276,6 +277,14 @@ export const PR_PRIORITY_ORDER: PRPriority[] = ['critical', 'high', 'medium', 'l
 
 export type PRSize = 'small' | 'medium' | 'large';
 
+export interface PRDependency {
+  repo: string;
+  prNumber: number;
+  title?: string;
+}
+
+export type CIPassing = 'yes' | 'no' | 'unknown';
+
 export interface TrackedPR {
   id: string;
   title: string;
@@ -288,12 +297,15 @@ export interface TrackedPR {
   repo?: string;
   prNumber?: number;
   prAuthor?: string;
+  dependencies?: PRDependency[];
+  ciPassing?: CIPassing;
   linkedSessionId?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
   lastReviewedAt?: string;
+  archivedAt?: string;
 }
 
 export const PR_ACTIVE_STATUSES: PRStatus[] = [

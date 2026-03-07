@@ -93,6 +93,11 @@ export class AiTutorDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(8192)
+  apiKey?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(64)
   commentStyleProfileId?: string;
 }

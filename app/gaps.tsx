@@ -9,6 +9,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
+import { DesktopContainer } from '../src/components/DesktopContainer';
+import { useResponsive } from '../src/hooks/useResponsive';
 import { CONFIDENCE_EMOJI } from '../src/data/types';
 import type { ConfidenceLevel, ItemConfidenceHistory } from '../src/data/types';
 import { findItemById } from '../src/data/checklistFinder';
@@ -72,6 +74,7 @@ function GapCard({ gap, onPress }: { gap: ItemConfidenceHistory; onPress: () => 
 
 export default function GapsScreen() {
   const router = useRouter();
+  const { isDesktop } = useResponsive();
   const histories = useConfidenceStore((s) => s.histories);
   const [filter, setFilter] = useState<GapFilter>('all');
 
@@ -139,9 +142,10 @@ export default function GapsScreen() {
     weakest.length === 0 && dueItems.length === 0;
 
   return (
+    <DesktopContainer>
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
     >
       <Text style={styles.title}>My Knowledge Gaps</Text>
 
@@ -245,12 +249,14 @@ export default function GapsScreen() {
         </Text>
       )}
     </ScrollView>
+    </DesktopContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg },
+  contentDesktop: { paddingHorizontal: spacing['2xl'], paddingTop: spacing['2xl'] },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '700',

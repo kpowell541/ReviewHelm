@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '../storage/secureStorage';
 import type { StackId } from '../data/types';
 
 interface RepoConfig {
@@ -64,7 +64,7 @@ export const useRepoConfigStore = create<RepoConfigState>()(
     }),
     {
       name: 'repo-config-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
       partialize: (state) => ({
         configs: state.configs,
       }),

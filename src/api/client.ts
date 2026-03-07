@@ -1,22 +1,16 @@
-import Constants from 'expo-constants';
 import { useAuthStore } from '../store/useAuthStore';
 
-const API_BASE_URL =
-  Constants.expoConfig?.extra?.apiBaseUrl ??
-  process.env.EXPO_PUBLIC_API_BASE_URL ??
-  '';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
+const API_BASE_PATH = process.env.EXPO_PUBLIC_API_BASE_PATH ?? '';
 
-const API_BASE_PATH =
-  Constants.expoConfig?.extra?.apiBasePath ??
-  process.env.EXPO_PUBLIC_API_BASE_PATH ??
-  '';
+function getBaseUrl(): string {
+  return `${API_BASE_URL}${API_BASE_PATH}`;
+}
 
-const BASE_URL = `${API_BASE_URL}${API_BASE_PATH}`;
-
-function assertBaseUrl(): void {
-  if (!BASE_URL) {
+function assertBaseUrl(baseUrl: string): void {
+  if (!baseUrl) {
     throw new ApiError(
-      'API base URL is not configured. Set EXPO_PUBLIC_API_BASE_URL in your .env file.',
+      'API base URL is not configured. Ensure Infisical secrets are loaded.',
       0,
       'MISSING_CONFIG',
     );
@@ -46,9 +40,10 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  assertBaseUrl();
+  const baseUrl = getBaseUrl();
+  assertBaseUrl(baseUrl);
   const { method = 'GET', body, headers = {} } = options;
-  const url = `${BASE_URL}${path}`;
+  const url = `${baseUrl}${path}`;
 
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',

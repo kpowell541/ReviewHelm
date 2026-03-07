@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { persistStorage } from '../storage/secureStorage';
 import { v4 as uuidv4 } from 'uuid';
 import type { Severity, ClaudeModel } from '../data/types';
 
@@ -228,7 +228,7 @@ export const usePreferencesStore = create<PreferencesState>()(
     }),
     {
       name: 'preferences-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
       partialize: (state) => ({
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         aiModel: state.aiModel,

@@ -77,12 +77,14 @@ export default function LearnSessionScreen() {
     try {
       const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
-        apiKey,
-        model: aiModel,
-        role: 'concept-explainer',
-        itemText: found.item.text,
-        stackLabel: found.stackTitle,
-        confidence: currentGap.currentConfidence as ConfidenceLevel,
+          apiKey,
+          model: aiModel,
+          feature: 'learn',
+          itemId: found.item.id,
+          role: 'concept-explainer',
+          itemText: found.item.text,
+          stackLabel: found.stackTitle,
+          confidence: currentGap.currentConfidence as ConfidenceLevel,
         messages: [userMsg],
       });
       if (!response.cached) {
@@ -125,11 +127,13 @@ export default function LearnSessionScreen() {
     try {
       const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
-        apiKey,
-        model: aiModel,
-        role: 'exercise-generator',
-        itemText: found.item.text,
-        stackLabel: found.stackTitle,
+          apiKey,
+          model: aiModel,
+          feature: 'learn',
+          itemId: found.item.id,
+          role: 'exercise-generator',
+          itemText: found.item.text,
+          stackLabel: found.stackTitle,
         confidence: currentGap.currentConfidence as ConfidenceLevel,
         messages: updatedMessages,
       });

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   Session,
@@ -11,6 +10,7 @@ import type {
   ConfidenceLevel,
 } from '../data/types';
 import { getEffectiveStackIds } from '../data/types';
+import { secureStoreAsyncStorage } from '../storage/secureStorage';
 
 interface SessionState {
   sessions: Record<string, Session>;
@@ -21,7 +21,8 @@ interface SessionState {
     mode: ChecklistMode,
     stackIds?: StackId[],
     title?: string,
-    selectedSections?: string[]
+    selectedSections?: string[],
+    linkedPRId?: string
   ) => string;
   setItemResponse: (
     sessionId: string,
@@ -32,6 +33,7 @@ interface SessionState {
   renameSession: (sessionId: string, title: string) => void;
   completeSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
+  linkPR: (sessionId: string, prId: string | undefined) => void;
   replaceSessions: (sessions: Record<string, Session>) => void;
   getSession: (sessionId: string) => Session | undefined;
   getSessionsByMode: (mode: ChecklistMode, stackId?: StackId) => Session[];
@@ -45,7 +47,7 @@ export const useSessionStore = create<SessionState>()(
       hasHydrated: false,
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
-      createSession: (mode, stackIds, title, selectedSections) => {
+      createSession: (mode, stackIds, title, selectedSections, linkedPRId) => {
         const id = uuidv4();
         const now = new Date().toISOString();
         const defaultTitle =
@@ -61,6 +63,7 @@ export const useSessionStore = create<SessionState>()(
           title: defaultTitle,
           itemResponses: {},
           sessionNotes: '',
+          linkedPRId,
           createdAt: now,
           updatedAt: now,
           isComplete: false,
@@ -155,6 +158,23 @@ export const useSessionStore = create<SessionState>()(
         });
       },
 
+      linkPR: (sessionId, prId) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                linkedPRId: prId,
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          };
+        });
+      },
+
       replaceSessions: (sessions) => set({ sessions }),
 
       getSession: (sessionId) => {
@@ -188,7 +208,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'session-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => secureStoreAsyncStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Alert, AppState, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Image, Platform, StyleSheet, Text, View } from 'react-native';
 import type { AppStateStatus } from 'react-native';
+import { useFonts, Quicksand_400Regular, Quicksand_500Medium, Quicksand_600SemiBold, Quicksand_700Bold } from '@expo-google-fonts/quicksand';
 import { colors, spacing, fontSizes, ThemeProvider, useThemeColors } from '../src/theme';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -36,11 +37,19 @@ export default function RootLayout() {
   const tutorHydrated = useTutorStore((s) => s.hasHydrated);
   const syncHydrated = useSyncStore((s) => s.hasHydrated);
   const prTrackerHydrated = usePRTrackerStore((s) => s.hasHydrated);
+  const archiveOldPRs = usePRTrackerStore((s) => s.archiveOldPRs);
   const repoConfigHydrated = useRepoConfigStore((s) => s.hasHydrated);
   const initAuth = useAuthStore((s) => s.initialize);
   const authUser = useAuthStore((s) => s.user);
   const authIsLoading = useAuthStore((s) => s.isLoading);
   const signOut = useAuthStore((s) => s.signOut);
+
+  const [fontsLoaded] = useFonts({
+    Quicksand_400Regular,
+    Quicksand_500Medium,
+    Quicksand_600SemiBold,
+    Quicksand_700Bold,
+  });
 
   const [cacheReady, setCacheReady] = useState(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -56,8 +65,14 @@ export default function RootLayout() {
       .catch(() => setCacheReady(true));
   }, []);
 
-  // Sign out when app goes to background
+  // Auto-archive resolved PRs older than 3 months
   useEffect(() => {
+    if (prTrackerHydrated) archiveOldPRs();
+  }, [prTrackerHydrated, archiveOldPRs]);
+
+  // Sign out when app goes to background (native only — on web, tab switches trigger inactive)
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (appStateRef.current === 'active' && nextState.match(/inactive|background/)) {
         void signOut();
@@ -77,7 +92,8 @@ export default function RootLayout() {
     prTrackerHydrated &&
     repoConfigHydrated &&
     isApiKeyLoaded &&
-    cacheReady;
+    cacheReady &&
+    fontsLoaded;
 
   useEffect(() => {
     if (!storesReady) return;
@@ -175,14 +191,25 @@ export default function RootLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
           headerTintColor: colors.textPrimary,
-          headerTitleStyle: { fontWeight: '600' },
+          headerTitleStyle: { fontFamily: 'Quicksand_600SemiBold' },
           contentStyle: { backgroundColor: colors.bg },
           animation: 'slide_from_right',
+          headerBackTitle: 'Back',
+          headerTitleAlign: 'center',
+          headerTitle: ({ children }) => (
+            <View style={styles.headerTitleRow}>
+              <Image
+                source={require('../assets/splash-icon.png')}
+                style={styles.headerLogo}
+              />
+              <Text style={styles.headerTitleText}>{children}</Text>
+            </View>
+          ),
         }}
       >
         <Stack.Screen
           name="index"
-          options={{ title: 'ReviewHelm', headerShown: false }}
+          options={{ title: 'Home', headerShown: false }}
         />
         <Stack.Screen
           name="review/stack-select"
@@ -194,11 +221,11 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="review/section-select"
-          options={{ title: 'Select Sections' }}
+          options={{ title: 'Customize Sections' }}
         />
         <Stack.Screen
           name="review/[sessionId]"
-          options={{ title: 'Review' }}
+          options={{ title: 'Review Checklist' }}
         />
         <Stack.Screen
           name="polish/sessions"
@@ -228,7 +255,7 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="learn/stack-select"
-          options={{ title: 'Learn — Select Stack' }}
+          options={{ title: 'Learn - Select Stack' }}
         />
         <Stack.Screen
           name="learn/[stackId]"
@@ -236,7 +263,7 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="gaps"
-          options={{ title: 'My Knowledge Gaps' }}
+          options={{ title: 'Knowledge Gaps' }}
         />
         <Stack.Screen
           name="search"
@@ -244,7 +271,7 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="dashboard"
-          options={{ title: 'Dashboard' }}
+          options={{ title: 'Review Readiness' }}
         />
         <Stack.Screen
           name="bookmarks"
@@ -260,15 +287,19 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="review/due-items"
-          options={{ title: 'Review Due Items' }}
+          options={{ title: 'Items Due for Review' }}
         />
         <Stack.Screen
           name="trends"
-          options={{ title: 'Session Comparison' }}
+          options={{ title: 'Session Trends' }}
         />
         <Stack.Screen
           name="pr-tracker"
           options={{ title: 'PR Tracker' }}
+        />
+        <Stack.Screen
+          name="past-reviews"
+          options={{ title: 'Past PRs' }}
         />
         <Stack.Screen
           name="settings"
@@ -291,5 +322,20 @@ const styles = StyleSheet.create({
   loadingText: {
     color: colors.textSecondary,
     fontSize: fontSizes.md,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  headerLogo: {
+    width: 36,
+    height: 36,
+    borderRadius: 9,
+  },
+  headerTitleText: {
+    fontSize: fontSizes.lg,
+    fontFamily: 'Quicksand_600SemiBold',
+    color: colors.textPrimary,
   },
 });

@@ -19,6 +19,19 @@ const CHECKLIST_FILES = {
   'polish-my-pr': 'polish-my-pr.json',
 } as const;
 
+const CHECKLIST_ALLOWLIST_HOSTS = (
+  process.env.EXPO_PUBLIC_CHECKLIST_ALLOWLIST_HOSTS ??
+  'raw.githubusercontent.com'
+)
+  .split(',')
+  .map((host) => host.trim().toLowerCase())
+  .filter(Boolean);
+
+const MAX_CHECKLIST_PAYLOAD_BYTES = Math.max(
+  1,
+  Number(process.env.EXPO_PUBLIC_CHECKLIST_MAX_PAYLOAD_BYTES) || 131072,
+);
+
 type ChecklistMap = Record<keyof typeof CHECKLIST_FILES, Checklist>;
 
 export interface ChecklistSyncConfig {
@@ -48,6 +61,36 @@ function getRawUrl(
   return `https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/assets/data/checklists/${filename}`;
 }
 
+function validateRawChecklistUrl(url: string, expectedFilename: string): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`Invalid checklist URL: ${url}`);
+  }
+
+  if (parsed.protocol !== 'https:') {
+    throw new Error('Checklist URLs must use https.');
+  }
+  if (!CHECKLIST_ALLOWLIST_HOSTS.includes(parsed.hostname.toLowerCase())) {
+    throw new Error(`Checklist host not allowed: ${parsed.hostname}`);
+  }
+  if (!parsed.pathname.endsWith(`/assets/data/checklists/${expectedFilename}`)) {
+    throw new Error(`Checklist URL path not allowed for file: ${expectedFilename}`);
+  }
+
+  return parsed;
+}
+
+function isValidChecklistPayload(value: unknown): value is Checklist {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const payload = value as Record<string, unknown>;
+  const meta = payload.meta;
+  if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return false;
+  if (typeof (meta as Record<string, unknown>).version !== 'string') return false;
+  return true;
+}
+
 function latestVersionOf(checklists: ChecklistMap): string {
   return Object.values(checklists)
     .map((checklist) => checklist.meta.version)
@@ -63,11 +106,27 @@ export async function syncChecklistsFromGithub(
 
   const entries = await Promise.all(
     Object.entries(CHECKLIST_FILES).map(async ([id, filename]) => {
-      const response = await fetch(getRawUrl(config, filename));
+      const rawUrl = getRawUrl(config, filename);
+      const parsed = validateRawChecklistUrl(rawUrl, filename);
+      const response = await fetch(parsed.toString());
       if (!response.ok) {
         throw new Error(`Failed to fetch ${id} checklist (${response.status})`);
       }
-      const data = (await response.json()) as Checklist;
+      const contentLength = response.headers.get('content-length');
+      if (contentLength) {
+        const declared = Number(contentLength);
+        if (Number.isFinite(declared) && declared > MAX_CHECKLIST_PAYLOAD_BYTES) {
+          throw new Error(`Checklist ${id} payload is too large`);
+        }
+      }
+      const raw = await response.text();
+      if (raw.length > MAX_CHECKLIST_PAYLOAD_BYTES) {
+        throw new Error(`Checklist ${id} payload is too large`);
+      }
+      const data: unknown = JSON.parse(raw);
+      if (!isValidChecklistPayload(data)) {
+        throw new Error(`Checklist ${id} payload is invalid`);
+      }
       return [id, data] as const;
     }),
   );
