@@ -1,0 +1,641 @@
+{
+  "meta": {
+    "id": "graphql",
+    "mode": "review",
+    "title": "GraphQL",
+    "shortTitle": "GraphQL",
+    "description": "Review checklist for GraphQL schema, resolvers, and API design",
+    "icon": "\u25c8",
+    "totalItems": 29,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "graphql.schema-design",
+      "title": "Schema Design",
+      "items": [
+        {
+          "id": "graphql.schema-design.type-naming-conventions",
+          "text": "Do type and field names follow GraphQL naming conventions?",
+          "severity": "nit",
+          "tags": [
+            "schema",
+            "naming"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL conventions: PascalCase for types (User, OrderConnection), camelCase for fields (firstName, createdAt), SCREAMING_SNAKE for enums (ORDER_STATUS).",
+            "whyItMatters": "Consistent naming makes the schema predictable and easy to use. Clients shouldn't have to guess whether it's userId or user_id.",
+            "howToVerify": "Are types PascalCase? Fields camelCase? Enum values SCREAMING_SNAKE? Are abbreviations avoided (use 'identifier' not 'id' for clarity)?",
+            "exampleComment": "The field `user_name` should be `userName` per GraphQL convention (camelCase for fields).",
+            "codeExamples": [],
+            "keyTakeaway": "Follow GraphQL conventions: PascalCase types, camelCase fields, SCREAMING_SNAKE enums.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.schema-design.nullability-intentional",
+          "text": "Is nullability intentional for every field (! used appropriately)?",
+          "severity": "major",
+          "tags": [
+            "schema"
+          ],
+          "baseContent": {
+            "whatItMeans": "In GraphQL, fields are nullable by default. Non-null (!) should be used when a field is guaranteed to have a value. Getting this wrong breaks clients.",
+            "whyItMatters": "Making a field non-null then returning null crashes the entire response (null propagates up). Making everything nullable forces clients to handle nulls everywhere.",
+            "howToVerify": "For each field: is the data always available? Can it fail independently? Is it worth propagating a null error to the parent?",
+            "exampleComment": "The `user.email` field is non-null (!) but email can be null for social-login users. Remove the ! or ensure it's always populated.",
+            "codeExamples": [
+              {
+                "label": "Intentional nullability",
+                "language": "graphql",
+                "code": "type User {\n  id: ID!           # Always exists\n  email: String     # Nullable: social login users may not have one\n  name: String!     # Always required\n  avatar: String    # Nullable: not all users upload one\n}"
+              }
+            ],
+            "keyTakeaway": "Default to nullable. Only use ! when you're sure the field can never be null, including error cases.",
+            "references": [
+              "https://graphql.org/learn/best-practices/#nullability"
+            ]
+          }
+        },
+        {
+          "id": "graphql.schema-design.input-types-for-mutations",
+          "text": "Are mutations using Input types (not inline arguments)?",
+          "severity": "minor",
+          "tags": [
+            "schema",
+            "mutations"
+          ],
+          "baseContent": {
+            "whatItMeans": "Mutations with multiple arguments should use a dedicated Input type instead of many individual arguments.",
+            "whyItMatters": "Input types are easier to evolve (add optional fields), document, and reuse. They also make client code cleaner.",
+            "howToVerify": "Does a mutation have more than 2-3 arguments? Should they be grouped into an input type?",
+            "exampleComment": "This mutation has 8 inline arguments. Create a `CreateOrderInput` type to group them.",
+            "codeExamples": [
+              {
+                "label": "Input type",
+                "language": "graphql",
+                "code": "input CreateOrderInput {\n  userId: ID!\n  items: [OrderItemInput!]!\n  shippingAddress: AddressInput!\n}\n\ntype Mutation {\n  createOrder(input: CreateOrderInput!): Order!\n}"
+              }
+            ],
+            "keyTakeaway": "Use Input types for mutations with more than 2-3 parameters. They're easier to evolve.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.schema-design.descriptions-on-types",
+          "text": "Do types and fields have descriptions for documentation?",
+          "severity": "nit",
+          "tags": [
+            "schema",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL schemas are self-documenting through introspection. Descriptions (doc strings) appear in tools like GraphiQL and Apollo Studio.",
+            "whyItMatters": "Without descriptions, developers using the API must guess what fields mean, leading to misuse and support burden.",
+            "howToVerify": "Do new types and non-obvious fields have description strings? Are enum values documented?",
+            "exampleComment": "Add descriptions to the `OrderStatus` enum values so API consumers know the difference between PROCESSING and PENDING.",
+            "codeExamples": [
+              {
+                "label": "Documented schema",
+                "language": "graphql",
+                "code": "\"\"\"A customer order with line items and shipping details.\"\"\"\ntype Order {\n  \"\"\"Unique identifier for the order.\"\"\"\n  id: ID!\n  \"\"\"Current status of the order in the fulfillment pipeline.\"\"\"\n  status: OrderStatus!\n}"
+              }
+            ],
+            "keyTakeaway": "Document your schema. Descriptions appear in introspection and are your API's documentation.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.schema-design.enums-over-strings",
+          "text": "Are enums used instead of String for fixed sets of values?",
+          "severity": "minor",
+          "tags": [
+            "schema",
+            "types"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL enums provide type safety and documentation for fields with a known set of values. Strings allow any value.",
+            "whyItMatters": "String-typed status fields accept invalid values like typos. Enums catch these at the schema level and document valid options.",
+            "howToVerify": "Are there String fields that only accept specific values? Should they be enums?",
+            "exampleComment": "The `status` field is a String but only accepts 'ACTIVE', 'INACTIVE', 'SUSPENDED'. Use an enum type.",
+            "codeExamples": [
+              {
+                "label": "Enum type",
+                "language": "graphql",
+                "code": "enum UserStatus {\n  ACTIVE\n  INACTIVE\n  SUSPENDED\n}\n\ntype User {\n  status: UserStatus!\n}"
+              }
+            ],
+            "keyTakeaway": "Use enums for finite value sets. They provide validation and documentation for free.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.schema-design.relay-connection-pattern",
+          "text": "Is pagination using the Relay Connection pattern (edges/nodes/pageInfo)?",
+          "severity": "minor",
+          "tags": [
+            "schema",
+            "pagination"
+          ],
+          "baseContent": {
+            "whatItMeans": "The Relay Connection specification provides a standard way to paginate with cursors, supporting forward/backward navigation and total counts.",
+            "whyItMatters": "Custom pagination patterns vary between teams and make client libraries harder to use. The Connection pattern is widely supported.",
+            "howToVerify": "Is list pagination using Connection types with edges, nodes, pageInfo? Or a custom approach? Does the team use Relay?",
+            "exampleComment": "This list field returns `[User!]!` with no pagination. Use a Connection type for lists that could be large.",
+            "codeExamples": [
+              {
+                "label": "Connection pattern",
+                "language": "graphql",
+                "code": "type UserConnection {\n  edges: [UserEdge!]!\n  pageInfo: PageInfo!\n  totalCount: Int!\n}\n\ntype UserEdge {\n  node: User!\n  cursor: String!\n}\n\ntype Query {\n  users(first: Int, after: String): UserConnection!\n}"
+              }
+            ],
+            "keyTakeaway": "Use the Connection pattern for paginated lists. It's the industry standard.",
+            "references": [
+              "https://relay.dev/graphql/connections.htm"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "graphql.resolvers",
+      "title": "Resolvers",
+      "items": [
+        {
+          "id": "graphql.resolvers.n-plus-one-dataloader",
+          "text": "Are N+1 queries prevented with DataLoader or batching?",
+          "severity": "blocker",
+          "tags": [
+            "resolvers",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL's nested resolution naturally causes N+1 queries: fetching a list of orders, then resolving the user for each order individually.",
+            "whyItMatters": "N+1 queries are the #1 GraphQL performance problem. 50 orders loading 50 users means 51 queries instead of 2.",
+            "howToVerify": "Are related entities loaded individually in resolvers? Is DataLoader used for batching? Are SQL JOINs used where appropriate?",
+            "exampleComment": "The `Order.user` resolver makes a separate DB query for each order. Use DataLoader to batch these into a single `WHERE id IN (...)` query.",
+            "codeExamples": [
+              {
+                "label": "DataLoader",
+                "language": "javascript",
+                "code": "const userLoader = new DataLoader(async (userIds) => {\n  const users = await db.users.findMany({ where: { id: { in: userIds } } });\n  const userMap = new Map(users.map(u => [u.id, u]));\n  return userIds.map(id => userMap.get(id));\n});\n\n// In resolver:\nOrder: {\n  user: (order, _, ctx) => ctx.loaders.user.load(order.userId)\n}"
+              }
+            ],
+            "keyTakeaway": "Use DataLoader for every resolver that fetches related entities. It's the standard solution for N+1 in GraphQL.",
+            "references": [
+              "https://github.com/graphql/dataloader"
+            ]
+          }
+        },
+        {
+          "id": "graphql.resolvers.error-handling-consistent",
+          "text": "Are resolver errors handled consistently (not leaking internal details)?",
+          "severity": "major",
+          "tags": [
+            "resolvers",
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Resolver errors should use GraphQL error extensions, not expose stack traces or database error messages to clients.",
+            "whyItMatters": "Leaking internal error details helps attackers. Inconsistent error formats make client error handling fragile.",
+            "howToVerify": "Do resolvers catch errors and return structured GraphQL errors? Are database errors and stack traces filtered out?",
+            "exampleComment": "This resolver throws the raw Prisma error message to the client, revealing database schema details. Wrap it in a user-friendly error.",
+            "codeExamples": [
+              {
+                "label": "Error handling",
+                "language": "typescript",
+                "code": "try {\n  return await createOrder(input);\n} catch (error) {\n  throw new GraphQLError('Failed to create order', {\n    extensions: { code: 'ORDER_CREATE_FAILED' },\n  });\n}"
+              }
+            ],
+            "keyTakeaway": "Never expose internal errors to clients. Use error codes and user-friendly messages.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.resolvers.authorization-in-resolvers",
+          "text": "Is authorization checked at the resolver level?",
+          "severity": "blocker",
+          "tags": [
+            "resolvers",
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Authorization must be checked in resolvers, not just at the query/mutation entry point. Nested resolvers can expose unauthorized data.",
+            "whyItMatters": "A user querying their own order can traverse to another user's data through relationships if nested resolvers don't check permissions.",
+            "howToVerify": "Does each resolver verify the user has access to the requested data? Are there nested fields that could expose other users' data?",
+            "exampleComment": "The `Order.user` resolver returns any user without checking if the requester should see that user's details. Add authorization.",
+            "codeExamples": [],
+            "keyTakeaway": "Check authorization in every resolver that returns sensitive data. Don't rely on parent resolvers alone.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.resolvers.context-usage-correct",
+          "text": "Is the resolver context used correctly (not storing mutable state)?",
+          "severity": "minor",
+          "tags": [
+            "resolvers"
+          ],
+          "baseContent": {
+            "whatItMeans": "The GraphQL context should contain per-request data (user, DataLoaders) but should not be mutated during resolution.",
+            "whyItMatters": "Mutating context during resolution can cause race conditions in async resolvers and make behavior order-dependent.",
+            "howToVerify": "Is the context object modified during resolution? Are DataLoaders created per-request (not shared across requests)?",
+            "exampleComment": "This resolver adds data to `context.cache` during resolution. Use DataLoader instead \u2014 it handles batching and caching correctly.",
+            "codeExamples": [],
+            "keyTakeaway": "Context is for reading per-request data. Use DataLoader for caching and batching within a request.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.resolvers.field-level-resolvers",
+          "text": "Are field resolvers efficient (not over-fetching from the database)?",
+          "severity": "minor",
+          "tags": [
+            "resolvers",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Field resolvers should only fetch data when the field is actually requested. Eagerly loading all relationships wastes resources.",
+            "whyItMatters": "If every User resolver pre-loads orders, friends, and settings, queries that only need the user's name waste significant resources.",
+            "howToVerify": "Do resolvers eagerly load related data? Could expensive fields use lazy resolution or check if they're in the selection set?",
+            "exampleComment": "The User resolver always JOINs orders and settings even when only `user.name` is queried. Use separate field resolvers for nested data.",
+            "codeExamples": [],
+            "keyTakeaway": "Resolve fields lazily. Only fetch what's requested in the query.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "graphql.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "graphql.security.query-depth-limited",
+          "text": "Is query depth limited to prevent deeply nested attacks?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL allows infinitely nested queries (user \u2192 friends \u2192 friends \u2192 friends...). Without depth limiting, this enables DoS attacks.",
+            "whyItMatters": "A malicious query with 100 levels of nesting can exponentially increase database queries and crash the server.",
+            "howToVerify": "Is there a depth limit configured? What's the maximum allowed depth? Does it account for legitimate deep queries?",
+            "exampleComment": "There's no query depth limit. An attacker could send `{ user { friends { friends { friends { ... } } } } }` to crash the server. Add a depth limit of 10.",
+            "codeExamples": [],
+            "keyTakeaway": "Set a query depth limit (typically 7-15). Use libraries like graphql-depth-limit.",
+            "references": [
+              "https://github.com/stems/graphql-depth-limit"
+            ]
+          }
+        },
+        {
+          "id": "graphql.security.query-complexity-analysis",
+          "text": "Is query complexity/cost analysis configured?",
+          "severity": "major",
+          "tags": [
+            "security",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Query complexity analysis assigns costs to fields and rejects queries exceeding a threshold. This prevents expensive queries.",
+            "whyItMatters": "Without cost analysis, a single query can request all fields on all types with maximum pagination, overwhelming the server.",
+            "howToVerify": "Is there a complexity limit? Are expensive fields (lists, computed fields) assigned higher costs?",
+            "exampleComment": "The `allOrders` field with no complexity cost can return 10000 orders with all nested relations. Assign a cost multiplier based on the limit argument.",
+            "codeExamples": [
+              {
+                "label": "Complexity config",
+                "language": "javascript",
+                "code": "const complexityRule = createComplexityRule({\n  maximumComplexity: 1000,\n  estimators: [\n    fieldExtensionsEstimator(),\n    simpleEstimator({ defaultComplexity: 1 }),\n  ],\n});"
+              }
+            ],
+            "keyTakeaway": "Assign costs to fields, especially lists. Reject queries that exceed the budget.",
+            "references": [
+              "https://github.com/slicknode/graphql-query-complexity"
+            ]
+          }
+        },
+        {
+          "id": "graphql.security.introspection-disabled-prod",
+          "text": "Is introspection disabled in production?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL introspection reveals your entire schema \u2014 every type, field, and relationship. This is valuable for attackers.",
+            "whyItMatters": "Introspection in production lets attackers map your entire API surface, find hidden fields, and craft targeted attacks.",
+            "howToVerify": "Is introspection explicitly disabled in the production configuration? Is it only enabled in development?",
+            "exampleComment": "Introspection is enabled in production. Disable it with `introspection: false` in the Apollo Server config.",
+            "codeExamples": [],
+            "keyTakeaway": "Disable introspection in production. Use schema registries for tooling instead.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.security.rate-limiting-per-operation",
+          "text": "Is rate limiting applied per operation or per complexity?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL's single endpoint makes traditional rate limiting insufficient. Rate limiting should consider query complexity, not just request count.",
+            "whyItMatters": "A single complex GraphQL query can do the work of 100 REST requests. Rate limiting by request count doesn't prevent abuse.",
+            "howToVerify": "Is rate limiting configured? Does it account for query complexity or just request count? Are mutations rate-limited differently?",
+            "exampleComment": "Rate limiting allows 100 requests/minute, but each request can be an expensive query. Consider complexity-based rate limiting.",
+            "codeExamples": [],
+            "keyTakeaway": "Rate limit by query complexity, not just request count. Mutations may need stricter limits.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.security.persisted-queries",
+          "text": "Are persisted queries used to prevent arbitrary query execution?",
+          "severity": "minor",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Persisted queries allow only pre-registered queries to execute, preventing attackers from crafting malicious ad-hoc queries.",
+            "whyItMatters": "Without persisted queries, any client can send any query, including expensive or exploratory ones that probe your schema.",
+            "howToVerify": "Does the production server accept arbitrary queries or only pre-registered ones? Is automatic persisted queries (APQ) configured?",
+            "exampleComment": "Consider using persisted queries in production to prevent arbitrary query execution. Apollo supports Automatic Persisted Queries.",
+            "codeExamples": [],
+            "keyTakeaway": "Persisted queries lock down what can be executed. Use them in production for defense in depth.",
+            "references": [
+              "https://www.apollographql.com/docs/apollo-server/performance/apq/"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "graphql.performance",
+      "title": "Performance",
+      "items": [
+        {
+          "id": "graphql.performance.pagination-implemented",
+          "text": "Are list fields paginated (not returning unbounded arrays)?",
+          "severity": "major",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "List fields without pagination can return thousands of items, overwhelming the client and server.",
+            "whyItMatters": "An unbounded `users` query returning 1M records crashes the server, exhausts memory, and times out the client.",
+            "howToVerify": "Do list fields have `first`/`after` or `limit`/`offset` arguments? Is there a maximum page size enforced?",
+            "exampleComment": "The `orders` field returns all orders with no pagination. Add `first` and `after` arguments with a max of 100.",
+            "codeExamples": [],
+            "keyTakeaway": "Every list field needs pagination. Enforce a maximum page size server-side.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.performance.caching-strategy",
+          "text": "Is there a caching strategy for frequently-accessed data?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL responses benefit from caching at multiple levels: CDN (with cache control), DataLoader (per-request), and application cache (Redis).",
+            "whyItMatters": "Without caching, every query hits the database. For public data like product catalogs, this is unnecessary and slow.",
+            "howToVerify": "Is cache-control configured for public queries? Are DataLoaders caching within requests? Is Redis used for cross-request caching?",
+            "exampleComment": "This product catalog query hits the database every time. Add @cacheControl(maxAge: 300) for 5-minute CDN caching.",
+            "codeExamples": [
+              {
+                "label": "Cache control",
+                "language": "graphql",
+                "code": "type Product @cacheControl(maxAge: 300) {\n  id: ID!\n  name: String!\n  price: Float!\n}"
+              }
+            ],
+            "keyTakeaway": "Cache public data aggressively. Use DataLoader for per-request deduplication.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.performance.batch-mutations",
+          "text": "Are related mutations batched instead of requiring multiple round trips?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "mutations"
+          ],
+          "baseContent": {
+            "whatItMeans": "Instead of requiring clients to call 10 individual mutations, provide batch mutations that handle multiple items in one request.",
+            "whyItMatters": "Multiple round trips add latency and increase the chance of partial failures. Batch operations are more efficient and atomic.",
+            "howToVerify": "Does the client need to make multiple mutation calls that could be a single batch? Is there a `createMany` or `bulkUpdate` mutation?",
+            "exampleComment": "The client calls `addItemToCart` 5 times in a loop. Provide an `addItemsToCart(items: [CartItemInput!]!)` mutation for efficiency.",
+            "codeExamples": [],
+            "keyTakeaway": "Provide batch mutations for operations that clients commonly perform in loops.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.performance.query-planning-optimized",
+          "text": "Are resolvers using query analysis to optimize data fetching?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Resolvers can inspect the GraphQL selection set to determine which fields are requested and optimize database queries accordingly.",
+            "whyItMatters": "Without query analysis, resolvers may eagerly load data that the client didn't request, wasting database and network resources.",
+            "howToVerify": "Do resolvers check which fields are selected? Could the database query be optimized based on the requested fields?",
+            "exampleComment": "This resolver always JOINs 5 tables regardless of which fields are queried. Use the info argument to build targeted SQL.",
+            "codeExamples": [],
+            "keyTakeaway": "Use the selection set to build optimized database queries. Only fetch what's requested.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "graphql.error-handling",
+      "title": "Error Handling",
+      "items": [
+        {
+          "id": "graphql.error-handling.error-codes-standardized",
+          "text": "Are error codes standardized and documented?",
+          "severity": "minor",
+          "tags": [
+            "errors"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL errors should use standardized extension codes that clients can programmatically handle.",
+            "whyItMatters": "Without error codes, clients can only parse error messages (which change). Codes provide stable, machine-readable error categories.",
+            "howToVerify": "Do errors include extension codes? Are codes documented? Do clients use codes (not messages) for error handling?",
+            "exampleComment": "This error only has a message. Add an extensions.code so clients can handle it programmatically: `{ code: 'NOT_FOUND' }`.",
+            "codeExamples": [
+              {
+                "label": "Structured error",
+                "language": "json",
+                "code": "{\n  \"errors\": [{\n    \"message\": \"Order not found\",\n    \"extensions\": {\n      \"code\": \"NOT_FOUND\",\n      \"orderId\": \"abc-123\"\n    }\n  }]\n}"
+              }
+            ],
+            "keyTakeaway": "Use error codes for machine handling, messages for humans. Document both.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.error-handling.partial-responses-handled",
+          "text": "Are partial responses (data + errors) handled correctly?",
+          "severity": "minor",
+          "tags": [
+            "errors"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL can return both data and errors in the same response. Nullable fields that error return null alongside the error.",
+            "whyItMatters": "Clients that check only for errors and ignore data (or vice versa) miss valid partial responses.",
+            "howToVerify": "If a nested resolver fails, does the response correctly null the field and include the error? Do clients handle partial data?",
+            "exampleComment": "The `User.recentOrders` resolver can fail independently. Make sure the schema allows it to be nullable so partial responses work.",
+            "codeExamples": [],
+            "keyTakeaway": "Design for partial responses. Nullable fields can fail independently without breaking the entire query.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.error-handling.validation-errors-clear",
+          "text": "Are input validation errors clear and actionable?",
+          "severity": "minor",
+          "tags": [
+            "errors"
+          ],
+          "baseContent": {
+            "whatItMeans": "Validation errors should tell the user which field failed, why, and what values are acceptable.",
+            "whyItMatters": "Generic 'Invalid input' errors force users to guess what's wrong. Field-specific errors enable better client-side UX.",
+            "howToVerify": "Do validation errors specify which field is invalid? Do they explain the constraint? Can the client map errors to form fields?",
+            "exampleComment": "This validation error says 'Invalid input'. Specify the field: `{ field: 'email', message: 'Must be a valid email address' }`.",
+            "codeExamples": [],
+            "keyTakeaway": "Validation errors should name the field, explain the rule, and be machine-parseable.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "graphql.breaking-changes",
+      "title": "Breaking Changes & Evolution",
+      "items": [
+        {
+          "id": "graphql.breaking-changes.field-deprecation",
+          "text": "Are removed fields deprecated first with a reason?",
+          "severity": "major",
+          "tags": [
+            "evolution"
+          ],
+          "baseContent": {
+            "whatItMeans": "GraphQL supports @deprecated directive for fields that will be removed. Deprecated fields should remain functional during a migration period.",
+            "whyItMatters": "Removing a field without deprecation breaks all clients using it. Deprecation gives clients time to migrate.",
+            "howToVerify": "Is a field being removed? Is it deprecated first with a reason? Is the replacement documented?",
+            "exampleComment": "Don't remove the `fullName` field yet. Deprecate it first: `fullName: String @deprecated(reason: \"Use firstName and lastName\")` and remove it next quarter.",
+            "codeExamples": [
+              {
+                "label": "Deprecation",
+                "language": "graphql",
+                "code": "type User {\n  name: String @deprecated(reason: \"Use firstName and lastName instead\")\n  firstName: String!\n  lastName: String!\n}"
+              }
+            ],
+            "keyTakeaway": "Deprecate before removing. Give clients a migration window with clear alternatives.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.breaking-changes.type-changes-safe",
+          "text": "Are type changes backwards-compatible (nullable to non-null is breaking)?",
+          "severity": "blocker",
+          "tags": [
+            "evolution"
+          ],
+          "baseContent": {
+            "whatItMeans": "Certain schema changes are breaking: making nullable fields non-null, changing return types, removing enum values, changing argument types.",
+            "whyItMatters": "A breaking schema change crashes all clients that depend on the old behavior. In GraphQL, the schema IS the contract.",
+            "howToVerify": "Is a field's type changing? Is nullability changing? Is an enum value being removed? These are all breaking changes.",
+            "exampleComment": "Changing `email: String` to `email: String!` is a breaking change \u2014 clients handling null emails will break. Add a new non-null field instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Additive changes are safe. Removals and type changes are breaking. Use schema change detection tools.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.breaking-changes.schema-change-detection",
+          "text": "Is there automated schema change detection in CI?",
+          "severity": "minor",
+          "tags": [
+            "evolution",
+            "tooling"
+          ],
+          "baseContent": {
+            "whatItMeans": "Tools like graphql-inspector or Apollo Studio detect breaking changes by comparing the new schema against the published one.",
+            "whyItMatters": "Manual review of schema changes misses subtle breaking changes. Automated detection catches them before they reach production.",
+            "howToVerify": "Is there a CI check that compares schema changes? Does it flag breaking changes? Is the schema registered with a schema registry?",
+            "exampleComment": "Add graphql-inspector to CI to automatically detect breaking schema changes: `npx graphql-inspector diff old.graphql new.graphql`.",
+            "codeExamples": [],
+            "keyTakeaway": "Automate breaking change detection. Don't rely on manual review for schema compatibility.",
+            "references": [
+              "https://the-guild.dev/graphql/inspector"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "graphql.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "graphql.testing.resolver-unit-tests",
+          "text": "Do resolvers have unit tests?",
+          "severity": "minor",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "Resolver logic should be unit tested with mocked data sources to verify business logic, error handling, and authorization.",
+            "whyItMatters": "Untested resolvers silently break during refactoring. Unit tests catch logic errors before they reach integration tests.",
+            "howToVerify": "Are there unit tests for the new/modified resolvers? Do they test happy path, error cases, and authorization?",
+            "exampleComment": "This resolver has complex authorization logic but no unit tests. Add tests for: authorized access, unauthorized access, and edge cases.",
+            "codeExamples": [],
+            "keyTakeaway": "Test resolvers like any other function. Mock the data layer, verify the business logic.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.testing.integration-queries-tested",
+          "text": "Are integration tests using actual GraphQL queries?",
+          "severity": "minor",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "Integration tests should send real GraphQL queries to verify the full stack: parsing, validation, resolution, and serialization.",
+            "whyItMatters": "Unit tests miss integration issues: schema mismatches, resolver wiring, middleware ordering, and serialization bugs.",
+            "howToVerify": "Are there integration tests that send GraphQL queries and verify responses? Do they cover the main query patterns?",
+            "exampleComment": "Add an integration test that sends the `createOrder` mutation and verifies the response matches the expected shape.",
+            "codeExamples": [],
+            "keyTakeaway": "Integration tests should use actual GraphQL queries, not just test resolvers in isolation.",
+            "references": ""
+          }
+        },
+        {
+          "id": "graphql.testing.schema-snapshot-test",
+          "text": "Is there a schema snapshot test to detect unintended changes?",
+          "severity": "nit",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "Schema snapshot tests compare the current schema against a saved snapshot, catching unintended changes during development.",
+            "whyItMatters": "Without snapshots, accidental schema changes (like removing a field during refactoring) go unnoticed until production.",
+            "howToVerify": "Is there a snapshot test for the schema? Is it updated intentionally when the schema changes?",
+            "exampleComment": "Add a schema snapshot test so accidental schema changes are caught in CI.",
+            "codeExamples": [],
+            "keyTakeaway": "Snapshot your schema. Intentional changes update the snapshot; accidental changes fail the test.",
+            "references": ""
+          }
+        }
+      ]
+    }
+  ]
+}

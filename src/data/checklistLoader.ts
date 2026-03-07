@@ -14,6 +14,10 @@ import pythonData from '../../assets/data/checklists/python.json';
 import rubyData from '../../assets/data/checklists/ruby.json';
 import luaData from '../../assets/data/checklists/lua.json';
 import cLangData from '../../assets/data/checklists/c-lang.json';
+import dataFormatsData from '../../assets/data/checklists/data-formats.json';
+import postgresqlData from '../../assets/data/checklists/postgresql.json';
+import graphqlData from '../../assets/data/checklists/graphql.json';
+import restApiData from '../../assets/data/checklists/rest-api.json';
 
 const CHECKLIST_IDS = [
   'java-protobuf',
@@ -26,6 +30,10 @@ const CHECKLIST_IDS = [
   'ruby',
   'lua',
   'c-lang',
+  'data-formats',
+  'postgresql',
+  'graphql',
+  'rest-api',
   'polish-my-pr',
 ] as const;
 
@@ -45,6 +53,10 @@ const bundledChecklists: ChecklistMap = {
   ruby: rubyData as unknown as Checklist,
   lua: luaData as unknown as Checklist,
   'c-lang': cLangData as unknown as Checklist,
+  'data-formats': dataFormatsData as unknown as Checklist,
+  postgresql: postgresqlData as unknown as Checklist,
+  graphql: graphqlData as unknown as Checklist,
+  'rest-api': restApiData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -136,6 +148,10 @@ export function getAllReviewChecklists(): Checklist[] {
     'ruby',
     'lua',
     'c-lang',
+    'data-formats',
+    'postgresql',
+    'graphql',
+    'rest-api',
   ].map((id) => getChecklist(id));
 }
 

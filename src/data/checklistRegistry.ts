@@ -90,6 +90,38 @@ export const STACKS: StackInfo[] = [
     icon: '⚙️',
     color: '#64748b',
   },
+  {
+    id: 'data-formats',
+    title: 'JSON, YAML, XML & Config',
+    shortTitle: 'Data Formats',
+    description: 'JSON, YAML, XML, TOML, and other data/config file formats',
+    icon: '📄',
+    color: '#f59e0b',
+  },
+  {
+    id: 'postgresql',
+    title: 'PostgreSQL',
+    shortTitle: 'PostgreSQL',
+    description: 'Database migrations, schema design, and query review',
+    icon: '🐘',
+    color: '#336791',
+  },
+  {
+    id: 'graphql',
+    title: 'GraphQL',
+    shortTitle: 'GraphQL',
+    description: 'GraphQL schema design, resolvers, and API review',
+    icon: '◈',
+    color: '#e10098',
+  },
+  {
+    id: 'rest-api',
+    title: 'REST API',
+    shortTitle: 'REST API',
+    description: 'REST API design, HTTP semantics, and endpoint review',
+    icon: '🔌',
+    color: '#10b981',
+  },
 ];
 
 export function getStackInfo(stackId: StackId): StackInfo {

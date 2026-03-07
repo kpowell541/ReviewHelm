@@ -16,6 +16,10 @@ const CHECKLIST_FILES = {
   ruby: 'ruby.json',
   lua: 'lua.json',
   'c-lang': 'c-lang.json',
+  'data-formats': 'data-formats.json',
+  postgresql: 'postgresql.json',
+  graphql: 'graphql.json',
+  'rest-api': 'rest-api.json',
   'polish-my-pr': 'polish-my-pr.json',
 } as const;
 

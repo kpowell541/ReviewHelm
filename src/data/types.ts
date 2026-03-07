@@ -14,7 +14,11 @@ export type StackId =
   | 'python'
   | 'ruby'
   | 'lua'
-  | 'c-lang';
+  | 'c-lang'
+  | 'data-formats'
+  | 'postgresql'
+  | 'graphql'
+  | 'rest-api';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,
