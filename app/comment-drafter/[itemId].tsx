@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -34,8 +34,10 @@ export default function CommentDrafterScreen() {
 
   const found = findItemById(itemId);
   const history = useConfidenceStore((s) => s.getItemHistory(itemId));
-  const session = useSessionStore((s) =>
-    decodedSessionId ? s.getSession(decodedSessionId) : undefined,
+  const allSessions = useSessionStore((s) => s.sessions);
+  const session = useMemo(
+    () => (decodedSessionId ? allSessions[decodedSessionId] : undefined),
+    [allSessions, decodedSessionId],
   );
   const setItemResponse = useSessionStore((s) => s.setItemResponse);
   const hasApiKey = usePreferencesStore((s) => s.hasApiKey);

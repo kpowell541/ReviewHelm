@@ -37,7 +37,8 @@ export default function SessionSummaryScreen() {
     autoExport?: string;
   }>();
   const router = useRouter();
-  const session = useSessionStore((s) => s.getSession(sessionId));
+  const allSessions = useSessionStore((s) => s.sessions);
+  const session = useMemo(() => allSessions[sessionId], [allSessions, sessionId]);
   const getSessionUsageSummary = useUsageStore((s) => s.getSessionUsageSummary);
   const [exporting, setExporting] = useState(false);
   const [didAutoExport, setDidAutoExport] = useState(false);

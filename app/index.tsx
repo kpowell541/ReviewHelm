@@ -1,11 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
-import { usePreferencesStore } from '../src/store/usePreferencesStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 
 interface ModeCardProps {
@@ -68,9 +67,6 @@ function RecentSessionCard({ session }: { session: { id: string; title: string; 
 
 export default function HomeScreen() {
   const router = useRouter();
-  const hasCompletedOnboarding = usePreferencesStore(
-    (s) => s.hasCompletedOnboarding,
-  );
   const sessions = useSessionStore((s) => s.sessions);
   const histories = useConfidenceStore((s) => s.histories);
   const prs = usePRTrackerStore((s) => s.prs);
@@ -98,12 +94,6 @@ export default function HomeScreen() {
       (pr) => ['open', 'in-review', 'changes-requested', 'approved'].includes(pr.status),
     ).length;
   }, [prs]);
-
-  useEffect(() => {
-    if (!hasCompletedOnboarding) {
-      router.replace('/onboarding');
-    }
-  }, [hasCompletedOnboarding, router]);
 
   return (
     <SafeAreaView style={styles.container}>

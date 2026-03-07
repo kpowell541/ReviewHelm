@@ -68,7 +68,7 @@ export default function OnboardingScreen() {
 
   const handleFinish = () => {
     usePreferencesStore.setState({ hasCompletedOnboarding: true } as any);
-    router.replace('/');
+    router.replace('/auth/login');
   };
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
