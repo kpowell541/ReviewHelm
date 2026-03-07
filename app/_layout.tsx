@@ -305,6 +305,18 @@ export default function RootLayout() {
           name="settings"
           options={{ title: 'Settings' }}
         />
+        <Stack.Screen
+          name="disclaimer"
+          options={{ title: 'Disclaimer' }}
+        />
+        <Stack.Screen
+          name="privacy"
+          options={{ title: 'Privacy' }}
+        />
+        <Stack.Screen
+          name="terms"
+          options={{ title: 'Terms of Use' }}
+        />
       </Stack>
     </ThemeProvider>
     </ErrorBoundary>

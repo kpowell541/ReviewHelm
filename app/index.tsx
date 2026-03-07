@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
+import { AppFooter } from '../src/components/AppFooter';
 import { useResponsive } from '../src/hooks/useResponsive';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
@@ -281,6 +282,7 @@ export default function HomeScreen() {
           </View>
         )}
 
+        <AppFooter />
       </ScrollView>
       </DesktopContainer>
 
