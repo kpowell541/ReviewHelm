@@ -1,18 +1,18 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
   FlatList,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { useResponsive } from '../src/hooks/useResponsive';
 
 interface OnboardingSlide {
   icon: string;
@@ -56,11 +56,17 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
+  const { width: screenWidth } = useWindowDimensions();
+  const { isDesktop } = useResponsive();
 
   const handleNext = () => {
     if (currentIndex < SLIDES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
-      setCurrentIndex(currentIndex + 1);
+      if (Platform.OS === 'web') {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
+        setCurrentIndex(currentIndex + 1);
+      }
     } else {
       handleFinish();
     }
@@ -72,7 +78,7 @@ export default function OnboardingScreen() {
   };
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => (
-    <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
+    <View style={[styles.slide, { width: screenWidth }]}>
       <Text style={styles.slideIcon}>{item.icon}</Text>
       <Text style={[styles.slideTitle, { color: item.color }]}>
         {item.title}
@@ -80,6 +86,8 @@ export default function OnboardingScreen() {
       <Text style={styles.slideDescription}>{item.description}</Text>
     </View>
   );
+
+  const currentSlide = SLIDES[currentIndex];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -89,21 +97,31 @@ export default function OnboardingScreen() {
         </Pressable>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={SLIDES}
-        renderItem={renderSlide}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onMomentumScrollEnd={(e) => {
-          const index = Math.round(
-            e.nativeEvent.contentOffset.x / SCREEN_WIDTH,
-          );
-          setCurrentIndex(index);
-        }}
-        keyExtractor={(_, i) => String(i)}
-      />
+      {Platform.OS === 'web' ? (
+        <View style={[styles.slide, { width: screenWidth, maxWidth: isDesktop ? 600 : undefined, alignSelf: 'center' as const }]}>
+          <Text style={styles.slideIcon}>{currentSlide.icon}</Text>
+          <Text style={[styles.slideTitle, { color: currentSlide.color }]}>
+            {currentSlide.title}
+          </Text>
+          <Text style={styles.slideDescription}>{currentSlide.description}</Text>
+        </View>
+      ) : (
+        <FlatList
+          ref={flatListRef}
+          data={SLIDES}
+          renderItem={renderSlide}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => {
+            const index = Math.round(
+              e.nativeEvent.contentOffset.x / screenWidth,
+            );
+            setCurrentIndex(index);
+          }}
+          keyExtractor={(_, i) => String(i)}
+        />
+      )}
 
       {/* Dots */}
       <View style={styles.dotsRow}>

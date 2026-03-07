@@ -19,6 +19,10 @@ export const fontWeights: Record<string, TextStyle['fontWeight']> = {
 };
 
 export const fonts = {
+  regular: 'Quicksand_400Regular',
+  medium: 'Quicksand_500Medium',
+  semibold: 'Quicksand_600SemiBold',
+  bold: 'Quicksand_700Bold',
   mono: 'JetBrainsMono',
   monoBold: 'JetBrainsMono-Bold',
 };

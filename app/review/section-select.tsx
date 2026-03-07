@@ -193,9 +193,9 @@ export default function SectionSelectScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowNameModal(false)}
         >
-          <View
+          <Pressable
             style={styles.modalCard}
-            onStartShouldSetResponder={() => true}
+            onPress={(e) => e.stopPropagation()}
           >
             <Text style={styles.modalTitle}>Save Template</Text>
             <Text style={styles.modalHint}>
@@ -241,7 +241,7 @@ export default function SectionSelectScreen() {
                 <Text style={styles.modalSaveText}>Save</Text>
               </Pressable>
             </View>
-          </View>
+          </Pressable>
         </Pressable>
       </Modal>
     </View>

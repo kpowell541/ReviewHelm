@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedUser } from '../common/auth/types';
@@ -6,6 +6,10 @@ import { BudgetService } from '../common/budget/budget.service';
 import type { AppEnv } from '../config/env.schema';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateBudgetConfigDto } from './dto/update-budget-config.dto';
+import { OfficialCostQueryDto } from './dto/official-cost.dto';
+
+const ANTHROPIC_COST_API_URL = 'https://api.anthropic.com/v1/organizations/cost_report';
+const ANTHROPIC_API_VERSION = '2023-06-01';
 
 interface ModelUsage {
   inputTokens: number;
@@ -52,6 +56,77 @@ export class UsageService {
 
   async resetUsage(authUser: AuthenticatedUser): Promise<void> {
     await this.budgetService.resetUsage(authUser);
+  }
+
+  async getOfficialCost(
+    _authUser: AuthenticatedUser,
+    query: OfficialCostQueryDto,
+  ) {
+    if (query.startDate > query.endDate) {
+      throw new BadRequestException('startDate must be before or equal to endDate');
+    }
+
+    const adminApiKey = (query.adminApiKey ?? '').trim();
+    if (!adminApiKey) {
+      throw new BadRequestException('Admin API key is required.');
+    }
+
+    const totalCostUsd = await this.fetchAnthropicOfficialCost({
+      adminApiKey,
+      startDate: query.startDate,
+      endDate: query.endDate,
+    });
+
+    return {
+      officialCostUsd: totalCostUsd,
+      startDate: query.startDate,
+      endDate: query.endDate,
+    };
+  }
+
+  private async fetchAnthropicOfficialCost(args: {
+    adminApiKey: string;
+    startDate: string;
+    endDate: string;
+  }): Promise<number> {
+    const params = new URLSearchParams({
+      starting_at: args.startDate,
+      ending_at: args.endDate,
+      granularity: '1d',
+    });
+    const response = await fetch(
+      `${ANTHROPIC_COST_API_URL}?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          'x-api-key': args.adminApiKey,
+          'anthropic-version': ANTHROPIC_API_VERSION,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      throw new BadGatewayException(
+        `Anthropic cost report request failed (${response.status})${body ? `: ${body}` : ''}`,
+      );
+    }
+
+    const payload = (await response.json()) as {
+      data?: Array<{
+        total_cost_usd?: number;
+        cost?: { amount?: number };
+        amount?: number;
+      }>;
+    };
+    const rows = payload.data ?? [];
+    const total = rows.reduce((sum, row) => {
+      if (typeof row.total_cost_usd === 'number') return sum + row.total_cost_usd;
+      if (typeof row.cost?.amount === 'number') return sum + row.cost.amount;
+      if (typeof row.amount === 'number') return sum + row.amount;
+      return sum;
+    }, 0);
+    return Number(total.toFixed(6));
   }
 
   async getUsageSummary(authUser: AuthenticatedUser, month?: string) {

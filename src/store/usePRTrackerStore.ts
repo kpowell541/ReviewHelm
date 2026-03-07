@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '../storage/secureStorage';
 import { v4 as uuidv4 } from 'uuid';
-import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize } from '../data/types';
+import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize, PRDependency, CIPassing } from '../data/types';
 import { PR_ACTIVE_STATUSES, PR_PRIORITY_ORDER } from '../data/types';
 
 interface WipStatus {
@@ -41,6 +41,8 @@ interface AddPRInput {
   repo?: string;
   prNumber?: number;
   prAuthor?: string;
+  dependencies?: PRDependency[];
+  ciPassing?: CIPassing;
   notes?: string;
 }
 
@@ -58,6 +60,9 @@ interface PRTrackerState {
   markReviewed: (id: string) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
+
+  archiveOldPRs: () => number;
+  getArchivedPRs: () => TrackedPR[];
 
   setWipLimit: (limit: number) => void;
   setEmergencySlotEnabled: (enabled: boolean) => void;
@@ -86,9 +91,16 @@ function isToday(dateStr: string): boolean {
   );
 }
 
-function isActive(pr: TrackedPR): boolean {
-  return PR_ACTIVE_STATUSES.includes(pr.status);
+function isWeekday(): boolean {
+  const day = new Date().getDay();
+  return day >= 1 && day <= 5;
 }
+
+function isActive(pr: TrackedPR): boolean {
+  return PR_ACTIVE_STATUSES.includes(pr.status) && !pr.archivedAt;
+}
+
+const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000;
 
 function byUpdatedDesc(a: TrackedPR, b: TrackedPR): number {
   return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
@@ -118,6 +130,8 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           repo: input.repo,
           prNumber: input.prNumber,
           prAuthor: input.prAuthor,
+          dependencies: input.dependencies,
+          ciPassing: input.ciPassing,
           notes: input.notes,
           createdAt: now,
           updatedAt: now,
@@ -167,6 +181,32 @@ export const usePRTrackerStore = create<PRTrackerState>()(
         get().updatePR(prId, { linkedSessionId: undefined });
       },
 
+      archiveOldPRs: () => {
+        const now = Date.now();
+        const cutoff = now - THREE_MONTHS_MS;
+        let count = 0;
+        set((state) => {
+          const updated = { ...state.prs };
+          for (const pr of Object.values(updated)) {
+            if (pr.archivedAt) continue;
+            if (!PR_ACTIVE_STATUSES.includes(pr.status) && pr.resolvedAt) {
+              if (new Date(pr.resolvedAt).getTime() < cutoff) {
+                updated[pr.id] = { ...pr, archivedAt: new Date().toISOString() };
+                count++;
+              }
+            }
+          }
+          return { prs: updated };
+        });
+        return count;
+      },
+
+      getArchivedPRs: () => {
+        return Object.values(get().prs)
+          .filter((pr) => !!pr.archivedAt)
+          .sort(byUpdatedDesc);
+      },
+
       setWipLimit: (limit) => set({ wipLimit: limit }),
       setEmergencySlotEnabled: (enabled) => set({ emergencySlotEnabled: enabled }),
       replacePRs: (prs) => set({ prs }),
@@ -201,7 +241,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
 
       getResolvedPRs: () => {
         return Object.values(get().prs)
-          .filter((pr) => !isActive(pr))
+          .filter((pr) => !isActive(pr) && !pr.archivedAt)
           .sort(byUpdatedDesc);
       },
 
@@ -225,6 +265,15 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       },
 
       getDailyReviewProgress: () => {
+        if (!isWeekday()) {
+          return {
+            smallTotal: 0, smallReviewed: 0,
+            mediumTotal: 0, mediumReviewed: 0,
+            largeTotal: 0, largeReviewed: 0,
+            suggestion: 'Enjoy your weekend!',
+          };
+        }
+
         const reviewPRs = Object.values(get().prs).filter(
           (pr) => isActive(pr) && pr.role === 'reviewer',
         );
@@ -274,6 +323,10 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       },
 
       getTodaysPlan: () => {
+        if (!isWeekday()) {
+          return { prs: [], capacityNote: 'Enjoy your weekend!' };
+        }
+
         const reviewPRs = Object.values(get().prs).filter(
           (pr) => isActive(pr) && pr.role === 'reviewer',
         );
@@ -337,7 +390,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
     }),
     {
       name: 'pr-tracker-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
       partialize: (state) => ({
         prs: state.prs,
         wipLimit: state.wipLimit,

@@ -1,16 +1,35 @@
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma, type Preference } from '@prisma/client';
+import type { AppEnv } from '../config/env.schema';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BackupsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly allowlistHosts: string[];
+  private readonly backupSigningSecret: string;
+  private readonly maxPayloadBytes: number;
+  private readonly maxSessions: number;
+  private readonly maxUsageRows: number;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService<AppEnv, true>,
+  ) {
+    this.allowlistHosts = this.parseAllowlist(
+      config.get('BACKUP_IMPORT_ALLOWLIST_HOSTS'),
+    );
+    this.backupSigningSecret = config.get('BACKUP_IMPORT_SIGNING_SECRET');
+    this.maxPayloadBytes = config.get('BACKUP_IMPORT_MAX_PAYLOAD_BYTES');
+    this.maxSessions = config.get('BACKUP_IMPORT_MAX_SESSIONS');
+    this.maxUsageRows = config.get('BACKUP_IMPORT_MAX_USAGE_ROWS');
+  }
 
   async exportBackup(authUser: AuthenticatedUser) {
     const user = await this.ensureUser(authUser);
@@ -68,9 +87,14 @@ export class BackupsService {
     };
   }
 
-  async importBackup(authUser: AuthenticatedUser, sourceUrl: string) {
+  async importBackup(
+    authUser: AuthenticatedUser,
+    sourceUrl: string,
+    signature?: string,
+    signatureTimestamp?: number,
+  ) {
     const user = await this.ensureUser(authUser);
-    const raw = await this.fetchSourcePayload(sourceUrl);
+    const raw = await this.fetchSourcePayload(sourceUrl, signature, signatureTimestamp);
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
@@ -82,12 +106,25 @@ export class BackupsService {
       throw new BadRequestException('Backup payload must be an object');
     }
     const backup = parsed as Record<string, unknown>;
+    if (typeof backup.version !== 'number' || backup.version < 1 || !('generatedAt' in backup)) {
+      throw new BadRequestException('Backup payload is missing required metadata');
+    }
+    if (typeof (backup.generatedAt as unknown) !== 'string') {
+      throw new BadRequestException('Backup payload has invalid generatedAt');
+    }
+    if (Number.isNaN(Date.parse(backup.generatedAt as string))) {
+      throw new BadRequestException('Backup payload has invalid generatedAt');
+    }
+    const sessions = this.toArray(backup.sessions, 'sessions', this.maxSessions);
+    const usage = this.validateUsageBlock(backup.usage, this.maxUsageRows);
+    const usageByDay = this.toArray(usage.byDay, 'usage.byDay', this.maxUsageRows);
+    const usageBySession = this.toArray(
+      usage.bySession,
+      'usage.bySession',
+      this.maxUsageRows,
+    );
 
     const preference = backup.preference;
-    const sessions = Array.isArray(backup.sessions) ? backup.sessions : [];
-    const usage = backup.usage && typeof backup.usage === 'object' ? (backup.usage as Record<string, unknown>) : {};
-    const usageByDay = Array.isArray(usage.byDay) ? usage.byDay : [];
-    const usageBySession = Array.isArray(usage.bySession) ? usage.bySession : [];
 
     await this.prisma.$transaction(async (tx) => {
       if (preference && typeof preference === 'object' && !Array.isArray(preference)) {
@@ -284,25 +321,138 @@ ${380 + stream.length}
     return `data:${mimeType};base64,${base64}`;
   }
 
-  private async fetchSourcePayload(sourceUrl: string) {
+  private async fetchSourcePayload(
+    sourceUrl: string,
+    signature?: string,
+    signatureTimestamp?: number,
+  ) {
     if (sourceUrl.startsWith('data:')) {
       const match = /^data:([^;,]+)?(;base64)?,(.*)$/s.exec(sourceUrl);
       if (!match) throw new BadRequestException('Invalid data URL');
       const isBase64 = !!match[2];
       const data = match[3] || '';
-      return isBase64
+      const decoded = isBase64
         ? Buffer.from(data, 'base64').toString('utf8')
         : decodeURIComponent(data);
+      if (Buffer.byteLength(decoded, 'utf8') > this.maxPayloadBytes) {
+        throw new BadRequestException('Backup payload exceeds size limit');
+      }
+      return decoded;
     }
 
     if (!sourceUrl.startsWith('https://')) {
       throw new BadRequestException('Only https:// or data: backup URLs are allowed');
     }
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(sourceUrl);
+    } catch {
+      throw new BadRequestException('Backup source URL is malformed');
+    }
+
+    const host = parsedUrl.hostname.toLowerCase();
+    const isAllowedHost = this.allowlistHosts.includes(host);
+    if (!isAllowedHost) {
+      throw new BadRequestException('Backup source host is not allowed');
+    }
+
     const response = await fetch(sourceUrl);
     if (!response.ok) {
       throw new BadRequestException(`Failed to download backup (${response.status})`);
     }
-    return response.text();
+    const lengthHeader = response.headers.get('content-length');
+    const declaredLength = lengthHeader ? Number(lengthHeader) : NaN;
+    if (Number.isFinite(declaredLength) && declaredLength > this.maxPayloadBytes) {
+      throw new BadRequestException('Backup payload exceeds size limit');
+    }
+
+    const text = await response.text();
+    if (Buffer.byteLength(text, 'utf8') > this.maxPayloadBytes) {
+      throw new BadRequestException('Backup payload exceeds size limit');
+    }
+
+    if (this.backupSigningSecret) {
+      if (!signature || !signatureTimestamp) {
+        throw new BadRequestException(
+          'Missing signature or signatureTimestamp for backup import',
+        );
+      }
+
+      if (!this.verifyPayloadSignature({ sourceUrl, signatureTimestamp, signature, payload: text })) {
+        throw new BadRequestException('Backup source URL signature is invalid or expired');
+      }
+    }
+
+    return text;
+  }
+
+  private toArray(value: unknown, field: string, max: number): unknown[] {
+    if (Array.isArray(value)) {
+      if (value.length > max) {
+        throw new BadRequestException(`Backup field "${field}" exceeds max size ${max}`);
+      }
+      return value;
+    }
+    if (value === undefined) {
+      return [];
+    }
+    throw new BadRequestException(`Backup field "${field}" must be an array`);
+  }
+
+  private validateUsageBlock(usage: unknown, maxRows: number): { byDay: unknown[]; bySession: unknown[] } {
+    if (usage === undefined) {
+      return { byDay: [], bySession: [] };
+    }
+    if (!usage || typeof usage !== 'object' || Array.isArray(usage)) {
+      throw new BadRequestException('Backup usage section must be an object');
+    }
+
+    const usageObj = usage as Record<string, unknown>;
+    const byDay = this.toArray(usageObj.byDay, 'usage.byDay', maxRows);
+    const bySession = this.toArray(usageObj.bySession, 'usage.bySession', maxRows);
+    return { byDay, bySession };
+  }
+
+  private parseAllowlist(raw: string): string[] {
+    const hosts = raw
+      .split(',')
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean);
+    return hosts.length > 0 ? hosts : ['raw.githubusercontent.com'];
+  }
+
+  private verifyPayloadSignature(args: {
+    sourceUrl: string;
+    signatureTimestamp: number;
+    signature: string;
+    payload: string;
+  }): boolean {
+    const ageMs = Date.now() - args.signatureTimestamp * 1000;
+    if (!Number.isFinite(args.signatureTimestamp) || ageMs < 0 || ageMs > 10 * 60 * 1000) {
+      return false;
+    }
+    const data = `${args.sourceUrl}\n${args.signatureTimestamp}\n${args.payload}`;
+    const expected = createHmac('sha256', this.backupSigningSecret).update(data).digest();
+    const provided = this.decodeHexOrNull(args.signature);
+    if (!provided) {
+      return false;
+    }
+    if (provided.length !== expected.length) {
+      return false;
+    }
+    return timingSafeEqual(provided, expected);
+  }
+
+  private decodeHexOrNull(value: string): Buffer | null {
+    if (!/^[0-9a-fA-F]+$/.test(value) || value.length % 2 !== 0) {
+      return null;
+    }
+    try {
+      return Buffer.from(value, 'hex');
+    } catch {
+      return null;
+    }
   }
 
   private serializePreference(preference: Preference) {

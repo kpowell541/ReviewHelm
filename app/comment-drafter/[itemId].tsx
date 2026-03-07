@@ -83,6 +83,8 @@ export default function CommentDrafterScreen() {
       const response = await sendTutorMessage({
         apiKey,
         model: aiModel,
+        feature: 'comment-drafter',
+        itemId,
         role: 'comment-drafter',
         itemText: found.item.text,
         stackLabel: found.stackTitle,
@@ -147,12 +149,14 @@ export default function CommentDrafterScreen() {
 
       try {
         const apiKey = await resolveApiKey();
-        const response = await sendTutorMessage({
-          apiKey,
-          model: aiModel,
-          role: 'comment-drafter',
-          itemText: found.item.text,
-          stackLabel: found.stackTitle,
+      const response = await sendTutorMessage({
+        apiKey,
+        model: aiModel,
+        feature: 'comment-drafter',
+        itemId,
+        role: 'comment-drafter',
+        itemText: found.item.text,
+        stackLabel: found.stackTitle,
           confidence,
           messages,
           allowResponseCache: false,

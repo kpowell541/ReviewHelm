@@ -1,31 +1,26 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
+import { secureStoreAsyncStorage } from '../storage/secureStorage';
 
-const SUPABASE_URL =
-  Constants.expoConfig?.extra?.supabaseUrl ??
-  process.env.EXPO_PUBLIC_SUPABASE_URL ??
-  '';
-
-const SUPABASE_ANON_KEY =
-  Constants.expoConfig?.extra?.supabaseAnonKey ??
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
-  '';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 let client: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
   if (client) return client;
 
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  const url = SUPABASE_URL;
+  const anonKey = SUPABASE_ANON_KEY;
+
+  if (!url || !anonKey) {
     throw new Error(
-      'Supabase URL and Anon Key must be configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY.',
+      'Supabase URL and Anon Key must be configured. Ensure Infisical secrets are loaded.',
     );
   }
 
-  client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  client = createClient(url, anonKey, {
     auth: {
-      storage: AsyncStorage,
+      storage: secureStoreAsyncStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,

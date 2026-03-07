@@ -13,6 +13,7 @@ import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { UpdateBudgetConfigDto } from './dto/update-budget-config.dto';
 import { UsageMonthQueryDto } from './dto/usage-month-query.dto';
+import { OfficialCostQueryDto } from './dto/official-cost.dto';
 import { UsageService } from './usage.service';
 
 @Controller('usage')
@@ -60,5 +61,13 @@ export class UsageController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async resetUsage(@CurrentUser() user: AuthenticatedUser) {
     await this.usageService.resetUsage(user);
+  }
+
+  @Post('official-cost')
+  async getOfficialCost(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: OfficialCostQueryDto,
+  ) {
+    return this.usageService.getOfficialCost(user, body);
   }
 }

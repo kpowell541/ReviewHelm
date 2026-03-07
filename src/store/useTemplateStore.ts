@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '../storage/secureStorage';
 import { v4 as uuidv4 } from 'uuid';
 import type { SessionTemplate, StackId } from '../data/types';
 
@@ -51,7 +51,7 @@ export const useTemplateStore = create<TemplateState>()(
     }),
     {
       name: 'template-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => persistStorage),
     },
   ),
 );

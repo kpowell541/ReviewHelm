@@ -14,6 +14,28 @@ interface RequestWithMeta extends express.Request {
   requestId?: string;
 }
 
+function parseCsvList(value: string): string[] {
+  return value
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function normalizeIpAddress(ip: string | undefined): string {
+  if (!ip) return '';
+  const first = ip.split(',')[0]?.trim() ?? '';
+  if (!first) return '';
+  if (first === '::1') return '127.0.0.1';
+  if (first.startsWith('::ffff:')) {
+    return first.slice(7);
+  }
+  return first;
+}
+
+function isIpAllowed(ip: string, allowlist: string[]): boolean {
+  return allowlist.length > 0 && allowlist.includes(ip);
+}
+
 function installProcessSignalLogging(): void {
   process.on('uncaughtException', (error: Error) => {
     console.error(
@@ -192,7 +214,12 @@ async function bootstrap() {
     next();
   });
 
-  if (config.get('ENABLE_SWAGGER_DOCS')) {
+  const enableSwaggerDocs = config.get('ENABLE_SWAGGER_DOCS');
+  const allowSwaggerInProduction = config.get('ALLOW_SWAGGER_DOCS_IN_PRODUCTION');
+  const swaggerAllowedIps = parseCsvList(config.get('SWAGGER_DOCS_ALLOWED_IPS'));
+  const shouldEnableSwagger = enableSwaggerDocs && (!isProduction || allowSwaggerInProduction);
+
+  if (shouldEnableSwagger) {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('ReviewHelm API')
       .setDescription('ReviewHelm backend API contract')
@@ -210,6 +237,42 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('docs', app, document);
+
+    if (isProduction && swaggerAllowedIps.length > 0) {
+      app.use(
+        '/docs',
+        (req: express.Request, res: express.Response, next: express.NextFunction) => {
+          const forwarded = req.headers['x-forwarded-for'];
+          const incomingIp = Array.isArray(forwarded)
+            ? forwarded[0]
+            : typeof forwarded === 'string'
+              ? forwarded
+              : req.ip;
+          const requestIp = normalizeIpAddress(incomingIp);
+          if (!isIpAllowed(requestIp, swaggerAllowedIps)) {
+            res.status(403).json({
+              statusCode: 403,
+              error: 'forbidden',
+              message: 'Swagger docs are restricted to allowed IPs.',
+            });
+            return;
+          }
+          next();
+        },
+      );
+    }
+
+    if (isProduction && swaggerAllowedIps.length === 0) {
+      console.warn(
+        JSON.stringify({
+          level: 'warn',
+          type: 'startup',
+          message:
+            'Swagger docs are enabled in production without IP allowlist. Configure SWAGGER_DOCS_ALLOWED_IPS.',
+          at: new Date().toISOString(),
+        }),
+      );
+    }
   }
 
   const port = config.get('PORT');

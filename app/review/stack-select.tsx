@@ -7,9 +7,12 @@ import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { useTemplateStore } from '../../src/store/useTemplateStore';
 import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
+import { DesktopContainer } from '../../src/components/DesktopContainer';
+import { useResponsive } from '../../src/hooks/useResponsive';
 
 export default function StackSelectScreen() {
   const router = useRouter();
+  const { isDesktop } = useResponsive();
   const { repo } = useLocalSearchParams<{ repo?: string }>();
   const histories = useConfidenceStore((s) => s.histories);
   const stackAverages = useMemo(() => {
@@ -60,6 +63,16 @@ export default function StackSelectScreen() {
 
   const repoParam = repo ? `&repo=${encodeURIComponent(repo)}` : '';
 
+  const handleUseRepoConfig = () => {
+    if (!repoConfig) return;
+    const params = repoConfig.selectedSections?.length
+      ? `stacks=${repoConfig.stackIds.join(',')}&sections=${repoConfig.selectedSections.join(',')}${repoParam}`
+      : repoConfig.stackIds.length === 1
+        ? `stack=${repoConfig.stackIds[0]}${repoParam}`
+        : `stacks=${repoConfig.stackIds.join(',')}${repoParam}`;
+    router.push(`/review/sessions?${params}` as '/review/sessions');
+  };
+
   const handleContinue = () => {
     if (selectedStacks.length === 0) return;
     if (selectedStacks.length === 1) {
@@ -73,11 +86,34 @@ export default function StackSelectScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        {repo && previousStackIds.size > 0 && (
-          <Text style={styles.repoHint}>
-            Previously used stacks for {repo} are pre-selected below
-          </Text>
+      <DesktopContainer>
+      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+        {repo && repoConfig && (
+          <Pressable
+            onPress={handleUseRepoConfig}
+            style={({ pressed }) => [
+              styles.repoBanner,
+              { opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <View style={styles.repoBannerContent}>
+              <Text style={styles.repoBannerTitle}>
+                Saved config for {repo}
+              </Text>
+              <Text style={styles.repoBannerMeta}>
+                {repoConfig.stackIds
+                  .map((id) => {
+                    try { return getStackInfo(id).shortTitle; }
+                    catch { return id; }
+                  })
+                  .join(' + ')}
+                {repoConfig.selectedSections
+                  ? ` · ${repoConfig.selectedSections.length} sections`
+                  : ''}
+              </Text>
+            </View>
+            <Text style={styles.repoBannerAction}>Use this ›</Text>
+          </Pressable>
         )}
 
         {templates.length > 0 && (
@@ -171,6 +207,7 @@ export default function StackSelectScreen() {
           );
         })}
       </ScrollView>
+      </DesktopContainer>
 
       {selectedStacks.length > 0 && (
         <View style={styles.bottomBar}>
@@ -209,6 +246,7 @@ export default function StackSelectScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: 120 },
+  contentDesktop: { paddingHorizontal: spacing['2xl'], paddingTop: spacing['2xl'] },
   heading: {
     fontSize: fontSizes.xl,
     fontWeight: '700',
@@ -337,11 +375,35 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xl,
     color: colors.textMuted,
   },
-  repoHint: {
-    fontSize: fontSizes.sm,
-    color: colors.reviewMode,
+  repoBanner: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    padding: spacing.md,
     marginBottom: spacing.lg,
-    lineHeight: 20,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.reviewMode,
+  },
+  repoBannerContent: {
+    flex: 1,
+  },
+  repoBannerTitle: {
+    fontSize: fontSizes.md,
+    fontWeight: '600' as const,
+    color: colors.textPrimary,
+  },
+  repoBannerMeta: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  repoBannerAction: {
+    fontSize: fontSizes.md,
+    fontWeight: '600' as const,
+    color: colors.reviewMode,
+    marginLeft: spacing.sm,
   },
   previousTag: {
     fontSize: fontSizes.xs,
