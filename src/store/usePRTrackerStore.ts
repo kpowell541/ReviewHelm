@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize } from '../data/types';
-import { PR_ACTIVE_STATUSES } from '../data/types';
+import { PR_ACTIVE_STATUSES, PR_PRIORITY_ORDER } from '../data/types';
 
 interface WipStatus {
   regularCount: number;
@@ -24,6 +24,11 @@ interface DailyReviewProgress {
   largeTotal: number;
   largeReviewed: number;
   suggestion: string;
+}
+
+interface TodaysPlan {
+  prs: TrackedPR[];
+  capacityNote: string;
 }
 
 interface AddPRInput {
@@ -66,6 +71,7 @@ interface PRTrackerState {
   getResolvedPRs: () => TrackedPR[];
   getWipStatus: () => WipStatus;
   getDailyReviewProgress: () => DailyReviewProgress;
+  getTodaysPlan: () => TodaysPlan;
   getPRsByStatus: (status: PRStatus) => TrackedPR[];
   getPRsByRole: (role: PRRole) => TrackedPR[];
 }
@@ -106,7 +112,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           url: input.url,
           status: input.role === 'reviewer' ? 'needs-review' : 'in-review',
           role: input.role,
-          priority: input.priority ?? 'normal',
+          priority: input.priority ?? 'medium',
           isEmergency: input.isEmergency ?? false,
           size: input.size,
           repo: input.repo,
@@ -265,6 +271,56 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           largeReviewed,
           suggestion,
         };
+      },
+
+      getTodaysPlan: () => {
+        const reviewPRs = Object.values(get().prs).filter(
+          (pr) => isActive(pr) && pr.role === 'reviewer',
+        );
+
+        // Sort by priority (critical first) then by date (oldest first)
+        const sorted = [...reviewPRs].sort((a, b) => {
+          const aPri = PR_PRIORITY_ORDER.indexOf(a.priority);
+          const bPri = PR_PRIORITY_ORDER.indexOf(b.priority);
+          if (aPri !== bPri) return aPri - bPri;
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        });
+
+        // Filter out already-reviewed-today
+        const notReviewedToday = sorted.filter(
+          (pr) => !pr.lastReviewedAt || !isToday(pr.lastReviewedAt),
+        );
+
+        // Build plan within daily capacity: all S, up to 5 M, up to 3 L
+        const plan: TrackedPR[] = [];
+        let mediumCount = 0;
+        let largeCount = 0;
+
+        for (const pr of notReviewedToday) {
+          const size = pr.size ?? 'medium';
+          if (size === 'small') {
+            plan.push(pr);
+          } else if (size === 'medium' && mediumCount < 5) {
+            plan.push(pr);
+            mediumCount++;
+          } else if (size === 'large' && largeCount < 3) {
+            plan.push(pr);
+            largeCount++;
+          }
+        }
+
+        const parts: string[] = [];
+        const smallInPlan = plan.filter((pr) => (pr.size ?? 'medium') === 'small').length;
+        if (smallInPlan > 0) parts.push(`${smallInPlan}S`);
+        if (mediumCount > 0) parts.push(`${mediumCount}M`);
+        if (largeCount > 0) parts.push(`${largeCount}L`);
+
+        const capacityNote =
+          plan.length === 0
+            ? 'All caught up for today!'
+            : `Today: ${parts.join(' + ')} (${plan.length} PR${plan.length > 1 ? 's' : ''})`;
+
+        return { prs: plan, capacityNote };
       },
 
       getPRsByStatus: (status) => {

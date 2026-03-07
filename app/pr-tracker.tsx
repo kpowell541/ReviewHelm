@@ -21,7 +21,7 @@ import type {
   PRPriority,
   TrackedPR,
 } from '../src/data/types';
-import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_ACTIVE_STATUSES } from '../src/data/types';
+import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 
 const STATUS_COLORS: Record<PRStatus, string> = {
@@ -42,11 +42,19 @@ const STATUS_FILTERS: { key: PRStatus | 'all' | 'resolved'; label: string }[] = 
   { key: 'resolved', label: 'Resolved' },
 ];
 
+const PRIORITY_COLORS: Record<PRPriority, string> = {
+  critical: colors.error,
+  high: colors.needsAttention,
+  medium: colors.warning,
+  low: colors.textSecondary,
+  routine: colors.textMuted,
+};
+
 const EMPTY_FORM = {
   title: '',
   url: '',
   role: 'reviewer' as PRRole,
-  priority: 'normal' as PRPriority,
+  priority: 'medium' as PRPriority,
   isEmergency: false,
   size: 'medium' as PRSize,
   repo: '',
@@ -111,6 +119,45 @@ export default function PRTrackerScreen() {
     };
   }, [allPRs]);
 
+  const todaysPlan = useMemo(() => {
+    const reviewerPRs = allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status) && pr.role === 'reviewer');
+    // Sort by priority (critical first) then oldest first
+    const sorted = [...reviewerPRs].sort((a, b) => {
+      const aPri = PR_PRIORITY_ORDER.indexOf(a.priority);
+      const bPri = PR_PRIORITY_ORDER.indexOf(b.priority);
+      if (aPri !== bPri) return aPri - bPri;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+    const notReviewedToday = sorted.filter(
+      (pr) => !pr.lastReviewedAt || !isToday(pr.lastReviewedAt),
+    );
+    const plan: TrackedPR[] = [];
+    let mediumCount = 0;
+    let largeCount = 0;
+    for (const pr of notReviewedToday) {
+      const size = pr.size ?? 'medium';
+      if (size === 'small') {
+        plan.push(pr);
+      } else if (size === 'medium' && mediumCount < 5) {
+        plan.push(pr);
+        mediumCount++;
+      } else if (size === 'large' && largeCount < 3) {
+        plan.push(pr);
+        largeCount++;
+      }
+    }
+    const parts: string[] = [];
+    const smallInPlan = plan.filter((pr) => (pr.size ?? 'medium') === 'small').length;
+    if (smallInPlan > 0) parts.push(`${smallInPlan}S`);
+    if (mediumCount > 0) parts.push(`${mediumCount}M`);
+    if (largeCount > 0) parts.push(`${largeCount}L`);
+    const capacityNote =
+      plan.length === 0
+        ? 'All caught up for today!'
+        : `${parts.join(' + ')} (${plan.length} PR${plan.length > 1 ? 's' : ''})`;
+    return { prs: plan, capacityNote };
+  }, [allPRs]);
+
   const filteredPRs = useMemo(() => {
     const sorted = (list: TrackedPR[]) => [...list].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     if (filter === 'all') return sorted(allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status)));
@@ -158,7 +205,7 @@ export default function PRTrackerScreen() {
       title: form.title.trim(),
       url: form.url.trim() || undefined,
       role: form.role,
-      priority: form.role === 'author' ? form.priority : ('normal' as PRPriority),
+      priority: form.priority,
       isEmergency: form.role === 'author' ? form.isEmergency : false,
       size: form.role === 'reviewer' ? form.size : undefined,
       repo: form.role === 'reviewer' && form.repo.trim() ? form.repo.trim() : undefined,
@@ -320,6 +367,53 @@ export default function PRTrackerScreen() {
     );
   };
 
+  const renderTodaysPlan = () => {
+    if (todaysPlan.prs.length === 0 && dailyProgress.smallTotal + dailyProgress.mediumTotal + dailyProgress.largeTotal === 0) return null;
+
+    return (
+      <View style={styles.planCard}>
+        <View style={styles.planHeader}>
+          <Text style={styles.planTitle}>Today's Plan</Text>
+          <Text style={styles.planCapacity}>{todaysPlan.capacityNote}</Text>
+        </View>
+        {todaysPlan.prs.length === 0 ? (
+          <Text style={styles.planEmpty}>All caught up for today!</Text>
+        ) : (
+          todaysPlan.prs.map((pr) => {
+            const priColor = PRIORITY_COLORS[pr.priority];
+            return (
+              <Pressable
+                key={pr.id}
+                style={styles.planRow}
+                onPress={() => handleStartReview(pr)}
+              >
+                <View style={[styles.planPriorityDot, { backgroundColor: priColor }]} />
+                <Text style={styles.planPRTitle} numberOfLines={1}>{pr.title}</Text>
+                <View style={styles.planBadges}>
+                  {pr.size && (
+                    <Text style={[styles.planBadge, styles.sizeBadge]}>{PR_SIZE_LABELS[pr.size]}</Text>
+                  )}
+                  <Text style={[styles.planBadge, { backgroundColor: priColor + '25', color: priColor }]}>
+                    {PR_PRIORITY_LABELS[pr.priority]}
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.reviewButton}
+                  onPress={() => handleMarkReviewed(pr)}
+                  hitSlop={6}
+                >
+                  <Text style={styles.reviewButtonText}>
+                    {pr.lastReviewedAt && isToday(pr.lastReviewedAt) ? '✓' : '○'}
+                  </Text>
+                </Pressable>
+              </Pressable>
+            );
+          })
+        )}
+      </View>
+    );
+  };
+
   const renderPRCard = (pr: TrackedPR) => {
     const statusColor = STATUS_COLORS[pr.status];
     const subtitle =
@@ -354,9 +448,14 @@ export default function PRTrackerScreen() {
             <Text style={[styles.badge, { backgroundColor: statusColor + '25', color: statusColor }]}>
               {PR_STATUS_LABELS[pr.status]}
             </Text>
-            {pr.role === 'reviewer' && pr.size && (
+            {pr.size && (
               <Text style={[styles.badge, styles.sizeBadge]}>
                 {PR_SIZE_LABELS[pr.size]}
+              </Text>
+            )}
+            {pr.priority !== 'medium' && (
+              <Text style={[styles.badge, { backgroundColor: PRIORITY_COLORS[pr.priority] + '25', color: PRIORITY_COLORS[pr.priority] }]}>
+                {PR_PRIORITY_LABELS[pr.priority]}
               </Text>
             )}
             {pr.isEmergency && (
@@ -394,6 +493,7 @@ export default function PRTrackerScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         {renderWipGauge()}
+        {renderTodaysPlan()}
         {renderDailyProgress()}
 
         {/* Filter chips */}
@@ -517,6 +617,27 @@ export default function PRTrackerScreen() {
                 ))}
               </View>
 
+              {/* Priority (both roles) */}
+              <Text style={styles.fieldLabel}>Priority</Text>
+              <View style={styles.chipRow}>
+                {PR_PRIORITY_ORDER.map((p) => (
+                  <Pressable
+                    key={p}
+                    style={[styles.chip, form.priority === p && styles.chipActive]}
+                    onPress={() => setForm((f) => ({ ...f, priority: p }))}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        form.priority === p && styles.chipTextActive,
+                      ]}
+                    >
+                      {PR_PRIORITY_LABELS[p]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
               {/* Reviewer-only fields */}
               {form.role === 'reviewer' && (
                 <>
@@ -579,36 +700,14 @@ export default function PRTrackerScreen() {
 
               {/* Author-only fields */}
               {form.role === 'author' && (
-                <>
-                  <Text style={styles.fieldLabel}>Priority</Text>
-                  <View style={styles.chipRow}>
-                    {(['low', 'normal', 'high'] as PRPriority[]).map((p) => (
-                      <Pressable
-                        key={p}
-                        style={[styles.chip, form.priority === p && styles.chipActive]}
-                        onPress={() => setForm((f) => ({ ...f, priority: p }))}
-                      >
-                        <Text
-                          style={[
-                            styles.chipText,
-                            form.priority === p && styles.chipTextActive,
-                          ]}
-                        >
-                          {p.charAt(0).toUpperCase() + p.slice(1)}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </View>
-
-                  <View style={styles.switchRow}>
-                    <Text style={styles.fieldLabel}>Emergency / Hotfix</Text>
-                    <Switch
-                      value={form.isEmergency}
-                      onValueChange={(v) => setForm((f) => ({ ...f, isEmergency: v }))}
-                      trackColor={{ false: colors.border, true: colors.error }}
-                    />
-                  </View>
-                </>
+                <View style={styles.switchRow}>
+                  <Text style={styles.fieldLabel}>Emergency / Hotfix</Text>
+                  <Switch
+                    value={form.isEmergency}
+                    onValueChange={(v) => setForm((f) => ({ ...f, isEmergency: v }))}
+                    trackColor={{ false: colors.border, true: colors.error }}
+                  />
+                </View>
               )}
 
               {/* Notes */}
@@ -757,6 +856,70 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
     fontStyle: 'italic',
+  },
+
+  // Today's Plan
+  planCard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  planHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  planTitle: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  planCapacity: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+  },
+  planEmpty: {
+    fontSize: fontSizes.sm,
+    color: colors.looksGood,
+    fontStyle: 'italic',
+  },
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border + '40',
+  },
+  planPriorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing.sm,
+  },
+  planPRTitle: {
+    flex: 1,
+    fontSize: fontSizes.sm,
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  planBadges: {
+    flexDirection: 'row',
+    gap: 4,
+    marginRight: spacing.sm,
+  },
+  planBadge: {
+    fontSize: 10,
+    fontWeight: '600',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
   },
 
   // Filters
@@ -945,6 +1108,7 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     gap: spacing.xs,
+    flexWrap: 'wrap',
   },
   chip: {
     paddingHorizontal: spacing.lg,

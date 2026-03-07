@@ -80,7 +80,8 @@ function severityChipLabel(severity: Severity): string {
 
 export function ChecklistScreen({ sessionId }: Props) {
   const router = useRouter();
-  const session = useSessionStore((s) => s.getSession(sessionId));
+  const sessions = useSessionStore((s) => s.sessions);
+  const session = useMemo(() => sessions[sessionId], [sessions, sessionId]);
   const setItemResponse = useSessionStore((s) => s.setItemResponse);
   const completeSession = useSessionStore((s) => s.completeSession);
   const updateSessionNotes = useSessionStore((s) => s.updateSessionNotes);

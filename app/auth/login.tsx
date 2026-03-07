@@ -99,14 +99,6 @@ export default function LoginScreen() {
             </Text>
           </Pressable>
 
-          <Pressable
-            style={styles.skipButton}
-            onPress={() => router.replace('/')}
-          >
-            <Text style={styles.skipButtonText}>
-              Continue without account
-            </Text>
-          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -178,14 +170,5 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: colors.primary,
     fontSize: fontSizes.md,
-  },
-  skipButton: {
-    marginTop: spacing.lg,
-    alignItems: 'center',
-    padding: spacing.sm,
-  },
-  skipButtonText: {
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
   },
 });

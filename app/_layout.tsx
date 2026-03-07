@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, StyleSheet, Text, View } from 'react-native';
+import type { AppStateStatus } from 'react-native';
 import { colors, spacing, fontSizes, ThemeProvider, useThemeColors } from '../src/theme';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
 import { useSessionStore } from '../src/store/useSessionStore';
@@ -20,6 +21,7 @@ export default function RootLayout() {
   const preferencesHydrated = usePreferencesStore((s) => s.hasHydrated);
   const loadApiKey = usePreferencesStore((s) => s.loadApiKey);
   const isApiKeyLoaded = usePreferencesStore((s) => s.isApiKeyLoaded);
+  const hasCompletedOnboarding = usePreferencesStore((s) => s.hasCompletedOnboarding);
 
   const sessionsHydrated = useSessionStore((s) => s.hasHydrated);
   const confidenceHydrated = useConfidenceStore((s) => s.hasHydrated);
@@ -37,8 +39,11 @@ export default function RootLayout() {
   const repoConfigHydrated = useRepoConfigStore((s) => s.hasHydrated);
   const initAuth = useAuthStore((s) => s.initialize);
   const authUser = useAuthStore((s) => s.user);
+  const authIsLoading = useAuthStore((s) => s.isLoading);
+  const signOut = useAuthStore((s) => s.signOut);
 
   const [cacheReady, setCacheReady] = useState(false);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
     void loadApiKey();
@@ -50,6 +55,17 @@ export default function RootLayout() {
       .then(() => setCacheReady(true))
       .catch(() => setCacheReady(true));
   }, []);
+
+  // Sign out when app goes to background
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (appStateRef.current === 'active' && nextState.match(/inactive|background/)) {
+        void signOut();
+      }
+      appStateRef.current = nextState;
+    });
+    return () => subscription.remove();
+  }, [signOut]);
 
   const storesReady =
     preferencesHydrated &&
@@ -93,12 +109,61 @@ export default function RootLayout() {
     void runSync();
   }, [storesReady, authUser]);
 
-  if (!storesReady) {
+  if (!storesReady || authIsLoading) {
     return (
       <View style={styles.loadingScreen}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Loading ReviewHelm...</Text>
       </View>
+    );
+  }
+
+  // Gate: onboarding first, then auth, then app
+  if (!hasCompletedOnboarding) {
+    return (
+      <ErrorBoundary>
+      <ThemeProvider>
+        <StatusBar style="auto" />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: colors.bg },
+            headerTintColor: colors.textPrimary,
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        >
+          <Stack.Screen
+            name="onboarding"
+            options={{ headerShown: false, animation: 'fade' }}
+          />
+        </Stack>
+      </ThemeProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <ErrorBoundary>
+      <ThemeProvider>
+        <StatusBar style="auto" />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: colors.bg },
+            headerTintColor: colors.textPrimary,
+            contentStyle: { backgroundColor: colors.bg },
+          }}
+        >
+          <Stack.Screen
+            name="auth/login"
+            options={{ title: 'Sign In', headerShown: false }}
+          />
+          <Stack.Screen
+            name="auth/signup"
+            options={{ title: 'Sign Up' }}
+          />
+        </Stack>
+      </ThemeProvider>
+      </ErrorBoundary>
     );
   }
 
@@ -184,18 +249,6 @@ export default function RootLayout() {
         <Stack.Screen
           name="bookmarks"
           options={{ title: 'Bookmarks' }}
-        />
-        <Stack.Screen
-          name="onboarding"
-          options={{ headerShown: false, animation: 'fade' }}
-        />
-        <Stack.Screen
-          name="auth/login"
-          options={{ title: 'Sign In', presentation: 'modal' }}
-        />
-        <Stack.Screen
-          name="auth/signup"
-          options={{ title: 'Sign Up', presentation: 'modal' }}
         />
         <Stack.Screen
           name="diffs"

@@ -270,7 +270,9 @@ export type PRStatus =
 
 export type PRRole = 'author' | 'reviewer';
 
-export type PRPriority = 'low' | 'normal' | 'high' | 'emergency';
+export type PRPriority = 'routine' | 'low' | 'medium' | 'high' | 'critical';
+
+export const PR_PRIORITY_ORDER: PRPriority[] = ['critical', 'high', 'medium', 'low', 'routine'];
 
 export type PRSize = 'small' | 'medium' | 'large';
 
@@ -319,6 +321,14 @@ export const PR_SIZE_LABELS: Record<PRSize, string> = {
   small: 'S',
   medium: 'M',
   large: 'L',
+};
+
+export const PR_PRIORITY_LABELS: Record<PRPriority, string> = {
+  critical: 'Critical',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+  routine: 'Routine',
 };
 
 // ============================================
