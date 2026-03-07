@@ -42,7 +42,6 @@ export default function RootLayout() {
   const initAuth = useAuthStore((s) => s.initialize);
   const authUser = useAuthStore((s) => s.user);
   const authIsLoading = useAuthStore((s) => s.isLoading);
-  const signOut = useAuthStore((s) => s.signOut);
 
   const [fontsLoaded] = useFonts({
     Quicksand_400Regular,
@@ -70,17 +69,18 @@ export default function RootLayout() {
     if (prTrackerHydrated) archiveOldPRs();
   }, [prTrackerHydrated, archiveOldPRs]);
 
-  // Sign out when app goes to background (native only — on web, tab switches trigger inactive)
+  // Re-sync when app returns to foreground
   useEffect(() => {
     if (Platform.OS === 'web') return;
     const subscription = AppState.addEventListener('change', (nextState) => {
-      if (appStateRef.current === 'active' && nextState.match(/inactive|background/)) {
-        void signOut();
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        // Trigger a sync when returning to foreground
+        if (authUser) void runSync();
       }
       appStateRef.current = nextState;
     });
     return () => subscription.remove();
-  }, [signOut]);
+  }, [authUser]);
 
   const storesReady =
     preferencesHydrated &&
