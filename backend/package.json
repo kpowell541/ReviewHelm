@@ -4,6 +4,7 @@
   "private": true,
   "description": "ReviewHelm backend API (NestJS + Prisma + Supabase + Upstash)",
   "scripts": {
+    "postinstall": "prisma generate",
     "build": "nest build",
     "start": "node dist/main.js",
     "start:dev": "infisical run -- nest start --watch",
