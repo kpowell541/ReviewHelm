@@ -1013,6 +1013,9 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      <Text style={styles.disclaimer}>
+        ReviewHelm's checklists and guides are designed to help you improve your code review skills and practices. They are not a guarantee of code quality, security, or correctness, and should not be used as a substitute for thorough human review.
+      </Text>
       <Text style={styles.footer}>ReviewHelm v{appVersion}</Text>
     </ScrollView>
     </DesktopContainer>
@@ -1235,10 +1238,18 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textMuted,
   },
+  disclaimer: {
+    textAlign: 'center',
+    color: colors.textMuted,
+    fontSize: fontSizes.xs,
+    lineHeight: 16,
+    marginTop: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+  },
   footer: {
     textAlign: 'center',
     color: colors.textMuted,
     fontSize: fontSizes.xs,
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
   },
 });
