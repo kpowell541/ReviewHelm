@@ -921,6 +921,36 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /usage/official-cost:
+    post:
+      tags: [Usage]
+      summary: Query official API cost for a date range
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [startDate, endDate]
+              properties:
+                startDate:
+                  type: string
+                  format: date
+                endDate:
+                  type: string
+                  format: date
+                adminApiKey:
+                  type: string
+      responses:
+        '200':
+          description: Official cost data
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /exports/sessions/{sessionId}/pdf:
     post:
       tags: [Exports]
