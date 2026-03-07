@@ -14,7 +14,21 @@ export default function StackSelectScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
   const { repo } = useLocalSearchParams<{ repo?: string }>();
-  const getSectionAverages = useConfidenceStore((s) => s.getSectionAverages);
+  const histories = useConfidenceStore((s) => s.histories);
+  const stackAverages = useMemo(() => {
+    const allItems = Object.values(histories);
+    const result: Record<string, number | null> = {};
+    for (const stack of STACKS) {
+      const stackItems = allItems.filter((h) => h.stackId === stack.id);
+      if (stackItems.length === 0) {
+        result[stack.id] = null;
+      } else {
+        const sum = stackItems.reduce((s, h) => s + h.currentConfidence, 0);
+        result[stack.id] = sum / stackItems.length;
+      }
+    }
+    return result;
+  }, [histories]);
   const templateMap = useTemplateStore((s) => s.templates);
   const deleteTemplate = useTemplateStore((s) => s.deleteTemplate);
   const repoConfigs = useRepoConfigStore((s) => s.configs);
@@ -27,7 +41,17 @@ export default function StackSelectScreen() {
     () => (repo ? repoConfigs[repo] : undefined),
     [repo, repoConfigs],
   );
-  const [selectedStacks, setSelectedStacks] = useState<StackId[]>([]);
+
+  // Pre-select previously used stacks for this repo
+  const [selectedStacks, setSelectedStacks] = useState<StackId[]>(
+    () => repoConfig?.stackIds ?? [],
+  );
+
+  // Stacks previously used for this repo (shown as suggestions)
+  const previousStackIds = useMemo(
+    () => new Set(repoConfig?.stackIds ?? []),
+    [repoConfig],
+  );
 
   const toggleStack = (stackId: StackId) => {
     setSelectedStacks((prev) =>
@@ -39,6 +63,16 @@ export default function StackSelectScreen() {
 
   const repoParam = repo ? `&repo=${encodeURIComponent(repo)}` : '';
 
+  const handleUseRepoConfig = () => {
+    if (!repoConfig) return;
+    const params = repoConfig.selectedSections?.length
+      ? `stacks=${repoConfig.stackIds.join(',')}&sections=${repoConfig.selectedSections.join(',')}${repoParam}`
+      : repoConfig.stackIds.length === 1
+        ? `stack=${repoConfig.stackIds[0]}${repoParam}`
+        : `stacks=${repoConfig.stackIds.join(',')}${repoParam}`;
+    router.push(`/review/sessions?${params}` as '/review/sessions');
+  };
+
   const handleContinue = () => {
     if (selectedStacks.length === 0) return;
     if (selectedStacks.length === 1) {
@@ -48,16 +82,6 @@ export default function StackSelectScreen() {
         `/review/sessions?stacks=${selectedStacks.join(',')}${repoParam}` as '/review/sessions',
       );
     }
-  };
-
-  const handleUseRepoConfig = () => {
-    if (!repoConfig) return;
-    const params = repoConfig.selectedSections?.length
-      ? `stacks=${repoConfig.stackIds.join(',')}&sections=${repoConfig.selectedSections.join(',')}${repoParam}`
-      : repoConfig.stackIds.length === 1
-        ? `stack=${repoConfig.stackIds[0]}${repoParam}`
-        : `stacks=${repoConfig.stackIds.join(',')}${repoParam}`;
-    router.push(`/review/sessions?${params}` as '/review/sessions');
   };
 
   return (
@@ -147,11 +171,8 @@ export default function StackSelectScreen() {
 
         {STACKS.map((stack) => {
           const isSelected = selectedStacks.includes(stack.id);
-          const averages = getSectionAverages(stack.id);
-          const overallAvg =
-            averages.length > 0
-              ? averages.reduce((s, a) => s + a.average, 0) / averages.length
-              : null;
+          const isPrevious = previousStackIds.has(stack.id);
+          const overallAvg = stackAverages[stack.id] ?? null;
 
           return (
             <Pressable
@@ -173,6 +194,9 @@ export default function StackSelectScreen() {
               <View style={styles.stackInfo}>
                 <Text style={styles.stackTitle}>{stack.title}</Text>
                 <Text style={styles.stackDescription}>{stack.description}</Text>
+                {isPrevious && (
+                  <Text style={styles.previousTag}>Previously used</Text>
+                )}
               </View>
               {overallAvg !== null && (
                 <View style={styles.avgBadge}>
@@ -352,31 +376,39 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   repoBanner: {
-    backgroundColor: colors.reviewMode + '15',
-    borderRadius: radius.lg,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.reviewMode,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
     padding: spacing.md,
-    marginBottom: spacing.xl,
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: spacing.lg,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.reviewMode,
   },
   repoBannerContent: {
     flex: 1,
   },
   repoBannerTitle: {
     fontSize: fontSizes.md,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: colors.textPrimary,
   },
   repoBannerMeta: {
-    fontSize: fontSizes.sm,
-    color: colors.textSecondary,
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
     marginTop: 2,
   },
   repoBannerAction: {
     fontSize: fontSizes.md,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: colors.reviewMode,
+    marginLeft: spacing.sm,
+  },
+  previousTag: {
+    fontSize: fontSizes.xs,
+    color: colors.reviewMode,
+    fontWeight: '600',
+    marginTop: 4,
   },
 });
