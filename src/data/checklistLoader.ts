@@ -14,8 +14,17 @@ import pythonData from '../../assets/data/checklists/python.json';
 import rubyData from '../../assets/data/checklists/ruby.json';
 import luaData from '../../assets/data/checklists/lua.json';
 import cLangData from '../../assets/data/checklists/c-lang.json';
+import dataFormatsData from '../../assets/data/checklists/data-formats.json';
+import postgresqlData from '../../assets/data/checklists/postgresql.json';
+import graphqlData from '../../assets/data/checklists/graphql.json';
+import restApiData from '../../assets/data/checklists/rest-api.json';
+import rustData from '../../assets/data/checklists/rust.json';
+import csharpDotnetData from '../../assets/data/checklists/csharp-dotnet.json';
+import kotlinAndroidData from '../../assets/data/checklists/kotlin-android.json';
+import securityData from '../../assets/data/checklists/security.json';
+import dartFlutterData from '../../assets/data/checklists/dart-flutter.json';
 
-const CHECKLIST_IDS = [
+export const CHECKLIST_IDS = [
   'java-protobuf',
   'js-ts-react-node',
   'go',
@@ -26,13 +35,22 @@ const CHECKLIST_IDS = [
   'ruby',
   'lua',
   'c-lang',
+  'data-formats',
+  'postgresql',
+  'graphql',
+  'rest-api',
+  'rust',
+  'csharp-dotnet',
+  'kotlin-android',
+  'security',
+  'dart-flutter',
   'polish-my-pr',
 ] as const;
 
 export const CHECKLIST_CACHE_KEY = 'reviewhelm:checklists:cache:v1';
 
-type ChecklistId = (typeof CHECKLIST_IDS)[number];
-type ChecklistMap = Record<ChecklistId, Checklist>;
+export type ChecklistId = (typeof CHECKLIST_IDS)[number];
+export type ChecklistMap = Record<ChecklistId, Checklist>;
 
 const bundledChecklists: ChecklistMap = {
   'java-protobuf': javaProtobufData as unknown as Checklist,
@@ -45,6 +63,15 @@ const bundledChecklists: ChecklistMap = {
   ruby: rubyData as unknown as Checklist,
   lua: luaData as unknown as Checklist,
   'c-lang': cLangData as unknown as Checklist,
+  'data-formats': dataFormatsData as unknown as Checklist,
+  postgresql: postgresqlData as unknown as Checklist,
+  graphql: graphqlData as unknown as Checklist,
+  'rest-api': restApiData as unknown as Checklist,
+  rust: rustData as unknown as Checklist,
+  'csharp-dotnet': csharpDotnetData as unknown as Checklist,
+  'kotlin-android': kotlinAndroidData as unknown as Checklist,
+  security: securityData as unknown as Checklist,
+  'dart-flutter': dartFlutterData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -136,6 +163,15 @@ export function getAllReviewChecklists(): Checklist[] {
     'ruby',
     'lua',
     'c-lang',
+    'data-formats',
+    'postgresql',
+    'graphql',
+    'rest-api',
+    'rust',
+    'csharp-dotnet',
+    'kotlin-android',
+    'security',
+    'dart-flutter',
   ].map((id) => getChecklist(id));
 }
 
@@ -145,6 +181,39 @@ export function getAllChecklists(): Checklist[] {
 
 export function getChecklistMap(): ChecklistMap {
   return { ...loadedChecklists };
+}
+
+/**
+ * Append security checklist sections to any checklist if not already present.
+ * Security is auto-included in every review and polish session.
+ */
+export function withSecurityChecklist(checklist: Checklist): Checklist {
+  const securityChecklist = getChecklist('security');
+  // Skip if security sections are already included (user explicitly selected security stack)
+  const hasSecuritySections = checklist.sections.some((s) =>
+    s.id.startsWith('security.'),
+  );
+  if (hasSecuritySections) return checklist;
+
+  const securityItems = securityChecklist.sections.reduce(
+    (sum, s) => sum + getSectionItems(s).length,
+    0,
+  );
+
+  return {
+    ...checklist,
+    meta: {
+      ...checklist.meta,
+      totalItems: checklist.meta.totalItems + securityItems,
+    },
+    sections: [
+      ...checklist.sections,
+      ...securityChecklist.sections.map((s) => ({
+        ...s,
+        title: `[Security] ${s.title}`,
+      })),
+    ],
+  };
 }
 
 /**

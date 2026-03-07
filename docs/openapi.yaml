@@ -951,6 +951,84 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /tracked-prs:
+    get:
+      tags: [Tracked PRs]
+      summary: List all tracked PRs for the current user
+      responses:
+        '200':
+          description: Array of tracked PRs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrackedPR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /tracked-prs/{prId}:
+    get:
+      tags: [Tracked PRs]
+      summary: Get a single tracked PR by ID
+      parameters:
+        - name: prId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tracked PR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackedPR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+    put:
+      tags: [Tracked PRs]
+      summary: Create or update a tracked PR
+      parameters:
+        - name: prId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackedPR'
+      responses:
+        '200':
+          description: Upserted tracked PR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackedPR'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags: [Tracked PRs]
+      summary: Delete a tracked PR
+      parameters:
+        - name: prId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: PR deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
   /exports/sessions/{sessionId}/pdf:
     post:
       tags: [Exports]
@@ -1215,6 +1293,73 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
 
   schemas:
+    TrackedPR:
+      type: object
+      required: [id, title, status, role, priority, isEmergency, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [needs-review, in-review, changes-requested, approved, merged, closed]
+        role:
+          type: string
+          enum: [author, reviewer]
+        priority:
+          type: string
+          enum: [routine, low, medium, high, critical]
+        isEmergency:
+          type: boolean
+        size:
+          type: string
+          enum: [small, medium, large]
+          nullable: true
+        repo:
+          type: string
+          nullable: true
+        prNumber:
+          type: integer
+          nullable: true
+        prAuthor:
+          type: string
+          nullable: true
+        dependencies:
+          type: array
+          items:
+            type: object
+        ciPassing:
+          type: string
+          enum: [yes, no, unknown]
+          nullable: true
+        linkedSessionId:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        archivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     ErrorResponse:
       type: object
       properties:

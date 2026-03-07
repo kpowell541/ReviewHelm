@@ -1,0 +1,655 @@
+{
+  "meta": {
+    "id": "security",
+    "mode": "review",
+    "title": "Security",
+    "shortTitle": "Security",
+    "description": "Cross-cutting security review checklist applicable to any stack",
+    "icon": "\uD83D\uDD12",
+    "totalItems": 40,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "security.authentication",
+      "title": "Authentication",
+      "items": [
+        {
+          "id": "security.authentication.credential-storage",
+          "text": "Are credentials hashed with a strong, salted algorithm (bcrypt, argon2)?",
+          "severity": "blocker",
+          "tags": ["auth", "crypto"],
+          "baseContent": {
+            "whatItMeans": "Passwords must be hashed with a slow, salted algorithm designed for password storage. MD5, SHA-256, and unsalted hashes are not sufficient.",
+            "whyItMatters": "If the database is breached, weak hashes let attackers recover passwords in minutes. bcrypt/argon2 make brute force infeasible (seconds per guess instead of billions per second).",
+            "howToVerify": "Search for password storage code. Check which hashing algorithm is used. Verify a unique salt is generated per password (bcrypt and argon2 handle this automatically).",
+            "exampleComment": "Passwords are hashed with SHA-256. This is a fast hash, making brute force easy. Switch to bcrypt with a cost factor of at least 12.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "import hashlib\nhashed = hashlib.sha256(password.encode()).hexdigest()\n# Fast hash, no salt, easily cracked"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "import bcrypt\nhashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12))\n# Slow hash, auto-salted, brute-force resistant"
+              }
+            ],
+            "keyTakeaway": "bcrypt or argon2id for passwords. Never MD5, SHA-1, or SHA-256.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.authentication.session-management",
+          "text": "Are sessions managed securely (expiry, rotation, invalidation)?",
+          "severity": "blocker",
+          "tags": ["auth", "session"],
+          "baseContent": {
+            "whatItMeans": "Sessions should expire after inactivity, session IDs should be rotated after login (to prevent fixation), and logout should invalidate the session server-side.",
+            "whyItMatters": "Long-lived sessions increase the window for hijacking. Session fixation lets attackers set a known session ID before login. Client-only logout leaves the session valid.",
+            "howToVerify": "Check session timeout configuration. Verify the session ID changes after authentication. Confirm logout destroys the server-side session, not just the cookie.",
+            "exampleComment": "The session ID is not rotated after login. An attacker who set the session cookie before login can hijack the authenticated session.",
+            "codeExamples": [],
+            "keyTakeaway": "Rotate session IDs on login. Expire on inactivity. Invalidate server-side on logout.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.authentication.mfa",
+          "text": "Is multi-factor authentication supported for sensitive operations?",
+          "severity": "minor",
+          "tags": ["auth"],
+          "baseContent": {
+            "whatItMeans": "Critical operations (password change, payment, admin actions) should require a second factor or re-authentication, even if the user is already logged in.",
+            "whyItMatters": "A stolen session token grants access to everything. Re-authentication for sensitive operations limits the blast radius of session hijacking.",
+            "howToVerify": "Check if sensitive operations require re-entering password, TOTP, or other second factor. Is MFA available for user accounts?",
+            "exampleComment": "Password changes do not require the current password. An attacker with a stolen session could change the password and lock out the real user.",
+            "codeExamples": [],
+            "keyTakeaway": "Re-authenticate for sensitive operations. Support MFA.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.authentication.jwt-validation",
+          "text": "Are JWTs validated correctly (signature, expiry, issuer, audience)?",
+          "severity": "blocker",
+          "tags": ["auth", "jwt"],
+          "baseContent": {
+            "whatItMeans": "JWT validation must check: signature (with the correct algorithm, not 'none'), expiry (exp claim), issuer (iss), and audience (aud). Algorithm confusion attacks are common.",
+            "whyItMatters": "Skipping any validation step lets attackers forge tokens. The 'alg: none' attack bypasses signatures entirely. Missing expiry checks mean tokens are valid forever.",
+            "howToVerify": "Check JWT verification code. Is the algorithm explicitly specified (not read from the token header)? Are exp, iss, and aud validated?",
+            "exampleComment": "The JWT library reads the algorithm from the token header. An attacker can set alg=none to bypass signature verification. Specify the expected algorithm explicitly.",
+            "codeExamples": [],
+            "keyTakeaway": "Hardcode the expected algorithm. Validate exp, iss, and aud. Never trust the token's alg header.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.authorization",
+      "title": "Authorization",
+      "items": [
+        {
+          "id": "security.authorization.access-control",
+          "text": "Is authorization enforced server-side for every endpoint?",
+          "severity": "blocker",
+          "tags": ["authz"],
+          "baseContent": {
+            "whatItMeans": "Every API endpoint must check that the authenticated user has permission to perform the action. Client-side UI hiding is not authorization.",
+            "whyItMatters": "Missing server-side authorization is the most common high-severity vulnerability. Attackers bypass the UI and call APIs directly. OWASP ranks this as A01 (Broken Access Control).",
+            "howToVerify": "For each endpoint, check: is there an auth check? Does it verify both authentication (who) and authorization (can they)? Test by calling the endpoint as a different user.",
+            "exampleComment": "The /admin/users endpoint checks if the user is authenticated but not if they are an admin. Any logged-in user can list all users.",
+            "codeExamples": [],
+            "keyTakeaway": "Every endpoint checks authorization. UI hiding is not security.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.authorization.idor",
+          "text": "Are object references validated against the current user (IDOR prevention)?",
+          "severity": "blocker",
+          "tags": ["authz"],
+          "baseContent": {
+            "whatItMeans": "When a user requests /orders/123, the server must verify that order 123 belongs to the requesting user. Otherwise any user can access any order by guessing IDs.",
+            "whyItMatters": "IDOR (Insecure Direct Object Reference) is trivial to exploit. Attackers increment IDs or use enumeration to access other users' data.",
+            "howToVerify": "Check every endpoint that takes a resource ID. Does the query filter by the authenticated user? Test by requesting another user's resource.",
+            "exampleComment": "GET /api/invoices/{id} fetches by ID without checking ownership. Add a WHERE userId = currentUser filter to prevent IDOR.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "app.get('/api/invoices/:id', async (req, res) => {\n  const invoice = await db.invoice.findUnique({ where: { id: req.params.id } });\n  res.json(invoice); // any user can access any invoice\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.get('/api/invoices/:id', async (req, res) => {\n  const invoice = await db.invoice.findFirst({\n    where: { id: req.params.id, userId: req.user.id },\n  });\n  if (!invoice) return res.status(404).json({ error: 'Not found' });\n  res.json(invoice);\n});"
+              }
+            ],
+            "keyTakeaway": "Always filter by the authenticated user's ID. Never trust client-supplied resource IDs alone.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.authorization.privilege-escalation",
+          "text": "Can users escalate their own privileges?",
+          "severity": "blocker",
+          "tags": ["authz"],
+          "baseContent": {
+            "whatItMeans": "Users should not be able to change their own role, access level, or permissions. The API should ignore role fields in user-submitted data.",
+            "whyItMatters": "Mass assignment or unprotected role fields let users promote themselves to admin. This is a complete authorization bypass.",
+            "howToVerify": "Check user update endpoints. Can a user send { role: 'admin' } and have it accepted? Are role changes restricted to admin-only endpoints?",
+            "exampleComment": "The PUT /users/me endpoint accepts a 'role' field from the request body. A user could set themselves as admin. Strip the role field from user-submitted updates.",
+            "codeExamples": [],
+            "keyTakeaway": "Never accept role or permission changes from the user being modified.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.authorization.least-privilege",
+          "text": "Do service accounts and API keys follow least-privilege?",
+          "severity": "major",
+          "tags": ["authz", "infra"],
+          "baseContent": {
+            "whatItMeans": "Service accounts, API keys, and database users should have the minimum permissions needed. A read-only service should not have write access.",
+            "whyItMatters": "Over-privileged credentials increase blast radius. A compromised read-only key is annoying. A compromised admin key is catastrophic.",
+            "howToVerify": "Check IAM policies, database user permissions, and API key scopes. Can any be narrowed without breaking functionality?",
+            "exampleComment": "The application database user has SUPERUSER privileges. Restrict to SELECT, INSERT, UPDATE, DELETE on application tables only.",
+            "codeExamples": [],
+            "keyTakeaway": "Grant minimum permissions. Separate read and write credentials where possible.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.injection",
+      "title": "Injection Prevention",
+      "items": [
+        {
+          "id": "security.injection.sql-injection",
+          "text": "Are all SQL queries parameterized (no string concatenation)?",
+          "severity": "blocker",
+          "tags": ["injection", "database"],
+          "baseContent": {
+            "whatItMeans": "SQL queries must use parameterized statements or an ORM's query builder. Never concatenate user input into SQL strings.",
+            "whyItMatters": "SQL injection can read, modify, or delete any data in the database. It can also execute system commands in some configurations. It remains the most dangerous injection attack.",
+            "howToVerify": "Search for raw SQL strings. Check for string concatenation or template literals containing user input. Verify ORM raw query methods use parameterized forms.",
+            "exampleComment": "This query concatenates the search term directly into SQL. Use a parameterized query with $1 placeholder.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "const result = await db.query(\n  `SELECT * FROM users WHERE name = '${req.query.name}'`\n);"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "const result = await db.query(\n  'SELECT * FROM users WHERE name = $1',\n  [req.query.name]\n);"
+              }
+            ],
+            "keyTakeaway": "Always parameterize. Never concatenate user input into SQL.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.injection.xss",
+          "text": "Is user-generated content properly escaped to prevent XSS?",
+          "severity": "blocker",
+          "tags": ["injection", "web"],
+          "baseContent": {
+            "whatItMeans": "User input rendered in HTML must be escaped (or sanitized if HTML is intentional). Modern frameworks (React, Angular) auto-escape by default, but dangerouslySetInnerHTML and similar bypass this.",
+            "whyItMatters": "XSS lets attackers execute JavaScript in other users' browsers, stealing sessions, credentials, and personal data.",
+            "howToVerify": "Search for dangerouslySetInnerHTML, innerHTML, v-html, [innerHTML], and raw HTML rendering. Check that user input is escaped in server-rendered templates.",
+            "exampleComment": "dangerouslySetInnerHTML is used with user-provided content. Sanitize with DOMPurify or render as text instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "jsx",
+                "code": "<div dangerouslySetInnerHTML={{ __html: userComment }} />"
+              },
+              {
+                "label": "Good",
+                "language": "jsx",
+                "code": "<div>{userComment}</div>\n// Or if HTML is needed:\n<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userComment) }} />"
+              }
+            ],
+            "keyTakeaway": "Let the framework escape output. Sanitize if raw HTML is intentional.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.injection.command-injection",
+          "text": "Are OS commands avoided, or parameterized if necessary?",
+          "severity": "blocker",
+          "tags": ["injection"],
+          "baseContent": {
+            "whatItMeans": "Executing shell commands with user input (exec, system, os.popen) enables command injection. Use language-native libraries instead, or parameterize with execFile/spawn.",
+            "whyItMatters": "Command injection gives attackers full system access. A single semicolon in user input can chain arbitrary commands.",
+            "howToVerify": "Search for exec, system, popen, subprocess.shell=True, child_process.exec with user input. Replace with parameterized alternatives.",
+            "exampleComment": "child_process.exec with user input allows command injection. Use execFile with an argument array instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "const { exec } = require('child_process');\nexec(`convert ${userFilename} output.png`); // injection via filename"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "const { execFile } = require('child_process');\nexecFile('convert', [userFilename, 'output.png']); // parameterized"
+              }
+            ],
+            "keyTakeaway": "Avoid shell commands. If unavoidable, use parameterized execution (execFile, not exec).",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.injection.path-traversal",
+          "text": "Is file path traversal prevented when handling user-supplied paths?",
+          "severity": "blocker",
+          "tags": ["injection"],
+          "baseContent": {
+            "whatItMeans": "User-supplied filenames or paths must be validated to prevent ../../../etc/passwd style attacks. Resolve the path and verify it stays within the allowed directory.",
+            "whyItMatters": "Path traversal can read any file on the server (credentials, source code, private keys). Combined with write access, it enables arbitrary code execution.",
+            "howToVerify": "Check for user-supplied filenames used in file operations. Is the resolved path checked against the allowed base directory?",
+            "exampleComment": "The filename from the request is passed directly to fs.readFile. An attacker can use ../../../etc/passwd. Resolve the path and verify it starts with the upload directory.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "app.get('/files/:name', (req, res) => {\n  res.sendFile(path.join(uploadDir, req.params.name)); // traversal!\n});"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "app.get('/files/:name', (req, res) => {\n  const resolved = path.resolve(uploadDir, req.params.name);\n  if (!resolved.startsWith(path.resolve(uploadDir))) {\n    return res.status(400).json({ error: 'Invalid path' });\n  }\n  res.sendFile(resolved);\n});"
+              }
+            ],
+            "keyTakeaway": "Resolve the full path and verify it stays within the allowed directory.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.injection.ssrf",
+          "text": "Are server-side requests validated to prevent SSRF?",
+          "severity": "blocker",
+          "tags": ["injection", "networking"],
+          "baseContent": {
+            "whatItMeans": "When the server fetches a URL provided by the user (webhooks, image proxies, link previews), it must validate the URL to prevent requests to internal services.",
+            "whyItMatters": "SSRF lets attackers probe internal networks, access metadata services (169.254.169.254), and reach services behind firewalls. It was the root cause of the Capital One breach.",
+            "howToVerify": "Check for user-controlled URLs passed to fetch/http.get/requests. Is the URL validated? Are internal IPs blocked? Is DNS rebinding prevented?",
+            "exampleComment": "The webhook URL is fetched without validation. An attacker could set it to http://169.254.169.254/latest/meta-data/ to access AWS credentials.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate and allowlist URLs for server-side requests. Block internal IPs and metadata endpoints.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.secrets",
+      "title": "Secrets & Credentials",
+      "items": [
+        {
+          "id": "security.secrets.no-hardcoded",
+          "text": "Are secrets, API keys, and credentials kept out of source code?",
+          "severity": "blocker",
+          "tags": ["secrets"],
+          "baseContent": {
+            "whatItMeans": "Secrets must come from environment variables, secret managers (Vault, AWS Secrets Manager), or encrypted config. They should never appear in source code, even in tests.",
+            "whyItMatters": "Secrets in code end up in version control history forever. Even private repos get cloned to developer laptops, CI systems, and backups. One leak compromises all.",
+            "howToVerify": "Search the diff for strings matching API key patterns, connection strings with passwords, and private keys. Check .env files are in .gitignore.",
+            "exampleComment": "This API key is hardcoded in the source file. Move it to an environment variable and reference via process.env.",
+            "codeExamples": [],
+            "keyTakeaway": "No secrets in code. Use environment variables or a secrets manager.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.secrets.env-files",
+          "text": "Are .env files excluded from version control?",
+          "severity": "blocker",
+          "tags": ["secrets"],
+          "baseContent": {
+            "whatItMeans": ".env files containing secrets must be in .gitignore. Only .env.example (with placeholder values) should be committed.",
+            "whyItMatters": "A committed .env file exposes all application secrets. Git history retains deleted files, so removing it later is not enough.",
+            "howToVerify": "Check .gitignore for .env patterns. Run git ls-files | grep env to see if any .env files are tracked.",
+            "exampleComment": "The .env file is committed with database credentials. Add .env to .gitignore, rotate the exposed credentials, and use git filter-branch to remove from history.",
+            "codeExamples": [],
+            "keyTakeaway": ".env in .gitignore. .env.example in the repo with placeholders. Rotate any exposed secrets.",
+            "references": []
+          }
+        },
+        {
+          "id": "security.secrets.logging",
+          "text": "Are secrets excluded from logs, error messages, and stack traces?",
+          "severity": "blocker",
+          "tags": ["secrets", "logging"],
+          "baseContent": {
+            "whatItMeans": "Log statements, error responses, and exception messages must not include tokens, passwords, or PII. Redact sensitive fields before logging.",
+            "whyItMatters": "Logs are stored in multiple systems (ELK, CloudWatch, Splunk), often with broad access. Secrets in logs spread to every system that ingests them.",
+            "howToVerify": "Search for log.info, console.log, logger.error that might include request bodies, tokens, or passwords. Check error responses for stack traces in production.",
+            "exampleComment": "The authentication error log includes the password attempt. Redact it: log.warn('Auth failed for user', { userId, reason: 'invalid_password' }).",
+            "codeExamples": [],
+            "keyTakeaway": "Never log secrets or PII. Redact before logging.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.secrets.rotation",
+          "text": "Do secrets have a rotation plan and are they not shared across environments?",
+          "severity": "minor",
+          "tags": ["secrets", "ops"],
+          "baseContent": {
+            "whatItMeans": "Production, staging, and development should use different credentials. Secrets should be rotatable without code changes.",
+            "whyItMatters": "Shared secrets between environments mean a dev leak compromises production. Non-rotatable secrets mean a breach requires code deployment to fix.",
+            "howToVerify": "Check if the same API keys are used across environments. Verify secrets can be rotated by changing environment variables, not code.",
+            "exampleComment": "The same Stripe API key is used in dev and production. Use test keys for dev and restrict production keys to the production environment.",
+            "codeExamples": [],
+            "keyTakeaway": "Different secrets per environment. Rotation without code changes.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.data-protection",
+      "title": "Data Protection",
+      "items": [
+        {
+          "id": "security.data-protection.encryption-transit",
+          "text": "Is all data transmitted over TLS/HTTPS?",
+          "severity": "blocker",
+          "tags": ["encryption", "networking"],
+          "baseContent": {
+            "whatItMeans": "All HTTP traffic should be HTTPS. HTTP should redirect to HTTPS. HSTS headers should be set. Internal service-to-service calls should also use TLS.",
+            "whyItMatters": "Unencrypted traffic can be intercepted on any network hop. Credentials, tokens, and PII are exposed to anyone on the network path.",
+            "howToVerify": "Check for http:// URLs in configuration (should be https://). Verify HSTS headers. Check that HTTP requests redirect to HTTPS.",
+            "exampleComment": "The API base URL uses http://. Change to https:// and add Strict-Transport-Security header.",
+            "codeExamples": [],
+            "keyTakeaway": "HTTPS everywhere. HSTS headers. No exceptions for internal traffic.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Security_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.data-protection.encryption-rest",
+          "text": "Is sensitive data encrypted at rest?",
+          "severity": "major",
+          "tags": ["encryption", "database"],
+          "baseContent": {
+            "whatItMeans": "PII, financial data, and health records should be encrypted in the database. Use application-level encryption for the most sensitive fields, and disk-level encryption as a baseline.",
+            "whyItMatters": "Database backups, stolen disks, and unauthorized database access expose unencrypted data. Encryption at rest is often a compliance requirement (GDPR, HIPAA, PCI-DSS).",
+            "howToVerify": "Check what data is stored. Is PII (SSN, payment info) encrypted? Is disk encryption enabled on the database? Are encryption keys managed separately from data?",
+            "exampleComment": "Credit card numbers are stored in plain text. Use application-level encryption with a key stored in a secrets manager.",
+            "codeExamples": [],
+            "keyTakeaway": "Encrypt PII and financial data at rest. Keys in a secrets manager, not the database.",
+            "references": []
+          }
+        },
+        {
+          "id": "security.data-protection.pii-minimization",
+          "text": "Is PII collection minimized and necessary data justified?",
+          "severity": "major",
+          "tags": ["privacy"],
+          "baseContent": {
+            "whatItMeans": "Only collect data you actually need. Do not store birthdates if you only need to verify age. Do not log IP addresses if you do not need them for security.",
+            "whyItMatters": "Every piece of PII stored is a liability. More data means more risk in a breach and more compliance burden (GDPR right to be forgotten, data subject requests).",
+            "howToVerify": "Review new fields being added. Is each one necessary? Can the same goal be achieved with less data (e.g., age range instead of birthdate)?",
+            "exampleComment": "The signup form collects phone number and address, but neither is used by the app. Remove these fields to reduce PII exposure.",
+            "codeExamples": [],
+            "keyTakeaway": "Collect only what you need. Every field is a liability.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/User_Privacy_Protection_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.data-protection.cors",
+          "text": "Is CORS configured to allow only trusted origins?",
+          "severity": "major",
+          "tags": ["web", "networking"],
+          "baseContent": {
+            "whatItMeans": "Cross-Origin Resource Sharing headers must specify which domains can access the API. Access-Control-Allow-Origin: * with credentials is a security vulnerability.",
+            "whyItMatters": "Overly permissive CORS allows any website to make authenticated requests to your API on behalf of the user, enabling data theft.",
+            "howToVerify": "Check CORS configuration. Is the origin allowlist explicit? Is Access-Control-Allow-Credentials used with a wildcard origin (this is blocked by browsers but signals misconfiguration)?",
+            "exampleComment": "CORS allows all origins (*) with credentials. Restrict to your app's domain(s) only.",
+            "codeExamples": [],
+            "keyTakeaway": "Explicit origin allowlist. Never wildcard with credentials.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Cross-Origin_Resource_Sharing_Cheat_Sheet.html"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.input-validation",
+      "title": "Input Validation",
+      "items": [
+        {
+          "id": "security.input-validation.server-side",
+          "text": "Is all input validated server-side, not just client-side?",
+          "severity": "blocker",
+          "tags": ["validation"],
+          "baseContent": {
+            "whatItMeans": "Client-side validation is for UX. Server-side validation is for security. Attackers bypass the client entirely. Every input must be validated where it is consumed.",
+            "whyItMatters": "Client-side validation can be bypassed with curl, Postman, or browser dev tools. Server-side validation is the only reliable boundary.",
+            "howToVerify": "Check API endpoints. Is the request body validated (types, lengths, ranges, formats)? Are query parameters validated? Is validation duplicated on the server?",
+            "exampleComment": "The email is validated only in the React form. The API accepts any string. Add server-side email validation.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate on the server. Client validation is optional UX polish.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.input-validation.content-type",
+          "text": "Is the Content-Type header validated for API requests?",
+          "severity": "minor",
+          "tags": ["validation", "api"],
+          "baseContent": {
+            "whatItMeans": "API endpoints should validate that the Content-Type header matches what they expect (application/json). Accepting unexpected types can enable CSRF or parsing confusion.",
+            "whyItMatters": "Browsers can send cross-origin POST requests with text/plain Content-Type, which bypasses CSRF protections that rely on rejecting non-JSON requests.",
+            "howToVerify": "Check if the API rejects requests with incorrect Content-Type. Test with Content-Type: text/plain on JSON endpoints.",
+            "exampleComment": "This endpoint accepts any Content-Type. Reject requests that are not application/json to prevent CSRF via form submission.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate Content-Type. Reject unexpected types.",
+            "references": []
+          }
+        },
+        {
+          "id": "security.input-validation.file-uploads",
+          "text": "Are file uploads validated for type, size, and content?",
+          "severity": "major",
+          "tags": ["validation", "uploads"],
+          "baseContent": {
+            "whatItMeans": "Validate file extensions, MIME types, and actual file content (magic bytes). Enforce size limits. Store uploaded files outside the web root with random names.",
+            "whyItMatters": "Unvalidated file uploads enable remote code execution (uploading a .php or .jsp file), XSS (SVG with JavaScript), and denial of service (huge files).",
+            "howToVerify": "Check upload endpoints. Is the file type validated by content, not just extension? Is there a size limit? Are files stored outside the web root?",
+            "exampleComment": "This upload validates only the file extension. An attacker can upload a .jpg file containing PHP code. Validate the file's magic bytes.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate file content, not just extension. Size limits. Store outside web root.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.input-validation.rate-limiting",
+          "text": "Is rate limiting applied to authentication and sensitive endpoints?",
+          "severity": "major",
+          "tags": ["dos", "auth"],
+          "baseContent": {
+            "whatItMeans": "Login, registration, password reset, and other sensitive endpoints should have rate limits to prevent brute force attacks and abuse.",
+            "whyItMatters": "Without rate limiting, attackers can try millions of password combinations, enumerate valid emails, or flood the system with registrations.",
+            "howToVerify": "Check if login endpoints have rate limiting. Is it per-IP, per-user, or both? Are other sensitive endpoints (password reset, email verification) rate-limited?",
+            "exampleComment": "The login endpoint has no rate limiting. Add a limit of 5 attempts per minute per IP, with exponential backoff.",
+            "codeExamples": [],
+            "keyTakeaway": "Rate limit login and sensitive endpoints. Per-IP and per-account.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.dependencies",
+      "title": "Dependency Security",
+      "items": [
+        {
+          "id": "security.dependencies.known-vulnerabilities",
+          "text": "Are dependencies free of known vulnerabilities?",
+          "severity": "blocker",
+          "tags": ["supply-chain"],
+          "baseContent": {
+            "whatItMeans": "Run npm audit, pip audit, cargo audit, or equivalent to check for known CVEs in dependencies. Address critical and high vulnerabilities before merging.",
+            "whyItMatters": "Known vulnerabilities in popular libraries are actively exploited. Automated scanners find and attack vulnerable versions within hours of disclosure.",
+            "howToVerify": "Run the language's audit tool. Check CI for automated vulnerability scanning (Dependabot, Snyk, Socket). Review new dependencies for advisories.",
+            "exampleComment": "npm audit shows 2 critical vulnerabilities in transitive dependencies. Update the parent package or use overrides to fix.",
+            "codeExamples": [],
+            "keyTakeaway": "Run audit tools. Fix critical/high vulnerabilities before merge. Automate in CI.",
+            "references": ["https://owasp.org/www-project-dependency-check/"]
+          }
+        },
+        {
+          "id": "security.dependencies.supply-chain",
+          "text": "Are new dependencies from trusted sources with active maintenance?",
+          "severity": "major",
+          "tags": ["supply-chain"],
+          "baseContent": {
+            "whatItMeans": "Before adding a dependency, check: author reputation, download count, maintenance status, license, and transitive dependency count. Prefer widely-used, well-maintained packages.",
+            "whyItMatters": "Supply chain attacks (event-stream, ua-parser-js, colors) inject malicious code via popular packages. Each dependency is code you implicitly trust.",
+            "howToVerify": "Check npm/PyPI/crates.io for the package. When was it last updated? How many maintainers? What is the download count? How many transitive dependencies?",
+            "exampleComment": "This new dependency has 12 weekly downloads and no updates in 3 years. Consider a more established alternative or implement the functionality directly.",
+            "codeExamples": [],
+            "keyTakeaway": "Vet new dependencies. Check maintenance, popularity, and transitive depth.",
+            "references": []
+          }
+        },
+        {
+          "id": "security.dependencies.lockfile",
+          "text": "Is the lockfile committed and reviewed for unexpected changes?",
+          "severity": "major",
+          "tags": ["supply-chain"],
+          "baseContent": {
+            "whatItMeans": "Lockfiles (package-lock.json, yarn.lock, Gemfile.lock) pin exact dependency versions. They should be committed and any changes reviewed.",
+            "whyItMatters": "Without a committed lockfile, different environments install different versions, which can introduce vulnerabilities or break builds. Malicious lockfile changes can downgrade to vulnerable versions.",
+            "howToVerify": "Check that the lockfile is committed. Review lockfile changes in the PR for unexpected additions, removals, or version changes.",
+            "exampleComment": "The lockfile shows 15 new transitive dependencies from adding one package. Review these additions for known issues.",
+            "codeExamples": [],
+            "keyTakeaway": "Commit lockfiles. Review changes. Unexpected updates are a red flag.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.error-handling",
+      "title": "Error Handling & Logging",
+      "items": [
+        {
+          "id": "security.error-handling.no-stack-traces",
+          "text": "Are stack traces and internal errors hidden from API responses?",
+          "severity": "major",
+          "tags": ["error-handling"],
+          "baseContent": {
+            "whatItMeans": "Production error responses should return generic messages. Stack traces, file paths, SQL queries, and internal service names help attackers understand the system.",
+            "whyItMatters": "Stack traces reveal framework versions, file structure, database schema, and third-party services. This information accelerates targeted attacks.",
+            "howToVerify": "Trigger an error in the API (invalid input, server error). Does the response include stack traces, SQL queries, or internal paths?",
+            "exampleComment": "The 500 response includes a full stack trace with file paths and database query. Return a generic error message and log the details server-side.",
+            "codeExamples": [],
+            "keyTakeaway": "Generic error messages to clients. Full details in server logs only.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.error-handling.security-logging",
+          "text": "Are security-relevant events logged (login failures, permission denials)?",
+          "severity": "major",
+          "tags": ["logging", "monitoring"],
+          "baseContent": {
+            "whatItMeans": "Log authentication successes and failures, authorization denials, input validation failures, and admin actions. Include enough context to investigate incidents.",
+            "whyItMatters": "Without security logs, you cannot detect brute force attacks, unauthorized access attempts, or compromised accounts. Logs are essential for incident response.",
+            "howToVerify": "Check if login failures, permission denials, and admin actions generate log entries. Do logs include user ID, IP, timestamp, and action?",
+            "exampleComment": "Failed login attempts are not logged. Add logging with user identifier and IP address (not the password) for security monitoring.",
+            "codeExamples": [],
+            "keyTakeaway": "Log security events: auth failures, permission denials, admin actions. Never log secrets.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.error-handling.timing-attacks",
+          "text": "Are constant-time comparisons used for secrets and tokens?",
+          "severity": "minor",
+          "tags": ["crypto"],
+          "baseContent": {
+            "whatItMeans": "Comparing secrets with === leaks information through timing differences. Use constant-time comparison functions (crypto.timingSafeEqual, hmac.compare_digest).",
+            "whyItMatters": "String comparison short-circuits on the first different byte. By measuring response time, attackers can determine the correct prefix byte-by-byte.",
+            "howToVerify": "Search for direct string comparison of API keys, HMAC signatures, or tokens. These should use constant-time comparison.",
+            "exampleComment": "The webhook signature is compared with ===. Use crypto.timingSafeEqual to prevent timing attacks.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "if (req.headers['x-signature'] === expectedSignature) {\n  // timing leak\n}"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "const a = Buffer.from(req.headers['x-signature']);\nconst b = Buffer.from(expectedSignature);\nif (a.length === b.length && crypto.timingSafeEqual(a, b)) {\n  // constant-time comparison\n}"
+              }
+            ],
+            "keyTakeaway": "Use constant-time comparison for all secret comparisons.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "security.infrastructure",
+      "title": "Infrastructure & Headers",
+      "items": [
+        {
+          "id": "security.infrastructure.security-headers",
+          "text": "Are security headers configured (CSP, X-Frame-Options, etc.)?",
+          "severity": "major",
+          "tags": ["web", "headers"],
+          "baseContent": {
+            "whatItMeans": "Set Content-Security-Policy, X-Frame-Options (or frame-ancestors CSP), X-Content-Type-Options: nosniff, Referrer-Policy, and Permissions-Policy headers.",
+            "whyItMatters": "Security headers are defense-in-depth. CSP mitigates XSS even if escaping fails. X-Frame-Options prevents clickjacking. These are low-effort, high-impact protections.",
+            "howToVerify": "Use securityheaders.com or browser dev tools to check response headers. Verify CSP is not overly permissive (unsafe-inline, unsafe-eval).",
+            "exampleComment": "No Content-Security-Policy header is set. Add a restrictive CSP that allows only your domains and avoids unsafe-inline.",
+            "codeExamples": [],
+            "keyTakeaway": "Set CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy on all responses.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.infrastructure.csrf",
+          "text": "Is CSRF protection in place for state-changing requests?",
+          "severity": "blocker",
+          "tags": ["web"],
+          "baseContent": {
+            "whatItMeans": "State-changing requests (POST, PUT, DELETE) with cookie-based auth need CSRF protection: anti-CSRF tokens, SameSite cookies, or requiring a custom header.",
+            "whyItMatters": "Without CSRF protection, a malicious website can trick the user's browser into making authenticated requests (transferring money, changing email) without the user's knowledge.",
+            "howToVerify": "Check if the app uses cookie-based auth. If so, is there a CSRF token or SameSite=Strict cookie? Token-based auth (Bearer header) is inherently CSRF-safe.",
+            "exampleComment": "This form uses cookie-based auth without a CSRF token. Add a CSRF token or set SameSite=Strict on the session cookie.",
+            "codeExamples": [],
+            "keyTakeaway": "Cookie auth needs CSRF protection. Bearer tokens are inherently safe. SameSite=Strict helps.",
+            "references": ["https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html"]
+          }
+        },
+        {
+          "id": "security.infrastructure.cookie-flags",
+          "text": "Are cookies set with Secure, HttpOnly, and SameSite flags?",
+          "severity": "major",
+          "tags": ["web", "cookies"],
+          "baseContent": {
+            "whatItMeans": "Secure: only sent over HTTPS. HttpOnly: inaccessible to JavaScript. SameSite: controls cross-origin sending. All session cookies should have all three.",
+            "whyItMatters": "Without Secure, cookies can be stolen on HTTP connections. Without HttpOnly, XSS can read them. Without SameSite, they are sent on cross-origin requests (CSRF).",
+            "howToVerify": "Check Set-Cookie headers. Do session cookies have Secure, HttpOnly, and SameSite=Lax (or Strict)?",
+            "exampleComment": "The session cookie is missing HttpOnly. JavaScript can read it, making XSS attacks more damaging. Add HttpOnly to the cookie options.",
+            "codeExamples": [],
+            "keyTakeaway": "Session cookies: Secure + HttpOnly + SameSite=Lax. Always.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

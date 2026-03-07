@@ -50,6 +50,13 @@ const SLIDES: OnboardingSlide[] = [
       'Deep-dive into any topic with an AI tutor, get review comments drafted, and study your weak areas — all powered by Claude.',
     color: colors.primary,
   },
+  {
+    icon: '📋',
+    title: 'A Learning Tool, Not a Guarantee',
+    description:
+      'ReviewHelm\'s checklists and guides are designed to help you build better code review habits and improve over time. They are not a substitute for thorough human review and do not guarantee code quality, security, or correctness.',
+    color: colors.textSecondary,
+  },
 ];
 
 export default function OnboardingScreen() {

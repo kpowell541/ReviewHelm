@@ -35,6 +35,7 @@ import {
 } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
+import { AppFooter } from '../src/components/AppFooter';
 import { useResponsive } from '../src/hooks/useResponsive';
 
 const MODEL_OPTIONS: ClaudeModel[] = ['sonnet', 'opus'];
@@ -1013,6 +1014,7 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      <AppFooter />
       <Text style={styles.footer}>ReviewHelm v{appVersion}</Text>
     </ScrollView>
     </DesktopContainer>
@@ -1239,6 +1241,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textMuted,
     fontSize: fontSizes.xs,
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
   },
 });

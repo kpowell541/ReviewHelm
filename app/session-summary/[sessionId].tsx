@@ -16,6 +16,7 @@ import {
   getChecklist,
   getPolishChecklist,
   getMergedChecklist,
+  withSecurityChecklist,
 } from '../../src/data/checklistLoader';
 import {
   getAllChecklistItems,
@@ -49,11 +50,31 @@ export default function SessionSummaryScreen() {
 
   const checklist = useMemo(() => {
     if (!session) return null;
-    if (session.mode === 'polish') return getPolishChecklist();
+    if (session.mode === 'polish') {
+      const effectiveIds = getEffectiveStackIds(session);
+      if (effectiveIds.length === 0) return withSecurityChecklist(getPolishChecklist());
+      const domainChecklist = effectiveIds.length === 1
+        ? getChecklist(effectiveIds[0])
+        : getMergedChecklist(effectiveIds, session.selectedSections);
+      const polishCl = getPolishChecklist();
+      return withSecurityChecklist({
+        ...domainChecklist,
+        meta: {
+          ...domainChecklist.meta,
+          id: `${domainChecklist.meta.id}+polish`,
+          title: `${domainChecklist.meta.title} + Polish`,
+          shortTitle: `${domainChecklist.meta.shortTitle}+Polish`,
+          totalItems: domainChecklist.meta.totalItems + polishCl.meta.totalItems,
+        },
+        sections: [...domainChecklist.sections, ...polishCl.sections],
+      });
+    }
     const effectiveIds = getEffectiveStackIds(session);
     if (effectiveIds.length === 0) return null;
-    if (effectiveIds.length === 1) return getChecklist(effectiveIds[0]);
-    return getMergedChecklist(effectiveIds, session.selectedSections);
+    const base = effectiveIds.length === 1
+      ? getChecklist(effectiveIds[0])
+      : getMergedChecklist(effectiveIds, session.selectedSections);
+    return withSecurityChecklist(base);
   }, [session]);
 
   const allItems = useMemo(
