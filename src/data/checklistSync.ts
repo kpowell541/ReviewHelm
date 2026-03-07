@@ -1,27 +1,11 @@
 import type { Checklist } from './types';
 import {
+  CHECKLIST_IDS,
   getChecklistMap,
   setCachedChecklists,
   initializeChecklistCache,
 } from './checklistLoader';
-
-const CHECKLIST_FILES = {
-  'java-protobuf': 'java-protobuf.json',
-  'js-ts-react-node': 'js-ts-react-node.json',
-  go: 'go.json',
-  'terraform-hcl': 'terraform-hcl.json',
-  'swift-objc': 'swift-objc.json',
-  'web-devops-config': 'web-devops-config.json',
-  python: 'python.json',
-  ruby: 'ruby.json',
-  lua: 'lua.json',
-  'c-lang': 'c-lang.json',
-  'data-formats': 'data-formats.json',
-  postgresql: 'postgresql.json',
-  graphql: 'graphql.json',
-  'rest-api': 'rest-api.json',
-  'polish-my-pr': 'polish-my-pr.json',
-} as const;
+import type { ChecklistId, ChecklistMap } from './checklistLoader';
 
 const CHECKLIST_ALLOWLIST_HOSTS = (
   process.env.EXPO_PUBLIC_CHECKLIST_ALLOWLIST_HOSTS ??
@@ -36,7 +20,9 @@ const MAX_CHECKLIST_PAYLOAD_BYTES = Math.max(
   Number(process.env.EXPO_PUBLIC_CHECKLIST_MAX_PAYLOAD_BYTES) || 131072,
 );
 
-type ChecklistMap = Record<keyof typeof CHECKLIST_FILES, Checklist>;
+function checklistFilename(id: ChecklistId): string {
+  return `${id}.json`;
+}
 
 export interface ChecklistSyncConfig {
   owner: string;
@@ -109,7 +95,8 @@ export async function syncChecklistsFromGithub(
   const current = getChecklistMap() as ChecklistMap;
 
   const entries = await Promise.all(
-    Object.entries(CHECKLIST_FILES).map(async ([id, filename]) => {
+    CHECKLIST_IDS.map(async (id) => {
+      const filename = checklistFilename(id);
       const rawUrl = getRawUrl(config, filename);
       const parsed = validateRawChecklistUrl(rawUrl, filename);
       const response = await fetch(parsed.toString());
@@ -136,7 +123,7 @@ export async function syncChecklistsFromGithub(
   );
 
   const fetched = Object.fromEntries(entries) as ChecklistMap;
-  const changedIds = (Object.keys(CHECKLIST_FILES) as Array<keyof ChecklistMap>).filter(
+  const changedIds = (CHECKLIST_IDS as readonly ChecklistId[]).filter(
     (id) => fetched[id].meta.version !== current[id].meta.version,
   );
 

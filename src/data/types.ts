@@ -18,7 +18,12 @@ export type StackId =
   | 'data-formats'
   | 'postgresql'
   | 'graphql'
-  | 'rest-api';
+  | 'rest-api'
+  | 'rust'
+  | 'csharp-dotnet'
+  | 'kotlin-android'
+  | 'security'
+  | 'dart-flutter';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,

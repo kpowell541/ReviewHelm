@@ -122,6 +122,46 @@ export const STACKS: StackInfo[] = [
     icon: '🔌',
     color: '#10b981',
   },
+  {
+    id: 'rust',
+    title: 'Rust',
+    shortTitle: 'Rust',
+    description: 'Rust applications, libraries, and systems programming',
+    icon: '\u{1F980}',
+    color: '#dea584',
+  },
+  {
+    id: 'csharp-dotnet',
+    title: 'C# / .NET',
+    shortTitle: 'C#/.NET',
+    description: 'C# and .NET applications, ASP.NET Core, Entity Framework',
+    icon: '#\uFE0F\u20E3',
+    color: '#512bd4',
+  },
+  {
+    id: 'kotlin-android',
+    title: 'Kotlin Android',
+    shortTitle: 'Android',
+    description: 'Android apps with Kotlin, Jetpack Compose, and MVVM',
+    icon: '\uD83E\uDD16',
+    color: '#3ddc84',
+  },
+  {
+    id: 'security',
+    title: 'Security',
+    shortTitle: 'Security',
+    description: 'Cross-cutting security review: auth, injection, secrets, OWASP',
+    icon: '\uD83D\uDD12',
+    color: '#ef4444',
+  },
+  {
+    id: 'dart-flutter',
+    title: 'Dart & Flutter',
+    shortTitle: 'Flutter',
+    description: 'Dart and Flutter cross-platform applications',
+    icon: '\uD83D\uDC26',
+    color: '#027DFD',
+  },
 ];
 
 export function getStackInfo(stackId: StackId): StackInfo {

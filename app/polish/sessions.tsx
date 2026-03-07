@@ -12,8 +12,9 @@ import {
 import { useRouter } from 'expo-router';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
-import type { TrackedPR, PRSize, CIPassing, PRDependency } from '../../src/data/types';
+import type { TrackedPR, PRSize, CIPassing, PRDependency, StackId } from '../../src/data/types';
 import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS } from '../../src/data/types';
+import { STACKS } from '../../src/data/checklistRegistry';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
@@ -30,6 +31,9 @@ export default function PolishSessionsScreen() {
   const linkSession = usePRTrackerStore((s) => s.linkSession);
 
   const [showPRPicker, setShowPRPicker] = useState(false);
+  const [showStackPicker, setShowStackPicker] = useState(false);
+  const [pendingPRId, setPendingPRId] = useState<string | undefined>(undefined);
+  const [selectedStacks, setSelectedStacks] = useState<StackId[]>([]);
   const [showAddPR, setShowAddPR] = useState(false);
   const [addForm, setAddForm] = useState({
     title: '',
@@ -61,15 +65,32 @@ export default function PolishSessionsScreen() {
 
   const handleSelectPR = (pr: TrackedPR) => {
     setShowPRPicker(false);
-    const sessionId = createSession('polish', undefined, undefined, undefined, pr.id);
-    linkSession(pr.id, sessionId);
-    router.push(`/polish/${sessionId}`);
+    setPendingPRId(pr.id);
+    setSelectedStacks([]);
+    setShowStackPicker(true);
   };
 
   const handleSkipPR = () => {
     setShowPRPicker(false);
-    const id = createSession('polish');
-    router.push(`/polish/${id}`);
+    setPendingPRId(undefined);
+    setSelectedStacks([]);
+    setShowStackPicker(true);
+  };
+
+  const toggleStack = (stackId: StackId) => {
+    setSelectedStacks((prev) =>
+      prev.includes(stackId)
+        ? prev.filter((id) => id !== stackId)
+        : [...prev, stackId],
+    );
+  };
+
+  const handleStartPolish = () => {
+    setShowStackPicker(false);
+    const stacks = selectedStacks.length > 0 ? selectedStacks : undefined;
+    const sessionId = createSession('polish', stacks, undefined, undefined, pendingPRId);
+    if (pendingPRId) linkSession(pendingPRId, sessionId);
+    router.push(`/polish/${sessionId}`);
   };
 
   const handleSaveNewPR = useCallback(() => {
@@ -264,6 +285,60 @@ export default function PolishSessionsScreen() {
                 <Text style={styles.skipButtonText}>Skip — no PR</Text>
               </Pressable>
               <Pressable onPress={() => setShowPRPicker(false)} style={styles.cancelButton}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Stack Picker Modal */}
+      <Modal
+        visible={showStackPicker}
+        transparent
+        animationType={isDesktop ? 'fade' : 'slide'}
+        onRequestClose={() => setShowStackPicker(false)}
+      >
+        <Pressable
+          style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}
+          onPress={() => setShowStackPicker(false)}
+        >
+          <Pressable style={[styles.modalCard, isDesktop && styles.modalCardDesktop]} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>What stack is this PR in?</Text>
+            <Text style={styles.stackHint}>
+              Select stacks to include domain-specific checks alongside the polish checklist. Skip to use polish only.
+            </Text>
+
+            <ScrollView style={styles.prList} showsVerticalScrollIndicator={false}>
+              {STACKS.map((stack) => {
+                const selected = selectedStacks.includes(stack.id);
+                return (
+                  <Pressable
+                    key={stack.id}
+                    onPress={() => toggleStack(stack.id)}
+                    style={({ pressed }) => [
+                      styles.stackCard,
+                      selected && { borderColor: stack.color, backgroundColor: stack.color + '15' },
+                      { opacity: pressed ? 0.85 : 1 },
+                    ]}
+                  >
+                    <Text style={styles.stackIcon}>{stack.icon}</Text>
+                    <View style={styles.stackInfo}>
+                      <Text style={styles.stackTitle}>{stack.shortTitle}</Text>
+                    </View>
+                    {selected && <Text style={[styles.stackCheck, { color: stack.color }]}>✓</Text>}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <View style={styles.pickerButtons}>
+              <Pressable onPress={handleStartPolish} style={styles.skipButton}>
+                <Text style={styles.skipButtonText}>
+                  {selectedStacks.length === 0 ? 'Skip — polish only' : 'Start'}
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => setShowStackPicker(false)} style={styles.cancelButton}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </Pressable>
             </View>
@@ -683,5 +758,35 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: '600',
     color: '#fff',
+  },
+  stackHint: {
+    fontSize: fontSizes.sm,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+  stackCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  stackIcon: {
+    fontSize: 20,
+    marginRight: spacing.sm,
+  },
+  stackInfo: { flex: 1 },
+  stackTitle: {
+    fontSize: fontSizes.md,
+    fontWeight: '500',
+    color: colors.textPrimary,
+  },
+  stackCheck: {
+    fontSize: fontSizes.lg,
+    fontWeight: '700',
+    marginLeft: spacing.sm,
   },
 });
