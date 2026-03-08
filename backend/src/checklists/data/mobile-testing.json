@@ -1,0 +1,419 @@
+{
+  "meta": {
+    "id": "mobile-testing",
+    "mode": "review",
+    "title": "Mobile Testing",
+    "shortTitle": "Mobile Tests",
+    "description": "Mobile testing with Detox, XCTest, Espresso, Appium, device testing, and accessibility",
+    "icon": "\ud83d\udcf1",
+    "totalItems": 25,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "mobile-testing.device-coverage",
+      "title": "Device & OS Coverage",
+      "items": [
+        {
+          "id": "mobile-testing.device-coverage.os-versions",
+          "text": "Are tests run on all supported OS versions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test on the minimum and latest supported iOS and Android versions. API behavior differs across versions.",
+            "whyItMatters": "Code that works on iOS 18 may crash on iOS 16. Android API differences across versions cause runtime crashes.",
+            "howToVerify": "Check CI configuration for OS version matrix. Verify the minimum supported version is included in the test matrix.",
+            "exampleComment": "Tests only run on iOS 18. The app supports iOS 16+. Add iOS 16 to the test matrix to catch compatibility issues.",
+            "codeExamples": [],
+            "keyTakeaway": "Test on minimum and latest OS versions. API differences cause version-specific crashes.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.device-coverage.screen-sizes",
+          "text": "Are tests run on multiple screen sizes (phone, tablet)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test on small phones (iPhone SE), large phones (iPhone Pro Max), and tablets (iPad). Layout breaks on extreme sizes.",
+            "whyItMatters": "A layout that looks perfect on iPhone 15 may overflow on iPhone SE or leave huge gaps on iPad.",
+            "howToVerify": "Check for screen size variety in the test matrix. Verify the smallest and largest supported screens are tested.",
+            "exampleComment": "Tests only run on iPhone 15 simulator. Add iPhone SE (smallest) and iPad (largest) to catch layout issues.",
+            "codeExamples": [],
+            "keyTakeaway": "Test on smallest and largest supported screens. Layout bugs hide at extreme sizes.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.device-coverage.real-devices",
+          "text": "Are critical flows tested on real devices (not just simulators)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Simulators don't replicate real device behavior: camera, GPS, push notifications, biometrics, and performance constraints.",
+            "whyItMatters": "Simulator tests miss real-device issues: slow GPS lock, camera permission prompts, push notification handling, memory limits.",
+            "howToVerify": "Check if any tests run on real devices or device farms (BrowserStack, Firebase Test Lab, AWS Device Farm).",
+            "exampleComment": "All tests run on simulators. Camera and push notification features are untested. Add real device tests for these flows.",
+            "codeExamples": [],
+            "keyTakeaway": "Use real devices for hardware features (camera, GPS, push). Simulators can't replicate them.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.device-coverage.orientation",
+          "text": "Are landscape and portrait orientations tested?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test the app in both portrait and landscape orientations. Verify layout adapts and content remains accessible.",
+            "whyItMatters": "Many apps break in landscape: text gets cut off, buttons become unreachable, or the layout collapses entirely.",
+            "howToVerify": "Check for orientation change tests. Verify key screens render correctly in both orientations.",
+            "exampleComment": "No landscape orientation tests. The form fields overflow in landscape mode. Add orientation change tests for key screens.",
+            "codeExamples": [],
+            "keyTakeaway": "Test both orientations. If landscape isn't supported, verify rotation is properly locked.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.device-coverage.dark-mode",
+          "text": "Are light mode and dark mode both tested?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test the app in both light and dark mode. Verify all text is readable, images have appropriate backgrounds, and colors adapt.",
+            "whyItMatters": "Dark mode with hardcoded black text on dark backgrounds makes content invisible. Users on dark mode see a broken app.",
+            "howToVerify": "Run visual tests in both light and dark mode. Check for hardcoded colors that don't adapt.",
+            "exampleComment": "Dark mode shows black text on a dark gray background — unreadable. Use semantic colors that adapt to the appearance mode.",
+            "codeExamples": [],
+            "keyTakeaway": "Test both appearance modes. Use semantic/dynamic colors that adapt automatically.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile-testing.interactions",
+      "title": "Gestures & Navigation",
+      "items": [
+        {
+          "id": "mobile-testing.interactions.gestures",
+          "text": "Are touch gestures tested (swipe, pinch, long press, drag)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test gesture interactions: swipe to delete, pinch to zoom, long press for context menu, drag to reorder.",
+            "whyItMatters": "Gesture handling bugs cause frustrating UX: swipe doesn't register, pinch zooms the wrong element, drag drops in wrong position.",
+            "howToVerify": "Check for gesture tests in E2E suite. Verify swipe, pinch, long press, and drag gestures are covered.",
+            "exampleComment": "Swipe-to-delete is implemented but has no test. Add a Detox test that swipes a list item and verifies deletion.",
+            "codeExamples": [],
+            "keyTakeaway": "Test all custom gestures. Gestures are hard to debug without automated tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.interactions.navigation-stack",
+          "text": "Is navigation tested (back button, deep links, tab switching)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test the full navigation stack: forward navigation, back button behavior, tab switching, and deep link handling.",
+            "whyItMatters": "Navigation bugs are the most common mobile crash cause. Back button showing wrong screen or deep links landing on blank screens.",
+            "howToVerify": "Check for navigation tests covering: forward, back, tab switch, deep link entry, and background-to-foreground.",
+            "exampleComment": "No test for back button after deep link entry. Users who open a notification deep link can't navigate back properly.",
+            "codeExamples": [],
+            "keyTakeaway": "Test the full navigation stack. Back button, deep links, and tab switching are common bug sources.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.interactions.deep-links",
+          "text": "Are deep links and universal links tested?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test that deep links open the correct screen with correct data. Test both cold start (app not running) and warm start (app in background).",
+            "whyItMatters": "Broken deep links from notifications, emails, or shared links frustrate users and break marketing campaigns.",
+            "howToVerify": "Test deep links in both cold and warm start. Verify the correct screen opens with correct data. Test invalid deep links.",
+            "exampleComment": "Deep link /order/123 works when app is open but shows a blank screen on cold start. Handle deep links in the app launch flow.",
+            "codeExamples": [],
+            "keyTakeaway": "Test deep links in cold and warm start. Handle invalid and expired deep links gracefully.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.interactions.keyboard",
+          "text": "Is keyboard interaction tested (show, hide, scroll, submit)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test that the keyboard doesn't obscure input fields, forms scroll when keyboard appears, and submit works via keyboard.",
+            "whyItMatters": "Keyboard covering the submit button is a classic mobile bug. Users can't complete forms if they can't see the button.",
+            "howToVerify": "Test form interactions with the keyboard visible. Verify scrolling, field focusing, and form submission work correctly.",
+            "exampleComment": "The submit button is hidden behind the keyboard on small screens. Add KeyboardAvoidingView and test the interaction.",
+            "codeExamples": [],
+            "keyTakeaway": "Test forms with the keyboard visible. The submit button must always be reachable.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.interactions.pull-to-refresh",
+          "text": "Are refresh mechanisms tested (pull-to-refresh, retry on error)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test pull-to-refresh functionality, retry buttons on error states, and automatic refresh after background-to-foreground.",
+            "whyItMatters": "Broken refresh means users see stale data. If retry doesn't work after a network error, users are stuck.",
+            "howToVerify": "Check for pull-to-refresh tests. Verify data refreshes correctly and loading states are shown during refresh.",
+            "exampleComment": "Pull-to-refresh on the order list doesn't update data from the server. Test that the API is called and new data appears.",
+            "codeExamples": [],
+            "keyTakeaway": "Test refresh mechanisms. Users rely on pull-to-refresh to see updated data.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile-testing.reliability",
+      "title": "Reliability & Edge Cases",
+      "items": [
+        {
+          "id": "mobile-testing.reliability.offline",
+          "text": "Is offline behavior tested (no network, slow network, network recovery)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test the app with no network, slow network (3G), and network recovery. Verify cached data is shown and actions queue for later.",
+            "whyItMatters": "Mobile users frequently lose connectivity: tunnels, elevators, airplane mode. The app must handle this gracefully.",
+            "howToVerify": "Test with airplane mode, simulated slow network, and network disconnection mid-request. Verify error UI and recovery.",
+            "exampleComment": "The app shows a blank screen when offline. Display cached data with an offline banner and queue writes for sync.",
+            "codeExamples": [],
+            "keyTakeaway": "Test offline thoroughly. Show cached data, queue actions, and recover gracefully when network returns.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.reliability.background-foreground",
+          "text": "Is app lifecycle tested (background, foreground, kill, restart)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test app behavior when backgrounded, foregrounded, killed by OS, and restarted. Verify state is preserved correctly.",
+            "whyItMatters": "Mobile OSes kill background apps to save memory. If state isn't persisted, users lose in-progress work.",
+            "howToVerify": "Test: fill a form, background the app, foreground it. Verify form data is preserved. Test with app kill and restart.",
+            "exampleComment": "Users filling out a long form lose all data when the app is backgrounded. Persist form state to survive background kills.",
+            "codeExamples": [],
+            "keyTakeaway": "Test background/foreground transitions. Persist important state to survive OS kills.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.reliability.permissions",
+          "text": "Are permission flows tested (grant, deny, revoke)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test what happens when users grant, deny, or later revoke permissions (camera, location, notifications, photos).",
+            "whyItMatters": "Crashing when a permission is denied is a common rejection reason in app store review. Handle all permission states.",
+            "howToVerify": "Test with: permission granted, permission denied, permission denied permanently, and permission revoked after granting.",
+            "exampleComment": "The app crashes when camera permission is denied. Show a helpful message explaining why the camera is needed.",
+            "codeExamples": [],
+            "keyTakeaway": "Handle all permission states gracefully. Never crash on denied permissions.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.reliability.memory-pressure",
+          "text": "Is the app tested under memory pressure?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test app behavior when the device is low on memory. Verify the app doesn't crash and recovers from memory warnings.",
+            "whyItMatters": "Low-memory conditions on older devices cause crashes. The OS sends memory warnings before killing the app.",
+            "howToVerify": "Simulate memory warnings in the simulator. Test with many apps open. Profile memory usage of key flows.",
+            "exampleComment": "The app uses 500MB for image caching without memory warning handling. Implement didReceiveMemoryWarning to clear caches.",
+            "codeExamples": [],
+            "keyTakeaway": "Handle memory warnings. Clear caches and non-essential data to survive low-memory conditions.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.reliability.interruptions",
+          "text": "Are interruptions tested (phone call, notification, screenshot)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test app behavior during interruptions: incoming call, notification banner, screenshot, screen recording, split screen.",
+            "whyItMatters": "An incoming call during a payment can leave the transaction in an inconsistent state. Interruptions are common.",
+            "howToVerify": "Test critical flows with interruptions. Verify the app resumes correctly after the interruption ends.",
+            "exampleComment": "A phone call during checkout leaves the payment in limbo. Implement proper state management to resume after interruptions.",
+            "codeExamples": [],
+            "keyTakeaway": "Test critical flows with interruptions. The app must resume gracefully.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile-testing.accessibility",
+      "title": "Accessibility Testing",
+      "items": [
+        {
+          "id": "mobile-testing.accessibility.screen-reader",
+          "text": "Is the app usable with VoiceOver/TalkBack?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "All interactive elements must have accessibility labels. Navigation with screen readers must reach all content.",
+            "whyItMatters": "Screen reader users can't use unlabeled buttons or images. This is both an accessibility requirement and often a legal one.",
+            "howToVerify": "Enable VoiceOver (iOS) or TalkBack (Android). Navigate through the app. Verify all elements are announced correctly.",
+            "exampleComment": "The submit button announces 'button' instead of 'Submit Order, button'. Add accessibilityLabel='Submit Order'.",
+            "codeExamples": [],
+            "keyTakeaway": "Test with VoiceOver/TalkBack. Every interactive element needs a meaningful accessibility label.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.accessibility.dynamic-type",
+          "text": "Does the app support Dynamic Type / font scaling?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test with the largest font size setting. Verify text scales, doesn't truncate, and the layout adapts without breaking.",
+            "whyItMatters": "Users with low vision rely on large text. If the app doesn't scale text, it's unusable for these users.",
+            "howToVerify": "Set the device to maximum text size. Navigate through the app. Check for truncation, overlapping, and broken layouts.",
+            "exampleComment": "At maximum Dynamic Type, button text overflows and is cut off. Use flexible layouts that accommodate large text.",
+            "codeExamples": [],
+            "keyTakeaway": "Test at maximum text size. Layouts must adapt to large Dynamic Type settings.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.accessibility.touch-targets",
+          "text": "Are touch targets large enough (44x44pt minimum)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "All tappable elements must have a minimum touch target of 44x44 points (Apple HIG) or 48x48dp (Material Design).",
+            "whyItMatters": "Small touch targets cause frustrating misclicks. Users with motor impairments can't use targets smaller than 44pt.",
+            "howToVerify": "Inspect touch target sizes in the layout inspector. Pay attention to icon buttons, close buttons, and links.",
+            "exampleComment": "This 24x24pt close button is too small. Add padding to make the touch target 44x44pt while keeping the visual size.",
+            "codeExamples": [],
+            "keyTakeaway": "Minimum 44x44pt touch targets. Use padding to increase hit area without changing visual size.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.accessibility.color-contrast",
+          "text": "Do colors meet accessibility contrast requirements?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Text must have 4.5:1 contrast ratio against its background (WCAG AA). Don't use color as the only indicator of state.",
+            "whyItMatters": "Low contrast text is unreadable for users with low vision and in outdoor conditions. Color-blind users miss color-only signals.",
+            "howToVerify": "Use accessibility audit tools. Check text on colored backgrounds. Verify error states use more than just red color.",
+            "exampleComment": "Error messages are indicated only by red text color. Color-blind users miss them. Add an error icon alongside the color.",
+            "codeExamples": [],
+            "keyTakeaway": "Meet contrast requirements. Don't rely on color alone to convey information.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.accessibility.reduce-motion",
+          "text": "Are animations reduced when 'Reduce Motion' is enabled?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When the user enables 'Reduce Motion' in system settings, animations should be disabled or simplified to cross-fades.",
+            "whyItMatters": "Animations cause motion sickness for users with vestibular disorders. This is an OS-level accessibility setting.",
+            "howToVerify": "Enable 'Reduce Motion' in device settings. Verify animations are disabled or simplified throughout the app.",
+            "exampleComment": "The page transition animation plays even with Reduce Motion enabled. Check UIAccessibility.isReduceMotionEnabled.",
+            "codeExamples": [],
+            "keyTakeaway": "Respect the Reduce Motion setting. Disable or simplify animations when enabled.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "mobile-testing.ci-infrastructure",
+      "title": "CI & Test Infrastructure",
+      "items": [
+        {
+          "id": "mobile-testing.ci-infrastructure.ci-simulators",
+          "text": "Are mobile tests running reliably in CI (not flaky)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Mobile E2E tests in CI should have >95% pass rate. Simulators/emulators need proper startup, timeout, and cleanup.",
+            "whyItMatters": "Flaky mobile tests in CI waste developer time. Every re-run costs 10-30 minutes of CI compute.",
+            "howToVerify": "Check CI pass rates for mobile tests. Identify flaky tests and fix root causes (timing, simulator state).",
+            "exampleComment": "Mobile E2E tests fail 20% of the time in CI due to simulator boot timing. Add a proper health check before test execution.",
+            "codeExamples": [],
+            "keyTakeaway": "Stabilize CI mobile tests. Add simulator health checks and proper wait conditions.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.ci-infrastructure.screenshot-tests",
+          "text": "Are screenshot/snapshot tests used for UI consistency?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use screenshot testing to catch visual regressions: pixel-level comparison of screens across OS versions and sizes.",
+            "whyItMatters": "Functional tests don't catch visual issues: misaligned elements, wrong fonts, broken layouts, theme inconsistencies.",
+            "howToVerify": "Check for screenshot test configuration. Verify critical screens have baseline screenshots.",
+            "exampleComment": "No screenshot tests for the checkout flow. Add snapshot tests for each step to catch visual regressions.",
+            "codeExamples": [],
+            "keyTakeaway": "Add screenshot tests for critical screens. Catch visual regressions that functional tests miss.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.ci-infrastructure.test-app-config",
+          "text": "Is there a proper test build configuration (not using production)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should run against a test build configuration with test API endpoints, disabled analytics, and test feature flags.",
+            "whyItMatters": "Running tests against production can corrupt real data, send real notifications, and trigger real payments.",
+            "howToVerify": "Check that the test scheme/flavor uses test API URLs. Verify analytics and third-party services are disabled in tests.",
+            "exampleComment": "E2E tests run against the production API. An accidental test order charged a real credit card. Use a test environment.",
+            "codeExamples": [],
+            "keyTakeaway": "Use a dedicated test build configuration. Never run tests against production.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.ci-infrastructure.test-artifacts",
+          "text": "Are failure artifacts captured (screenshots, logs, videos)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Capture screenshots, device logs, and video recordings when mobile tests fail. Upload as CI artifacts for debugging.",
+            "whyItMatters": "Mobile test failures are hard to reproduce locally. Screenshots and videos from CI show exactly what went wrong.",
+            "howToVerify": "Check CI configuration for artifact capture on failure. Verify screenshots and logs are uploaded.",
+            "exampleComment": "Mobile test failures have no artifacts. Enable Detox/XCTest screenshot capture and upload device logs as CI artifacts.",
+            "codeExamples": [],
+            "keyTakeaway": "Capture screenshots, videos, and logs on failure. Upload as CI artifacts.",
+            "references": []
+          }
+        },
+        {
+          "id": "mobile-testing.ci-infrastructure.test-speed",
+          "text": "Are mobile tests optimized for speed (parallel, selective)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Optimize mobile test execution: parallel test execution, selective test runs on PRs, full suite nightly.",
+            "whyItMatters": "Mobile E2E tests are slow (30+ minutes). Running all tests on every PR blocks developer productivity.",
+            "howToVerify": "Check test execution time. Verify parallel execution is configured. Check for selective test runs on PR changes.",
+            "exampleComment": "Full mobile test suite takes 45 minutes on every PR. Run smoke tests on PR (10 min), full suite nightly.",
+            "codeExamples": [],
+            "keyTakeaway": "Parallelize mobile tests. Run smoke tests on PR, full suite nightly.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

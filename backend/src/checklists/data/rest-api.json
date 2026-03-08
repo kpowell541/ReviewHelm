@@ -1,0 +1,618 @@
+{
+  "meta": {
+    "id": "rest-api",
+    "mode": "review",
+    "title": "REST API",
+    "shortTitle": "REST API",
+    "description": "Review checklist for REST API design, HTTP semantics, and endpoint review",
+    "icon": "\ud83d\udd0c",
+    "totalItems": 29,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "rest-api.url-design",
+      "title": "URL Design",
+      "items": [
+        {
+          "id": "rest-api.url-design.resource-naming",
+          "text": "Are URLs using plural nouns for resource names (not verbs)?",
+          "severity": "minor",
+          "tags": [
+            "design",
+            "naming"
+          ],
+          "baseContent": {
+            "whatItMeans": "REST URLs should name resources (nouns), not actions (verbs). Use HTTP methods for actions: GET /users, not GET /getUsers.",
+            "whyItMatters": "Verb-based URLs create inconsistency and redundancy. Every team invents different verbs. Resource-based URLs are predictable.",
+            "howToVerify": "Do URLs use nouns? Are they plural? Are there verb-based URLs like /createUser or /deleteItem?",
+            "exampleComment": "`POST /createOrder` should be `POST /orders`. The HTTP method already conveys the action.",
+            "codeExamples": [
+              {
+                "label": "Good URLs",
+                "language": "text",
+                "code": "GET    /users          # list\nPOST   /users          # create\nGET    /users/123      # get one\nPATCH  /users/123      # update\nDELETE /users/123      # delete\nGET    /users/123/orders  # nested resource"
+              }
+            ],
+            "keyTakeaway": "Use plural nouns for resources. Let HTTP methods express the action.",
+            "references": [
+              "https://restfulapi.net/resource-naming/"
+            ]
+          }
+        },
+        {
+          "id": "rest-api.url-design.consistent-path-structure",
+          "text": "Is the URL path structure consistent across endpoints?",
+          "severity": "minor",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "URL patterns should be consistent: `/users/{id}/orders` not sometimes `/user/{id}/order` and sometimes `/users/{userId}/orders-list`.",
+            "whyItMatters": "Inconsistent paths make the API hard to learn and integrate with. Developers constantly check the docs instead of guessing correctly.",
+            "howToVerify": "Are path segments consistently plural? Are ID parameter names consistent? Is nesting consistent?",
+            "exampleComment": "Some endpoints use `/user/{id}` and others use `/users/{userId}`. Standardize to `/users/{userId}` everywhere.",
+            "codeExamples": [],
+            "keyTakeaway": "Consistency matters more than any specific convention. Pick patterns and stick to them.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.url-design.query-params-for-filtering",
+          "text": "Are query parameters used for filtering, sorting, and pagination (not path segments)?",
+          "severity": "minor",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "Filtering, sorting, and pagination belong in query parameters, not path segments. Path segments identify resources.",
+            "whyItMatters": "Path segments like `/users/active/sorted-by-name/page/2` create an explosion of routes and aren't RESTful.",
+            "howToVerify": "Are filters in query params (`?status=active&sort=name`)? Or in the path (`/users/active`)?",
+            "exampleComment": "Move the filter from the path to a query parameter: `/users?status=active&sort=created_at&order=desc`.",
+            "codeExamples": [
+              {
+                "label": "Query params",
+                "language": "text",
+                "code": "GET /orders?status=active&sort=created_at&order=desc&page=2&per_page=20"
+              }
+            ],
+            "keyTakeaway": "Path segments = resource identity. Query parameters = filtering, sorting, pagination.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.url-design.api-versioning",
+          "text": "Is the API versioned appropriately?",
+          "severity": "minor",
+          "tags": [
+            "design",
+            "compatibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "APIs should be versioned to allow breaking changes without disrupting existing clients. Common approaches: URL path (/v1/), header, or query param.",
+            "whyItMatters": "Without versioning, any breaking change forces all clients to update simultaneously, which is often impossible.",
+            "howToVerify": "Is there a version in the URL or headers? Is the versioning strategy documented? Are there plans for the next version?",
+            "exampleComment": "This API has no versioning. Add `/v1/` prefix so breaking changes can be introduced in `/v2/` without disrupting existing clients.",
+            "codeExamples": [],
+            "keyTakeaway": "Version your API from day one. URL-based versioning (/v1/) is the most visible and easiest to implement.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.url-design.no-sensitive-data-in-urls",
+          "text": "Are sensitive data kept out of URLs (use headers or body)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "URLs appear in browser history, server logs, proxy logs, and Referer headers. Sensitive data in URLs is easily leaked.",
+            "whyItMatters": "API keys, tokens, passwords, and PII in URLs get logged everywhere, creating a security audit nightmare.",
+            "howToVerify": "Are there query parameters containing tokens, passwords, or PII? Should they be in headers or the request body instead?",
+            "exampleComment": "`/users?api_key=sk-abc123` leaks the API key in logs. Use the Authorization header instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Never put secrets or PII in URLs. Use Authorization headers for tokens, request bodies for sensitive data.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "rest-api.http-methods",
+      "title": "HTTP Methods & Status Codes",
+      "items": [
+        {
+          "id": "rest-api.http-methods.correct-http-method",
+          "text": "Is the correct HTTP method used for the operation?",
+          "severity": "major",
+          "tags": [
+            "http",
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "HTTP methods have defined semantics: GET=read, POST=create, PUT=replace, PATCH=partial update, DELETE=remove.",
+            "whyItMatters": "Using POST for everything loses the benefits of HTTP: caching (GET), idempotency (PUT/DELETE), and clear intent.",
+            "howToVerify": "Does the endpoint use the right method? Is GET used for reads (not modifications)? Is DELETE used for removal?",
+            "exampleComment": "This endpoint uses `POST /users/123/delete`. Use `DELETE /users/123` instead \u2014 the HTTP method conveys the intent.",
+            "codeExamples": [],
+            "keyTakeaway": "Use HTTP methods as designed. GET for reads, POST for creation, PUT/PATCH for updates, DELETE for removal.",
+            "references": [
+              "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods"
+            ]
+          }
+        },
+        {
+          "id": "rest-api.http-methods.correct-status-codes",
+          "text": "Are HTTP status codes used correctly and consistently?",
+          "severity": "major",
+          "tags": [
+            "http"
+          ],
+          "baseContent": {
+            "whatItMeans": "Status codes communicate the result: 200=OK, 201=Created, 204=No Content, 400=Bad Request, 404=Not Found, 409=Conflict, 500=Server Error.",
+            "whyItMatters": "Wrong status codes break client logic. Returning 200 for errors makes error handling impossible. Returning 500 for bad input hides bugs.",
+            "howToVerify": "Is 201 returned for creation? 204 for deletion? 404 for missing resources? 400 for validation errors? 409 for conflicts?",
+            "exampleComment": "This endpoint returns 200 for successful creation. Use 201 Created with a Location header pointing to the new resource.",
+            "codeExamples": [
+              {
+                "label": "Correct codes",
+                "language": "text",
+                "code": "POST /users \u2192 201 Created + Location: /users/456\nGET /users/999 \u2192 404 Not Found\nPATCH /users/123 (invalid) \u2192 400 Bad Request\nDELETE /users/123 \u2192 204 No Content\nPOST /users (duplicate email) \u2192 409 Conflict"
+              }
+            ],
+            "keyTakeaway": "Use status codes precisely. They're the API's primary error communication channel.",
+            "references": [
+              "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status"
+            ]
+          }
+        },
+        {
+          "id": "rest-api.http-methods.idempotent-operations",
+          "text": "Are PUT and DELETE idempotent?",
+          "severity": "major",
+          "tags": [
+            "http",
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "PUT and DELETE must be idempotent \u2014 calling them multiple times has the same effect as calling once. POST is not idempotent.",
+            "whyItMatters": "Non-idempotent DELETE means retrying a failed delete request could delete a different resource. Non-idempotent PUT corrupts data.",
+            "howToVerify": "Does calling DELETE twice on the same resource cause an error or side effect? Does PUT always produce the same result?",
+            "exampleComment": "DELETE /orders/123 returns 404 on the second call. It should return 204 (or 404 is acceptable) \u2014 the key is no side effects on retry.",
+            "codeExamples": [],
+            "keyTakeaway": "PUT and DELETE must be safe to retry. If a client retries, the result should be the same.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.http-methods.get-no-side-effects",
+          "text": "Do GET requests have no side effects?",
+          "severity": "blocker",
+          "tags": [
+            "http",
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "GET requests must be safe \u2014 they should not modify data. Web crawlers, preloaders, and caches assume GET is safe.",
+            "whyItMatters": "A GET request that modifies data gets triggered by crawlers, browser preloading, and link previews, causing unintended mutations.",
+            "howToVerify": "Does any GET endpoint modify data, create records, or trigger actions? These should be POST/PUT/PATCH/DELETE.",
+            "exampleComment": "`GET /orders/123/cancel` modifies data via a GET request. Use `POST /orders/123/cancel` instead.",
+            "codeExamples": [],
+            "keyTakeaway": "GET must never modify data. Browsers, crawlers, and CDNs assume it's safe to call GET at any time.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "rest-api.request-response",
+      "title": "Request & Response Design",
+      "items": [
+        {
+          "id": "rest-api.request-response.consistent-response-format",
+          "text": "Is the response format consistent across all endpoints?",
+          "severity": "minor",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "All endpoints should return the same response envelope. Whether it's `{ data, meta }` or direct objects, be consistent.",
+            "whyItMatters": "Inconsistent response formats force clients to write per-endpoint parsing logic, increasing complexity and bugs.",
+            "howToVerify": "Do all endpoints use the same response structure? Is there a standard envelope? Are list and single-item responses consistent?",
+            "exampleComment": "Some endpoints return `{ data: [...] }` and others return bare arrays. Standardize on one response envelope.",
+            "codeExamples": [
+              {
+                "label": "Consistent envelope",
+                "language": "json",
+                "code": "{\n  \"data\": { \"id\": \"123\", \"name\": \"Alice\" },\n  \"meta\": { \"requestId\": \"req-abc\" }\n}\n\n// List response:\n{\n  \"data\": [{ \"id\": \"123\" }, { \"id\": \"456\" }],\n  \"meta\": { \"total\": 100, \"page\": 1, \"perPage\": 20 }\n}"
+              }
+            ],
+            "keyTakeaway": "Pick a response format and use it everywhere. Consistency saves more time than cleverness.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.request-response.pagination-for-lists",
+          "text": "Are list endpoints paginated?",
+          "severity": "major",
+          "tags": [
+            "design",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "List endpoints must be paginated to prevent unbounded responses. Support page-based or cursor-based pagination.",
+            "whyItMatters": "An unpaginated endpoint returning 1M records crashes clients, exhausts server memory, and times out.",
+            "howToVerify": "Do list endpoints accept pagination parameters? Is there a default and maximum page size? Is total count available?",
+            "exampleComment": "The `GET /orders` endpoint returns all orders with no pagination. Add `?page=1&per_page=20` with a max of 100.",
+            "codeExamples": [
+              {
+                "label": "Pagination response",
+                "language": "json",
+                "code": "{\n  \"data\": [{...}, {...}],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 20,\n    \"total\": 1543,\n    \"totalPages\": 78\n  }\n}"
+              }
+            ],
+            "keyTakeaway": "Every list endpoint needs pagination. Default to 20 items, max 100. Include total count in metadata.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.request-response.filtering-and-sorting",
+          "text": "Are filtering and sorting parameters well-defined?",
+          "severity": "minor",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "List endpoints should support filtering by relevant fields and sorting with a clear syntax.",
+            "whyItMatters": "Without standardized filtering, clients request all data and filter client-side, wasting bandwidth and server resources.",
+            "howToVerify": "Are filterable fields documented? Is the sort syntax clear (e.g., `sort=created_at&order=desc`)? Are invalid filters rejected?",
+            "exampleComment": "Add filtering support: `GET /orders?status=active&created_after=2024-01-01&sort=-created_at` (prefix - for descending).",
+            "codeExamples": [],
+            "keyTakeaway": "Define filterable fields and sort syntax. Reject unknown filter fields with 400.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.request-response.content-type-headers",
+          "text": "Are Content-Type and Accept headers handled correctly?",
+          "severity": "minor",
+          "tags": [
+            "http"
+          ],
+          "baseContent": {
+            "whatItMeans": "Requests should specify Content-Type (what the body contains) and Accept (what the client wants). The server should respect both.",
+            "whyItMatters": "Ignoring Content-Type leads to parsing errors. Ignoring Accept means clients get unexpected formats.",
+            "howToVerify": "Does the server check Content-Type on POST/PUT/PATCH? Does it respect Accept headers? Does it return 415 for unsupported types?",
+            "exampleComment": "This endpoint accepts JSON but doesn't check Content-Type. A client sending XML gets a confusing parse error instead of 415.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate Content-Type on input. Respect Accept on output. Return 415/406 for unsupported types.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "rest-api.auth-security",
+      "title": "Authentication & Security",
+      "items": [
+        {
+          "id": "rest-api.auth-security.authentication-required",
+          "text": "Are all non-public endpoints authenticated?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "auth"
+          ],
+          "baseContent": {
+            "whatItMeans": "Endpoints that access user data or perform mutations must require authentication. Public endpoints should be explicitly marked.",
+            "whyItMatters": "An unauthenticated endpoint that exposes user data is a critical vulnerability. It's the most common API security issue.",
+            "howToVerify": "Is there an auth middleware? Are public endpoints explicitly opted out? Could any endpoint be accessed without a token?",
+            "exampleComment": "The `GET /users/{id}/profile` endpoint has no authentication check. Any unauthenticated request can read user profiles.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to authenticated. Explicitly opt out for public endpoints. Never forget auth on new routes.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.auth-security.authorization-checked",
+          "text": "Is authorization checked (not just authentication)?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "auth"
+          ],
+          "baseContent": {
+            "whatItMeans": "Authentication verifies identity. Authorization verifies the user has permission for the specific resource or action.",
+            "whyItMatters": "A user authenticated as Alice should not be able to access Bob's data. Missing authorization = data breach.",
+            "howToVerify": "After authentication, does the endpoint verify the user owns or has access to the requested resource?",
+            "exampleComment": "User A can access `GET /users/B/orders` \u2014 there's no check that the authenticated user matches the requested user ID.",
+            "codeExamples": [],
+            "keyTakeaway": "Always check: does THIS user have permission to access THIS resource? Authentication is not authorization.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.auth-security.cors-configured",
+          "text": "Is CORS configured correctly (not wildcard in production)?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "CORS (Cross-Origin Resource Sharing) controls which domains can call your API from a browser. Wildcard (*) allows any origin.",
+            "whyItMatters": "A permissive CORS policy lets malicious websites make authenticated requests to your API using the user's cookies.",
+            "howToVerify": "Is CORS configured? Is the origin whitelist specific? Are credentials allowed with a wildcard origin (which browsers block)?",
+            "exampleComment": "CORS is set to `*` (all origins) with credentials enabled. This is insecure \u2014 specify the allowed origins explicitly.",
+            "codeExamples": [],
+            "keyTakeaway": "Whitelist specific origins. Never use `*` with credentials. Restrict to your frontend domains.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.auth-security.rate-limiting",
+          "text": "Is rate limiting implemented?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Rate limiting prevents abuse, brute force attacks, and accidental DoS from buggy clients. Limits should vary by endpoint sensitivity.",
+            "whyItMatters": "Without rate limiting, an attacker can brute-force passwords, scrape all data, or overwhelm the server with requests.",
+            "howToVerify": "Are rate limits configured? Are they per-user or per-IP? Are sensitive endpoints (login, registration) more strictly limited?",
+            "exampleComment": "The login endpoint has no rate limiting. An attacker can brute-force passwords at thousands of attempts per second.",
+            "codeExamples": [
+              {
+                "label": "Rate limit headers",
+                "language": "text",
+                "code": "HTTP/1.1 429 Too Many Requests\nRetry-After: 60\nX-RateLimit-Limit: 100\nX-RateLimit-Remaining: 0\nX-RateLimit-Reset: 1704067200"
+              }
+            ],
+            "keyTakeaway": "Rate limit all endpoints. Stricter limits on auth endpoints. Return Retry-After headers.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.auth-security.input-validation",
+          "text": "Is all input validated and sanitized?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "All request input \u2014 body, query params, path params, headers \u2014 must be validated for type, format, length, and range.",
+            "whyItMatters": "Unvalidated input leads to injection attacks, crashes from unexpected types, and data corruption from invalid values.",
+            "howToVerify": "Is the request body validated against a schema? Are query params type-checked? Are string lengths limited?",
+            "exampleComment": "The `name` field accepts strings of unlimited length. Add a max length of 500 to prevent storage abuse.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate everything at the boundary. Trust nothing from the client.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "rest-api.error-handling",
+      "title": "Error Handling",
+      "items": [
+        {
+          "id": "rest-api.error-handling.consistent-error-format",
+          "text": "Is the error response format consistent and documented?",
+          "severity": "minor",
+          "tags": [
+            "errors"
+          ],
+          "baseContent": {
+            "whatItMeans": "Error responses should follow a consistent format with a machine-readable code, human-readable message, and optional details.",
+            "whyItMatters": "Inconsistent error formats make client error handling fragile. A standard format enables reusable error handling code.",
+            "howToVerify": "Do all errors return the same structure? Is there an error code, message, and details field?",
+            "exampleComment": "Some endpoints return `{ error: 'message' }` and others return `{ message: '...', code: '...' }`. Standardize the format.",
+            "codeExamples": [
+              {
+                "label": "Error format",
+                "language": "json",
+                "code": "{\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"Invalid request body\",\n    \"details\": [\n      { \"field\": \"email\", \"message\": \"Must be a valid email address\" }\n    ]\n  }\n}"
+              }
+            ],
+            "keyTakeaway": "Define one error format. Use it everywhere. Document it in the API reference.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.error-handling.no-stack-traces-in-errors",
+          "text": "Are stack traces and internal details excluded from error responses?",
+          "severity": "blocker",
+          "tags": [
+            "security",
+            "errors"
+          ],
+          "baseContent": {
+            "whatItMeans": "Production error responses must not include stack traces, SQL queries, file paths, or internal error messages.",
+            "whyItMatters": "Stack traces reveal framework versions, file structure, and internal logic \u2014 valuable information for attackers.",
+            "howToVerify": "Do 500 errors include stack traces? Are database error messages returned to the client? Are file paths leaked?",
+            "exampleComment": "This 500 response includes a full stack trace and the SQL query that failed. Log it server-side but return a generic error to the client.",
+            "codeExamples": [],
+            "keyTakeaway": "Log details server-side. Return generic errors to clients. Never expose internals.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.error-handling.validation-errors-specific",
+          "text": "Do validation errors specify which fields are invalid?",
+          "severity": "minor",
+          "tags": [
+            "errors"
+          ],
+          "baseContent": {
+            "whatItMeans": "Validation errors should list each invalid field with a specific error message so clients can display field-level errors.",
+            "whyItMatters": "A generic 'Invalid input' error forces users to guess what's wrong. Field-specific errors improve the user experience.",
+            "howToVerify": "Do validation errors name the field, explain the constraint, and provide actionable guidance?",
+            "exampleComment": "This returns `400 Bad Request` with no details. Return field-specific validation errors.",
+            "codeExamples": [],
+            "keyTakeaway": "Validation errors should be specific: which field, what's wrong, what's expected.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.error-handling.error-codes-documented",
+          "text": "Are error codes documented in the API reference?",
+          "severity": "nit",
+          "tags": [
+            "errors",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "API error codes should be documented so client developers know what errors to expect and how to handle them.",
+            "whyItMatters": "Undocumented error codes require client developers to discover them through trial and error, slowing integration.",
+            "howToVerify": "Is there a list of error codes in the API docs? Does each endpoint document its possible error responses?",
+            "exampleComment": "Document the error codes this endpoint can return: VALIDATION_ERROR, NOT_FOUND, CONFLICT, RATE_LIMITED.",
+            "codeExamples": [],
+            "keyTakeaway": "Document every error code. Client developers shouldn't discover errors in production.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "rest-api.documentation",
+      "title": "Documentation",
+      "items": [
+        {
+          "id": "rest-api.documentation.openapi-spec",
+          "text": "Is there an OpenAPI/Swagger specification?",
+          "severity": "minor",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "An OpenAPI specification provides machine-readable API documentation that enables code generation, testing tools, and interactive docs.",
+            "whyItMatters": "Without an OpenAPI spec, documentation is manual and quickly outdated. Tools can't auto-generate clients or validate requests.",
+            "howToVerify": "Is there an openapi.yaml or swagger.json? Is it generated from code or manually maintained? Is it up to date?",
+            "exampleComment": "Add an OpenAPI spec for this new endpoint so it appears in the API docs and can be used for client code generation.",
+            "codeExamples": [],
+            "keyTakeaway": "Maintain an OpenAPI spec. Generate it from code if possible. Validate it in CI.",
+            "references": [
+              "https://swagger.io/specification/"
+            ]
+          }
+        },
+        {
+          "id": "rest-api.documentation.endpoint-examples",
+          "text": "Are request/response examples provided for each endpoint?",
+          "severity": "nit",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "Examples help developers understand the API faster than reading schemas. Real-world examples with actual data are most useful.",
+            "whyItMatters": "Without examples, developers must construct requests by reading the schema, which is slower and more error-prone.",
+            "howToVerify": "Does the OpenAPI spec include example requests and responses? Are edge cases documented?",
+            "exampleComment": "Add a request/response example for this endpoint. Include both a successful response and a common error case.",
+            "codeExamples": [],
+            "keyTakeaway": "Examples are worth more than schemas. Show real requests and responses for common use cases.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.documentation.changelog-maintained",
+          "text": "Are API changes documented in a changelog?",
+          "severity": "nit",
+          "tags": [
+            "documentation",
+            "compatibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "API changes should be tracked in a changelog so consumers know what changed, what's new, and what's deprecated.",
+            "whyItMatters": "Without a changelog, API consumers must diff the OpenAPI spec or discover changes through broken integrations.",
+            "howToVerify": "Is there an API changelog? Does it include this change? Are breaking changes clearly marked?",
+            "exampleComment": "Add this new endpoint to the API changelog with the release version.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep a changelog. Note new endpoints, breaking changes, and deprecations.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "rest-api.performance",
+      "title": "Performance",
+      "items": [
+        {
+          "id": "rest-api.performance.caching-headers",
+          "text": "Are appropriate caching headers set?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "http"
+          ],
+          "baseContent": {
+            "whatItMeans": "Cache-Control, ETag, and Last-Modified headers enable client-side and CDN caching, reducing server load and latency.",
+            "whyItMatters": "Without caching headers, every request hits the server. Static or slowly-changing data wastes bandwidth and server resources.",
+            "howToVerify": "Are Cache-Control headers set for cacheable responses? Are ETags used for conditional requests?",
+            "exampleComment": "The product catalog endpoint is called 1000x/minute but has no caching headers. Add `Cache-Control: public, max-age=300` for 5-minute caching.",
+            "codeExamples": [
+              {
+                "label": "Caching headers",
+                "language": "text",
+                "code": "HTTP/1.1 200 OK\nCache-Control: public, max-age=300\nETag: \"abc123\"\nLast-Modified: Sat, 01 Jan 2024 00:00:00 GMT"
+              }
+            ],
+            "keyTakeaway": "Set Cache-Control for cacheable data. Use ETags for efficient conditional requests.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.performance.compression-enabled",
+          "text": "Is response compression (gzip/brotli) enabled?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Compressing JSON responses with gzip or brotli typically reduces payload size by 70-90%, improving latency and bandwidth usage.",
+            "whyItMatters": "Large JSON responses sent uncompressed waste bandwidth and increase latency, especially on mobile networks.",
+            "howToVerify": "Is compression middleware configured? Does the server respect Accept-Encoding? Are large responses being compressed?",
+            "exampleComment": "JSON responses are sent uncompressed. Enable gzip compression \u2014 it typically reduces a 100KB response to 15KB.",
+            "codeExamples": [],
+            "keyTakeaway": "Enable gzip/brotli compression for all JSON responses. It's a free performance win.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.performance.batch-endpoint",
+          "text": "Is there a batch endpoint for operations commonly done in sequence?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "When clients commonly make multiple related requests, a batch endpoint reduces round trips and improves performance.",
+            "whyItMatters": "10 sequential API calls add up to 10x the latency. A batch endpoint does the same work in one round trip.",
+            "howToVerify": "Does the client make multiple related requests that could be batched? Would a bulk create/update endpoint help?",
+            "exampleComment": "The client creates 20 line items one at a time. Add a `POST /orders/{id}/items/batch` endpoint that accepts an array.",
+            "codeExamples": [],
+            "keyTakeaway": "Provide batch endpoints for operations that clients commonly do in loops.",
+            "references": ""
+          }
+        },
+        {
+          "id": "rest-api.performance.response-size-appropriate",
+          "text": "Are responses sized appropriately (no over-fetching)?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "API responses should return only the data clients need. Sparse fieldsets or different detail levels prevent over-fetching.",
+            "whyItMatters": "Returning 50 fields when the client needs 5 wastes bandwidth, especially on mobile. Large responses also slow JSON parsing.",
+            "howToVerify": "Does the response include fields the client doesn't need? Would a `?fields=id,name,email` parameter help?",
+            "exampleComment": "The list endpoint returns full objects with all nested relationships. Add a compact list representation or support sparse fieldsets.",
+            "codeExamples": [],
+            "keyTakeaway": "Return appropriate detail levels. List endpoints should be lean. Detail endpoints can be full.",
+            "references": ""
+          }
+        }
+      ]
+    }
+  ]
+}

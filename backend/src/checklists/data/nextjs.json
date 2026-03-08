@@ -1,0 +1,388 @@
+{
+  "meta": {
+    "id": "nextjs",
+    "mode": "review",
+    "title": "Next.js",
+    "shortTitle": "Next.js",
+    "description": "Next.js applications with App Router, server components, and data fetching",
+    "icon": "▲",
+    "totalItems": 22,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "nextjs.routing",
+      "title": "Routing & Layout",
+      "items": [
+        {
+          "id": "nextjs.routing.app-router-conventions",
+          "text": "Do files follow App Router conventions (page.tsx, layout.tsx, loading.tsx, error.tsx)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Next.js App Router uses file-system conventions for routing. Special files like page.tsx, layout.tsx, loading.tsx, error.tsx, and not-found.tsx have specific roles.",
+            "whyItMatters": "Misnamed files won't be recognized by Next.js. A component in the wrong file won't render as a page or layout.",
+            "howToVerify": "Check that route segments use the correct file names. Verify layouts wrap their children properly and don't re-render unnecessarily.",
+            "exampleComment": "This component is named page.ts but should be page.tsx since it returns JSX. Next.js won't recognize it without the correct extension.",
+            "codeExamples": [],
+            "keyTakeaway": "Follow App Router file conventions exactly. Use layout.tsx for shared UI and loading.tsx for suspense boundaries.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.routing.dynamic-routes",
+          "text": "Are dynamic route segments properly typed and validated?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Dynamic routes like [id] or [...slug] receive params that should be validated before use. Params are always strings.",
+            "whyItMatters": "Unvalidated route params can cause runtime errors or security issues. Passing a string where a number is expected silently breaks logic.",
+            "howToVerify": "Check that dynamic params are validated (parsed as numbers, checked against allowed values, etc.) before being used in queries or rendering.",
+            "exampleComment": "params.id is used directly in a database query without validation. Parse and validate it first.",
+            "codeExamples": [],
+            "keyTakeaway": "Always validate dynamic route params. They are strings by default and need explicit parsing.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.routing.metadata",
+          "text": "Is page metadata (title, description, og tags) properly defined?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each page should export a metadata object or generateMetadata function for SEO and social sharing.",
+            "whyItMatters": "Missing metadata hurts SEO rankings and makes shared links look unprofessional without proper titles and descriptions.",
+            "howToVerify": "Check that pages export metadata or generateMetadata. Verify dynamic pages generate contextual metadata, not static defaults.",
+            "exampleComment": "This product page uses the default metadata. Export generateMetadata to set the title and description from the product data.",
+            "codeExamples": [],
+            "keyTakeaway": "Define metadata for every page. Use generateMetadata for dynamic content.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.routing.parallel-intercepting",
+          "text": "Are parallel and intercepting routes used appropriately?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Parallel routes (@folder) render multiple pages simultaneously. Intercepting routes ((.)) show routes in modals while preserving context.",
+            "whyItMatters": "Misuse of these patterns creates confusing navigation. Overuse adds complexity without benefit.",
+            "howToVerify": "Check that parallel routes have matching default.tsx files. Verify intercepting routes handle both modal and direct-navigation cases.",
+            "exampleComment": "This intercepting route works as a modal but breaks when navigated to directly. Add a full-page version at the original route.",
+            "codeExamples": [],
+            "keyTakeaway": "Use parallel and intercepting routes sparingly. Always handle the direct-navigation fallback.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nextjs.server-client",
+      "title": "Server & Client Components",
+      "items": [
+        {
+          "id": "nextjs.server-client.use-client-boundary",
+          "text": "Is 'use client' only added where actually needed?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Components are server components by default. 'use client' should only be added when the component uses hooks, event handlers, or browser APIs.",
+            "whyItMatters": "Unnecessary 'use client' increases the client bundle size and prevents server-side optimizations like streaming and direct data access.",
+            "howToVerify": "Check if the component actually uses useState, useEffect, onClick, or browser APIs. If not, 'use client' is unnecessary.",
+            "exampleComment": "This component only renders props — it doesn't use any client features. Remove 'use client' to keep it as a server component.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to server components. Only add 'use client' when the component genuinely needs client-side interactivity.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.server-client.composition",
+          "text": "Are server and client components composed correctly (client wrapping server via children)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Server components cannot be imported into client components directly. Pass server components as children or props to client components instead.",
+            "whyItMatters": "Importing a server component into a client component silently converts it to a client component, losing all server-side benefits.",
+            "howToVerify": "Check that client components receive server components via children/props rather than importing them directly.",
+            "exampleComment": "This client component imports ServerData directly. Pass it as children instead: <ClientWrapper><ServerData /></ClientWrapper>.",
+            "codeExamples": [],
+            "keyTakeaway": "Compose server components into client components via children props, never via direct imports.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.server-client.serialization",
+          "text": "Are props passed from server to client components serializable?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Props crossing the server-client boundary must be JSON-serializable. Functions, Dates, Maps, Sets, and class instances cannot be passed.",
+            "whyItMatters": "Non-serializable props cause runtime errors. Functions silently disappear, Dates become strings, and class instances lose their methods.",
+            "howToVerify": "Check props passed from server to client components. Ensure no functions, Dates, or complex objects cross the boundary.",
+            "exampleComment": "You're passing a Date object to a client component. Convert it to an ISO string and parse it on the client side.",
+            "codeExamples": [],
+            "keyTakeaway": "Only pass JSON-serializable data across the server-client boundary.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.server-client.no-secrets-client",
+          "text": "Are server-only secrets and API keys kept out of client components?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Environment variables without NEXT_PUBLIC_ prefix are server-only. Database connections, API keys, and secrets must never be used in client components.",
+            "whyItMatters": "Secrets used in client components are exposed in the browser bundle, visible to anyone inspecting the page source.",
+            "howToVerify": "Check client components for direct use of process.env variables (without NEXT_PUBLIC_), database clients, or secret keys.",
+            "exampleComment": "This client component references process.env.DATABASE_URL. Move this logic to a server component or API route.",
+            "codeExamples": [],
+            "keyTakeaway": "Never access secrets in client components. Use server components, server actions, or API routes instead.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nextjs.data-fetching",
+      "title": "Data Fetching & Caching",
+      "items": [
+        {
+          "id": "nextjs.data-fetching.server-fetch",
+          "text": "Is data fetched in server components where possible (instead of client-side useEffect)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Server components can fetch data directly using async/await. This is faster and more secure than client-side fetching with useEffect.",
+            "whyItMatters": "Client-side fetching causes waterfalls, loading spinners, and exposes API endpoints. Server-side fetching sends ready HTML.",
+            "howToVerify": "Check for useEffect + fetch patterns that could be replaced by server component data fetching.",
+            "exampleComment": "This page fetches data in useEffect. Since this is a server component, fetch the data directly with async/await at the top level.",
+            "codeExamples": [],
+            "keyTakeaway": "Fetch data in server components. Reserve client-side fetching for real-time updates and user-triggered actions.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.data-fetching.cache-revalidation",
+          "text": "Are caching and revalidation strategies appropriate?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Next.js caches fetch requests by default. Use revalidate options (time-based or on-demand) to control freshness.",
+            "whyItMatters": "Over-caching shows stale data. Under-caching wastes resources and slows pages. Incorrect revalidation causes confusing behavior.",
+            "howToVerify": "Check fetch calls for cache/revalidate options. Verify dynamic data uses appropriate revalidation and static data is cached.",
+            "exampleComment": "This product price is cached indefinitely but prices change daily. Add { next: { revalidate: 3600 } } to refresh hourly.",
+            "codeExamples": [],
+            "keyTakeaway": "Choose caching strategies based on data freshness requirements. Use revalidateTag for on-demand invalidation.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.data-fetching.loading-error-states",
+          "text": "Are loading and error states handled with loading.tsx and error.tsx?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "App Router provides loading.tsx for Suspense boundaries and error.tsx for error boundaries at the route segment level.",
+            "whyItMatters": "Without loading states, users see blank pages during data fetching. Without error boundaries, errors crash the entire page.",
+            "howToVerify": "Check that route segments with async data have loading.tsx files. Verify error.tsx exists for routes that can fail.",
+            "exampleComment": "This route fetches data but has no loading.tsx. Users see a blank page while data loads. Add a loading skeleton.",
+            "codeExamples": [],
+            "keyTakeaway": "Add loading.tsx and error.tsx at appropriate route segments. Use Suspense for granular loading states.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.data-fetching.server-actions",
+          "text": "Are server actions used correctly for mutations?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Server actions ('use server') handle form submissions and mutations. They should validate input, handle errors, and revalidate affected data.",
+            "whyItMatters": "Server actions without validation are vulnerable to injection. Missing revalidation leaves stale data after mutations.",
+            "howToVerify": "Check that server actions validate all inputs, handle errors gracefully, and call revalidatePath/revalidateTag after mutations.",
+            "exampleComment": "This server action doesn't validate the form data before inserting into the database. Add input validation with zod or similar.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate inputs in server actions. Always revalidate affected cache entries after mutations.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.data-fetching.waterfall",
+          "text": "Are parallel data fetches used to avoid request waterfalls?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Sequential awaits create waterfalls. Use Promise.all() for independent fetches or fetch in parallel components with Suspense.",
+            "whyItMatters": "Sequential fetches add up latency. Three 200ms fetches in sequence take 600ms, but 200ms in parallel.",
+            "howToVerify": "Look for sequential await statements where fetches don't depend on each other. Check for opportunities to parallelize.",
+            "exampleComment": "These two fetches are independent but awaited sequentially. Use Promise.all([fetchUser(), fetchPosts()]) to run them in parallel.",
+            "codeExamples": [],
+            "keyTakeaway": "Parallelize independent data fetches with Promise.all or parallel Suspense boundaries.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nextjs.performance",
+      "title": "Performance & Optimization",
+      "items": [
+        {
+          "id": "nextjs.performance.image-optimization",
+          "text": "Are images using next/image for automatic optimization?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The next/image component provides automatic image optimization, lazy loading, and responsive sizing.",
+            "whyItMatters": "Unoptimized images are the biggest cause of slow pages. next/image reduces image size by 50-80% automatically.",
+            "howToVerify": "Check for raw <img> tags that should use <Image> from next/image. Verify width/height or fill props are set to prevent layout shift.",
+            "exampleComment": "This uses a raw <img> tag for a hero image. Use next/image with priority prop for above-the-fold images.",
+            "codeExamples": [],
+            "keyTakeaway": "Use next/image for all images. Set priority on above-the-fold images.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.performance.dynamic-imports",
+          "text": "Are heavy client components lazy-loaded with next/dynamic?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Large client components (charts, editors, maps) should be loaded with next/dynamic to reduce initial bundle size.",
+            "whyItMatters": "Loading a 500KB charting library on every page visit wastes bandwidth and delays interactivity.",
+            "howToVerify": "Check for large client-side dependencies imported at the top level. Consider if they could be dynamically imported.",
+            "exampleComment": "This page imports a 300KB rich text editor at the top level. Use next/dynamic with { ssr: false } to lazy-load it.",
+            "codeExamples": [],
+            "keyTakeaway": "Lazy-load heavy client components. Use next/dynamic for components that aren't needed immediately.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.performance.static-dynamic",
+          "text": "Are pages statically generated where possible?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Pages without dynamic data should be statically generated at build time. Use generateStaticParams for dynamic routes with known paths.",
+            "whyItMatters": "Static pages are served from CDN with near-zero latency. Dynamic rendering adds server processing time on every request.",
+            "howToVerify": "Check if pages use cookies(), headers(), or searchParams unnecessarily, which force dynamic rendering.",
+            "exampleComment": "This page reads cookies() but doesn't use them. Remove the cookies() call to allow static generation.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to static generation. Only use dynamic rendering when the page truly depends on request-time data.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nextjs.middleware-api",
+      "title": "Middleware & API Routes",
+      "items": [
+        {
+          "id": "nextjs.middleware-api.middleware-scope",
+          "text": "Is middleware scoped correctly with matchers?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Middleware runs on every request by default. Use config.matcher to limit it to specific routes.",
+            "whyItMatters": "Unscoped middleware adds latency to every request including static assets, API calls, and images.",
+            "howToVerify": "Check if middleware.ts has a matcher config. Verify it doesn't run on _next/static, _next/image, or favicon.ico.",
+            "exampleComment": "This middleware runs on every request including static files. Add a matcher to limit it to protected routes.",
+            "codeExamples": [],
+            "keyTakeaway": "Always scope middleware with matchers. Exclude static assets and public routes.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.middleware-api.route-handlers",
+          "text": "Do API route handlers validate input and return proper status codes?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Route handlers (route.ts) should validate request bodies, return appropriate HTTP status codes, and handle errors.",
+            "whyItMatters": "Missing validation leads to security vulnerabilities. Wrong status codes break client error handling and caching.",
+            "howToVerify": "Check that route handlers validate input, use correct HTTP methods (GET, POST, etc.), and return proper status codes.",
+            "exampleComment": "This POST handler doesn't validate the request body. Add schema validation and return 400 for invalid input.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate all inputs in route handlers. Return semantically correct HTTP status codes.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.middleware-api.edge-runtime",
+          "text": "Is edge runtime used only when beneficial and compatible?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Edge runtime provides lower latency but has limitations (no Node.js APIs, limited npm packages, smaller memory).",
+            "whyItMatters": "Using edge runtime with incompatible dependencies causes build failures or runtime errors. Using it unnecessarily adds complexity.",
+            "howToVerify": "Check for export const runtime = 'edge'. Verify the route doesn't use Node.js-only APIs like fs, crypto, or incompatible npm packages.",
+            "exampleComment": "This route handler uses edge runtime but imports bcrypt which requires Node.js. Remove the edge runtime or use a Web Crypto alternative.",
+            "codeExamples": [],
+            "keyTakeaway": "Use edge runtime for simple, latency-sensitive routes. Stick with Node.js runtime for complex logic.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nextjs.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "nextjs.security.csrf",
+          "text": "Are server actions and API routes protected against CSRF?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Server actions have built-in CSRF protection, but custom API routes may need explicit protection. Verify Origin headers are checked.",
+            "whyItMatters": "CSRF attacks can trick authenticated users into performing unwanted actions like changing passwords or transferring funds.",
+            "howToVerify": "Check that API routes verify Origin or Referer headers. Server actions are protected by default but verify custom fetch-based mutations.",
+            "exampleComment": "This API route accepts POST requests without CSRF protection. Verify the Origin header matches your domain.",
+            "codeExamples": [],
+            "keyTakeaway": "Use server actions (built-in CSRF protection) for mutations. Add explicit CSRF checks to custom API routes.",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.security.auth-middleware",
+          "text": "Is authentication checked in middleware AND in server components/actions?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Middleware can redirect unauthenticated users, but server components and actions should also verify authentication. Defense in depth.",
+            "whyItMatters": "Middleware alone can be bypassed. Server-side auth checks prevent unauthorized data access even if middleware is misconfigured.",
+            "howToVerify": "Check that server components fetching protected data verify the session. Check that server actions verify the user before mutations.",
+            "exampleComment": "This server action modifies user data but doesn't verify the session. Add auth check even though middleware protects the route.",
+            "codeExamples": [],
+            "keyTakeaway": "Check auth in both middleware (for redirects) and server components/actions (for data protection).",
+            "references": []
+          }
+        },
+        {
+          "id": "nextjs.security.xss-dangerously",
+          "text": "Is dangerouslySetInnerHTML avoided or properly sanitized?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "dangerouslySetInnerHTML renders raw HTML and bypasses React's XSS protection. If used, the HTML must be sanitized.",
+            "whyItMatters": "Unsanitized HTML from user input or external sources enables XSS attacks that can steal sessions and credentials.",
+            "howToVerify": "Search for dangerouslySetInnerHTML. Verify the HTML source is trusted or sanitized with a library like DOMPurify.",
+            "exampleComment": "This renders user-submitted HTML with dangerouslySetInnerHTML. Sanitize it with DOMPurify first.",
+            "codeExamples": [],
+            "keyTakeaway": "Avoid dangerouslySetInnerHTML. If necessary, always sanitize the HTML first.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,478 @@
+{
+  "meta": {
+    "id": "sql-migrations",
+    "mode": "review",
+    "title": "SQL & Database Migrations",
+    "shortTitle": "SQL/Migrations",
+    "description": "Review checklist for SQL queries, schema changes, and database migrations",
+    "icon": "🗄️",
+    "totalItems": 28,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "sql-migrations.schema-design",
+      "title": "Schema Design",
+      "items": [
+        {
+          "id": "sql-migrations.schema-design.naming-conventions",
+          "text": "Do table and column names follow consistent naming conventions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tables and columns should use consistent naming: snake_case or camelCase, singular or plural table names, and descriptive column names.",
+            "whyItMatters": "Inconsistent naming makes queries harder to write and causes confusion about which table or column to use.",
+            "howToVerify": "Check that new tables and columns follow the existing project conventions. Look for abbreviations, inconsistent pluralization, or unclear names.",
+            "exampleComment": "This table uses camelCase but the rest of the schema uses snake_case. Please rename to match conventions.",
+            "codeExamples": [],
+            "keyTakeaway": "Follow the established naming conventions. Consistency matters more than any specific style.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.schema-design.appropriate-types",
+          "text": "Are column data types appropriate for the data being stored?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Columns should use the most appropriate type: UUID for IDs, TIMESTAMPTZ for timestamps, NUMERIC for money, TEXT vs VARCHAR, BOOLEAN instead of integer flags.",
+            "whyItMatters": "Wrong data types waste storage, lose precision (especially with money/timestamps), or prevent proper validation at the database level.",
+            "howToVerify": "Check each column type against the data it will store. Watch for VARCHAR(255) used as a default, FLOAT for money, or TIMESTAMP without timezone.",
+            "exampleComment": "This price column uses FLOAT. Use NUMERIC(10,2) instead to avoid floating-point precision errors with currency.",
+            "codeExamples": [],
+            "keyTakeaway": "Choose data types deliberately. The database should enforce data integrity at the type level.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.schema-design.primary-keys",
+          "text": "Do all tables have appropriate primary keys?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every table should have a primary key. Consider UUID vs serial/BIGSERIAL vs natural keys based on your use case.",
+            "whyItMatters": "Missing primary keys prevent proper row identification, break ORM usage, and make joins unreliable.",
+            "howToVerify": "Check that each new table defines a PRIMARY KEY. Verify the key type matches the project standard (UUID, serial, etc.).",
+            "exampleComment": "This table has no primary key defined. Add an id column or define a composite primary key.",
+            "codeExamples": [],
+            "keyTakeaway": "Every table needs a primary key. Use UUIDs for distributed systems, serial for simple applications.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.schema-design.foreign-keys",
+          "text": "Are foreign key constraints defined for relationships?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Columns referencing other tables should have FOREIGN KEY constraints with appropriate ON DELETE/ON UPDATE actions.",
+            "whyItMatters": "Without foreign keys, the database cannot enforce referential integrity, leading to orphaned rows and inconsistent data.",
+            "howToVerify": "Check columns that reference other tables (user_id, order_id, etc.). Verify they have REFERENCES constraints and appropriate cascade behavior.",
+            "exampleComment": "user_id references users(id) but has no ON DELETE action. Add ON DELETE CASCADE or ON DELETE SET NULL depending on requirements.",
+            "codeExamples": [],
+            "keyTakeaway": "Define foreign keys for all relationships. Specify ON DELETE behavior explicitly.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.schema-design.not-null",
+          "text": "Are NOT NULL constraints used where appropriate?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Columns that should always have a value should be marked NOT NULL. Default to NOT NULL and only allow NULL when it has a meaningful semantic purpose.",
+            "whyItMatters": "Nullable columns complicate queries (three-value logic), create bugs when NULL is unexpected, and make application code more complex.",
+            "howToVerify": "Review each new column. If it should always have a value, ensure it has NOT NULL. Check for columns that could use DEFAULT values instead of allowing NULL.",
+            "exampleComment": "created_at should be NOT NULL DEFAULT NOW(). There's no valid case for a row without a creation timestamp.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to NOT NULL. Only allow NULL when absence of a value is semantically meaningful.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.schema-design.normalization",
+          "text": "Is the schema appropriately normalized (or intentionally denormalized)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tables should generally be in 3NF. Denormalization should be intentional and documented, usually for performance reasons.",
+            "whyItMatters": "Under-normalized schemas lead to update anomalies and inconsistent data. Over-normalized schemas cause excessive joins and poor performance.",
+            "howToVerify": "Check for repeated data across tables, composite columns that should be split, or excessive normalization that requires many joins for simple queries.",
+            "exampleComment": "The user's email is stored in both the users table and the orders table. Consider normalizing to avoid stale data.",
+            "codeExamples": [],
+            "keyTakeaway": "Normalize by default. Denormalize intentionally with a documented reason.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "sql-migrations.migrations",
+      "title": "Migration Safety",
+      "items": [
+        {
+          "id": "sql-migrations.migrations.reversible",
+          "text": "Is the migration reversible with a down/rollback?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Migrations should include a rollback (down) migration that undoes the change. Destructive migrations should be carefully considered.",
+            "whyItMatters": "Without rollback capability, a failed deployment may leave the database in a broken state with no easy recovery path.",
+            "howToVerify": "Check for a corresponding down migration. Verify it actually reverses the up migration correctly.",
+            "exampleComment": "This migration adds a column but has no down migration. Add ALTER TABLE ... DROP COLUMN in the rollback.",
+            "codeExamples": [],
+            "keyTakeaway": "Always write a down migration. If the change is truly irreversible, document why.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.migrations.backwards-compatible",
+          "text": "Is the migration backwards-compatible with the current running code?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "During deployment, old code runs against the new schema. Migrations must not break queries from the currently deployed version.",
+            "whyItMatters": "In zero-downtime deployments, there is a window where old code runs against the new schema. Breaking changes cause outages.",
+            "howToVerify": "Consider what happens if the current production code runs against this new schema. Will existing SELECTs, INSERTs, UPDATEs still work?",
+            "exampleComment": "Renaming this column will break the current production code. Use a multi-step migration: add new column, backfill, deploy code, drop old column.",
+            "codeExamples": [],
+            "keyTakeaway": "Migrations must be compatible with the currently deployed code. Use expand-contract for breaking changes.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.migrations.no-lock-tables",
+          "text": "Will the migration avoid locking tables for extended periods?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Some DDL operations acquire exclusive locks that block all reads and writes. On large tables, this can cause minutes of downtime.",
+            "whyItMatters": "A locked table means the application cannot read or write that data, causing request timeouts and potential cascading failures.",
+            "howToVerify": "Check for ALTER TABLE on large tables. Adding a column with a DEFAULT, creating an index without CONCURRENTLY, or changing a column type can all lock the table.",
+            "exampleComment": "CREATE INDEX on a 50M row table will lock it. Use CREATE INDEX CONCURRENTLY instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use CONCURRENTLY for indexes on large tables. Avoid adding columns with defaults on large tables in older PostgreSQL versions.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.migrations.data-migration",
+          "text": "Are data migrations separated from schema migrations?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Schema changes (DDL) and data changes (DML) should be in separate migrations. Data migrations should be idempotent.",
+            "whyItMatters": "Mixing DDL and DML in one transaction can cause long locks. Separate migrations are easier to debug, rollback, and retry.",
+            "howToVerify": "Check if the migration mixes CREATE/ALTER TABLE with UPDATE/INSERT statements. These should be separate migration files.",
+            "exampleComment": "This migration adds a column and backfills data in the same step. Split into two migrations: one for schema, one for data.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep schema and data migrations separate. Data migrations should be idempotent and safe to re-run.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.migrations.idempotent",
+          "text": "Is the migration safe to run multiple times?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Migrations should use IF NOT EXISTS for creates, IF EXISTS for drops, and ON CONFLICT for data changes where possible.",
+            "whyItMatters": "Migration tools sometimes need to re-run migrations. Non-idempotent migrations fail on retry, leaving the database in an unclear state.",
+            "howToVerify": "Check for CREATE TABLE without IF NOT EXISTS, CREATE INDEX without IF NOT EXISTS, or INSERT without ON CONFLICT.",
+            "exampleComment": "Use CREATE TABLE IF NOT EXISTS to make this migration safe to re-run.",
+            "codeExamples": [],
+            "keyTakeaway": "Use IF NOT EXISTS and ON CONFLICT to make migrations idempotent where possible.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "sql-migrations.query-quality",
+      "title": "Query Quality",
+      "items": [
+        {
+          "id": "sql-migrations.query-quality.indexes",
+          "text": "Are appropriate indexes defined for query patterns?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Columns used in WHERE, JOIN, and ORDER BY clauses should have indexes. Composite indexes should match query patterns.",
+            "whyItMatters": "Missing indexes cause full table scans that grow linearly with data. A query that takes 10ms on 1K rows takes 10s on 1M rows.",
+            "howToVerify": "Check each new query for its WHERE and JOIN conditions. Verify matching indexes exist. Use EXPLAIN ANALYZE to confirm.",
+            "exampleComment": "This query filters by status and created_at but there's no composite index. Add CREATE INDEX idx_orders_status_created ON orders(status, created_at).",
+            "codeExamples": [],
+            "keyTakeaway": "Create indexes to match your query patterns. Use EXPLAIN ANALYZE to verify they are used.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.query-quality.n-plus-one",
+          "text": "Are N+1 query patterns avoided?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Loading a list of items and then querying for each item's related data individually creates N+1 queries. Use JOINs or batch loading instead.",
+            "whyItMatters": "N+1 queries are the most common performance problem. Loading 100 items with N+1 makes 101 database round-trips instead of 1-2.",
+            "howToVerify": "Look for queries inside loops. Check ORM usage for lazy loading patterns. Watch for .map() or .forEach() that trigger individual queries.",
+            "exampleComment": "This loads each user's orders in a loop. Use a JOIN or WHERE user_id IN (...) to batch load instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Never query inside a loop. Use JOINs, subqueries, or batch loading.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.query-quality.parameterized",
+          "text": "Are all queries parameterized (no string concatenation)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "SQL queries must use parameterized queries or prepared statements. Never concatenate user input into SQL strings.",
+            "whyItMatters": "SQL injection is one of the most dangerous and common vulnerabilities. It can lead to complete database compromise.",
+            "howToVerify": "Search for string concatenation or template literals building SQL queries. Check for f-strings, format(), or + operators with SQL.",
+            "exampleComment": "This builds SQL with string concatenation: `WHERE name = '${name}'`. Use parameterized queries: `WHERE name = $1` with parameters.",
+            "codeExamples": [],
+            "keyTakeaway": "Always use parameterized queries. Never concatenate user input into SQL.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.query-quality.select-specific",
+          "text": "Do queries SELECT specific columns instead of SELECT *?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Queries should select only the columns they need rather than using SELECT *.",
+            "whyItMatters": "SELECT * fetches unnecessary data, breaks when columns are added/removed, and prevents covering index optimizations.",
+            "howToVerify": "Search for SELECT * in production queries (not ad-hoc debugging). Check ORM queries for equivalent patterns.",
+            "exampleComment": "This uses SELECT * but only needs name and email. Select only the needed columns.",
+            "codeExamples": [],
+            "keyTakeaway": "Select only the columns you need. It improves performance and makes intent clear.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.query-quality.pagination",
+          "text": "Do list queries use proper pagination?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Queries that return variable-length results should use LIMIT/OFFSET or cursor-based pagination to prevent unbounded result sets.",
+            "whyItMatters": "Without pagination, a query can return millions of rows, exhausting memory and causing timeouts or crashes.",
+            "howToVerify": "Check for queries without LIMIT that could return many rows. Verify pagination is implemented correctly (OFFSET-based or cursor-based).",
+            "exampleComment": "This query has no LIMIT. If there are 1M matching rows, this will exhaust memory. Add pagination.",
+            "codeExamples": [],
+            "keyTakeaway": "Always paginate list queries. Prefer cursor-based pagination for large datasets.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.query-quality.transactions",
+          "text": "Are related operations wrapped in transactions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Operations that must succeed or fail together should be in a database transaction with appropriate isolation level.",
+            "whyItMatters": "Without transactions, a failure partway through leaves data in an inconsistent state (e.g., money deducted but not credited).",
+            "howToVerify": "Check for multi-step operations that modify data. Verify they use BEGIN/COMMIT or the ORM's transaction API.",
+            "exampleComment": "The balance deduction and credit are separate queries without a transaction. Wrap them in a transaction to prevent inconsistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Use transactions for operations that must be atomic. Choose the right isolation level for your use case.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "sql-migrations.security",
+      "title": "Security & Access Control",
+      "items": [
+        {
+          "id": "sql-migrations.security.permissions",
+          "text": "Are database permissions properly scoped?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Application database users should have minimum necessary permissions. Don't use superuser or admin roles for application connections.",
+            "whyItMatters": "An overprivileged database user turns a SQL injection vulnerability into a complete database compromise including schema changes and data export.",
+            "howToVerify": "Check what database user the application connects as. Verify it doesn't have unnecessary permissions like DROP, CREATE, or SUPERUSER.",
+            "exampleComment": "The application connects as the postgres superuser. Create a dedicated role with only SELECT, INSERT, UPDATE, DELETE on needed tables.",
+            "codeExamples": [],
+            "keyTakeaway": "Apply least privilege. Application users should only have permissions they actually need.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.security.sensitive-data",
+          "text": "Is sensitive data properly handled (encryption, hashing)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Passwords must be hashed (bcrypt/argon2). PII and sensitive fields should be encrypted at rest. Consider column-level encryption for highly sensitive data.",
+            "whyItMatters": "A database breach exposes all stored data. Proper hashing and encryption limit the damage.",
+            "howToVerify": "Check for columns storing passwords, SSNs, credit cards, or other sensitive data. Verify they are hashed or encrypted, not stored in plaintext.",
+            "exampleComment": "This stores the API key in plaintext. Hash it or encrypt it at rest.",
+            "codeExamples": [],
+            "keyTakeaway": "Hash passwords, encrypt sensitive data. Never store secrets in plaintext.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.security.row-level-security",
+          "text": "Is row-level access control enforced where needed?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Multi-tenant applications should enforce tenant isolation at the database level using RLS policies or always including tenant_id in queries.",
+            "whyItMatters": "Missing tenant isolation allows one user to access another user's data. This is a critical security vulnerability in multi-tenant systems.",
+            "howToVerify": "Check queries on shared tables for tenant_id or user_id filters. Verify RLS policies are enabled if using PostgreSQL RLS.",
+            "exampleComment": "This query on the orders table doesn't filter by tenant_id. A user could see other tenants' orders.",
+            "codeExamples": [],
+            "keyTakeaway": "Always enforce tenant isolation. Use RLS or application-level filtering on every query.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "sql-migrations.performance",
+      "title": "Performance & Scalability",
+      "items": [
+        {
+          "id": "sql-migrations.performance.explain-plan",
+          "text": "Have expensive queries been analyzed with EXPLAIN?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Complex queries should be tested with EXPLAIN ANALYZE to verify the query plan uses indexes and doesn't do full table scans.",
+            "whyItMatters": "A query that looks simple may hide sequential scans, hash joins on large tables, or suboptimal plans that degrade with data growth.",
+            "howToVerify": "Run EXPLAIN ANALYZE on new queries with representative data. Check for Seq Scan on large tables and high estimated row counts.",
+            "exampleComment": "Please run EXPLAIN ANALYZE on this query with production-like data and share the output. I suspect a sequential scan.",
+            "codeExamples": [],
+            "keyTakeaway": "Use EXPLAIN ANALYZE for any query touching large tables or used in hot paths.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.performance.connection-pooling",
+          "text": "Is connection pooling used appropriately?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Applications should use connection pools (PgBouncer, application-level pools) rather than opening new connections per request.",
+            "whyItMatters": "Database connections are expensive to create. Without pooling, high traffic causes connection exhaustion and the database rejects new connections.",
+            "howToVerify": "Check the database connection configuration. Verify pool size limits are set and appropriate for the deployment.",
+            "exampleComment": "This creates a new connection per request. Use a connection pool with a max size matching your database's max_connections.",
+            "codeExamples": [],
+            "keyTakeaway": "Always use connection pooling. Size pools based on your database's max_connections.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.performance.large-table-operations",
+          "text": "Are operations on large tables done in batches?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Bulk updates, deletes, and data migrations on large tables should be done in batches to avoid long-running transactions and lock contention.",
+            "whyItMatters": "A single UPDATE on 10M rows creates a massive transaction that holds locks, bloats WAL, and may cause replication lag or OOM.",
+            "howToVerify": "Check for UPDATE or DELETE without a LIMIT on tables with many rows. Look for data backfill scripts that process all rows at once.",
+            "exampleComment": "This UPDATE affects all rows in a 5M row table. Process in batches of 10,000 with a small delay between batches.",
+            "codeExamples": [],
+            "keyTakeaway": "Batch large data operations. Never update millions of rows in a single transaction.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.performance.over-indexing",
+          "text": "Are there unnecessary or duplicate indexes?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each index adds write overhead and storage cost. Duplicate indexes (where one index is a prefix of another) or unused indexes should be removed.",
+            "whyItMatters": "Too many indexes slow down writes significantly. Each INSERT/UPDATE must update every index on the table.",
+            "howToVerify": "Check for indexes that overlap (e.g., idx(a) and idx(a,b) — the latter covers both). Check pg_stat_user_indexes for unused indexes.",
+            "exampleComment": "There's already an index on (user_id, created_at). The new index on just (user_id) is redundant.",
+            "codeExamples": [],
+            "keyTakeaway": "Every index has a cost. Only add indexes that serve actual query patterns.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "sql-migrations.testing",
+      "title": "Testing & Documentation",
+      "items": [
+        {
+          "id": "sql-migrations.testing.tested-migration",
+          "text": "Has the migration been tested against a copy of production data?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Migrations should be tested against a database with production-like data volume and schema to catch issues that don't appear on empty databases.",
+            "whyItMatters": "A migration that runs in 1 second on a test database may take 30 minutes on production, causing downtime.",
+            "howToVerify": "Ask if the migration was tested on a staging database with production-scale data. Check for timing results.",
+            "exampleComment": "Has this migration been tested against a staging database? The orders table has 5M rows — this ALTER could be slow.",
+            "codeExamples": [],
+            "keyTakeaway": "Always test migrations against production-scale data. Empty databases hide performance issues.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.testing.seed-data",
+          "text": "Is seed or test data provided for new tables?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New tables should have corresponding seed data or factory definitions for testing and local development.",
+            "whyItMatters": "Without seed data, other developers cannot test features that depend on the new tables without manually inserting data.",
+            "howToVerify": "Check for seed files, factory definitions, or fixture data that populate the new tables.",
+            "exampleComment": "This adds a new categories table but no seed data. Please add seed data for local development.",
+            "codeExamples": [],
+            "keyTakeaway": "Provide seed data for new tables. It enables testing and improves developer experience.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.testing.documented-changes",
+          "text": "Are breaking schema changes documented?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Schema changes that affect other teams or services should be documented in the PR description with migration instructions.",
+            "whyItMatters": "Other services may query the same database. Undocumented schema changes can silently break other teams' code.",
+            "howToVerify": "Check the PR description for documentation of breaking changes. Verify affected services or teams have been notified.",
+            "exampleComment": "This drops a column used by the analytics service. Please document the breaking change and coordinate with that team.",
+            "codeExamples": [],
+            "keyTakeaway": "Document breaking schema changes. Coordinate with all consumers of the affected tables.",
+            "references": []
+          }
+        },
+        {
+          "id": "sql-migrations.testing.backup-plan",
+          "text": "Is there a rollback plan for the migration?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Migrations that modify or delete data should have a documented rollback plan including data backup, migration reversal, and verification steps.",
+            "whyItMatters": "If a migration goes wrong in production, a clear rollback plan is the difference between a 5-minute fix and a multi-hour incident.",
+            "howToVerify": "Check for a rollback plan in the PR description. For destructive migrations, verify that data backup steps are included.",
+            "exampleComment": "This drops a column with data. What's the rollback plan if we need that data back? Consider backing up to a temp table first.",
+            "codeExamples": [],
+            "keyTakeaway": "Have a rollback plan before running migrations in production. Back up data before destructive changes.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

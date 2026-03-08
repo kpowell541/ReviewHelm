@@ -1,0 +1,341 @@
+{
+  "meta": {
+    "id": "cicd",
+    "mode": "review",
+    "title": "CI/CD Pipelines",
+    "shortTitle": "CI/CD",
+    "description": "CI/CD pipeline design with GitHub Actions, GitLab CI, secret handling, and workflow patterns",
+    "icon": "🔄",
+    "totalItems": 19,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "cicd.workflow-design",
+      "title": "Workflow Design",
+      "items": [
+        {
+          "id": "cicd.workflow-design.triggers",
+          "text": "Are workflow triggers scoped correctly (not running on every push)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Workflows should trigger on appropriate events: pull_request for checks, push to main for deploys. Use path filters to skip irrelevant runs.",
+            "whyItMatters": "Over-broad triggers waste CI minutes, slow feedback, and create unnecessary noise. Running deploys on feature branches is dangerous.",
+            "howToVerify": "Check trigger events (on:). Verify path filters exclude docs, README changes. Ensure deploy workflows only run on main/release branches.",
+            "exampleComment": "This deploy workflow triggers on push to all branches. Restrict to push: branches: [main] to prevent accidental deployments.",
+            "codeExamples": [],
+            "keyTakeaway": "Scope triggers to appropriate branches and paths. Use path filters to skip irrelevant changes.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.workflow-design.job-dependencies",
+          "text": "Are job dependencies (needs:) configured correctly for parallel execution?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Independent jobs should run in parallel. Dependent jobs should use needs: to declare dependencies. Use if: to control conditional execution.",
+            "whyItMatters": "Sequential jobs when parallel is possible wastes time. Missing needs: can run deploy before tests pass.",
+            "howToVerify": "Check that independent jobs (lint, test, build) run in parallel. Verify deploy jobs depend on all test/build jobs.",
+            "exampleComment": "Lint and test run sequentially but are independent. Remove the needs: dependency to run them in parallel.",
+            "codeExamples": [],
+            "keyTakeaway": "Run independent jobs in parallel. Only use needs: for genuine dependencies.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.workflow-design.caching",
+          "text": "Are dependencies and build artifacts cached between runs?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Cache package manager downloads (npm, pip, maven), build outputs, and other slow-to-recreate artifacts between CI runs.",
+            "whyItMatters": "Without caching, every run downloads and installs all dependencies from scratch, adding 2-10 minutes per run.",
+            "howToVerify": "Check for cache actions or built-in caching configuration. Verify cache keys include lockfile hashes for invalidation.",
+            "exampleComment": "This workflow installs dependencies from scratch every run. Add a cache step using the lockfile hash as the cache key.",
+            "codeExamples": [],
+            "keyTakeaway": "Cache dependencies using lockfile hashes. Cache build outputs when possible.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.workflow-design.timeout",
+          "text": "Are job timeouts configured to prevent runaway builds?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Jobs should have timeout-minutes set to prevent stuck builds from consuming resources indefinitely.",
+            "whyItMatters": "A hung test or build can run for hours, consuming CI minutes and blocking other jobs. Default timeouts are often 6 hours.",
+            "howToVerify": "Check for timeout-minutes on jobs. Set a reasonable limit based on expected run time (2-3x normal duration).",
+            "exampleComment": "This job has no timeout. If a test hangs, it runs for 6 hours. Add timeout-minutes: 15.",
+            "codeExamples": [],
+            "keyTakeaway": "Set timeouts on all jobs. Use 2-3x the expected duration as the limit.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.workflow-design.idempotent",
+          "text": "Are pipeline steps idempotent (safe to re-run)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Pipeline steps should be safe to re-run without side effects. Deploy steps should handle already-deployed states gracefully.",
+            "whyItMatters": "Retrying a failed pipeline should not create duplicates, send duplicate notifications, or corrupt state.",
+            "howToVerify": "Check deploy and notification steps for idempotency. Verify re-running the pipeline won't cause double-deploys or duplicate records.",
+            "exampleComment": "This step creates a GitHub release but doesn't check if one already exists. Add a check to skip if the release exists.",
+            "codeExamples": [],
+            "keyTakeaway": "Make pipeline steps idempotent. Re-running should produce the same result as the first run.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cicd.secrets",
+      "title": "Secrets & Security",
+      "items": [
+        {
+          "id": "cicd.secrets.no-hardcoded",
+          "text": "Are all secrets stored in CI secret management (not hardcoded in pipeline files)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Passwords, tokens, and API keys must be stored in the CI platform's secret storage, never in workflow files or environment variables in plain text.",
+            "whyItMatters": "Secrets in pipeline files are visible to everyone with repository access. They persist in git history even after deletion.",
+            "howToVerify": "Search workflow files for hardcoded tokens, passwords, or API keys. Verify all sensitive values use ${{ secrets.* }}.",
+            "exampleComment": "The API key is hardcoded in the workflow file. Store it as a repository secret and reference it with ${{ secrets.API_KEY }}.",
+            "codeExamples": [],
+            "keyTakeaway": "Store all secrets in CI secret management. Never hardcode credentials in pipeline files.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.secrets.least-privilege",
+          "text": "Do CI tokens and service accounts have minimum necessary permissions?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "CI service accounts should only have permissions needed for their tasks. GitHub tokens should use minimal permissions: scope.",
+            "whyItMatters": "Over-privileged CI tokens can be used to modify code, delete branches, access other repos, or exfiltrate secrets.",
+            "howToVerify": "Check permissions: blocks in GitHub Actions. Verify service account roles in deployment pipelines are scoped to minimum.",
+            "exampleComment": "This workflow has permissions: write-all. Scope it to contents: read, pull-requests: write — only what's needed.",
+            "codeExamples": [],
+            "keyTakeaway": "Apply least privilege to CI tokens. Scope permissions to the minimum needed for each job.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.secrets.pr-security",
+          "text": "Are workflows triggered by PRs from forks handled securely?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "pull_request_target runs with repository secrets but in the context of the target branch. Forked PRs with pull_request don't get secrets. Mixing these incorrectly is dangerous.",
+            "whyItMatters": "Giving secrets to forked PR code allows attackers to exfiltrate credentials by submitting malicious PRs.",
+            "howToVerify": "Check for pull_request_target with checkout of PR code. This combination gives secrets to untrusted code.",
+            "exampleComment": "This uses pull_request_target with actions/checkout@PR. A malicious PR can steal secrets. Use pull_request instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Never combine pull_request_target with checking out PR code. Use pull_request for untrusted code.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.secrets.env-separation",
+          "text": "Are staging and production secrets separated (different values per environment)?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Staging and production should use different credentials, API keys, and service accounts. Use environment protection rules.",
+            "whyItMatters": "Shared credentials mean a staging breach compromises production. Environment separation limits blast radius.",
+            "howToVerify": "Check if the same secrets are used for staging and production. Verify production deployments use environment protection rules.",
+            "exampleComment": "The staging and production database use the same credentials. Create separate service accounts per environment.",
+            "codeExamples": [],
+            "keyTakeaway": "Separate credentials per environment. Use environment protection rules for production deployments.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cicd.testing",
+      "title": "Testing & Quality Gates",
+      "items": [
+        {
+          "id": "cicd.testing.required-checks",
+          "text": "Are required status checks enforced on the main branch?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Branch protection should require CI checks to pass before merging. Tests, lint, and build must all succeed.",
+            "whyItMatters": "Without required checks, broken code can be merged to main, affecting all developers and potentially deploying bugs.",
+            "howToVerify": "Check branch protection rules. Verify required status checks include tests, lint, and build. Ensure checks can't be bypassed.",
+            "exampleComment": "The main branch has no required status checks. Enable branch protection and require CI to pass before merging.",
+            "codeExamples": [],
+            "keyTakeaway": "Require status checks on main. Never allow merging without passing CI.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.testing.test-stability",
+          "text": "Are tests stable (no flaky tests that are retried blindly)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should pass consistently. Automatic retry of failed tests masks flaky tests rather than fixing them.",
+            "whyItMatters": "Flaky tests erode trust in CI. Teams start ignoring failures, allowing real bugs to slip through.",
+            "howToVerify": "Check for automatic retry configurations. Look at recent CI history for tests that intermittently fail.",
+            "exampleComment": "This job retries failed tests up to 3 times. Fix the flaky tests instead of retrying. Track flaky tests and fix them.",
+            "codeExamples": [],
+            "keyTakeaway": "Fix flaky tests, don't retry them. Track and prioritize flaky test fixes.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.testing.coverage-gates",
+          "text": "Are code coverage thresholds enforced without being gamed?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Coverage thresholds should prevent regressions but not encourage writing meaningless tests just to hit a number.",
+            "whyItMatters": "Coverage without quality leads to tests that exercise code without asserting anything. Overly strict gates slow development.",
+            "howToVerify": "Check coverage configuration. Verify the threshold is reasonable (70-85%). Look for tests with no assertions.",
+            "exampleComment": "100% coverage is required but many tests have no assertions. Lower the threshold and focus on meaningful test quality.",
+            "codeExamples": [],
+            "keyTakeaway": "Set reasonable coverage thresholds. Focus on test quality over quantity.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cicd.deployment",
+      "title": "Deployment",
+      "items": [
+        {
+          "id": "cicd.deployment.rollback",
+          "text": "Is there a clear rollback strategy?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Deployments should have a documented and tested rollback mechanism. One-click rollback to the previous version.",
+            "whyItMatters": "Without rollback, a bad deployment means either a forward-fix (slow) or manual intervention (error-prone).",
+            "howToVerify": "Check if the deployment process supports rollback. Verify it's been tested. Check for database migration rollback coordination.",
+            "exampleComment": "The deploy script has no rollback capability. Add a rollback job that deploys the previous image tag.",
+            "codeExamples": [],
+            "keyTakeaway": "Every deployment must have a rollback plan. Test rollbacks regularly.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.deployment.blue-green-canary",
+          "text": "Is progressive deployment used for production (canary, blue-green, feature flags)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Production deployments should roll out progressively: canary to a small percentage, then gradually expand. Use feature flags for risky changes.",
+            "whyItMatters": "Deploying to 100% immediately means bugs affect all users. Progressive deployment limits blast radius.",
+            "howToVerify": "Check if the deployment strategy supports canary or blue-green. Verify monitoring is in place to catch issues during rollout.",
+            "exampleComment": "This deploys directly to 100% of production. Consider a canary deployment that serves 5% of traffic first.",
+            "codeExamples": [],
+            "keyTakeaway": "Deploy progressively to production. Monitor metrics during rollout and automate rollback on errors.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.deployment.deploy-approval",
+          "text": "Do production deployments require manual approval?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Production deployments should require explicit approval. Use environment protection rules or manual gates.",
+            "whyItMatters": "Automatic production deploys on merge mean any merged code immediately reaches users. A bad merge causes an instant outage.",
+            "howToVerify": "Check if production deployments have approval gates. Verify the approval can't be bypassed.",
+            "exampleComment": "Production deploys automatically on merge to main. Add a manual approval step or environment protection rule.",
+            "codeExamples": [],
+            "keyTakeaway": "Require explicit approval for production deployments. Automate staging deploys for testing.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.deployment.notifications",
+          "text": "Are deployment success/failure notifications configured?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Teams should be notified of deployment successes and failures via Slack, email, or other channels.",
+            "whyItMatters": "Without notifications, failed deployments go unnoticed. Teams don't know when their code is live.",
+            "howToVerify": "Check for notification steps in deploy workflows. Verify both success and failure cases send notifications.",
+            "exampleComment": "This deploy workflow has no failure notification. Add a Slack notification on failure so the team can respond quickly.",
+            "codeExamples": [],
+            "keyTakeaway": "Notify on deployment success and failure. Include deploy version and environment in notifications.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cicd.actions-deps",
+      "title": "Actions & Dependencies",
+      "items": [
+        {
+          "id": "cicd.actions-deps.pinned-actions",
+          "text": "Are third-party actions pinned to specific versions or commit SHAs?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Third-party GitHub Actions should be pinned to a commit SHA or specific version tag, not @latest or @main.",
+            "whyItMatters": "An unpinned action can be updated by its maintainer to include malicious code. SHA pinning prevents supply chain attacks.",
+            "howToVerify": "Check for actions using @main, @latest, or unpinned major versions. Verify they use SHA pins or specific version tags.",
+            "exampleComment": "uses: actions/checkout@main is unpinned. Pin to a SHA: uses: actions/checkout@abc123...",
+            "codeExamples": [],
+            "keyTakeaway": "Pin third-party actions to commit SHAs. Use Dependabot to keep them updated.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.actions-deps.runner-version",
+          "text": "Are runner images specified explicitly (not just 'latest')?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Specify runner OS versions (ubuntu-22.04 instead of ubuntu-latest) for reproducible builds.",
+            "whyItMatters": "ubuntu-latest changes when GitHub updates the default. This can break builds when OS packages or tool versions change.",
+            "howToVerify": "Check runs-on: for 'latest' tags. Pin to specific versions for reproducibility.",
+            "exampleComment": "runs-on: ubuntu-latest may change. Use ubuntu-22.04 for consistent builds.",
+            "codeExamples": [],
+            "keyTakeaway": "Pin runner images for reproducible builds. Accept 'latest' only if you want automatic updates.",
+            "references": []
+          }
+        },
+        {
+          "id": "cicd.actions-deps.script-injection",
+          "text": "Are workflow expressions protected against script injection?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Using ${{ github.event.issue.title }} directly in run: steps allows injection. Use environment variables instead.",
+            "whyItMatters": "A PR title or issue body containing shell commands will execute in the workflow context, potentially exfiltrating secrets.",
+            "howToVerify": "Check for ${{ }} expressions inside run: blocks. These should be passed as environment variables instead.",
+            "exampleComment": "run: echo ${{ github.event.comment.body }} allows injection. Use env: COMMENT: ${{ github.event.comment.body }} and echo $COMMENT.",
+            "codeExamples": [],
+            "keyTakeaway": "Never use ${{ }} directly in run: steps. Pass values through env: variables.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

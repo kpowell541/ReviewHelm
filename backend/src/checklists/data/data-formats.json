@@ -1,0 +1,947 @@
+{
+  "meta": {
+    "id": "data-formats",
+    "mode": "review",
+    "title": "JSON, YAML, XML & Config",
+    "shortTitle": "Data Formats",
+    "description": "Review checklist for JSON, YAML, XML, TOML, and config files",
+    "icon": "\ud83d\udcc4",
+    "totalItems": 40,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "data-formats.schema-structure",
+      "title": "Schema & Structure",
+      "items": [
+        {
+          "id": "data-formats.schema-structure.schema-validation-defined",
+          "text": "Is there a schema (JSON Schema, XSD, YAML schema) validating the structure?",
+          "severity": "major",
+          "tags": [
+            "schema",
+            "validation"
+          ],
+          "baseContent": {
+            "whatItMeans": "Data files should be validated against a formal schema that defines required fields, types, and constraints.",
+            "whyItMatters": "Without schema validation, invalid configs can slip into production undetected, causing runtime failures that are hard to diagnose.",
+            "howToVerify": "Check if a JSON Schema, XSD, or similar validation file exists. Is it referenced in CI or pre-commit hooks?",
+            "exampleComment": "This config file has grown to 50+ fields but has no JSON Schema. Adding one would catch typos and missing fields before deployment.",
+            "codeExamples": [
+              {
+                "label": "JSON Schema example",
+                "language": "json",
+                "code": "{\n  \"$schema\": \"https://json-schema.org/draft/2020-12/schema\",\n  \"type\": \"object\",\n  \"required\": [\"name\", \"version\"],\n  \"properties\": {\n    \"name\": { \"type\": \"string\" },\n    \"version\": { \"type\": \"string\", \"pattern\": \"^\\\\d+\\\\.\\\\d+\\\\.\\\\d+$\" }\n  }\n}"
+              }
+            ],
+            "keyTakeaway": "Schema validation is the first line of defense against config errors.",
+            "references": [
+              "https://json-schema.org/"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.schema-structure.required-fields-present",
+          "text": "Are all required fields present and non-empty?",
+          "severity": "blocker",
+          "tags": [
+            "schema"
+          ],
+          "baseContent": {
+            "whatItMeans": "Required fields must have values. Missing required config can cause application startup failures or silent misbehavior.",
+            "whyItMatters": "A missing database URL or API key causes hard-to-debug runtime crashes. Catching these at review time prevents outages.",
+            "howToVerify": "Cross-reference the schema or documentation. Are all required fields populated? Are there empty strings where values are expected?",
+            "exampleComment": "The `database.host` field is required but empty in the staging config. This will cause a connection error at startup.",
+            "codeExamples": [],
+            "keyTakeaway": "Missing required fields are the most common config-related outage cause.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.schema-structure.consistent-naming-convention",
+          "text": "Do field names follow a consistent naming convention?",
+          "severity": "nit",
+          "tags": [
+            "style"
+          ],
+          "baseContent": {
+            "whatItMeans": "Field names should use a single convention: camelCase, snake_case, or kebab-case \u2014 consistently throughout the file.",
+            "whyItMatters": "Mixed naming conventions make config files harder to read and increase the chance of typos when referencing fields in code.",
+            "howToVerify": "Scan field names. Is there a mix of camelCase and snake_case? Does the convention match the project standard?",
+            "exampleComment": "This file mixes `maxRetries` and `max_timeout`. Pick one convention (the rest of the project uses camelCase).",
+            "codeExamples": [
+              {
+                "label": "Inconsistent",
+                "language": "json",
+                "code": "{\n  \"maxRetries\": 3,\n  \"max_timeout\": 30,\n  \"baseUrl\": \"...\",\n  \"api_key\": \"...\"\n}"
+              },
+              {
+                "label": "Consistent",
+                "language": "json",
+                "code": "{\n  \"maxRetries\": 3,\n  \"maxTimeout\": 30,\n  \"baseUrl\": \"...\",\n  \"apiKey\": \"...\"\n}"
+              }
+            ],
+            "keyTakeaway": "Pick one naming convention and stick with it.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.schema-structure.no-duplicate-keys",
+          "text": "Are there any duplicate keys that would cause silent overwrites?",
+          "severity": "blocker",
+          "tags": [
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "In JSON, duplicate keys are technically allowed by the spec but the last value wins silently. Most parsers won't warn about this.",
+            "whyItMatters": "A duplicate key means one value is silently ignored, leading to config that doesn't match what the developer intended.",
+            "howToVerify": "Search the file for duplicate key names. Use a JSON linter that flags duplicates.",
+            "exampleComment": "The key `timeout` appears twice in this object \u2014 the first value (30) is silently overwritten by the second (5).",
+            "codeExamples": [
+              {
+                "label": "Duplicate key",
+                "language": "json",
+                "code": "{\n  \"timeout\": 30,\n  \"retries\": 3,\n  \"timeout\": 5\n}"
+              }
+            ],
+            "keyTakeaway": "Duplicate keys are silent bugs. Use a linter that catches them.",
+            "references": [
+              "https://datatracker.ietf.org/doc/html/rfc8259#section-4"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.schema-structure.nesting-depth-reasonable",
+          "text": "Is the nesting depth reasonable (typically under 5 levels)?",
+          "severity": "minor",
+          "tags": [
+            "structure"
+          ],
+          "baseContent": {
+            "whatItMeans": "Deeply nested config structures are hard to read, hard to reference in code, and error-prone to modify.",
+            "whyItMatters": "Deep nesting increases cognitive load and makes it harder to find and update values. It often indicates the config should be restructured.",
+            "howToVerify": "Count the maximum nesting depth. Is it more than 4-5 levels? Could flatter structures with dotted keys work instead?",
+            "exampleComment": "This config is 7 levels deep. Consider flattening: `database.pool.max` instead of `services.backend.database.connection.pool.settings.max`.",
+            "codeExamples": [],
+            "keyTakeaway": "Flat is better than nested. If you need a map to find a value, the structure is too deep.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.schema-structure.appropriate-data-types",
+          "text": "Are values using appropriate types (numbers as numbers, booleans as booleans)?",
+          "severity": "minor",
+          "tags": [
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config values should use native types: numbers should be numbers, booleans should be true/false, not strings like \"true\" or \"3\".",
+            "whyItMatters": "String-typed numbers and booleans require extra parsing in code, are error-prone, and bypass schema type validation.",
+            "howToVerify": "Look for quoted numbers or booleans. Is `\"port\": \"8080\"` used instead of `\"port\": 8080`?",
+            "exampleComment": "`\"enabled\": \"true\"` should be `\"enabled\": true`. String booleans require extra parsing and can lead to bugs (`\"false\"` is truthy in JS).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "json",
+                "code": "{ \"port\": \"8080\", \"debug\": \"true\", \"maxRetries\": \"3\" }"
+              },
+              {
+                "label": "Good",
+                "language": "json",
+                "code": "{ \"port\": 8080, \"debug\": true, \"maxRetries\": 3 }"
+              }
+            ],
+            "keyTakeaway": "Use native types. Strings should be reserved for actual text values.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-formats.yaml-specific",
+      "title": "YAML-Specific",
+      "items": [
+        {
+          "id": "data-formats.yaml-specific.norway-problem",
+          "text": "Are bare values that look like booleans or nulls properly quoted (the Norway problem)?",
+          "severity": "blocker",
+          "tags": [
+            "yaml",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "YAML 1.1 interprets bare `yes`, `no`, `on`, `off`, `NO`, `true`, `false` as booleans and bare `null`, `~`, empty values as null. Country codes like `NO` (Norway) become `false`.",
+            "whyItMatters": "The Norway problem has caused real production incidents. Unquoted values silently change meaning, leading to data corruption.",
+            "howToVerify": "Search for bare values that could be misinterpreted: country codes (NO, YES), environment names (on, off), and values that look like booleans.",
+            "exampleComment": "`country: NO` is interpreted as `country: false` in YAML 1.1. Quote it: `country: \"NO\"`.",
+            "codeExamples": [
+              {
+                "label": "Bug",
+                "language": "yaml",
+                "code": "countries:\n  - DK\n  - NO  # Parsed as false!\n  - SE"
+              },
+              {
+                "label": "Fixed",
+                "language": "yaml",
+                "code": "countries:\n  - DK\n  - \"NO\"  # String, not boolean\n  - SE"
+              }
+            ],
+            "keyTakeaway": "When in doubt, quote it. Especially country codes, environment names, and anything that could be a boolean.",
+            "references": [
+              "https://yaml.org/type/bool.html"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.yaml-specific.indentation-consistent",
+          "text": "Is indentation consistent (spaces only, same width throughout)?",
+          "severity": "major",
+          "tags": [
+            "yaml",
+            "style"
+          ],
+          "baseContent": {
+            "whatItMeans": "YAML is whitespace-sensitive. Tabs are not allowed. Indentation width must be consistent (typically 2 spaces).",
+            "whyItMatters": "Mixed indentation causes parse errors or, worse, silently changes the document structure. A value at the wrong level means something entirely different.",
+            "howToVerify": "Check for tabs (often invisible). Verify consistent indent width. Does the editor use spaces for YAML files?",
+            "exampleComment": "Line 42 uses 3-space indent while the rest of the file uses 2. This puts `retries` under `timeout` instead of `connection`.",
+            "codeExamples": [],
+            "keyTakeaway": "Use 2-space indent, spaces only, and configure your editor to enforce it for YAML files.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.yaml-specific.anchors-aliases-clear",
+          "text": "Are YAML anchors and aliases used clearly and not over-complicated?",
+          "severity": "minor",
+          "tags": [
+            "yaml",
+            "readability"
+          ],
+          "baseContent": {
+            "whatItMeans": "YAML anchors (`&name`) and aliases (`*name`) with merge keys (`<<:`) allow reuse, but can make files hard to follow.",
+            "whyItMatters": "Overuse of anchors creates a web of references that's hard to debug. Reviewers can't easily see the final resolved values.",
+            "howToVerify": "Are anchors used for genuine DRY purposes or just to seem clever? Can the reviewer easily trace what each alias resolves to?",
+            "exampleComment": "This file has 12 anchors with nested merge keys. Consider using a templating tool instead, or duplicating the 3 shared fields for clarity.",
+            "codeExamples": [
+              {
+                "label": "Clear anchor use",
+                "language": "yaml",
+                "code": "defaults: &defaults\n  adapter: postgres\n  pool: 5\n\ndevelopment:\n  <<: *defaults\n  database: myapp_dev\n\nproduction:\n  <<: *defaults\n  database: myapp_prod\n  pool: 25"
+              }
+            ],
+            "keyTakeaway": "Anchors are great for simple DRY. If you need a diagram to follow the references, it's too complex.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.yaml-specific.multiline-strings-appropriate",
+          "text": "Are multi-line strings using the right block scalar style (| vs >)?",
+          "severity": "nit",
+          "tags": [
+            "yaml"
+          ],
+          "baseContent": {
+            "whatItMeans": "YAML offers `|` (literal block, preserves newlines) and `>` (folded block, joins lines). Using the wrong one changes the value.",
+            "whyItMatters": "Using `>` when you need preserved newlines (like SQL or scripts) corrupts the value. Using `|` for prose creates unnecessary newlines.",
+            "howToVerify": "Check multi-line values. Does the content need preserved line breaks (use `|`) or is it wrapped prose (use `>`)?",
+            "exampleComment": "This SQL query uses `>` (folded), which joins the lines into one. Use `|` (literal) to preserve the line breaks.",
+            "codeExamples": [
+              {
+                "label": "Literal (preserves newlines)",
+                "language": "yaml",
+                "code": "query: |\n  SELECT *\n  FROM users\n  WHERE active = true"
+              },
+              {
+                "label": "Folded (joins lines)",
+                "language": "yaml",
+                "code": "description: >\n  This is a long description\n  that wraps across multiple\n  lines for readability."
+              }
+            ],
+            "keyTakeaway": "Use | for code/SQL/scripts. Use > for prose. Add - (|-, >-) to strip the trailing newline.",
+            "references": [
+              "https://yaml-multiline.info/"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.yaml-specific.no-implicit-type-coercion",
+          "text": "Are numeric-looking strings and timestamps properly quoted?",
+          "severity": "major",
+          "tags": [
+            "yaml",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "YAML auto-converts unquoted values: `1.0` becomes a float, `2024-01-01` becomes a date, `1e3` becomes 1000, `0o77` becomes octal.",
+            "whyItMatters": "Version strings like `1.0` become the number 1, timestamps get converted to dates, and version `010` becomes octal 8.",
+            "howToVerify": "Check for unquoted version numbers, dates used as strings, scientific notation, and octal/hex prefixes.",
+            "exampleComment": "`version: 1.0` is parsed as the number 1, not the string \"1.0\". Quote it: `version: \"1.0\"`.",
+            "codeExamples": [
+              {
+                "label": "Gotcha",
+                "language": "yaml",
+                "code": "version: 1.0     # Number 1, not \"1.0\"\nrelease: 2024-01-01  # Date object\nbuild: 010     # Octal 8"
+              },
+              {
+                "label": "Safe",
+                "language": "yaml",
+                "code": "version: \"1.0\"\nrelease: \"2024-01-01\"\nbuild: \"010\""
+              }
+            ],
+            "keyTakeaway": "Quote any value that looks like a number or date but is semantically a string.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-formats.json-specific",
+      "title": "JSON-Specific",
+      "items": [
+        {
+          "id": "data-formats.json-specific.valid-strict-json",
+          "text": "Is the file valid strict JSON (no trailing commas, no comments)?",
+          "severity": "blocker",
+          "tags": [
+            "json",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "JSON does not allow trailing commas, single quotes, comments, or unquoted keys. These are common mistakes from JavaScript developers.",
+            "whyItMatters": "Invalid JSON causes parse failures. Some parsers are lenient, masking issues that break in stricter environments.",
+            "howToVerify": "Run the file through a strict JSON validator. Check for trailing commas after the last array/object element, // comments, or single quotes.",
+            "exampleComment": "Line 15 has a trailing comma after the last array element. This is valid in JavaScript but not in JSON.",
+            "codeExamples": [
+              {
+                "label": "Invalid JSON",
+                "language": "json",
+                "code": "{\n  \"items\": [\n    \"one\",\n    \"two\",  // trailing comma!\n  ]\n}"
+              },
+              {
+                "label": "Valid JSON",
+                "language": "json",
+                "code": "{\n  \"items\": [\n    \"one\",\n    \"two\"\n  ]\n}"
+              }
+            ],
+            "keyTakeaway": "Use a JSON linter in CI. JSON is stricter than you think.",
+            "references": [
+              "https://datatracker.ietf.org/doc/html/rfc8259"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.json-specific.large-numbers-safe",
+          "text": "Are large numbers within safe integer range (avoid precision loss)?",
+          "severity": "major",
+          "tags": [
+            "json",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "JSON numbers that exceed JavaScript's Number.MAX_SAFE_INTEGER (2^53 - 1) lose precision when parsed by JS-based tools.",
+            "whyItMatters": "IDs like 9007199254740993 silently become 9007199254740992 in JavaScript, causing data corruption and lookup failures.",
+            "howToVerify": "Check for integer values larger than 9007199254740991. Should they be strings instead?",
+            "exampleComment": "This ID field uses a 64-bit integer that exceeds JS safe integer range. Use a string representation to avoid precision loss.",
+            "codeExamples": [
+              {
+                "label": "Unsafe",
+                "language": "json",
+                "code": "{ \"userId\": 9007199254740993 }"
+              },
+              {
+                "label": "Safe",
+                "language": "json",
+                "code": "{ \"userId\": \"9007199254740993\" }"
+              }
+            ],
+            "keyTakeaway": "Use strings for IDs and large numbers. JSON number precision is not guaranteed beyond 2^53.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.json-specific.encoding-utf8",
+          "text": "Is the file encoded as UTF-8 (the only valid JSON encoding)?",
+          "severity": "minor",
+          "tags": [
+            "json"
+          ],
+          "baseContent": {
+            "whatItMeans": "RFC 8259 specifies that JSON text exchanged between systems MUST be encoded using UTF-8.",
+            "whyItMatters": "Non-UTF-8 encoding can cause parse failures or garbled text in systems that correctly enforce the JSON spec.",
+            "howToVerify": "Check the file encoding. Look for BOM markers or non-UTF-8 characters.",
+            "exampleComment": "This file appears to be encoded as UTF-16. JSON must be UTF-8.",
+            "codeExamples": [],
+            "keyTakeaway": "JSON must be UTF-8. No BOM, no UTF-16, no Latin-1.",
+            "references": [
+              "https://datatracker.ietf.org/doc/html/rfc8259#section-8.1"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.json-specific.json5-jsonc-intentional",
+          "text": "If using JSON5 or JSONC (with comments), is the parser configured for it?",
+          "severity": "minor",
+          "tags": [
+            "json",
+            "tooling"
+          ],
+          "baseContent": {
+            "whatItMeans": "JSON5 and JSONC extend JSON with comments, trailing commas, and unquoted keys. These require specific parsers.",
+            "whyItMatters": "A file with comments works in VS Code (which uses JSONC) but breaks in production JSON parsers, causing mysterious failures.",
+            "howToVerify": "Check the file extension (.json vs .jsonc vs .json5). Is the consuming tool configured to handle the extended format?",
+            "exampleComment": "This tsconfig.json uses // comments which work because TypeScript uses JSONC parsing. But the CI tool uses strict JSON and will fail.",
+            "codeExamples": [],
+            "keyTakeaway": "If you need comments, use JSONC or JSON5 explicitly. Don't assume all JSON parsers accept comments.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.json-specific.readable-formatting",
+          "text": "Is the JSON formatted readably (indented) for human-edited files?",
+          "severity": "nit",
+          "tags": [
+            "json",
+            "readability"
+          ],
+          "baseContent": {
+            "whatItMeans": "Human-edited JSON files should be pretty-printed with consistent indentation. Machine-generated files can be minified.",
+            "whyItMatters": "Minified JSON is impossible to review in diffs. A single-line config file makes code review meaningless.",
+            "howToVerify": "Is the file pretty-printed with 2-space indent? Is there a formatter configured (prettier, etc.)?",
+            "exampleComment": "This config file is all on one line. Please format it with 2-space indentation so changes are reviewable in diffs.",
+            "codeExamples": [],
+            "keyTakeaway": "Pretty-print human-edited JSON. Configure a formatter to enforce it.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-formats.xml-specific",
+      "title": "XML-Specific",
+      "items": [
+        {
+          "id": "data-formats.xml-specific.xxe-prevention",
+          "text": "Is external entity processing disabled to prevent XXE attacks?",
+          "severity": "blocker",
+          "tags": [
+            "xml",
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "XML External Entity (XXE) attacks exploit XML parsers that process external entity declarations, allowing file reads or SSRF.",
+            "whyItMatters": "XXE is a critical vulnerability (OWASP Top 10). An attacker can read server files, perform SSRF, or cause denial of service.",
+            "howToVerify": "Check if the XML parser disables DTD processing and external entities. Look for DOCTYPE declarations with ENTITY definitions.",
+            "exampleComment": "This XML parser does not disable external entities. An attacker could inject `<!ENTITY xxe SYSTEM \"file:///etc/passwd\">` to read server files.",
+            "codeExamples": [
+              {
+                "label": "Vulnerable XML",
+                "language": "xml",
+                "code": "<?xml version=\"1.0\"?>\n<!DOCTYPE foo [\n  <!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n]>\n<data>&xxe;</data>"
+              },
+              {
+                "label": "Java fix",
+                "language": "java",
+                "code": "factory.setFeature(\"http://apache.org/xml/features/disallow-doctype-decl\", true);"
+              }
+            ],
+            "keyTakeaway": "Always disable DTD and external entity processing unless you explicitly need it.",
+            "references": [
+              "https://cheatsheetseries.owasp.org/cheatsheets/XML_External_Entity_Prevention_Cheat_Sheet.html"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.xml-specific.namespace-usage-correct",
+          "text": "Are XML namespaces used correctly and consistently?",
+          "severity": "major",
+          "tags": [
+            "xml"
+          ],
+          "baseContent": {
+            "whatItMeans": "XML namespaces prevent element name collisions. Incorrect namespace declarations cause parsing failures and XPath mismatches.",
+            "whyItMatters": "Wrong or missing namespaces make XPath queries return empty results, XSLT transforms fail silently, and schema validation break.",
+            "howToVerify": "Check namespace declarations (xmlns). Are prefixes consistent? Do XPath queries use the correct namespace context?",
+            "exampleComment": "The SOAP envelope uses namespace prefix `soap` but the body elements use `soapenv`. These need to match or use proper namespace bindings.",
+            "codeExamples": [],
+            "keyTakeaway": "Be consistent with namespace prefixes and always declare them. Test XPath queries with namespace awareness.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.xml-specific.encoding-declaration",
+          "text": "Does the XML declaration specify the correct encoding?",
+          "severity": "minor",
+          "tags": [
+            "xml"
+          ],
+          "baseContent": {
+            "whatItMeans": "The XML declaration should specify encoding: `<?xml version=\"1.0\" encoding=\"UTF-8\"?>`. Missing it defaults to UTF-8 but can cause issues.",
+            "whyItMatters": "Files without encoding declarations may be misinterpreted by parsers, especially when transferred between systems with different defaults.",
+            "howToVerify": "Check the first line. Is there an XML declaration with encoding? Does the declared encoding match the actual file encoding?",
+            "exampleComment": "This XML file declares `encoding=\"ISO-8859-1\"` but contains UTF-8 characters. Either convert the file or fix the declaration.",
+            "codeExamples": [],
+            "keyTakeaway": "Always include `<?xml version=\"1.0\" encoding=\"UTF-8\"?>` as the first line.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.xml-specific.cdata-appropriate",
+          "text": "Are CDATA sections used appropriately (not for escaping that should use entities)?",
+          "severity": "nit",
+          "tags": [
+            "xml"
+          ],
+          "baseContent": {
+            "whatItMeans": "CDATA sections (`<![CDATA[...]]>`) disable XML parsing for their content. They're useful for embedded code but not for simple escaping.",
+            "whyItMatters": "Overuse of CDATA makes XML harder to process with XSLT and XPath. Simple character escaping (&amp;, &lt;) is preferred for most cases.",
+            "howToVerify": "Is CDATA used for embedded scripts/code (appropriate) or just to avoid escaping a single ampersand (overkill)?",
+            "exampleComment": "This CDATA section just wraps `AT&T`. Use `AT&amp;T` instead \u2014 CDATA is overkill for simple entity escaping.",
+            "codeExamples": [],
+            "keyTakeaway": "Use CDATA for embedded code or large text blocks. Use XML entities for simple escaping.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.xml-specific.schema-validation-xsd",
+          "text": "Is there an XSD or DTD schema for validation?",
+          "severity": "minor",
+          "tags": [
+            "xml",
+            "validation"
+          ],
+          "baseContent": {
+            "whatItMeans": "XML documents should reference a schema (XSD preferred over DTD) that validates their structure and data types.",
+            "whyItMatters": "Without schema validation, malformed XML can pass through pipelines undetected, causing failures in downstream systems.",
+            "howToVerify": "Does the XML reference an XSD via xsi:schemaLocation? Is the schema up-to-date with the document structure?",
+            "exampleComment": "This XML config has grown to 200+ elements but has no XSD schema. Adding one would catch structural errors at build time.",
+            "codeExamples": [],
+            "keyTakeaway": "Prefer XSD over DTD for validation. XSD supports data types and namespaces.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-formats.toml-specific",
+      "title": "TOML-Specific",
+      "items": [
+        {
+          "id": "data-formats.toml-specific.table-structure-clear",
+          "text": "Are TOML tables and sub-tables structured clearly?",
+          "severity": "minor",
+          "tags": [
+            "toml",
+            "structure"
+          ],
+          "baseContent": {
+            "whatItMeans": "TOML uses [table] headers to define sections. Dotted keys and inline tables offer alternatives but can reduce clarity.",
+            "whyItMatters": "Mixing table headers, dotted keys, and inline tables in the same file creates confusion about the actual structure.",
+            "howToVerify": "Is the table hierarchy clear? Are related settings grouped under the same table? Is there unnecessary mixing of styles?",
+            "exampleComment": "This file uses both `[database.connection]` tables and `database.connection.pool = 5` dotted keys. Pick one style.",
+            "codeExamples": [
+              {
+                "label": "Clear TOML",
+                "language": "toml",
+                "code": "[database]\nhost = \"localhost\"\nport = 5432\n\n[database.pool]\nmax = 10\nidle = 5"
+              }
+            ],
+            "keyTakeaway": "Use table headers for nested config. Reserve dotted keys for simple one-off nested values.",
+            "references": [
+              "https://toml.io/en/v1.0.0"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.toml-specific.datetime-format-correct",
+          "text": "Are datetime values using RFC 3339 format?",
+          "severity": "minor",
+          "tags": [
+            "toml",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "TOML natively supports datetime values in RFC 3339 format. Using strings for dates loses type safety.",
+            "whyItMatters": "Using string dates means TOML parsers can't validate them. Invalid dates like 2024-13-45 pass silently as strings.",
+            "howToVerify": "Check datetime values. Are they native TOML datetimes (unquoted) or strings? Is the format correct?",
+            "exampleComment": "`created = \"2024-01-15\"` should be `created = 2024-01-15` (unquoted) to get native TOML date validation.",
+            "codeExamples": [
+              {
+                "label": "Native datetime",
+                "language": "toml",
+                "code": "created = 2024-01-15T09:30:00Z\nupdated = 2024-01-15  # Local date"
+              }
+            ],
+            "keyTakeaway": "Use native TOML datetimes for type safety. Don't quote them.",
+            "references": [
+              "https://toml.io/en/v1.0.0#local-date"
+            ]
+          }
+        },
+        {
+          "id": "data-formats.toml-specific.inline-tables-not-overused",
+          "text": "Are inline tables kept simple (single line, few keys)?",
+          "severity": "nit",
+          "tags": [
+            "toml",
+            "readability"
+          ],
+          "baseContent": {
+            "whatItMeans": "TOML inline tables (`{key = val, key2 = val2}`) must be on a single line. Complex inline tables are hard to read.",
+            "whyItMatters": "Long inline tables wrap awkwardly and can't include newlines. They're meant for simple, few-key objects only.",
+            "howToVerify": "Are inline tables short (under ~60 chars)? Do they have more than 3-4 keys? Should they be regular tables instead?",
+            "exampleComment": "This inline table has 6 keys and wraps across the line. Convert it to a regular `[section]` table.",
+            "codeExamples": [],
+            "keyTakeaway": "Inline tables are for simple objects: `point = {x = 1, y = 2}`. Anything bigger deserves a proper table.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.toml-specific.array-of-tables-correct",
+          "text": "Are arrays of tables (`[[table]]`) used correctly?",
+          "severity": "minor",
+          "tags": [
+            "toml"
+          ],
+          "baseContent": {
+            "whatItMeans": "TOML's `[[table]]` syntax creates arrays of objects. It's powerful but the double-bracket syntax can be confused with single-bracket tables.",
+            "whyItMatters": "Using `[table]` instead of `[[table]]` creates a single object instead of an array, causing runtime type errors.",
+            "howToVerify": "Check arrays of tables. Is the double-bracket syntax used? Does the consuming code expect an array?",
+            "exampleComment": "This should be `[[servers]]` (array of tables) not `[servers]` (single table). The config loader expects an array of server objects.",
+            "codeExamples": [
+              {
+                "label": "Array of tables",
+                "language": "toml",
+                "code": "[[servers]]\nname = \"alpha\"\nip = \"10.0.0.1\"\n\n[[servers]]\nname = \"beta\"\nip = \"10.0.0.2\""
+              }
+            ],
+            "keyTakeaway": "Use [[double brackets]] for arrays of objects. Single [brackets] create one object.",
+            "references": [
+              "https://toml.io/en/v1.0.0#array-of-tables"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-formats.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "data-formats.security.no-secrets-in-config",
+          "text": "Are secrets (API keys, passwords, tokens) kept out of config files?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Secrets must never be stored in plain-text config files that are committed to version control.",
+            "whyItMatters": "Secrets in config files get committed to git, appear in logs, are cached in CI artifacts, and are visible to anyone with repo access.",
+            "howToVerify": "Search for patterns: passwords, api_key, token, secret, credentials. Are they actual values or references to environment variables/vaults?",
+            "exampleComment": "This config file contains a plain-text database password. Use an environment variable or secret manager reference instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "yaml",
+                "code": "database:\n  password: s3cret123"
+              },
+              {
+                "label": "Good",
+                "language": "yaml",
+                "code": "database:\n  password: ${DB_PASSWORD}"
+              }
+            ],
+            "keyTakeaway": "Never commit secrets. Use environment variables, vault references, or encrypted secret files.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.security.deserialization-safety",
+          "text": "Is deserialized config data validated before use?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config loaded from YAML or JSON should be validated and type-checked before being used, especially if the source is user-provided.",
+            "whyItMatters": "Unsafe deserialization can lead to type confusion, injection, or code execution (especially in YAML with custom tags).",
+            "howToVerify": "Is the parsed config validated against a schema? Are types checked? Is YAML safe_load used instead of load?",
+            "exampleComment": "This uses `yaml.load()` which can execute arbitrary Python. Use `yaml.safe_load()` instead.",
+            "codeExamples": [
+              {
+                "label": "Unsafe",
+                "language": "python",
+                "code": "import yaml\nconfig = yaml.load(user_input)  # RCE!"
+              },
+              {
+                "label": "Safe",
+                "language": "python",
+                "code": "import yaml\nconfig = yaml.safe_load(user_input)"
+              }
+            ],
+            "keyTakeaway": "Always use safe loading functions. Validate parsed data against expected types.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.security.file-permissions-appropriate",
+          "text": "Are config file permissions restrictive enough?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config files containing sensitive settings should have restrictive file permissions (e.g., 600 or 640).",
+            "whyItMatters": "World-readable config files expose sensitive settings to any user on the system, increasing the attack surface.",
+            "howToVerify": "Check file permissions in deployment scripts or Dockerfiles. Are config files chmod'd appropriately?",
+            "exampleComment": "This Dockerfile copies the config with default permissions (644). Use `COPY --chmod=640` for files with database credentials.",
+            "codeExamples": [],
+            "keyTakeaway": "Config files with any sensitive data should be readable only by the application user.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.security.no-injection-in-templates",
+          "text": "Are config values properly escaped when used in templates or commands?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config values interpolated into shell commands, SQL, HTML, or other templates can enable injection attacks.",
+            "whyItMatters": "An attacker who controls a config value can inject shell commands, SQL, or scripts if the value isn't properly escaped.",
+            "howToVerify": "Trace how config values flow into the application. Are they interpolated into shell commands, SQL queries, or templates without escaping?",
+            "exampleComment": "The `backup_path` config value is interpolated directly into a shell command. An attacker could set it to `; rm -rf /` for command injection.",
+            "codeExamples": [
+              {
+                "label": "Vulnerable",
+                "language": "python",
+                "code": "os.system(f'tar -czf backup.tar.gz {config[\"backup_path\"]}')"
+              },
+              {
+                "label": "Safe",
+                "language": "python",
+                "code": "subprocess.run(['tar', '-czf', 'backup.tar.gz', config['backup_path']])"
+              }
+            ],
+            "keyTakeaway": "Never interpolate config values into shell commands or queries. Use parameterized APIs.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.security.sensitive-defaults-absent",
+          "text": "Are default values safe (no default passwords, open permissions)?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Default config values should be safe. A default admin password or debug=true creates security vulnerabilities.",
+            "whyItMatters": "Default passwords are the #1 way systems get compromised. Debug mode in production leaks sensitive information.",
+            "howToVerify": "Check default values. Is debug off by default? Are there default credentials? Is authentication enabled by default?",
+            "exampleComment": "This config defaults `debug: true` and `admin_password: admin`. Both should require explicit configuration.",
+            "codeExamples": [],
+            "keyTakeaway": "Defaults should be secure. Require explicit opt-in for debug modes and credentials.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-formats.compatibility",
+      "title": "Compatibility & Migration",
+      "items": [
+        {
+          "id": "data-formats.compatibility.backwards-compatible",
+          "text": "Is this config change backwards-compatible with existing deployments?",
+          "severity": "major",
+          "tags": [
+            "compatibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config changes should not break existing deployments. Renaming keys, changing types, or removing fields requires migration.",
+            "whyItMatters": "A config change that breaks existing deployments causes outages during rollout, especially in environments that can't be updated atomically.",
+            "howToVerify": "Is a key being renamed or removed? Is a value type changing? Will old config files still work with the new code?",
+            "exampleComment": "Renaming `db_url` to `database_url` will break all existing deployments. Add `database_url` as the new key but keep reading `db_url` as a fallback.",
+            "codeExamples": [],
+            "keyTakeaway": "Add new keys, don't rename old ones. Support both during migration, then deprecate.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.compatibility.version-field-present",
+          "text": "Does the config file include a version or schema version field?",
+          "severity": "minor",
+          "tags": [
+            "compatibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config files should include a version field so the application can handle format migrations gracefully.",
+            "whyItMatters": "Without a version field, the application can't distinguish between config formats when the schema evolves over time.",
+            "howToVerify": "Is there a `version`, `schemaVersion`, or `apiVersion` field? Is it updated when the schema changes?",
+            "exampleComment": "Consider adding a `configVersion: 2` field so the app can migrate v1 configs automatically.",
+            "codeExamples": [
+              {
+                "label": "Versioned config",
+                "language": "json",
+                "code": "{\n  \"configVersion\": 2,\n  \"database\": { \"host\": \"localhost\" }\n}"
+              }
+            ],
+            "keyTakeaway": "Version your config schema. It makes automated migration possible.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.compatibility.deprecated-fields-documented",
+          "text": "Are deprecated fields marked and documented?",
+          "severity": "minor",
+          "tags": [
+            "compatibility",
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "Deprecated config fields should be clearly marked with comments explaining what replaces them and when they'll be removed.",
+            "whyItMatters": "Undocumented deprecations lead to confusion. Users don't know which field to use and may continue using the old one.",
+            "howToVerify": "Are there fields being replaced? Is the old field documented as deprecated? Is there a migration guide?",
+            "exampleComment": "The `host` field is being replaced by `endpoint` but there's no deprecation notice. Add a comment and log a warning at startup.",
+            "codeExamples": [],
+            "keyTakeaway": "Document deprecations with a replacement and a removal timeline.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.compatibility.environment-overrides-clear",
+          "text": "Are environment-specific overrides clearly separated?",
+          "severity": "minor",
+          "tags": [
+            "structure"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config for different environments (dev, staging, prod) should be clearly separated, not mixed in one file with conditionals.",
+            "whyItMatters": "Mixing environment configs in one file increases the risk of deploying dev settings to production (debug mode, test credentials).",
+            "howToVerify": "Are there separate config files per environment? Or clear sections? Is it obvious which values apply to production?",
+            "exampleComment": "This single config file has dev and prod database URLs with a comment saying \"uncomment for prod.\" Use separate files or environment variables.",
+            "codeExamples": [],
+            "keyTakeaway": "Separate config by environment. Never rely on commenting/uncommenting for environment selection.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.compatibility.migration-script-provided",
+          "text": "If the config format changed, is a migration script or guide provided?",
+          "severity": "minor",
+          "tags": [
+            "compatibility"
+          ],
+          "baseContent": {
+            "whatItMeans": "When the config format changes, users need a way to update their existing configs \u2014 either a script or clear migration instructions.",
+            "whyItMatters": "Without a migration path, users manually edit configs, making mistakes. Automated migration reduces errors and support burden.",
+            "howToVerify": "Is there a migration script in the PR? Are the CHANGELOG or migration docs updated? Is the old format still supported?",
+            "exampleComment": "This PR changes the config format but doesn't include a migration script. Users with existing configs will need to manually update.",
+            "codeExamples": [],
+            "keyTakeaway": "Provide automated migration when possible. At minimum, document the changes.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-formats.best-practices",
+      "title": "Best Practices",
+      "items": [
+        {
+          "id": "data-formats.best-practices.comments-for-non-obvious",
+          "text": "Are non-obvious config values documented with comments (where the format supports it)?",
+          "severity": "nit",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config values that aren't self-explanatory should have comments explaining their purpose, valid values, and defaults.",
+            "whyItMatters": "Future maintainers (including yourself) won't remember why a timeout is set to exactly 37 seconds. Comments save hours of archaeology.",
+            "howToVerify": "Are there magic numbers, obscure flags, or values that need context? Do non-obvious settings have explanatory comments?",
+            "exampleComment": "What does `replication_factor: 3` mean here? Add a comment explaining it's the number of Kafka replicas required for acknowledgment.",
+            "codeExamples": [
+              {
+                "label": "Documented config",
+                "language": "yaml",
+                "code": "# Max connections to the database.\n# Increase this if you see pool exhaustion errors.\n# Default: 10, Max recommended: 50\nmax_connections: 25"
+              }
+            ],
+            "keyTakeaway": "Comment the why, not the what. Future you will be grateful.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.best-practices.dry-no-duplication",
+          "text": "Is config DRY (no duplicated values that should be references)?",
+          "severity": "minor",
+          "tags": [
+            "structure"
+          ],
+          "baseContent": {
+            "whatItMeans": "Repeated values across config files or sections should be extracted into shared variables, anchors, or base configs.",
+            "whyItMatters": "Duplicated values get out of sync. When the database host changes, you update it in one place but miss the copy in another.",
+            "howToVerify": "Are there identical values repeated? Could YAML anchors, TOML table inheritance, or separate variable files reduce duplication?",
+            "exampleComment": "The database host `db.internal.prod` appears in 4 places. Extract it to a variable or anchor so it's defined once.",
+            "codeExamples": [],
+            "keyTakeaway": "Define values once, reference everywhere. DRY config is maintainable config.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.best-practices.sensible-defaults-documented",
+          "text": "Are default values documented so users know what happens when a field is omitted?",
+          "severity": "nit",
+          "tags": [
+            "documentation"
+          ],
+          "baseContent": {
+            "whatItMeans": "When config fields are optional, the default behavior should be documented so users can make informed decisions about what to set.",
+            "whyItMatters": "Without documented defaults, users set values unnecessarily or miss important settings because they don't know the default is unsafe.",
+            "howToVerify": "Are optional fields documented with their defaults? Does the schema or README list what happens when a field is omitted?",
+            "exampleComment": "What's the default for `max_retries` if omitted? Document it: `# Default: 3 if not specified`.",
+            "codeExamples": [],
+            "keyTakeaway": "Document defaults. Users shouldn't need to read source code to know what omitting a field does.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.best-practices.format-choice-appropriate",
+          "text": "Is the chosen format (JSON/YAML/TOML/XML) appropriate for the use case?",
+          "severity": "nit",
+          "tags": [
+            "general"
+          ],
+          "baseContent": {
+            "whatItMeans": "Each format has strengths: JSON for APIs and tooling, YAML for human-edited config, TOML for simple config, XML for document markup.",
+            "whyItMatters": "Using the wrong format creates friction. YAML for a REST API body is unusual. JSON for deeply nested human-edited config is painful.",
+            "howToVerify": "Does the format match the use case? Is the team familiar with it? Does the tooling support it well?",
+            "exampleComment": "This deeply nested config with many comments might be better as TOML or YAML instead of JSON (which doesn't support comments).",
+            "codeExamples": [],
+            "keyTakeaway": "Choose the format that best fits the audience and tooling. Don't fight the format.",
+            "references": []
+          }
+        },
+        {
+          "id": "data-formats.best-practices.validated-in-ci",
+          "text": "Is config validation included in the CI pipeline?",
+          "severity": "minor",
+          "tags": [
+            "tooling",
+            "ci"
+          ],
+          "baseContent": {
+            "whatItMeans": "Config files should be validated in CI \u2014 schema validation, syntax checking, and linting \u2014 to catch errors before deployment.",
+            "whyItMatters": "Config errors caught in CI are cheap to fix. Config errors caught in production cause outages.",
+            "howToVerify": "Is there a CI step that validates config files? Does it check syntax, schema conformance, and lint rules?",
+            "exampleComment": "Add a CI step to validate all YAML files with `yamllint` and JSON files against their schemas. This would have caught the last two config outages.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate config in CI. Syntax check + schema validation + linting = no config-related outages.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "id": "spring-boot",
+    "mode": "review",
+    "title": "Spring Boot",
+    "shortTitle": "Spring Boot",
+    "description": "Spring Boot applications with dependency injection, JPA, security, and actuators",
+    "icon": "🍃",
+    "totalItems": 18,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "spring-boot.di-config",
+      "title": "Dependency Injection & Configuration",
+      "items": [
+        {
+          "id": "spring-boot.di-config.constructor-injection",
+          "text": "Is constructor injection preferred over field injection?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use constructor injection instead of @Autowired on fields. Constructor injection makes dependencies explicit and enables testing.",
+            "whyItMatters": "Field injection hides dependencies, prevents immutability, and makes unit testing harder (requires reflection or Spring context).",
+            "howToVerify": "Check for @Autowired on fields. Verify classes use constructor injection (with Lombok @RequiredArgsConstructor or explicit constructors).",
+            "exampleComment": "This service uses @Autowired field injection. Refactor to constructor injection for testability and immutability.",
+            "codeExamples": [],
+            "keyTakeaway": "Always use constructor injection. Use Lombok @RequiredArgsConstructor to reduce boilerplate.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.di-config.profiles",
+          "text": "Are environment-specific configs managed with profiles?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Spring profiles (application-{profile}.yml) for environment-specific configuration. Don't hardcode environment values.",
+            "whyItMatters": "Hardcoded environment values require code changes for deployment. Profiles enable clean separation of dev/staging/prod configs.",
+            "howToVerify": "Check for hardcoded URLs, credentials, or env-specific values in application.yml. Verify they use profiles or environment variables.",
+            "exampleComment": "The database URL is hardcoded to localhost. Use application-dev.yml for local and environment variables for production.",
+            "codeExamples": [],
+            "keyTakeaway": "Use profiles for environment-specific config. Use ${ENV_VAR} syntax for secrets.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.di-config.bean-scope",
+          "text": "Are bean scopes appropriate (singleton vs prototype vs request)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Beans are singleton by default. Stateful beans that shouldn't be shared need @Scope(\"prototype\") or @RequestScope.",
+            "whyItMatters": "Singleton beans with mutable state cause thread-safety issues. Request-scoped beans injected into singletons cause scoping problems.",
+            "howToVerify": "Check for mutable fields in singleton beans. Verify request-scoped beans aren't injected directly into singletons.",
+            "exampleComment": "This singleton service has a mutable userContext field. This will be shared across threads. Use @RequestScope or pass context as a parameter.",
+            "codeExamples": [],
+            "keyTakeaway": "Singletons must be stateless. Use appropriate scopes for stateful beans.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.di-config.conditional-beans",
+          "text": "Are @Conditional annotations used correctly?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "@ConditionalOnProperty, @ConditionalOnMissingBean, and @Profile control when beans are created. They must be used carefully.",
+            "whyItMatters": "Wrong conditions cause missing beans at runtime (NoSuchBeanDefinitionException) or unexpected behavior in specific environments.",
+            "howToVerify": "Check that conditional beans have fallbacks. Verify the conditions match actual deployment scenarios.",
+            "exampleComment": "This bean is @ConditionalOnProperty('feature.x') but there's no default. Add a default value or a fallback bean.",
+            "codeExamples": [],
+            "keyTakeaway": "Test all conditional paths. Ensure every condition has a clear default behavior.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "spring-boot.jpa",
+      "title": "JPA & Data Access",
+      "items": [
+        {
+          "id": "spring-boot.jpa.lazy-loading",
+          "text": "Are JPA relationships using appropriate fetch strategies?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "@OneToMany defaults to LAZY, @ManyToOne defaults to EAGER. Understand when to override and when to use JOIN FETCH.",
+            "whyItMatters": "EAGER loading on collections loads all related entities always. LAZY loading without fetch joins causes N+1 queries.",
+            "howToVerify": "Check @OneToMany for EAGER (avoid). Check queries accessing LAZY relationships — they need JOIN FETCH or @EntityGraph.",
+            "exampleComment": "This @OneToMany(fetch = EAGER) loads all order items for every order query. Change to LAZY and use JOIN FETCH where needed.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to LAZY loading. Use JOIN FETCH or @EntityGraph for specific queries that need related data.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.jpa.n-plus-one",
+          "text": "Are N+1 query problems avoided?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Accessing LAZY relationships in a loop triggers individual queries for each entity. Use @EntityGraph, JOIN FETCH, or batch fetching.",
+            "whyItMatters": "N+1 queries are the most common JPA performance problem. Loading 100 orders with items makes 101 queries instead of 1-2.",
+            "howToVerify": "Enable hibernate.show_sql or use a SQL logger. Check for repeated queries when accessing collections.",
+            "exampleComment": "This endpoint loads users then accesses user.roles in a loop. Add @EntityGraph(attributePaths = \"roles\") to the repository method.",
+            "codeExamples": [],
+            "keyTakeaway": "Always check for N+1 queries. Use @EntityGraph or JPQL JOIN FETCH.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.jpa.transactions",
+          "text": "Are @Transactional boundaries correct?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "@Transactional should be on service methods, not repositories. Understand propagation, readOnly, and rollback behavior.",
+            "whyItMatters": "Wrong transaction boundaries cause partial updates, LazyInitializationException, or unnecessary locking.",
+            "howToVerify": "Check that @Transactional is on service methods that need atomicity. Verify readOnly=true for read-only operations. Check propagation settings.",
+            "exampleComment": "This method reads data then writes. The @Transactional(readOnly=true) will cause the write to fail. Remove readOnly.",
+            "codeExamples": [],
+            "keyTakeaway": "Put @Transactional on service methods. Use readOnly=true for queries. Understand propagation.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.jpa.projections",
+          "text": "Are DTOs or projections used instead of exposing entities?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "REST endpoints should return DTOs, not JPA entities. Use Spring Data projections or MapStruct for entity-to-DTO mapping.",
+            "whyItMatters": "Exposing entities leaks internal structure, causes serialization issues with LAZY proxies, and couples API to database schema.",
+            "howToVerify": "Check if controllers return entity types directly. Look for @JsonIgnore used to hide fields (sign of missing DTO).",
+            "exampleComment": "This endpoint returns the User entity directly, exposing password_hash. Create a UserResponse DTO.",
+            "codeExamples": [],
+            "keyTakeaway": "Never expose JPA entities in API responses. Use DTOs to control what data is returned.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "spring-boot.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "spring-boot.security.security-config",
+          "text": "Is Spring Security configured correctly?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "SecurityFilterChain should define which endpoints require authentication. Use .authenticated() for protected routes and .permitAll() for public ones.",
+            "whyItMatters": "Misconfigured security rules can expose admin endpoints to unauthenticated users or lock out legitimate users.",
+            "howToVerify": "Review the SecurityFilterChain configuration. Verify admin endpoints require admin roles. Check that the order of rules is correct (most specific first).",
+            "exampleComment": "The security config permits all requests to /api/**. This includes /api/admin which should require ADMIN role.",
+            "codeExamples": [],
+            "keyTakeaway": "Order security rules from most specific to least. Default to authenticated, then whitelist public endpoints.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.security.secrets-config",
+          "text": "Are secrets externalized (not in application.yml)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Database passwords, API keys, and JWT secrets should come from environment variables, Vault, or Spring Cloud Config — not committed in config files.",
+            "whyItMatters": "Secrets in application.yml are visible to anyone with repository access. Leaked database credentials compromise all data.",
+            "howToVerify": "Check application.yml and application.properties for hardcoded credentials. Verify they use ${ENV_VAR} or external config.",
+            "exampleComment": "spring.datasource.password is hardcoded. Use ${DB_PASSWORD} and set it as an environment variable.",
+            "codeExamples": [],
+            "keyTakeaway": "Externalize all secrets. Use environment variables or a secret manager.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.security.method-security",
+          "text": "Is method-level security used for fine-grained access control?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Use @PreAuthorize, @Secured, or @RolesAllowed on service methods for authorization beyond URL-pattern matching.",
+            "whyItMatters": "URL-based security alone can't enforce object-level permissions like 'users can only edit their own resources'.",
+            "howToVerify": "Check if sensitive service methods have authorization annotations. Verify @EnableMethodSecurity is configured.",
+            "exampleComment": "This updateUser method allows any authenticated user to update any user. Add @PreAuthorize('#userId == authentication.principal.id').",
+            "codeExamples": [],
+            "keyTakeaway": "Use method-level security for object-level authorization. Combine with URL-based security for defense in depth.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.security.actuator",
+          "text": "Are actuator endpoints secured?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Spring Actuator exposes /actuator/health, /actuator/env, /actuator/beans, etc. Sensitive endpoints must be secured or disabled.",
+            "whyItMatters": "/actuator/env exposes all environment variables including secrets. /actuator/heapdump can leak sensitive memory contents.",
+            "howToVerify": "Check which actuator endpoints are exposed. Verify sensitive ones (env, heapdump, configprops) are not publicly accessible.",
+            "exampleComment": "management.endpoints.web.exposure.include=* exposes all actuator endpoints. Limit to health,info and secure the rest.",
+            "codeExamples": [],
+            "keyTakeaway": "Only expose health and info publicly. Secure or disable all other actuator endpoints.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "spring-boot.api",
+      "title": "REST API Design",
+      "items": [
+        {
+          "id": "spring-boot.api.validation",
+          "text": "Are request bodies validated with @Valid and Bean Validation?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use @Valid on @RequestBody parameters with Jakarta Bean Validation annotations (@NotNull, @Size, @Email, etc.) on DTOs.",
+            "whyItMatters": "Without validation, invalid data reaches the service layer, causing unclear errors or data corruption.",
+            "howToVerify": "Check controller methods for @Valid on request body parameters. Verify DTOs have appropriate validation annotations.",
+            "exampleComment": "This endpoint accepts a CreateUserRequest without @Valid. Add @Valid and @NotBlank/@Email annotations to the DTO fields.",
+            "codeExamples": [],
+            "keyTakeaway": "Always use @Valid with Bean Validation annotations. Handle MethodArgumentNotValidException globally.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.api.error-handling",
+          "text": "Is there consistent error handling with @ControllerAdvice?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use @ControllerAdvice with @ExceptionHandler to handle exceptions globally. Return consistent error response formats.",
+            "whyItMatters": "Without global error handling, different endpoints return different error formats, making client integration difficult.",
+            "howToVerify": "Check for a @ControllerAdvice class. Verify it handles common exceptions (validation, not found, unauthorized) with consistent format.",
+            "exampleComment": "This controller catches exceptions inline with try-catch. Move error handling to a @ControllerAdvice for consistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Use @ControllerAdvice for global error handling. Return a consistent error response DTO.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.api.response-codes",
+          "text": "Do endpoints return appropriate HTTP status codes?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use 201 for creation, 204 for no-content deletes, 400 for validation errors, 404 for not found, 409 for conflicts.",
+            "whyItMatters": "Wrong status codes break client error handling. Returning 200 for errors makes it impossible to distinguish success from failure.",
+            "howToVerify": "Check that POST endpoints return 201, DELETE returns 204, and error cases return 4xx/5xx, not 200.",
+            "exampleComment": "This POST endpoint returns 200 on success. Use ResponseEntity.status(HttpStatus.CREATED) for resource creation.",
+            "codeExamples": [],
+            "keyTakeaway": "Use semantically correct HTTP status codes. They are part of your API contract.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "spring-boot.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "spring-boot.testing.slice-tests",
+          "text": "Are test slices used instead of full @SpringBootTest where possible?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use @WebMvcTest for controller tests, @DataJpaTest for repository tests, @MockBean for mocking. Full @SpringBootTest is slow.",
+            "whyItMatters": "@SpringBootTest loads the entire application context. Slice tests load only what's needed, running 10-100x faster.",
+            "howToVerify": "Check for @SpringBootTest on tests that only test a controller or repository. These should use slice annotations.",
+            "exampleComment": "This controller test uses @SpringBootTest but only tests the UserController. Use @WebMvcTest(UserController.class) instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use the narrowest test slice that covers your test. Save @SpringBootTest for integration tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.testing.testcontainers",
+          "text": "Are integration tests using Testcontainers or embedded databases?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Integration tests should use Testcontainers for real database testing or H2 for speed. Don't depend on external services.",
+            "whyItMatters": "Tests that depend on external databases are flaky, hard to run locally, and block CI when the database is unavailable.",
+            "howToVerify": "Check for hardcoded database URLs in test configs. Verify @Testcontainers or in-memory databases are configured.",
+            "exampleComment": "These tests connect to a shared test database. Use @Testcontainers with PostgreSQLContainer for isolated testing.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Testcontainers for realistic database tests. Use H2 when speed matters more than accuracy.",
+            "references": []
+          }
+        },
+        {
+          "id": "spring-boot.testing.mockbean-overuse",
+          "text": "Is @MockBean used appropriately (not over-mocking)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "@MockBean replaces beans in the Spring context. Over-mocking (mocking the class you're testing) makes tests meaningless.",
+            "whyItMatters": "Tests that mock everything verify mock behavior, not actual code. They pass even when the real code is broken.",
+            "howToVerify": "Check that @MockBean is only used for external dependencies (APIs, databases). The class under test should not be mocked.",
+            "exampleComment": "This test mocks the service it's supposed to test. Remove the mock and test the actual service with a mocked repository.",
+            "codeExamples": [],
+            "keyTakeaway": "Mock external dependencies, not the code under test. Integration tests should use real implementations.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

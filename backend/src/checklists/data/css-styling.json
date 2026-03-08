@@ -1,0 +1,314 @@
+{
+  "meta": {
+    "id": "css-styling",
+    "mode": "review",
+    "title": "CSS, Tailwind & Styling",
+    "shortTitle": "CSS/Styling",
+    "description": "CSS, Tailwind CSS, CSS-in-JS, responsive design, and styling architecture",
+    "icon": "🎨",
+    "totalItems": 18,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "css-styling.fundamentals",
+      "title": "CSS Fundamentals",
+      "items": [
+        {
+          "id": "css-styling.fundamentals.specificity",
+          "text": "Are specificity conflicts avoided (no !important, no overly specific selectors)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Keep selector specificity low and consistent. Avoid !important except in utility classes. Don't chain IDs or deeply nest selectors.",
+            "whyItMatters": "Specificity wars make CSS unmaintainable. Once !important is used, it escalates until styles are impossible to override.",
+            "howToVerify": "Search for !important usage. Check for selectors with more than 3 levels of nesting. Look for ID selectors used for styling.",
+            "exampleComment": "This uses !important to override a style. Fix the specificity issue at the source instead of escalating.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep specificity flat. Use classes, not IDs. Reserve !important for utility overrides only.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.fundamentals.naming",
+          "text": "Do class names follow a consistent convention (BEM, utility-first, CSS Modules)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use a consistent naming methodology: BEM (.block__element--modifier), utility-first (Tailwind), or CSS Modules (scoped by default).",
+            "whyItMatters": "Inconsistent naming leads to style conflicts, difficulty finding styles, and unclear relationships between elements.",
+            "howToVerify": "Check that new classes follow the project's established convention. Don't mix BEM with ad-hoc names.",
+            "exampleComment": "The project uses BEM but this component uses generic class names like .title and .container. Use .card__title and .card__container.",
+            "codeExamples": [],
+            "keyTakeaway": "Follow the project's naming convention. Consistency matters more than which convention you choose.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.fundamentals.magic-numbers",
+          "text": "Are magic numbers replaced with design tokens or CSS custom properties?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Hardcoded values like 'padding: 13px' or 'color: #3a7bc8' should use CSS custom properties (--spacing-md) or design tokens.",
+            "whyItMatters": "Magic numbers make themes impossible, break consistency, and are hard to update globally. A design system needs centralized values.",
+            "howToVerify": "Look for hardcoded pixel values, hex colors, and font sizes that don't reference custom properties or theme tokens.",
+            "exampleComment": "padding: 13px is a magic number. Use var(--spacing-md) or the design system's spacing scale.",
+            "codeExamples": [],
+            "keyTakeaway": "Use design tokens and CSS custom properties. Avoid hardcoded values for spacing, colors, and typography.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.fundamentals.units",
+          "text": "Are appropriate CSS units used (rem/em for text, relative units for layout)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use rem for font sizes (respects user preferences), px for borders, and relative units (%, vw, vh, fr) for layout.",
+            "whyItMatters": "Using px for font sizes ignores user accessibility settings. Using fixed units for layout breaks on different screen sizes.",
+            "howToVerify": "Check font-size declarations for px units. Verify layout uses relative units where appropriate.",
+            "exampleComment": "font-size: 14px ignores user font size preferences. Use font-size: 0.875rem instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use rem for typography, relative units for layout. Reserve px for borders and fine details.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "css-styling.responsive",
+      "title": "Responsive Design",
+      "items": [
+        {
+          "id": "css-styling.responsive.mobile-first",
+          "text": "Is the design mobile-first (min-width breakpoints, not max-width)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Write base styles for mobile, then add complexity with min-width media queries. This is the standard responsive approach.",
+            "whyItMatters": "Mobile-first means mobile users get simple CSS. Desktop users get additional rules. Max-width (desktop-first) ships bloated CSS to mobile.",
+            "howToVerify": "Check for max-width media queries (sign of desktop-first). Verify base styles work on mobile without media queries.",
+            "exampleComment": "This uses max-width: 768px to hide on mobile. Use mobile-first: show by default, hide with min-width: 769px.",
+            "codeExamples": [],
+            "keyTakeaway": "Write mobile styles first. Enhance for larger screens with min-width media queries.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.responsive.breakpoints",
+          "text": "Are breakpoints consistent and from a design system?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use consistent breakpoints from your design system or Tailwind config. Don't use arbitrary values like @media (min-width: 847px).",
+            "whyItMatters": "Arbitrary breakpoints create inconsistencies. Content shifts at different widths in different components.",
+            "howToVerify": "Check media queries for non-standard breakpoint values. Verify they match the design system or Tailwind config.",
+            "exampleComment": "This uses min-width: 847px but the design system breakpoints are 640/768/1024/1280. Use the nearest standard breakpoint.",
+            "codeExamples": [],
+            "keyTakeaway": "Use design system breakpoints consistently. Don't create one-off breakpoint values.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.responsive.overflow",
+          "text": "Is horizontal scroll prevented (no overflow on mobile)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Content should not cause horizontal scrolling on any viewport. Fixed-width elements, wide tables, and images can break layout.",
+            "whyItMatters": "Horizontal scroll is a broken experience on mobile. Users can't see content and may not realize they can scroll sideways.",
+            "howToVerify": "Test on mobile viewport sizes. Check for fixed-width elements, images without max-width: 100%, and tables without responsive handling.",
+            "exampleComment": "This image has width: 800px which causes horizontal scroll on mobile. Use max-width: 100% instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Prevent horizontal overflow. Use max-width: 100% on images and responsive patterns for tables.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.responsive.touch-targets",
+          "text": "Are interactive elements large enough for touch (44x44px minimum)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Buttons, links, and interactive elements should have a minimum touch target of 44x44 CSS pixels (WCAG 2.5.5).",
+            "whyItMatters": "Small touch targets cause misclicks on mobile. Users with motor impairments struggle with targets under 44px.",
+            "howToVerify": "Check button and link sizes on mobile. Verify padding creates adequate touch targets even if text is small.",
+            "exampleComment": "This icon button is 24x24px. Add padding to make the touch target at least 44x44px.",
+            "codeExamples": [],
+            "keyTakeaway": "Make touch targets at least 44x44px. Use padding to increase hit area without changing visual size.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "css-styling.tailwind",
+      "title": "Tailwind CSS",
+      "items": [
+        {
+          "id": "css-styling.tailwind.arbitrary-values",
+          "text": "Are arbitrary values ([13px], [#abc]) avoided in favor of the design system scale?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tailwind's arbitrary value syntax (w-[137px]) bypasses the design system. Use the predefined scale (w-32, w-36) or extend the theme.",
+            "whyItMatters": "Arbitrary values defeat the purpose of a design system. They create one-off values that break consistency.",
+            "howToVerify": "Search for square bracket syntax in class names. Each should be justified or replaced with a theme value.",
+            "exampleComment": "p-[13px] is an arbitrary value. Use p-3 (12px) or p-3.5 (14px) from the spacing scale, or extend the theme.",
+            "codeExamples": [],
+            "keyTakeaway": "Use the design system scale. Extend the Tailwind config for project-specific values instead of arbitrary values.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.tailwind.component-extraction",
+          "text": "Are repeated utility combinations extracted into components or @apply?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When the same utility combination appears in multiple places, extract it into a component or use @apply in a CSS file.",
+            "whyItMatters": "Duplicated utility strings are hard to maintain. Changing the design requires finding and updating every instance.",
+            "howToVerify": "Look for identical long class strings repeated across files. These should be components or @apply abstractions.",
+            "exampleComment": "This exact set of 12 utility classes appears in 5 files. Extract it into a <Button> component.",
+            "codeExamples": [],
+            "keyTakeaway": "Extract repeated utility combinations into components. Use @apply sparingly for non-component abstractions.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.tailwind.responsive-modifiers",
+          "text": "Are responsive modifiers (sm:, md:, lg:) used correctly and mobile-first?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tailwind is mobile-first. Base utilities apply to all sizes. sm:, md:, lg: add styles at increasing breakpoints.",
+            "whyItMatters": "Using lg: without base styles means large screens get styles but mobile is broken. Always start with mobile styles.",
+            "howToVerify": "Check that elements have base styles (no prefix) for mobile. Responsive prefixes should add or override for larger screens.",
+            "exampleComment": "This uses md:flex but has no display set for mobile. Add hidden as base and md:flex to show on desktop.",
+            "codeExamples": [],
+            "keyTakeaway": "Start with mobile styles (no prefix). Add responsive modifiers for larger screens.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.tailwind.dark-mode",
+          "text": "Are dark mode styles properly implemented with dark: variant?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Tailwind's dark: variant for dark mode styles. Ensure all custom colors have dark mode equivalents.",
+            "whyItMatters": "Missing dark mode styles cause white backgrounds or invisible text in dark mode, making the UI unusable.",
+            "howToVerify": "Check new components for dark: variants on backgrounds, text colors, and borders. Test in dark mode.",
+            "exampleComment": "This component uses bg-white but has no dark:bg-gray-800. Users in dark mode will see a blinding white card.",
+            "codeExamples": [],
+            "keyTakeaway": "Add dark: variants for all color-related utilities. Test in both light and dark modes.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "css-styling.accessibility",
+      "title": "Accessibility & Performance",
+      "items": [
+        {
+          "id": "css-styling.accessibility.color-contrast",
+          "text": "Do text colors meet WCAG contrast requirements (4.5:1 for normal text)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Text must have sufficient contrast against its background. WCAG AA requires 4.5:1 for normal text, 3:1 for large text.",
+            "whyItMatters": "Low contrast text is unreadable for users with low vision, in bright sunlight, or on low-quality displays.",
+            "howToVerify": "Use a contrast checker tool. Check light gray text on white backgrounds and dark text on dark backgrounds.",
+            "exampleComment": "text-gray-400 on bg-white has a contrast ratio of 3.0:1, below the 4.5:1 minimum. Use text-gray-600 or darker.",
+            "codeExamples": [],
+            "keyTakeaway": "Check contrast ratios. Use WCAG AA (4.5:1) as the minimum for all normal text.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.accessibility.focus-styles",
+          "text": "Are focus styles visible for keyboard navigation?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Interactive elements must show a visible focus indicator when navigated with keyboard. Don't remove outline without a replacement.",
+            "whyItMatters": "Removing focus styles makes the site unusable for keyboard users. They can't tell which element is focused.",
+            "howToVerify": "Tab through the interface. Every interactive element should show a visible focus ring. Check for outline: none without a replacement.",
+            "exampleComment": "This button has outline: none but no custom focus style. Add a visible focus ring: focus:ring-2 focus:ring-blue-500.",
+            "codeExamples": [],
+            "keyTakeaway": "Never remove focus styles without a replacement. Use focus-visible for mouse-friendly focus styles.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.accessibility.motion",
+          "text": "Are animations respectful of prefers-reduced-motion?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Animations should be disabled or simplified for users who set prefers-reduced-motion in their OS settings.",
+            "whyItMatters": "Animations can cause motion sickness, seizures, or distraction for users with vestibular disorders.",
+            "howToVerify": "Check for animations and transitions. Verify they use @media (prefers-reduced-motion: reduce) to disable or simplify.",
+            "exampleComment": "This spinning animation has no reduced-motion alternative. Add motion-reduce:animate-none in Tailwind.",
+            "codeExamples": [],
+            "keyTakeaway": "Respect prefers-reduced-motion. Provide static alternatives for all animations.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.accessibility.layout-shift",
+          "text": "Are Cumulative Layout Shifts (CLS) minimized?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Elements should not shift position after the page loads. Set explicit dimensions on images/video. Use skeleton loaders.",
+            "whyItMatters": "Layout shifts cause users to click the wrong element. They're frustrating and hurt Core Web Vitals scores.",
+            "howToVerify": "Check for images without width/height. Look for dynamically injected content that pushes existing content down.",
+            "exampleComment": "This image has no width/height set. When it loads, it pushes content down. Add explicit dimensions or use aspect-ratio.",
+            "codeExamples": [],
+            "keyTakeaway": "Set explicit dimensions on media. Use skeleton loaders for dynamic content.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "css-styling.architecture",
+      "title": "Architecture & Organization",
+      "items": [
+        {
+          "id": "css-styling.architecture.css-modules",
+          "text": "Are styles properly scoped (CSS Modules, scoped styles, or utility classes)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Styles should be scoped to their component to prevent leaking. Use CSS Modules, styled-components, or utility classes.",
+            "whyItMatters": "Global CSS leaks cause unexpected style changes in unrelated components. This is the #1 CSS maintenance problem.",
+            "howToVerify": "Check for global CSS that could affect other components. Verify new styles are scoped to their component.",
+            "exampleComment": "This global .title class could affect other components. Use CSS Modules (.module.css) or a more specific selector.",
+            "codeExamples": [],
+            "keyTakeaway": "Scope styles to components. Use CSS Modules, utility classes, or CSS-in-JS to prevent leaking.",
+            "references": []
+          }
+        },
+        {
+          "id": "css-styling.architecture.dead-css",
+          "text": "Is unused CSS removed?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Remove CSS that's no longer used by any component. Use PurgeCSS or Tailwind's built-in purging to eliminate unused utilities.",
+            "whyItMatters": "Unused CSS increases bundle size and download time. Over time, CSS files grow without limit if unused styles aren't removed.",
+            "howToVerify": "Check for CSS classes that don't match any HTML/JSX element. Verify Tailwind purge configuration covers all template files.",
+            "exampleComment": "These 50 lines of CSS for the old header are no longer used after the redesign. Remove them.",
+            "codeExamples": [],
+            "keyTakeaway": "Remove unused CSS. Configure purging for utility-first frameworks.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

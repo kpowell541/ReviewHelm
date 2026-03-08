@@ -1,0 +1,362 @@
+{
+  "meta": {
+    "id": "vue",
+    "mode": "review",
+    "title": "Vue.js",
+    "shortTitle": "Vue",
+    "description": "Review checklist for Vue.js applications (Vue 3, Composition API, Nuxt)",
+    "icon": "💚",
+    "totalItems": 18,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "vue.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "vue.general-code-quality.clear-pr-description",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The PR description should explain the purpose of the change and any relevant context.",
+            "whyItMatters": "Reviewers without context waste time reverse-engineering intent from code.",
+            "howToVerify": "Read the PR description. Can you understand what changed and why without reading the code?",
+            "exampleComment": "Could you add more context about why this component was restructured?",
+            "codeExamples": [],
+            "keyTakeaway": "A good PR description saves reviewer time.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.general-code-quality.change-scoped",
+          "text": "Is the change scoped appropriately?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each PR should do one thing. Mixing a feature with a refactor makes review harder.",
+            "whyItMatters": "Large multi-concern PRs are slow to review and difficult to revert.",
+            "howToVerify": "Check if the PR touches multiple unrelated areas. Could any part ship independently?",
+            "exampleComment": "This PR adds a new page and also refactors the store. Could we split these?",
+            "codeExamples": [],
+            "keyTakeaway": "One concern per PR.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "vue.component-design",
+      "title": "Component Design",
+      "items": [
+        {
+          "id": "vue.component-design.composition-api",
+          "text": "Are new components using the Composition API (setup or script setup)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Vue 3's Composition API (especially <script setup>) is the recommended approach for new components, offering better TypeScript support and logic reuse.",
+            "whyItMatters": "The Options API mixes concerns by lifecycle hook. Composition API groups related logic together and enables better composable extraction.",
+            "howToVerify": "Check new .vue files for <script setup> or setup() function. Flag new Options API components in a Composition API codebase.",
+            "exampleComment": "This new component uses the Options API. Since the rest of the codebase uses Composition API, could we convert it for consistency?",
+            "codeExamples": [
+              {
+                "label": "Options API",
+                "language": "vue",
+                "code": "<script>\nexport default {\n  data() { return { count: 0 } },\n  methods: { increment() { this.count++ } }\n}\n</script>"
+              },
+              {
+                "label": "Composition API",
+                "language": "vue",
+                "code": "<script setup lang=\"ts\">\nimport { ref } from 'vue'\nconst count = ref(0)\nfunction increment() { count.value++ }\n</script>"
+              }
+            ],
+            "keyTakeaway": "Use <script setup> for new components. It is more concise and has better TypeScript inference.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.component-design.props-typed",
+          "text": "Are component props properly typed with defaults?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Props should use defineProps with TypeScript types or validator functions, and include sensible defaults.",
+            "whyItMatters": "Untyped props lead to runtime errors and make components hard to use correctly. TypeScript catches misuse at build time.",
+            "howToVerify": "Check defineProps for type annotations. Look for props used without type or default.",
+            "exampleComment": "These props are untyped. Using defineProps<{ title: string; count?: number }>() would catch misuse at compile time.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "vue",
+                "code": "<script setup>\nconst props = defineProps(['title', 'count'])\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "vue",
+                "code": "<script setup lang=\"ts\">\ninterface Props {\n  title: string\n  count?: number\n}\nconst props = withDefaults(defineProps<Props>(), {\n  count: 0,\n})\n</script>"
+              }
+            ],
+            "keyTakeaway": "Always type your props. Use withDefaults for optional props with defaults.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.component-design.emits-declared",
+          "text": "Are component emits explicitly declared?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Components should declare their emits using defineEmits with TypeScript payload types.",
+            "whyItMatters": "Undeclared emits are not type-checked and can silently fail. Declaring them documents the component's event contract.",
+            "howToVerify": "Check for $emit calls without corresponding defineEmits declarations.",
+            "exampleComment": "This component emits 'update' and 'delete' but they are not declared in defineEmits. Adding them enables type checking.",
+            "codeExamples": [],
+            "keyTakeaway": "Declare all emits with defineEmits for type safety and documentation.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.component-design.component-size",
+          "text": "Is the component small enough to understand at a glance?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Components should have a single responsibility. If a .vue file exceeds 200-300 lines, it likely needs to be split.",
+            "whyItMatters": "Large components are hard to review, test, and maintain. Extracting composables and child components improves reusability.",
+            "howToVerify": "Check the line count and number of responsibilities. Can any logic be extracted into a composable?",
+            "exampleComment": "This component is 400 lines and handles form validation, API calls, and rendering. Consider extracting the form logic into a useFormValidation composable.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep components focused. Extract logic into composables, extract UI into child components.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.component-design.v-model-usage",
+          "text": "Is v-model used correctly for two-way binding?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Custom components should support v-model by accepting a modelValue prop and emitting update:modelValue, not by mutating props directly.",
+            "whyItMatters": "Mutating props breaks Vue's one-way data flow and causes hard-to-debug reactivity issues.",
+            "howToVerify": "Check for direct prop mutation. Verify v-model components emit update:modelValue.",
+            "exampleComment": "This component mutates the prop directly instead of emitting. Use defineModel() or emit update:modelValue.",
+            "codeExamples": [],
+            "keyTakeaway": "Never mutate props. Use defineModel() or emit update:modelValue for two-way binding.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "vue.reactivity",
+      "title": "Reactivity & State",
+      "items": [
+        {
+          "id": "vue.reactivity.ref-vs-reactive",
+          "text": "Are ref() and reactive() used appropriately?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "ref() wraps primitives and objects (accessed via .value). reactive() wraps objects (accessed directly). Mixing them inconsistently adds confusion.",
+            "whyItMatters": "Destructuring a reactive() object loses reactivity. Forgetting .value on a ref in script causes silent bugs.",
+            "howToVerify": "Check for destructured reactive objects. Verify consistent usage of ref vs reactive within the same codebase.",
+            "exampleComment": "This destructures a reactive object, breaking reactivity. Use toRefs() or switch to ref() for individual values.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const state = reactive({ count: 0, name: '' })\nconst { count } = state // loses reactivity!"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const count = ref(0)\nconst name = ref('')\n// or: const { count, name } = toRefs(state)"
+              }
+            ],
+            "keyTakeaway": "Prefer ref() for consistency. If using reactive(), never destructure without toRefs().",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.reactivity.computed-for-derived",
+          "text": "Is computed() used for derived state instead of watchers?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Derived values should use computed() rather than watch() + manual update. Computed properties are cached and declarative.",
+            "whyItMatters": "Using watch to sync derived state is imperative and error-prone. Computed properties automatically stay in sync.",
+            "howToVerify": "Look for watch() that sets a ref based on other reactive values. This is usually a computed in disguise.",
+            "exampleComment": "This watcher just derives fullName from firstName and lastName. A computed property would be simpler and cached.",
+            "codeExamples": [],
+            "keyTakeaway": "If you are watching state just to derive other state, use computed() instead.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.reactivity.watchers-cleanup",
+          "text": "Do watchers clean up side effects?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Watch callbacks that create side effects (timers, subscriptions, event listeners) should use the onCleanup parameter to clean up.",
+            "whyItMatters": "Without cleanup, watchers can leak timers, create duplicate subscriptions, or fire stale callbacks.",
+            "howToVerify": "Look for watch() or watchEffect() that set up intervals, event listeners, or subscriptions without cleanup.",
+            "exampleComment": "This watcher sets up a timer but never clears it. Use onCleanup to clear the interval when the watched value changes.",
+            "codeExamples": [],
+            "keyTakeaway": "Always clean up side effects in watchers using onCleanup.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.reactivity.store-usage",
+          "text": "Is global state managed through a store (Pinia) rather than provide/inject for complex state?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Complex shared state should use Pinia stores. provide/inject is for dependency injection, not global state management.",
+            "whyItMatters": "provide/inject state is not devtools-friendly, hard to test, and has no built-in patterns for actions or getters.",
+            "howToVerify": "Check for provide/inject being used to share complex mutable state across many components.",
+            "exampleComment": "This provide/inject pattern is managing global state with multiple mutations. Consider using a Pinia store for devtools support and testability.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Pinia for global state. Use provide/inject for dependency injection and simple config.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "vue.template-style",
+      "title": "Template & Styling",
+      "items": [
+        {
+          "id": "vue.template-style.key-on-v-for",
+          "text": "Do v-for loops have unique :key attributes?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every v-for loop must have a unique, stable :key. Using the array index as key causes bugs when items are reordered or removed.",
+            "whyItMatters": "Without proper keys, Vue cannot efficiently diff the DOM and may reuse the wrong component instances, causing stale state.",
+            "howToVerify": "Check all v-for directives for :key. Verify the key is a unique identifier, not the loop index.",
+            "exampleComment": "This v-for uses the index as :key. If items can be reordered or deleted, use item.id instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "vue-html",
+                "code": "<div v-for=\"(item, index) in items\" :key=\"index\">{{ item.name }}</div>"
+              },
+              {
+                "label": "Good",
+                "language": "vue-html",
+                "code": "<div v-for=\"item in items\" :key=\"item.id\">{{ item.name }}</div>"
+              }
+            ],
+            "keyTakeaway": "Always use a unique, stable identifier as :key in v-for. Never use index for dynamic lists.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.template-style.v-if-v-for",
+          "text": "Are v-if and v-for not used on the same element?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Using v-if and v-for on the same element is ambiguous and has changed behavior between Vue 2 and Vue 3.",
+            "whyItMatters": "In Vue 3, v-if has higher priority than v-for, which means the loop variable is not accessible in the condition. This causes runtime errors.",
+            "howToVerify": "Search for elements with both v-if and v-for directives.",
+            "exampleComment": "This element has both v-if and v-for. Wrap the v-for in a <template> and put v-if on the child element.",
+            "codeExamples": [],
+            "keyTakeaway": "Never put v-if and v-for on the same element. Use <template v-for> with v-if on the child.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.template-style.scoped-styles",
+          "text": "Are component styles scoped to prevent leaking?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Component <style> blocks should use scoped or CSS Modules to prevent styles from affecting other components.",
+            "whyItMatters": "Unscoped styles leak globally and cause unpredictable styling conflicts that are hard to debug.",
+            "howToVerify": "Check <style> tags for the scoped attribute or module attribute.",
+            "exampleComment": "This component's styles are not scoped. Add <style scoped> to prevent them from leaking to other components.",
+            "codeExamples": [],
+            "keyTakeaway": "Use <style scoped> or CSS Modules. Only use global styles intentionally in a dedicated file.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.template-style.template-complexity",
+          "text": "Is complex logic kept out of templates?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Templates should contain simple expressions. Complex logic should be in computed properties or methods.",
+            "whyItMatters": "Complex template expressions are hard to read, cannot be reused, and are not cached.",
+            "howToVerify": "Look for multi-line expressions, chained method calls, or complex ternaries in template bindings.",
+            "exampleComment": "This template expression is doing filtering and mapping inline. Extract it into a computed property for readability.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep templates simple. Move logic into computed properties or methods.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "vue.performance",
+      "title": "Performance & Best Practices",
+      "items": [
+        {
+          "id": "vue.performance.async-components",
+          "text": "Are heavy components lazy-loaded where appropriate?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Large components not needed on initial render should use defineAsyncComponent() or dynamic import() for code splitting.",
+            "whyItMatters": "Bundling everything upfront increases initial load time. Lazy loading defers non-critical code until it is needed.",
+            "howToVerify": "Check for large components (modals, charts, editors) that are imported statically but only shown conditionally.",
+            "exampleComment": "This chart component is 50KB but only shown when the user clicks a tab. Consider lazy loading it with defineAsyncComponent.",
+            "codeExamples": [],
+            "keyTakeaway": "Lazy-load components that are not visible on initial render.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.performance.memory-leaks",
+          "text": "Are event listeners and subscriptions cleaned up in onUnmounted?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Global event listeners, WebSocket connections, and manual DOM subscriptions must be removed when the component unmounts.",
+            "whyItMatters": "Leaked listeners accumulate over time, causing memory leaks and phantom behavior from unmounted components.",
+            "howToVerify": "Look for addEventListener, setInterval, or external library subscriptions without corresponding cleanup in onUnmounted.",
+            "exampleComment": "This component adds a resize listener in onMounted but never removes it. Add a cleanup in onUnmounted.",
+            "codeExamples": [],
+            "keyTakeaway": "Every subscription created in onMounted needs a corresponding teardown in onUnmounted.",
+            "references": []
+          }
+        },
+        {
+          "id": "vue.performance.unnecessary-renders",
+          "text": "Are unnecessary re-renders avoided?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Avoid reactive dependencies that change frequently but do not affect the rendered output. Use shallowRef for large objects that replace rather than mutate.",
+            "whyItMatters": "Unnecessary re-renders degrade performance, especially in lists or complex component trees.",
+            "howToVerify": "Check for reactive objects that are replaced frequently. Look for computed properties with expensive calculations that could be cached.",
+            "exampleComment": "This ref holds a large array that is replaced on every keystroke. Consider debouncing the update or using shallowRef.",
+            "codeExamples": [],
+            "keyTakeaway": "Be mindful of reactivity granularity. Use shallowRef and shallowReactive for large data structures.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

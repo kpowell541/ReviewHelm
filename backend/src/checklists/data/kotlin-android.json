@@ -1,0 +1,698 @@
+{
+  "meta": {
+    "id": "kotlin-android",
+    "mode": "review",
+    "title": "Kotlin Android",
+    "shortTitle": "Android",
+    "description": "Review checklist for Kotlin Android applications",
+    "icon": "🤖",
+    "totalItems": 28,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "kotlin-android.lifecycle",
+      "title": "Lifecycle & Architecture",
+      "items": [
+        {
+          "id": "kotlin-android.lifecycle.viewmodel-state",
+          "text": "Is UI state held in ViewModel, not in the Activity or Fragment?",
+          "severity": "major",
+          "tags": [
+            "architecture"
+          ],
+          "baseContent": {
+            "whatItMeans": "ViewModel survives configuration changes (rotation, theme changes). Storing state in Activity/Fragment fields means it is lost on rotation.",
+            "whyItMatters": "Users rotate their devices, switch apps, and change themes. State in Activity fields is destroyed and recreated, causing data loss and visual glitches.",
+            "howToVerify": "Check Activities and Fragments for mutable state fields. These should be StateFlow or LiveData in a ViewModel.",
+            "exampleComment": "The list of items is stored in a Fragment field. On rotation, it will be empty. Move it to a ViewModel with StateFlow.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "class OrdersFragment : Fragment() {\n    private var orders = mutableListOf<Order>() // lost on rotation\n}"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "class OrdersViewModel : ViewModel() {\n    private val _orders = MutableStateFlow<List<Order>>(emptyList())\n    val orders: StateFlow<List<Order>> = _orders.asStateFlow()\n}"
+              }
+            ],
+            "keyTakeaway": "ViewModel owns state. Activity/Fragment observes it.",
+            "references": [
+              "https://developer.android.com/topic/libraries/architecture/viewmodel"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.lifecycle.coroutine-scope",
+          "text": "Are coroutines launched in the correct scope (viewModelScope, lifecycleScope)?",
+          "severity": "blocker",
+          "tags": [
+            "lifecycle",
+            "coroutines"
+          ],
+          "baseContent": {
+            "whatItMeans": "viewModelScope cancels when the ViewModel is cleared. lifecycleScope cancels when the lifecycle is destroyed. GlobalScope never cancels and leaks.",
+            "whyItMatters": "Coroutines in GlobalScope or manually created scopes leak when the user navigates away. They waste resources and can update destroyed UI, causing crashes.",
+            "howToVerify": "Search for GlobalScope.launch, CoroutineScope(Dispatchers...).launch. These should usually be viewModelScope.launch or lifecycleScope.launch.",
+            "exampleComment": "GlobalScope.launch here means this network call continues even after the user leaves the screen. Use viewModelScope.launch instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "GlobalScope.launch {\n    val data = api.fetchData()\n    _state.value = data // may update after ViewModel is cleared\n}"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "viewModelScope.launch {\n    val data = api.fetchData()\n    _state.value = data // auto-cancelled when ViewModel clears\n}"
+              }
+            ],
+            "keyTakeaway": "viewModelScope for ViewModels. lifecycleScope for UI. Never GlobalScope.",
+            "references": [
+              "https://developer.android.com/topic/libraries/architecture/coroutines"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.lifecycle.process-death",
+          "text": "Does the app handle process death and restoration correctly?",
+          "severity": "major",
+          "tags": [
+            "lifecycle"
+          ],
+          "baseContent": {
+            "whatItMeans": "Android can kill your process when the app is backgrounded. On return, the system recreates Activities from saved state. ViewModel data is lost unless saved with SavedStateHandle.",
+            "whyItMatters": "Users expect to return to exactly where they were. Without SavedStateHandle or persistent storage, form data, scroll position, and navigation state are lost.",
+            "howToVerify": "Test with 'Don't keep activities' in developer options. Background the app and return. Is the state preserved?",
+            "exampleComment": "The draft form data in ViewModel is lost on process death. Use SavedStateHandle to preserve it across process recreation.",
+            "codeExamples": [],
+            "keyTakeaway": "Test with 'Don't keep activities'. Use SavedStateHandle for transient state.",
+            "references": [
+              "https://developer.android.com/topic/libraries/architecture/saving-states"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.lifecycle.back-navigation",
+          "text": "Does back navigation behave correctly and predictably?",
+          "severity": "major",
+          "tags": [
+            "ux",
+            "navigation"
+          ],
+          "baseContent": {
+            "whatItMeans": "The back button should navigate to the previous screen or close the current overlay. With Navigation Component, the back stack should be managed declaratively.",
+            "whyItMatters": "Broken back navigation is the most common UX complaint on Android. Users expect the back button to undo the last navigation action.",
+            "howToVerify": "Test the back button from every screen. Check for popUpTo and launchSingleTop usage. Ensure deep links do not create duplicate back stack entries.",
+            "exampleComment": "Pressing back from the order confirmation takes the user to the splash screen instead of the order list. Check the nav graph's popUpTo settings.",
+            "codeExamples": [],
+            "keyTakeaway": "Test back navigation from every screen. Use popUpTo to manage the back stack.",
+            "references": [
+              "https://developer.android.com/guide/navigation/principles"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.lifecycle.leak-detection",
+          "text": "Are memory leaks avoided (no Activity/Context in static fields)?",
+          "severity": "blocker",
+          "tags": [
+            "memory"
+          ],
+          "baseContent": {
+            "whatItMeans": "Storing Activity or Context references in static fields, companion objects, or long-lived objects prevents garbage collection of the entire Activity.",
+            "whyItMatters": "An Activity leak retains its entire view hierarchy (often many MB). Multiple leaks can cause OutOfMemoryError.",
+            "howToVerify": "Search for companion object properties holding Context, Activity, or View references. Check for anonymous inner classes that capture the outer Activity.",
+            "exampleComment": "This companion object holds a reference to the Activity. After rotation, the old Activity cannot be garbage collected. Use applicationContext or remove the reference.",
+            "codeExamples": [],
+            "keyTakeaway": "Never store Activity/Fragment in static fields. Use applicationContext for long-lived references.",
+            "references": [
+              "https://square.github.io/leakcanary/"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "kotlin-android.compose",
+      "title": "Jetpack Compose",
+      "items": [
+        {
+          "id": "kotlin-android.compose.recomposition",
+          "text": "Are unnecessary recompositions avoided?",
+          "severity": "major",
+          "tags": [
+            "performance",
+            "compose"
+          ],
+          "baseContent": {
+            "whatItMeans": "Compose skips recomposition for composables whose parameters have not changed. Unstable parameters (mutable lists, lambdas created inline) prevent skipping.",
+            "whyItMatters": "Excessive recomposition causes jank and battery drain. A list item that recomposes on every frame makes scrolling laggy.",
+            "howToVerify": "Use the Layout Inspector's recomposition counts. Check for unstable parameters: List instead of ImmutableList, inline lambda creation, passing ViewModel directly.",
+            "exampleComment": "Passing viewModel directly to this composable makes it unstable. Extract the needed state as separate parameters.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "@Composable\nfun OrderList(viewModel: OrdersViewModel) { // unstable param\n    val orders by viewModel.orders.collectAsState()\n    // ...\n}"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "@Composable\nfun OrderList(orders: List<Order>, onOrderClick: (String) -> Unit) {\n    // stable params, skippable\n}"
+              }
+            ],
+            "keyTakeaway": "Pass stable, minimal parameters to composables. Hoist state out.",
+            "references": [
+              "https://developer.android.com/develop/ui/compose/performance/stability"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.compose.remember-keys",
+          "text": "Are remember and derivedStateOf used with correct keys?",
+          "severity": "major",
+          "tags": [
+            "compose",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "remember caches a value across recompositions. If the inputs change, the key must change too, or the cached value becomes stale.",
+            "whyItMatters": "Missing keys cause stale data. Unnecessary keys cause excessive recomputation. derivedStateOf should be used for expensive computations that depend on state.",
+            "howToVerify": "Check remember calls. Do they include all inputs as keys? Check derivedStateOf for computations that should only rerun when specific state changes.",
+            "exampleComment": "remember { expensiveFilter(items) } does not include items as a key. When items changes, the filter result will be stale. Use remember(items) { ... }.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "val filtered = remember { items.filter { it.active } } // stale when items changes"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "val filtered = remember(items) { items.filter { it.active } }"
+              }
+            ],
+            "keyTakeaway": "Include all dependencies as remember keys. Use derivedStateOf for expensive derived state.",
+            "references": [
+              "https://developer.android.com/develop/ui/compose/side-effects#remember"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.compose.side-effects",
+          "text": "Are side effects managed with LaunchedEffect, not in composition?",
+          "severity": "blocker",
+          "tags": [
+            "compose",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "Side effects (API calls, navigation, analytics) must not run during composition. Use LaunchedEffect, SideEffect, or DisposableEffect.",
+            "whyItMatters": "Composition can happen multiple times per frame. A side effect in composition will fire repeatedly, causing duplicate API calls, crashes, or infinite loops.",
+            "howToVerify": "Check for API calls, navigation, or state mutations directly in @Composable function bodies without LaunchedEffect/SideEffect wrappers.",
+            "exampleComment": "This API call runs on every recomposition. Wrap it in LaunchedEffect(key) to run it only when the key changes.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "@Composable\nfun UserScreen(userId: String) {\n    viewModel.loadUser(userId) // fires on every recomposition!\n}"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "@Composable\nfun UserScreen(userId: String) {\n    LaunchedEffect(userId) {\n        viewModel.loadUser(userId) // fires once per userId\n    }\n}"
+              }
+            ],
+            "keyTakeaway": "Never perform side effects during composition. Always use effect handlers.",
+            "references": [
+              "https://developer.android.com/develop/ui/compose/side-effects"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.compose.state-hoisting",
+          "text": "Is state hoisted to the appropriate level?",
+          "severity": "minor",
+          "tags": [
+            "compose",
+            "architecture"
+          ],
+          "baseContent": {
+            "whatItMeans": "State hoisting moves state up to the lowest common ancestor that needs it. Composables become stateless and reusable.",
+            "whyItMatters": "Unhoisted state makes composables hard to test and reuse. It also makes it harder to persist state across configuration changes.",
+            "howToVerify": "Check for mutableStateOf inside composables that should be controlled by a parent. Can the composable be made stateless with callbacks?",
+            "exampleComment": "The text field state is internal to this composable. Hoist it to the parent so the parent can validate and submit.",
+            "codeExamples": [],
+            "keyTakeaway": "Stateless composables are reusable and testable. Hoist state up.",
+            "references": [
+              "https://developer.android.com/develop/ui/compose/state-hoisting"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "kotlin-android.permissions",
+      "title": "Permissions & Privacy",
+      "items": [
+        {
+          "id": "kotlin-android.permissions.runtime-permissions",
+          "text": "Are runtime permissions requested with rationale at the right time?",
+          "severity": "major",
+          "tags": [
+            "permissions",
+            "ux"
+          ],
+          "baseContent": {
+            "whatItMeans": "Dangerous permissions (camera, location, contacts) must be requested at runtime. Show a rationale before the system dialog, and handle denial gracefully.",
+            "whyItMatters": "Requesting permissions at launch without context causes users to deny them. Once denied twice, Android shows 'Don't ask again'. Requesting at the right moment with rationale increases grant rates.",
+            "howToVerify": "Check that permission requests happen when the user initiates the feature (e.g., tapping 'Take Photo'), not at app startup. Verify denial is handled.",
+            "exampleComment": "Camera permission is requested on app launch. Move it to when the user taps the camera button, with a rationale dialog first.",
+            "codeExamples": [],
+            "keyTakeaway": "Request permissions in context. Show rationale. Handle denial gracefully.",
+            "references": [
+              "https://developer.android.com/training/permissions/requesting"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.permissions.minimal-permissions",
+          "text": "Does the app request only necessary permissions?",
+          "severity": "major",
+          "tags": [
+            "permissions",
+            "privacy"
+          ],
+          "baseContent": {
+            "whatItMeans": "Only request permissions the app actually needs. Use photo picker instead of READ_EXTERNAL_STORAGE. Use fine location only when coarse is not sufficient.",
+            "whyItMatters": "Excessive permissions reduce trust, trigger Play Store warnings, and can cause rejection. Users uninstall apps that request too many permissions.",
+            "howToVerify": "Review AndroidManifest.xml permissions. For each, verify the app actually uses it. Check for alternatives that do not require permissions (photo picker, MediaStore).",
+            "exampleComment": "READ_EXTERNAL_STORAGE is declared but the app only picks photos. Use the Photo Picker API instead, which needs no permission.",
+            "codeExamples": [],
+            "keyTakeaway": "Fewer permissions = more trust. Use permission-free alternatives when available.",
+            "references": [
+              "https://developer.android.com/training/permissions/evaluating"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.permissions.data-privacy",
+          "text": "Is user data handled according to privacy best practices?",
+          "severity": "major",
+          "tags": [
+            "privacy",
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "PII should be encrypted at rest, not logged, and transmitted over HTTPS. Use EncryptedSharedPreferences for sensitive data. Clear data on logout.",
+            "whyItMatters": "Data breaches cause legal liability and user harm. Android's data safety section in Play Store requires accurate disclosure.",
+            "howToVerify": "Check what data is stored and how. Is PII in plain SharedPreferences? Is sensitive data in log statements? Is data cleared on sign-out?",
+            "exampleComment": "The auth token is stored in plain SharedPreferences. Use EncryptedSharedPreferences or the Jetpack Security library.",
+            "codeExamples": [],
+            "keyTakeaway": "Encrypt PII at rest. Never log sensitive data. Clear on logout.",
+            "references": [
+              "https://developer.android.com/topic/security/data"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "kotlin-android.performance",
+      "title": "Performance",
+      "items": [
+        {
+          "id": "kotlin-android.performance.main-thread",
+          "text": "Is heavy work performed off the main thread?",
+          "severity": "blocker",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Network calls, database queries, file I/O, and heavy computation must run on background dispatchers (Dispatchers.IO or Dispatchers.Default), not Dispatchers.Main.",
+            "whyItMatters": "The main thread renders UI at 60fps. Blocking it for more than 16ms causes dropped frames. Blocking for 5+ seconds triggers an ANR (Application Not Responding) dialog.",
+            "howToVerify": "Check for I/O or computation in viewModelScope.launch without withContext(Dispatchers.IO). Enable StrictMode in debug builds to catch violations.",
+            "exampleComment": "This database query runs on the main thread. Wrap it in withContext(Dispatchers.IO) to avoid ANRs.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "viewModelScope.launch {\n    val data = database.queryAll() // main thread I/O!\n    _state.value = data\n}"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "viewModelScope.launch {\n    val data = withContext(Dispatchers.IO) {\n        database.queryAll()\n    }\n    _state.value = data\n}"
+              }
+            ],
+            "keyTakeaway": "I/O on Dispatchers.IO. Computation on Dispatchers.Default. UI updates on Main.",
+            "references": [
+              "https://developer.android.com/kotlin/coroutines/coroutines-best-practices"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.performance.lazy-lists",
+          "text": "Are lists using LazyColumn/LazyRow instead of Column/Row with forEach?",
+          "severity": "major",
+          "tags": [
+            "performance",
+            "compose"
+          ],
+          "baseContent": {
+            "whatItMeans": "LazyColumn only composes and renders visible items. A regular Column with forEach composes all items upfront, causing lag on large lists.",
+            "whyItMatters": "A Column with 1000 items composes all 1000 at once. LazyColumn only composes the ~15 visible items, providing smooth scrolling.",
+            "howToVerify": "Check for Column { items.forEach { Item(it) } } patterns. These should be LazyColumn { items(items) { Item(it) } }.",
+            "exampleComment": "This Column renders all 500 orders at once. Use LazyColumn with items() for smooth scrolling.",
+            "codeExamples": [],
+            "keyTakeaway": "LazyColumn for scrollable lists. Column only for small, fixed-size groups.",
+            "references": [
+              "https://developer.android.com/develop/ui/compose/lists"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.performance.image-loading",
+          "text": "Are images loaded and cached efficiently?",
+          "severity": "major",
+          "tags": [
+            "performance",
+            "memory"
+          ],
+          "baseContent": {
+            "whatItMeans": "Use Coil or Glide for image loading. They handle caching, resizing, memory management, and lifecycle awareness. Never load full-resolution bitmaps manually.",
+            "whyItMatters": "Loading a 4000x3000 photo into memory without resizing uses ~48MB. In a list, this quickly causes OutOfMemoryError.",
+            "howToVerify": "Check for BitmapFactory.decodeStream or manual bitmap loading. These should use Coil's AsyncImage or Glide's composable integration.",
+            "exampleComment": "This manually loads the full bitmap into memory. Use Coil's AsyncImage composable, which handles caching and resizing automatically.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Coil or Glide. Never decode full bitmaps manually.",
+            "references": [
+              "https://coil-kt.github.io/coil/compose/"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.performance.startup",
+          "text": "Is app startup optimized to avoid blocking the first frame?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Heavy initialization (DI, analytics, databases) in Application.onCreate or the first Activity delays the first frame. Use lazy initialization or App Startup library.",
+            "whyItMatters": "Users perceive startup time directly. More than 500ms to first frame feels slow. Heavy initialization blocks the main thread.",
+            "howToVerify": "Profile startup with Android Studio's profiler. Check Application.onCreate for synchronous init that could be deferred.",
+            "exampleComment": "Database initialization in Application.onCreate adds 300ms to startup. Use lazy initialization so it runs when first accessed.",
+            "codeExamples": [],
+            "keyTakeaway": "Defer heavy initialization. Only do what is needed for the first frame.",
+            "references": [
+              "https://developer.android.com/topic/performance/vitals/launch-time"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "kotlin-android.kotlin-idioms",
+      "title": "Kotlin Idioms",
+      "items": [
+        {
+          "id": "kotlin-android.kotlin-idioms.scope-functions",
+          "text": "Are scope functions (let, run, with, apply, also) used appropriately?",
+          "severity": "nit",
+          "tags": [
+            "idiom"
+          ],
+          "baseContent": {
+            "whatItMeans": "let for nullable chains, apply for configuring objects, run for computing a result, also for side effects, with for calling multiple methods on an object.",
+            "whyItMatters": "Misusing scope functions makes code harder to read. Using let where apply is appropriate, or nesting multiple lets, creates confusing chains.",
+            "howToVerify": "Check for deeply nested scope functions (more than 2 levels). Check that the chosen function matches the intent.",
+            "exampleComment": "This nested let/let/also chain is hard to follow. Extract the inner logic into a named function.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "user?.let { u ->\n    u.address?.let { a ->\n        a.city?.let { c ->\n            updateCity(u.id, c)\n        }\n    }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "val city = user?.address?.city ?: return\nupdateCity(user.id, city)"
+              }
+            ],
+            "keyTakeaway": "Scope functions should simplify, not complicate. If nesting more than 2, refactor.",
+            "references": [
+              "https://kotlinlang.org/docs/scope-functions.html"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.kotlin-idioms.data-classes",
+          "text": "Are data classes used for value types and DTOs?",
+          "severity": "nit",
+          "tags": [
+            "idiom"
+          ],
+          "baseContent": {
+            "whatItMeans": "Data classes provide equals, hashCode, toString, copy, and destructuring automatically. Use them for types whose identity is defined by their data.",
+            "whyItMatters": "Manual equals/hashCode implementations are error-prone and tedious. Data classes eliminate this entire category of bugs.",
+            "howToVerify": "Check new classes with only properties and no behavior. Are they data classes? Watch for mutable properties in data classes used as map keys.",
+            "exampleComment": "This UserDto class manually implements equals and hashCode. Convert to a data class to get them automatically.",
+            "codeExamples": [],
+            "keyTakeaway": "Use data class for DTOs and value objects. Watch out for mutable properties.",
+            "references": [
+              "https://kotlinlang.org/docs/data-classes.html"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.kotlin-idioms.sealed-classes",
+          "text": "Are sealed classes/interfaces used for restricted type hierarchies?",
+          "severity": "minor",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "Sealed classes restrict which types can extend them. Combined with when expressions, the compiler ensures all subtypes are handled.",
+            "whyItMatters": "Sealed hierarchies make impossible states unrepresentable. Adding a new subtype forces all when expressions to be updated.",
+            "howToVerify": "Check for enum-like hierarchies that carry different data per variant. These are better as sealed classes. Check when expressions for else branches that should be exhaustive.",
+            "exampleComment": "This UiState uses three boolean flags. A sealed class with Loading, Success, Error subclasses makes invalid states impossible.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "kotlin",
+                "code": "data class UiState(\n    val isLoading: Boolean,\n    val data: List<Item>?,\n    val error: String?\n)"
+              },
+              {
+                "label": "Good",
+                "language": "kotlin",
+                "code": "sealed interface UiState {\n    data object Loading : UiState\n    data class Success(val data: List<Item>) : UiState\n    data class Error(val message: String) : UiState\n}"
+              }
+            ],
+            "keyTakeaway": "Sealed classes eliminate impossible states. Use them for UI state, results, and events.",
+            "references": [
+              "https://kotlinlang.org/docs/sealed-classes.html"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.kotlin-idioms.null-safety",
+          "text": "Is Kotlin's null safety used correctly without excessive !! operators?",
+          "severity": "major",
+          "tags": [
+            "null-safety"
+          ],
+          "baseContent": {
+            "whatItMeans": "The !! operator throws NullPointerException. Kotlin's type system is designed to make nulls explicit. Using !! defeats this safety.",
+            "whyItMatters": "!! converts a compile-time null check into a runtime crash. It is the Kotlin equivalent of 'trust me, this is never null' and is often wrong.",
+            "howToVerify": "Search for !! in the diff. Each one is a potential NPE. Replace with ?., ?.let, ?:, or requireNotNull with a message.",
+            "exampleComment": "user!! will crash if the user is null. Use user ?: return for early exit, or requireNotNull(user) { \"User must be set\" } for a clear error.",
+            "codeExamples": [],
+            "keyTakeaway": "Every !! is a potential crash. Use safe calls and requireNotNull instead.",
+            "references": [
+              "https://kotlinlang.org/docs/null-safety.html"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "kotlin-android.networking",
+      "title": "Networking & Data",
+      "items": [
+        {
+          "id": "kotlin-android.networking.offline-first",
+          "text": "Does the app handle offline scenarios gracefully?",
+          "severity": "major",
+          "tags": [
+            "ux",
+            "reliability"
+          ],
+          "baseContent": {
+            "whatItMeans": "The app should show cached data when offline, queue writes for later, and clearly communicate connectivity status to the user.",
+            "whyItMatters": "Mobile networks are unreliable. Tunnels, elevators, and poor coverage are common. An app that crashes or shows empty screens offline feels broken.",
+            "howToVerify": "Enable airplane mode and navigate through the app. Can the user still see previously loaded data? Are write operations queued?",
+            "exampleComment": "The home screen shows a blank white page when offline. Show cached data with a subtle offline indicator instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Show cached data offline. Queue writes. Communicate status clearly.",
+            "references": [
+              "https://developer.android.com/topic/architecture/data-layer/offline-first"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.networking.retrofit-setup",
+          "text": "Is the network layer configured with timeouts, retries, and error handling?",
+          "severity": "major",
+          "tags": [
+            "networking"
+          ],
+          "baseContent": {
+            "whatItMeans": "OkHttp/Retrofit should have connect, read, and write timeouts. Retries should use exponential backoff. Errors should be mapped to domain types.",
+            "whyItMatters": "Without timeouts, a hung server blocks the coroutine forever. Without retries, transient failures surface to the user unnecessarily.",
+            "howToVerify": "Check OkHttpClient configuration. Are timeouts set? Is there a retry interceptor? Do API errors map to sealed result types?",
+            "exampleComment": "The OkHttpClient has no timeouts configured. Add .connectTimeout(10, SECONDS) and .readTimeout(30, SECONDS).",
+            "codeExamples": [],
+            "keyTakeaway": "Always set timeouts. Add retries with backoff for transient failures.",
+            "references": [
+              "https://square.github.io/retrofit/"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.networking.certificate-pinning",
+          "text": "Is certificate pinning configured for sensitive API calls?",
+          "severity": "minor",
+          "tags": [
+            "security",
+            "networking"
+          ],
+          "baseContent": {
+            "whatItMeans": "Certificate pinning ensures the app only trusts specific certificates, preventing man-in-the-middle attacks even if a CA is compromised.",
+            "whyItMatters": "Without pinning, any CA-signed certificate is trusted. A compromised CA or corporate proxy can intercept all traffic.",
+            "howToVerify": "Check for CertificatePinner in OkHttp or network_security_config.xml. Ensure pins include a backup and have a rotation plan.",
+            "exampleComment": "Sensitive API calls have no certificate pinning. Add a CertificatePinner with the server's public key hash and a backup pin.",
+            "codeExamples": [],
+            "keyTakeaway": "Pin certificates for sensitive APIs. Include backup pins for rotation.",
+            "references": [
+              "https://developer.android.com/privacy-and-security/security-config"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "kotlin-android.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "kotlin-android.testing.viewmodel-tests",
+          "text": "Are ViewModels tested with fake repositories?",
+          "severity": "minor",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "ViewModel tests should use fake implementations of repositories/use cases, not mocks. Fakes are easier to maintain and test behavior rather than implementation.",
+            "whyItMatters": "ViewModels contain the app's business logic. Without tests, regressions go unnoticed until QA or production.",
+            "howToVerify": "Check for test classes corresponding to new ViewModels. Do they use Turbine for testing StateFlow emissions?",
+            "exampleComment": "This new ViewModel has no tests. Add tests with a FakeOrderRepository and Turbine to verify state emissions.",
+            "codeExamples": [],
+            "keyTakeaway": "Test ViewModels with fakes and Turbine. They are the most valuable tests on Android.",
+            "references": [
+              "https://developer.android.com/kotlin/flow/test"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.testing.compose-tests",
+          "text": "Are Compose UI tests using semantic matchers?",
+          "severity": "minor",
+          "tags": [
+            "testing",
+            "compose"
+          ],
+          "baseContent": {
+            "whatItMeans": "Compose tests find elements by semantics (content description, text, test tag) not by implementation details. Use composeTestRule.onNodeWithText/onNodeWithTag.",
+            "whyItMatters": "Tests that depend on implementation details break on every UI change. Semantic matchers test what the user sees.",
+            "howToVerify": "Check UI tests for hardcoded indices or internal composable names. These should use semantic matchers.",
+            "exampleComment": "This test finds elements by index. Use onNodeWithText(\"Submit\") or onNodeWithContentDescription for stable selectors.",
+            "codeExamples": [],
+            "keyTakeaway": "Test what the user sees with semantic matchers, not internal composable structure.",
+            "references": [
+              "https://developer.android.com/develop/ui/compose/testing"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.testing.coroutine-tests",
+          "text": "Are coroutine tests using TestDispatcher and runTest?",
+          "severity": "minor",
+          "tags": [
+            "testing",
+            "coroutines"
+          ],
+          "baseContent": {
+            "whatItMeans": "Coroutine tests should use runTest with StandardTestDispatcher or UnconfinedTestDispatcher. This controls virtual time and makes tests deterministic.",
+            "whyItMatters": "Tests with real dispatchers are flaky due to timing. runTest skips delays and advances virtual time, making tests fast and deterministic.",
+            "howToVerify": "Check for runBlocking in tests (should usually be runTest). Verify that ViewModels accept a CoroutineDispatcher parameter for testability.",
+            "exampleComment": "This test uses runBlocking with Thread.sleep. Use runTest with advanceTimeBy for deterministic timing.",
+            "codeExamples": [],
+            "keyTakeaway": "Use runTest, not runBlocking. Inject dispatchers for testability.",
+            "references": [
+              "https://developer.android.com/kotlin/coroutines/test"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "kotlin-android.accessibility",
+      "title": "Accessibility",
+      "items": [
+        {
+          "id": "kotlin-android.accessibility.content-descriptions",
+          "text": "Do images and icons have content descriptions for screen readers?",
+          "severity": "major",
+          "tags": [
+            "a11y"
+          ],
+          "baseContent": {
+            "whatItMeans": "Every meaningful image and icon must have a contentDescription. Decorative images should use contentDescription = null to be skipped by TalkBack.",
+            "whyItMatters": "Without content descriptions, blind users cannot understand what icons and images represent. TalkBack reads 'unlabeled' which is useless.",
+            "howToVerify": "Enable TalkBack and navigate the screen. Are all interactive elements announced meaningfully? Are decorative elements skipped?",
+            "exampleComment": "This Icon composable has no contentDescription. Add a descriptive string like 'Delete order' or null if purely decorative.",
+            "codeExamples": [],
+            "keyTakeaway": "Meaningful images get descriptions. Decorative images get null.",
+            "references": [
+              "https://developer.android.com/develop/ui/compose/accessibility"
+            ]
+          }
+        },
+        {
+          "id": "kotlin-android.accessibility.touch-targets",
+          "text": "Are touch targets at least 48dp?",
+          "severity": "major",
+          "tags": [
+            "a11y",
+            "ux"
+          ],
+          "baseContent": {
+            "whatItMeans": "Material Design recommends 48dp minimum touch target size. Compose's Modifier.minimumInteractiveComponentSize enforces this.",
+            "whyItMatters": "Small touch targets are frustrating for all users and inaccessible for users with motor impairments. The accessibility scanner flags targets under 48dp.",
+            "howToVerify": "Run the Accessibility Scanner on each screen. Check that clickable elements are at least 48dp in both dimensions.",
+            "exampleComment": "This icon button is 24dp. Add Modifier.minimumInteractiveComponentSize() or increase the padding to reach 48dp.",
+            "codeExamples": [],
+            "keyTakeaway": "48dp minimum touch targets. Use minimumInteractiveComponentSize.",
+            "references": [
+              "https://m3.material.io/foundations/accessible-design/accessibility-basics"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
