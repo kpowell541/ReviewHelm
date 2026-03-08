@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import * as SecureStore from 'expo-secure-store';
 import { persistStorage } from '../storage/secureStorage';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'expo-crypto';
 import type { Severity, ClaudeModel } from '../data/types';
 
 const KEY_SLOT_PREFIX = 'reviewhelm-key-slot:';
@@ -22,7 +22,7 @@ async function clearToken(indexKey: string): Promise<void> {
 
 async function saveTokenizedKey(indexKey: string, value: string): Promise<string> {
   await clearToken(indexKey);
-  const token = `atk_${uuidv4().replace(/-/g, '')}`;
+  const token = `atk_${randomUUID().replace(/-/g, '')}`;
   await SecureStore.setItemAsync(tokenSlotKey(token), value);
   await SecureStore.setItemAsync(indexKey, token);
   return token;
