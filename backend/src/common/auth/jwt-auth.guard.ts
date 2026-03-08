@@ -121,7 +121,29 @@ export class JwtAuthGuard implements CanActivate {
         algorithms: ['RS256', 'ES256'],
       });
       return verified.payload as Record<string, unknown>;
-    } catch {
+    } catch (err) {
+      // Decode header without verification for diagnostics
+      let tokenAlg: string | undefined;
+      try {
+        const jose = await this.loadJose();
+        const decoded = jose.decodeProtectedHeader(token);
+        tokenAlg = decoded.alg;
+      } catch {
+        // ignore decode errors
+      }
+      console.warn(
+        JSON.stringify({
+          level: 'warn',
+          type: 'jwt_verify_failed',
+          error: err instanceof Error ? err.message : String(err),
+          errorName: err instanceof Error ? err.name : undefined,
+          tokenAlg,
+          issuer: this.issuer,
+          audience: this.audience,
+          jwksUrl: this.jwksUrl,
+          at: new Date().toISOString(),
+        }),
+      );
       return null;
     }
   }
