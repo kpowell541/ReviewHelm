@@ -1,0 +1,434 @@
+{
+  "meta": {
+    "id": "e2e-testing",
+    "mode": "review",
+    "title": "E2E Testing",
+    "shortTitle": "E2E Tests",
+    "description": "Cypress, Playwright, Selenium end-to-end testing patterns and best practices",
+    "icon": "\ud83c\udfad",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "e2e-testing.selectors",
+      "title": "Selectors & Page Objects",
+      "items": [
+        {
+          "id": "e2e-testing.selectors.stable-selectors",
+          "text": "Are stable selectors used (data-testid, not CSS classes or XPath)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use data-testid or data-cy attributes for selectors. Don't rely on CSS classes, tag names, or XPath that change with UI redesigns.",
+            "whyItMatters": "CSS class selectors break when styles change. XPath breaks when the DOM structure changes. data-testid survives both.",
+            "howToVerify": "Check for selectors using CSS classes (.btn-primary), tag paths (div > span), or XPath. These should use data-testid.",
+            "exampleComment": "cy.get('.btn.btn-primary.submit') breaks when button styles change. Use cy.get('[data-testid=\"submit-button\"]') instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use data-testid for E2E selectors. They're immune to style and structure changes.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.selectors.page-objects",
+          "text": "Are page objects or component abstractions used to encapsulate UI interactions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Wrap page interactions in Page Object classes or custom commands. Tests should read like user stories, not DOM manipulation.",
+            "whyItMatters": "Without page objects, selector changes require updating every test. Page objects centralize selectors and interactions.",
+            "howToVerify": "Check for raw selectors scattered across test files. These should be in page object methods.",
+            "exampleComment": "Every test repeats cy.get('[data-testid=email]').type() and cy.get('[data-testid=password]').type(). Create a LoginPage.login(email, pass) method.",
+            "codeExamples": [],
+            "keyTakeaway": "Encapsulate UI interactions in page objects. Tests should read as user workflows.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.selectors.no-brittle-selectors",
+          "text": "Are selectors free of position-based or index-based targeting?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Don't select elements by position (:nth-child, [0], first()). Adding an item before the target breaks the selector.",
+            "whyItMatters": "Index-based selectors are the #1 cause of flaky E2E tests. Any change to the list order breaks them.",
+            "howToVerify": "Search for :nth-child, .eq(), [index], .first(), .last() in selectors. Replace with data-testid or content-based selectors.",
+            "exampleComment": "cy.get('tr').eq(2) breaks when a new row is added. Use cy.get('[data-testid=\"order-row-123\"]') with a unique identifier.",
+            "codeExamples": [],
+            "keyTakeaway": "Never use index-based selectors. Use unique identifiers via data-testid.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.selectors.accessibility-selectors",
+          "text": "Are accessibility-friendly selectors preferred (roles, labels, text)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Prefer selectors based on accessible roles and labels: getByRole, getByLabelText, getByText. This tests accessibility too.",
+            "whyItMatters": "Accessibility-based selectors verify that the UI is accessible while testing functionality. Two birds, one stone.",
+            "howToVerify": "Check if tests could use role-based selectors instead of data-testid. Verify buttons have accessible names.",
+            "exampleComment": "Instead of data-testid='submit', use getByRole('button', { name: 'Submit Order' }) to test accessibility simultaneously.",
+            "codeExamples": [],
+            "keyTakeaway": "Prefer accessibility selectors (getByRole, getByLabelText) when possible.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.selectors.selector-encapsulation",
+          "text": "Are selectors defined in one place (not hardcoded throughout tests)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Define selectors as constants or in page objects. Don't repeat the same selector string in multiple test files.",
+            "whyItMatters": "When a selector changes, you update it in one place instead of finding every occurrence across all test files.",
+            "howToVerify": "Search for the same data-testid string appearing in multiple files. Centralize in page objects or constants.",
+            "exampleComment": "'[data-testid=user-menu]' appears in 8 test files. Define it once in a shared constants file or page object.",
+            "codeExamples": [],
+            "keyTakeaway": "Define selectors once. Reuse through page objects or constants.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "e2e-testing.waits",
+      "title": "Waits & Timing",
+      "items": [
+        {
+          "id": "e2e-testing.waits.no-hard-waits",
+          "text": "Are hard waits (sleep, cy.wait(ms)) avoided?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Never use cy.wait(3000), page.waitForTimeout(), or Thread.sleep(). Use smart waits that wait for specific conditions.",
+            "whyItMatters": "Hard waits are too slow (waiting 3s when 100ms suffices) or too fast (3s isn't enough on slow CI). They make tests slow and flaky.",
+            "howToVerify": "Search for cy.wait(number), waitForTimeout, sleep, Thread.sleep in E2E tests. Replace with condition-based waits.",
+            "exampleComment": "cy.wait(5000) before asserting. Use cy.get('[data-testid=result]').should('be.visible') which auto-retries until visible.",
+            "codeExamples": [],
+            "keyTakeaway": "Never use hard waits. Wait for specific conditions (visible, contains, network idle).",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.waits.network-waits",
+          "text": "Are network requests properly awaited (not assumed complete)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Wait for specific API responses before asserting. Use cy.intercept().as('alias') + cy.wait('@alias') or page.waitForResponse().",
+            "whyItMatters": "Asserting before API responses arrive causes flaky failures. The data hasn't loaded yet when the assertion runs.",
+            "howToVerify": "Check that actions triggering API calls wait for the response before asserting on the result.",
+            "exampleComment": "This clicks Save and immediately asserts the success message. Intercept the POST request and wait for its response first.",
+            "codeExamples": [],
+            "keyTakeaway": "Intercept and wait for API responses. Don't assert before data has loaded.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.waits.retry-assertions",
+          "text": "Are assertions using auto-retry mechanisms (should, expect with retry)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use framework retry mechanisms: Cypress .should() retries automatically, Playwright expect() has auto-retry, Testing Library waitFor().",
+            "whyItMatters": "Single-shot assertions fail on slow renders. Auto-retry assertions wait for the condition to become true.",
+            "howToVerify": "Check that assertions on dynamic content use retrying mechanisms, not one-shot checks.",
+            "exampleComment": "This uses a plain expect() which doesn't retry. Use await expect(locator).toBeVisible() in Playwright for auto-retry.",
+            "codeExamples": [],
+            "keyTakeaway": "Use auto-retrying assertions for dynamic content. Single-shot assertions cause flakiness.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.waits.animation-handling",
+          "text": "Are animations and transitions handled before interactions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Wait for animations to complete before clicking or asserting. Or disable animations in test mode entirely.",
+            "whyItMatters": "Clicking an element during an animation can miss the target. Assertions during transitions see intermediate states.",
+            "howToVerify": "Check for flaky click tests. Verify the app disables animations in test mode or tests wait for animation completion.",
+            "exampleComment": "This click fails intermittently because the dropdown is still animating. Add { animationDistanceThreshold: 0 } or disable animations.",
+            "codeExamples": [],
+            "keyTakeaway": "Disable animations in test mode or wait for them to complete before interacting.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.waits.timeout-configuration",
+          "text": "Are timeouts configured appropriately (not too short, not too long)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Set default timeouts appropriate for CI speed. Use longer timeouts for specific slow operations, not globally.",
+            "whyItMatters": "Default 4s timeout is too short for CI. Setting 30s globally makes failures take forever to surface.",
+            "howToVerify": "Check timeout configuration. Verify slow operations have specific longer timeouts, not a blanket increase.",
+            "exampleComment": "Global timeout is 30s, making failures take 30s to report. Use 10s default with 30s only for file upload tests.",
+            "codeExamples": [],
+            "keyTakeaway": "Set reasonable default timeouts. Use longer timeouts only for specific slow operations.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "e2e-testing.reliability",
+      "title": "Test Reliability & Data",
+      "items": [
+        {
+          "id": "e2e-testing.reliability.test-data-isolation",
+          "text": "Does each test create its own test data (not sharing across tests)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each test should set up the data it needs via API calls or database seeds. Don't rely on data from previous tests.",
+            "whyItMatters": "Shared test data causes cascading failures. If the 'create user' test fails, every subsequent test that needs that user also fails.",
+            "howToVerify": "Check if tests depend on data created by other tests. Verify each test can run in isolation.",
+            "exampleComment": "This test assumes a user 'testuser@example.com' exists. Create the user in a beforeEach hook via the API.",
+            "codeExamples": [],
+            "keyTakeaway": "Each test creates its own data. No dependencies between tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.reliability.cleanup",
+          "text": "Is test data cleaned up after tests (no leftover state)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Delete or reset test data after each test or test suite. Use database transactions, API cleanup, or fresh environments.",
+            "whyItMatters": "Accumulated test data slows subsequent runs, causes unique constraint violations, and makes debugging harder.",
+            "howToVerify": "Check for afterEach/afterAll cleanup. Verify the database is clean between test runs. Check for unique constraint errors.",
+            "exampleComment": "Tests create users without cleanup. After 100 runs, the database has thousands of test users. Add afterEach cleanup.",
+            "codeExamples": [],
+            "keyTakeaway": "Clean up test data. Use database reset, API deletion, or transactional rollback.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.reliability.api-seeding",
+          "text": "Is test data seeded via API (not through the UI)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Set up test preconditions using API calls or direct database commands, not by clicking through the UI.",
+            "whyItMatters": "UI-based setup is slow (minutes vs seconds) and fragile. If the registration form changes, all tests that create users break.",
+            "howToVerify": "Check if tests use UI interactions for setup. Replace with API calls: cy.request(), page.request, or custom commands.",
+            "exampleComment": "Each test fills out the registration form to create a user. Use cy.request('POST', '/api/users', userData) instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Seed data via API. Only use the UI for the specific workflow being tested.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.reliability.flaky-handling",
+          "text": "Are flaky tests identified and fixed (not silently retried)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Don't hide flakiness with automatic retries. Track flaky tests, fix root causes (timing, data, selectors).",
+            "whyItMatters": "Retrying hides real bugs. A test that passes on retry 2 of 3 has a real problem — timing issue, race condition, or data leak.",
+            "howToVerify": "Check for retry configuration. If retries > 0, verify there's a process to track and fix flaky tests.",
+            "exampleComment": "This test has retries: 3 configured. Instead of retrying, fix the root cause: add a proper wait for the API response.",
+            "codeExamples": [],
+            "keyTakeaway": "Fix flaky tests, don't retry them. Retries mask real problems.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.reliability.independent-tests",
+          "text": "Can tests run in any order and in parallel?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each test must be completely independent. No test should assume another test ran first or set up state.",
+            "whyItMatters": "Order-dependent tests break parallel execution and cause mysterious CI failures when test order changes.",
+            "howToVerify": "Run a single test in isolation. If it fails, it has hidden dependencies on other tests.",
+            "exampleComment": "This test passes only when run after 'should create order'. It depends on the order existing. Add its own order creation.",
+            "codeExamples": [],
+            "keyTakeaway": "Every test is self-contained. Run alone, run in parallel, run in any order.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "e2e-testing.patterns",
+      "title": "Test Patterns & Scope",
+      "items": [
+        {
+          "id": "e2e-testing.patterns.user-workflows",
+          "text": "Do E2E tests cover complete user workflows (not isolated clicks)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "E2E tests should cover full user journeys: login -> search -> add to cart -> checkout. Not isolated button clicks.",
+            "whyItMatters": "E2E tests are expensive. Use them for complete workflows that verify integration. Unit tests cover isolated behavior.",
+            "howToVerify": "Check that each E2E test represents a real user workflow from start to finish. Isolated interactions belong in unit tests.",
+            "exampleComment": "This E2E test only clicks a button and checks it's disabled. That's a unit test. E2E should test the full purchase flow.",
+            "codeExamples": [],
+            "keyTakeaway": "E2E tests = user workflows. Use unit tests for isolated behaviors.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.patterns.test-pyramid",
+          "text": "Is the test count appropriate (fewer E2E tests, more unit tests)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Follow the test pyramid: many unit tests, some integration tests, few E2E tests. E2E tests should cover critical paths only.",
+            "whyItMatters": "E2E tests are slow and expensive. 500 E2E tests take hours. Cover edge cases with unit tests, critical paths with E2E.",
+            "howToVerify": "Count E2E vs unit tests. If E2E outnumber unit tests, the pyramid is inverted. Move non-critical tests to unit level.",
+            "exampleComment": "There are 200 E2E tests and 50 unit tests. The pyramid is inverted. Move validation and edge case tests to unit level.",
+            "codeExamples": [],
+            "keyTakeaway": "Follow the test pyramid. E2E for critical paths, unit tests for everything else.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.patterns.visual-regression",
+          "text": "Are visual regression tests used for UI-critical components?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use visual regression testing (Percy, Chromatic, Playwright screenshots) to catch unintended visual changes.",
+            "whyItMatters": "Functional tests don't catch visual regressions: misaligned text, broken layouts, wrong colors. Screenshots do.",
+            "howToVerify": "Check for screenshot comparison tests on critical UI components. Verify they run on consistent viewport sizes.",
+            "exampleComment": "This checkout page redesign has no visual regression test. Add Percy or Playwright screenshot tests for the checkout flow.",
+            "codeExamples": [],
+            "keyTakeaway": "Add visual regression tests for critical UI. Screenshots catch what functional tests miss.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.patterns.cross-browser",
+          "text": "Are tests run across required browsers/viewports?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Run E2E tests on all supported browsers (Chrome, Firefox, Safari, mobile). Verify responsive behavior at key breakpoints.",
+            "whyItMatters": "Browser differences cause real bugs. A feature working in Chrome but broken in Safari affects 25% of mobile users.",
+            "howToVerify": "Check CI configuration for multi-browser testing. Verify mobile viewports are tested.",
+            "exampleComment": "Tests only run in Chrome. Add Firefox and WebKit (Safari) to the Playwright configuration to catch browser-specific bugs.",
+            "codeExamples": [],
+            "keyTakeaway": "Test on all supported browsers. Include mobile viewports for responsive testing.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.patterns.error-scenarios",
+          "text": "Are error states and edge cases tested (network failure, timeouts)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test what users see when things go wrong: network failures, 500 errors, timeouts, empty states, unauthorized access.",
+            "whyItMatters": "Users encounter errors frequently. If the error UI is broken, users see blank screens instead of helpful messages.",
+            "howToVerify": "Check for tests that simulate network failures, slow responses, and error responses. Verify error UI is tested.",
+            "exampleComment": "No tests for what happens when the API returns 500. Intercept the request and return an error to test the error state.",
+            "codeExamples": [],
+            "keyTakeaway": "Test error scenarios: network failures, timeouts, server errors. Users see these regularly.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.patterns.authentication",
+          "text": "Is authentication handled efficiently (not logging in through UI every test)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Set authentication state programmatically (inject cookies, localStorage tokens) instead of filling the login form every test.",
+            "whyItMatters": "Logging in through the UI in every test adds 5-10 seconds per test. With 100 tests, that's 15+ minutes of just login.",
+            "howToVerify": "Check how tests authenticate. If every test fills the login form, switch to programmatic auth setup.",
+            "exampleComment": "Every test navigates to /login and types credentials. Use cy.setCookie() or storageState to skip the login UI.",
+            "codeExamples": [],
+            "keyTakeaway": "Authenticate programmatically. Only test the login UI in the login test itself.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "e2e-testing.ci",
+      "title": "CI Integration & Debugging",
+      "items": [
+        {
+          "id": "e2e-testing.ci.ci-stability",
+          "text": "Are E2E tests stable in CI (not frequently failing)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "E2E tests in CI should have a >98% pass rate. Frequent flaky failures erode trust and cause developers to ignore failures.",
+            "whyItMatters": "A test suite that fails randomly is worse than no tests. Developers learn to ignore failures and real bugs slip through.",
+            "howToVerify": "Check CI pass rates for E2E tests over the past month. Identify and fix tests with <95% pass rate.",
+            "exampleComment": "E2E tests fail 3 times a week on CI. Track the flaky tests, fix root causes (timing, data), and monitor pass rates.",
+            "codeExamples": [],
+            "keyTakeaway": "Maintain >98% CI pass rate. Fix flaky tests immediately, don't just re-run.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.ci.artifacts",
+          "text": "Are failure artifacts captured (screenshots, videos, traces)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Configure test runners to capture screenshots on failure, record videos, and save trace files for debugging.",
+            "whyItMatters": "Without artifacts, debugging CI failures requires reproducing locally. Screenshots and videos show exactly what went wrong.",
+            "howToVerify": "Check CI configuration for artifact uploading. Verify screenshots/videos are captured on failure.",
+            "exampleComment": "E2E failures in CI have no screenshots. Enable screenshot-on-failure and upload as CI artifacts.",
+            "codeExamples": [],
+            "keyTakeaway": "Capture screenshots and videos on failure. Upload as CI artifacts for easy debugging.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.ci.parallel-execution",
+          "text": "Are tests parallelized for faster CI execution?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Split E2E tests across multiple CI workers/containers for parallel execution. Use sharding or spec-level parallelism.",
+            "whyItMatters": "Serial E2E execution can take 30+ minutes. Parallel execution across 4 workers cuts this to 8 minutes.",
+            "howToVerify": "Check CI configuration for parallel workers. Verify tests are evenly distributed across workers.",
+            "exampleComment": "100 E2E tests run serially in 40 minutes. Configure 4 parallel workers with Playwright sharding to run in 10 minutes.",
+            "codeExamples": [],
+            "keyTakeaway": "Parallelize E2E tests in CI. Use sharding to distribute across workers.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.ci.environment-parity",
+          "text": "Does the test environment match production (not a mock-everything setup)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "E2E tests should run against a real backend, real database, and real (or realistic) third-party integrations.",
+            "whyItMatters": "E2E tests against mocked backends don't test integration. They become expensive unit tests.",
+            "howToVerify": "Check what the E2E tests connect to. Verify it's a real application stack, not a mock server.",
+            "exampleComment": "E2E tests run against a mock API. They don't catch backend bugs. Set up a real test environment with Docker Compose.",
+            "codeExamples": [],
+            "keyTakeaway": "E2E tests need a real backend. Mock only external third-party services.",
+            "references": []
+          }
+        },
+        {
+          "id": "e2e-testing.ci.test-reporting",
+          "text": "Are test results reported in a readable format (not raw console output)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use structured test reporters (JUnit XML, HTML report, Allure) that integrate with CI dashboards.",
+            "whyItMatters": "Raw console output is hard to parse for failures. Structured reports show pass/fail at a glance with failure details.",
+            "howToVerify": "Check for test reporter configuration. Verify CI shows test results in a dashboard, not raw logs.",
+            "exampleComment": "Test results are only in console output. Add JUnit reporter for CI integration and HTML reporter for local debugging.",
+            "codeExamples": [],
+            "keyTakeaway": "Use structured test reporters. Integrate with CI dashboards for visibility.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -43,6 +43,11 @@ import rLangData from '../../assets/data/checklists/r-lang.json';
 import nosqlData from '../../assets/data/checklists/nosql.json';
 import packageBundlerData from '../../assets/data/checklists/package-bundler.json';
 import bddTestingData from '../../assets/data/checklists/bdd-testing.json';
+import unitTestingData from '../../assets/data/checklists/unit-testing.json';
+import e2eTestingData from '../../assets/data/checklists/e2e-testing.json';
+import apiTestingData from '../../assets/data/checklists/api-testing.json';
+import performanceTestingData from '../../assets/data/checklists/performance-testing.json';
+import mobileTestingData from '../../assets/data/checklists/mobile-testing.json';
 
 export const CHECKLIST_IDS = [
   'java-protobuf',
@@ -84,6 +89,11 @@ export const CHECKLIST_IDS = [
   'nosql',
   'package-bundler',
   'bdd-testing',
+  'unit-testing',
+  'e2e-testing',
+  'api-testing',
+  'performance-testing',
+  'mobile-testing',
   'polish-my-pr',
 ] as const;
 
@@ -132,6 +142,11 @@ const bundledChecklists: ChecklistMap = {
   nosql: nosqlData as unknown as Checklist,
   'package-bundler': packageBundlerData as unknown as Checklist,
   'bdd-testing': bddTestingData as unknown as Checklist,
+  'unit-testing': unitTestingData as unknown as Checklist,
+  'e2e-testing': e2eTestingData as unknown as Checklist,
+  'api-testing': apiTestingData as unknown as Checklist,
+  'performance-testing': performanceTestingData as unknown as Checklist,
+  'mobile-testing': mobileTestingData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -252,6 +267,11 @@ export function getAllReviewChecklists(): Checklist[] {
     'nosql',
     'package-bundler',
     'bdd-testing',
+    'unit-testing',
+    'e2e-testing',
+    'api-testing',
+    'performance-testing',
+    'mobile-testing',
   ].map((id) => getChecklist(id));
 }
 
