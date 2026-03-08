@@ -14,6 +14,14 @@ import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import type { PRRole, PRSize, PRPriority, CIPassing, PRDependency } from '../src/data/types';
 import { PR_PRIORITY_LABELS, PR_PRIORITY_ORDER } from '../src/data/types';
 
+const ADMIN_DASHBOARD_EMAILS = (
+  process.env.EXPO_PUBLIC_ADMIN_DASHBOARD_EMAILS ??
+  'kaitlin.e.powell@gmail.com'
+)
+  .split(',')
+  .map((email: string) => email.trim().toLowerCase())
+  .filter(Boolean);
+
 interface ModeCardProps {
   title: string;
   subtitle: string;
@@ -91,10 +99,13 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 export default function HomeScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
+  const authUser = useAuthStore((s) => s.user);
   const sessions = useSessionStore((s) => s.sessions);
   const histories = useConfidenceStore((s) => s.histories);
   const prs = usePRTrackerStore((s) => s.prs);
   const addPR = usePRTrackerStore((s) => s.addPR);
+  const adminEmail = (authUser?.email ?? '').trim().toLowerCase();
+  const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
 
   const [showAddPR, setShowAddPR] = useState(false);
   const [addForm, setAddForm] = useState({
@@ -286,6 +297,14 @@ export default function HomeScreen() {
               onPress={() => router.push('/review/due-items')}
             >
               <Text style={styles.quickLinkText}>🔁 Due ({dueCount})</Text>
+            </Pressable>
+          )}
+          {isAdminDashboardUser && (
+            <Pressable
+              style={styles.quickLink}
+              onPress={() => router.push('/admin-dashboard')}
+            >
+              <Text style={styles.quickLinkText}>🛡 Admin</Text>
             </Pressable>
           )}
         </View>

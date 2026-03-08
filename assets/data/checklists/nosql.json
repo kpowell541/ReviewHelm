@@ -1,0 +1,314 @@
+{
+  "meta": {
+    "id": "nosql",
+    "mode": "review",
+    "title": "MongoDB, NoSQL & Big Data",
+    "shortTitle": "NoSQL",
+    "description": "MongoDB, Redis, DynamoDB, Elasticsearch, Hadoop, and NoSQL data modeling",
+    "icon": "🍃",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "nosql.data-modeling",
+      "title": "Data Modeling",
+      "items": [
+        {
+          "id": "nosql.data-modeling.embed-vs-reference",
+          "text": "Is the choice between embedding and referencing documents justified?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Embed data that's read together and has a 1:few relationship. Reference data that's shared, large, or has unbounded growth.",
+            "whyItMatters": "Wrong data modeling is the #1 cause of NoSQL performance problems. Over-embedding creates huge documents. Over-referencing requires expensive joins.",
+            "howToVerify": "Check document sizes and access patterns. Embedded arrays that grow unbounded will eventually hit the 16MB BSON limit.",
+            "exampleComment": "Embedding all comments in the post document will grow unbounded. Reference comments in a separate collection with a post_id.",
+            "codeExamples": [],
+            "keyTakeaway": "Model for your query patterns. Embed what you read together. Reference what grows unbounded.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.data-modeling.schema-design",
+          "text": "Is the schema designed for the most common query patterns?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "NoSQL schemas should be designed around read patterns, not normalized like SQL. Denormalization is expected and encouraged for read-heavy workloads.",
+            "whyItMatters": "A schema designed for SQL-like normalized access will perform terribly in NoSQL. Multiple collection lookups are expensive without JOINs.",
+            "howToVerify": "List the top 3-5 query patterns. Verify each can be satisfied with a single collection read. Check for patterns requiring multiple lookups.",
+            "exampleComment": "The user profile page requires 4 separate collection lookups. Denormalize the data into a single document for single-read access.",
+            "codeExamples": [],
+            "keyTakeaway": "Design schema for query patterns, not normalization. One query should satisfy one read pattern.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.data-modeling.document-size",
+          "text": "Are document sizes kept reasonable (not approaching size limits)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "MongoDB documents have a 16MB limit. DynamoDB items have a 400KB limit. Keep documents well under limits to avoid future issues.",
+            "whyItMatters": "Documents approaching size limits cause write failures that are hard to debug and fix without data migration.",
+            "howToVerify": "Check for embedded arrays that grow with usage (comments, events, logs). These can push documents past size limits.",
+            "exampleComment": "This document embeds an unbounded event log. At 1000 events per day, it'll hit 16MB in months. Use a separate collection.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep documents well under size limits. Move unbounded arrays to separate collections.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.data-modeling.key-design",
+          "text": "Are partition/sort keys designed for even data distribution?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Partition keys should distribute data evenly across shards/partitions. Hot keys cause throttling in DynamoDB and hot spots in sharded MongoDB.",
+            "whyItMatters": "A hot partition key means one node handles most traffic while others are idle. This creates bottlenecks and throttling.",
+            "howToVerify": "Analyze the cardinality and distribution of partition key values. Check for keys like 'status' (few values) or date-based keys (recent dates are hot).",
+            "exampleComment": "Using date as the partition key concentrates all today's writes on one partition. Use a composite key with a hash prefix.",
+            "codeExamples": [],
+            "keyTakeaway": "Choose high-cardinality partition keys. Avoid keys that concentrate traffic on a few values.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nosql.queries",
+      "title": "Queries & Indexes",
+      "items": [
+        {
+          "id": "nosql.queries.indexes",
+          "text": "Are indexes created for query patterns (not missing or excessive)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Create indexes for fields used in find(), sort(), and aggregation. Don't create indexes you don't need — each slows writes.",
+            "whyItMatters": "Missing indexes cause full collection scans. Excessive indexes slow write performance and waste storage.",
+            "howToVerify": "Use explain() to verify queries use indexes. Check for unused indexes with $indexStats. Verify compound index field order matches queries.",
+            "exampleComment": "This query filters by status and sorts by created_at but there's no compound index. Create: { status: 1, created_at: -1 }.",
+            "codeExamples": [],
+            "keyTakeaway": "Create indexes to match query patterns. Use explain() to verify they're used. Remove unused indexes.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.queries.aggregation",
+          "text": "Are aggregation pipelines efficient (filtering early, using indexes)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Put $match and $sort stages first in the pipeline so they can use indexes. Avoid $lookup (joins) in hot paths.",
+            "whyItMatters": "$match at the end scans all documents first. $lookup without indexes is extremely slow. Pipeline stage order matters enormously.",
+            "howToVerify": "Check aggregation pipeline stage order. $match and $sort should come first. Verify $match uses indexed fields.",
+            "exampleComment": "This pipeline runs $project before $match, preventing index usage. Move $match to the first stage.",
+            "codeExamples": [],
+            "keyTakeaway": "Put $match first in aggregation pipelines. Verify pipelines use indexes with explain().",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.queries.pagination",
+          "text": "Is cursor-based pagination used instead of skip/offset?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use range-based pagination (where _id > lastId) instead of skip(). Skip must scan and discard documents.",
+            "whyItMatters": "skip(10000) scans 10,000 documents to discard them. At page 1000, it scans 1M documents. Cursor pagination is O(1).",
+            "howToVerify": "Check for .skip() with large or variable offsets. Replace with cursor-based pagination using the last document's ID.",
+            "exampleComment": "This uses skip(page * limit) for pagination. At page 100, it scans 10,000 documents. Use cursor-based pagination instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use cursor-based pagination for large datasets. Only use skip() for small, bounded collections.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.queries.projections",
+          "text": "Are projections used to return only needed fields?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use projections to return only the fields you need. This reduces network transfer and memory usage.",
+            "whyItMatters": "Returning entire documents when you only need 2 fields wastes bandwidth and memory. Especially impactful for large documents.",
+            "howToVerify": "Check find() calls for projection parameters. Verify large document queries only return needed fields.",
+            "exampleComment": "This returns entire user documents but only uses name and email. Add projection: { name: 1, email: 1 }.",
+            "codeExamples": [],
+            "keyTakeaway": "Always project to needed fields. Don't transfer entire documents for partial reads.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nosql.caching",
+      "title": "Caching (Redis/Memcached)",
+      "items": [
+        {
+          "id": "nosql.caching.ttl",
+          "text": "Do cached values have appropriate TTLs?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every cached value should have an expiration time (TTL). Without TTL, stale data persists indefinitely.",
+            "whyItMatters": "Missing TTLs cause stale data and memory exhaustion. Cache grows without bound until Redis runs out of memory.",
+            "howToVerify": "Check SET commands for EX/PX options. Verify TTLs match data freshness requirements.",
+            "exampleComment": "This caches user profiles without TTL. If a user updates their name, the old name persists forever. Add a 1-hour TTL.",
+            "codeExamples": [],
+            "keyTakeaway": "Always set TTLs on cached data. Match TTL to data freshness requirements.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.caching.invalidation",
+          "text": "Is cache invalidation handled correctly on writes?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When data is updated, the corresponding cache entry must be invalidated or updated. Choose write-through or write-behind strategies.",
+            "whyItMatters": "Stale cache after updates shows users old data. Missing invalidation is the second hardest problem in computer science.",
+            "howToVerify": "Check that write/update operations also invalidate or update the cache. Verify the invalidation strategy is consistent.",
+            "exampleComment": "The update endpoint modifies the database but doesn't invalidate the cache. Users see stale data until TTL expires.",
+            "codeExamples": [],
+            "keyTakeaway": "Invalidate cache on writes. Use consistent patterns (cache-aside, write-through) throughout the application.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.caching.thundering-herd",
+          "text": "Is the thundering herd problem mitigated for popular keys?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When a popular cache key expires, many requests simultaneously hit the database. Use locking, staggered TTLs, or cache warming.",
+            "whyItMatters": "Thundering herd can overwhelm the database with identical queries, causing cascading failures during cache expiration.",
+            "howToVerify": "Check for popular cache keys with identical TTLs. Verify there's protection (lock, singleflight, or staggered expiry).",
+            "exampleComment": "This homepage cache expires for all users simultaneously. Add TTL jitter (TTL + random 0-60s) to spread recomputation.",
+            "codeExamples": [],
+            "keyTakeaway": "Add TTL jitter for popular keys. Use locks or singleflight to prevent duplicate recomputation.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.caching.serialization",
+          "text": "Is cache serialization efficient (not JSON for large binary data)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Choose serialization format based on data type: JSON for small objects, MessagePack/Protobuf for large data, raw bytes for binary.",
+            "whyItMatters": "JSON serialization of large objects is slow and bloated. A 1MB JSON cache entry could be 200KB in MessagePack.",
+            "howToVerify": "Check cached data sizes and serialization format. Verify large cache entries aren't using JSON unnecessarily.",
+            "exampleComment": "This caches 500KB of data as JSON. Use MessagePack or Protobuf to reduce size and serialization time by 60%.",
+            "codeExamples": [],
+            "keyTakeaway": "Use efficient serialization for large cache entries. JSON is fine for small, human-readable data.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nosql.security",
+      "title": "Security & Operations",
+      "items": [
+        {
+          "id": "nosql.security.injection",
+          "text": "Is NoSQL injection prevented (no user input in query operators)?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "User input should not be used directly in query operators ($gt, $ne, $where). Sanitize input and validate types.",
+            "whyItMatters": "NoSQL injection can bypass authentication, extract data, or execute arbitrary code (with $where in MongoDB).",
+            "howToVerify": "Check for user input passed directly into query objects. Verify req.body fields aren't used as query operators.",
+            "exampleComment": "This passes req.body.username directly into the query. An attacker can send { $ne: '' } to match any user.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate and sanitize all user input. Never pass raw user input into query operators.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.security.authentication",
+          "text": "Is database authentication enabled (not running without auth)?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "MongoDB, Redis, and other NoSQL databases should have authentication enabled. Never expose unauthenticated databases to the network.",
+            "whyItMatters": "Unauthenticated MongoDB/Redis instances are the most common cause of data breaches. Bots scan for open databases continuously.",
+            "howToVerify": "Check connection strings for authentication credentials. Verify the database requires authentication and isn't bound to 0.0.0.0.",
+            "exampleComment": "This MongoDB connection has no authentication. Enable authentication and bind to localhost or use a private network.",
+            "codeExamples": [],
+            "keyTakeaway": "Always enable authentication. Bind to private networks. Never expose databases to the public internet.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.security.backup",
+          "text": "Are backups configured and tested?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Configure automated backups with appropriate retention. Test restore procedures regularly.",
+            "whyItMatters": "Without backups, any data loss (hardware failure, accidental deletion, ransomware) is permanent.",
+            "howToVerify": "Check for backup configuration (mongodump schedule, Redis RDB/AOF, managed service backups). Verify restore has been tested.",
+            "exampleComment": "There's no backup configured for this Redis instance. If it crashes, all session data is lost. Enable AOF persistence.",
+            "codeExamples": [],
+            "keyTakeaway": "Configure automated backups. Test restore procedures. Document recovery time objectives.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "nosql.scalability",
+      "title": "Scalability",
+      "items": [
+        {
+          "id": "nosql.scalability.connection-pooling",
+          "text": "Is connection pooling configured properly?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use connection pooling for all NoSQL databases. Configure pool sizes based on expected concurrency and database limits.",
+            "whyItMatters": "Creating connections per request is expensive. Without pooling, high traffic exhausts connections and the database rejects new ones.",
+            "howToVerify": "Check connection configuration for pool size settings. Verify the pool size matches deployment requirements.",
+            "exampleComment": "This creates a new MongoDB connection per request. Use a connection pool with maxPoolSize set appropriately.",
+            "codeExamples": [],
+            "keyTakeaway": "Always use connection pooling. Size pools based on your database's connection limits.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.scalability.sharding",
+          "text": "Is the sharding strategy appropriate for data growth?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Choose shard keys that distribute data and queries evenly. Avoid monotonically increasing keys (timestamps, auto-increment IDs).",
+            "whyItMatters": "Poor shard keys create hot spots where one shard handles most traffic while others are idle.",
+            "howToVerify": "Check shard key cardinality and distribution. Verify queries include the shard key to avoid scatter-gather.",
+            "exampleComment": "Using timestamp as shard key concentrates all new writes on one shard. Use a hashed compound key instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Choose shard keys with high cardinality and even distribution. Include shard keys in query filters.",
+            "references": []
+          }
+        },
+        {
+          "id": "nosql.scalability.read-replicas",
+          "text": "Are read replicas used appropriately for read-heavy workloads?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Direct read-heavy queries to replica nodes. Understand that replicas may have slight lag (eventual consistency).",
+            "whyItMatters": "Sending all reads to the primary overloads it. Read replicas distribute load, but stale reads must be acceptable.",
+            "howToVerify": "Check read preferences in connection configuration. Verify read-after-write scenarios use the primary, not replicas.",
+            "exampleComment": "This analytics query runs on the primary, competing with writes. Route analytics to a secondary read replica.",
+            "codeExamples": [],
+            "keyTakeaway": "Use read replicas for read-heavy workloads. Ensure read-after-write operations read from the primary.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

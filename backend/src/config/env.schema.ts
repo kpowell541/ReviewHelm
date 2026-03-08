@@ -48,6 +48,17 @@ const EnvSchema = z.object({
   AWS_KMS_KEY_ID: z.string().optional().default(''),
 
   ADMIN_USER_IDS: z.string().optional().default(''),
+  ADMIN_DASHBOARD_ALLOWED_EMAILS: z
+    .string()
+    .optional()
+    .default('kaitlin.e.powell@gmail.com'),
+  CHECKLIST_RELEVANCE_WORKFLOW_OWNER: z.string().optional().default('kpowell541'),
+  CHECKLIST_RELEVANCE_WORKFLOW_REPO: z.string().optional().default('ReviewHelm'),
+  CHECKLIST_RELEVANCE_WORKFLOW_FILE: z
+    .string()
+    .optional()
+    .default('checklist-relevance-check.yml'),
+  GITHUB_READ_TOKEN: z.string().optional().default(''),
   ALLOWED_ORIGINS: z.string().optional().default(''),
   STRICT_STARTUP_CHECKS: z.preprocess(
     (value) => `${value ?? 'true'}`.toLowerCase() === 'true',

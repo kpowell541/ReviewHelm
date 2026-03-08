@@ -37,6 +37,12 @@ import scalaData from '../../assets/data/checklists/scala.json';
 import dockerK8sData from '../../assets/data/checklists/docker-k8s.json';
 import cicdData from '../../assets/data/checklists/cicd.json';
 import codeReviewMetaData from '../../assets/data/checklists/code-review-meta.json';
+import typescriptData from '../../assets/data/checklists/typescript.json';
+import cssStylingData from '../../assets/data/checklists/css-styling.json';
+import rLangData from '../../assets/data/checklists/r-lang.json';
+import nosqlData from '../../assets/data/checklists/nosql.json';
+import packageBundlerData from '../../assets/data/checklists/package-bundler.json';
+import bddTestingData from '../../assets/data/checklists/bdd-testing.json';
 
 export const CHECKLIST_IDS = [
   'java-protobuf',
@@ -72,6 +78,12 @@ export const CHECKLIST_IDS = [
   'docker-k8s',
   'cicd',
   'code-review-meta',
+  'typescript',
+  'css-styling',
+  'r-lang',
+  'nosql',
+  'package-bundler',
+  'bdd-testing',
   'polish-my-pr',
 ] as const;
 
@@ -114,6 +126,12 @@ const bundledChecklists: ChecklistMap = {
   'docker-k8s': dockerK8sData as unknown as Checklist,
   cicd: cicdData as unknown as Checklist,
   'code-review-meta': codeReviewMetaData as unknown as Checklist,
+  typescript: typescriptData as unknown as Checklist,
+  'css-styling': cssStylingData as unknown as Checklist,
+  'r-lang': rLangData as unknown as Checklist,
+  nosql: nosqlData as unknown as Checklist,
+  'package-bundler': packageBundlerData as unknown as Checklist,
+  'bdd-testing': bddTestingData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -228,6 +246,12 @@ export function getAllReviewChecklists(): Checklist[] {
     'docker-k8s',
     'cicd',
     'code-review-meta',
+    'typescript',
+    'css-styling',
+    'r-lang',
+    'nosql',
+    'package-bundler',
+    'bdd-testing',
   ].map((id) => getChecklist(id));
 }
 

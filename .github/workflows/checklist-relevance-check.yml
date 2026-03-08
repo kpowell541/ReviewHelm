@@ -1,0 +1,51 @@
+name: Checklist Relevance Check
+
+on:
+  schedule:
+    # Weekly scan: Mondays at 14:00 UTC
+    - cron: '0 14 * * 1'
+    # Monthly review: day 1 at 15:00 UTC
+    - cron: '0 15 1 * *'
+  workflow_dispatch:
+
+jobs:
+  checklist-relevance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate Checklist Snapshot
+        shell: bash
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const dir = path.join(process.cwd(), 'backend', 'src', 'checklists', 'data');
+          const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+          const items = files.map((name) => {
+            const data = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+            return {
+              checklistId: data?.meta?.id ?? name.replace('.json',''),
+              version: data?.meta?.version ?? 'unknown',
+              totalItems: data?.meta?.totalItems ?? 0,
+            };
+          });
+          const out = {
+            generatedAt: new Date().toISOString(),
+            checklistCount: items.length,
+            items,
+          };
+          fs.mkdirSync(path.join(process.cwd(), 'artifacts'), { recursive: true });
+          fs.writeFileSync(path.join(process.cwd(), 'artifacts', 'checklist-relevance-report.json'), JSON.stringify(out, null, 2));
+          "
+
+      - name: Upload Checklist Relevance Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: checklist-relevance-report
+          path: artifacts/checklist-relevance-report.json
+

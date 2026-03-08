@@ -1,0 +1,278 @@
+{
+  "meta": {
+    "id": "r-lang",
+    "mode": "review",
+    "title": "R",
+    "shortTitle": "R",
+    "description": "R programming for data science, statistical analysis, and visualization",
+    "icon": "📊",
+    "totalItems": 25,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "r-lang.code-quality",
+      "title": "Code Quality",
+      "items": [
+        {
+          "id": "r-lang.code-quality.tidyverse-style",
+          "text": "Does the code follow tidyverse style conventions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Follow the tidyverse style guide: snake_case for variables, pipe operator for chains, consistent spacing and indentation.",
+            "whyItMatters": "Consistent style makes code readable and maintainable. The tidyverse style guide is the most widely adopted R convention.",
+            "howToVerify": "Check for camelCase or dot.case naming. Verify pipes are used for multi-step transformations. Run lintr or styler.",
+            "exampleComment": "This uses myVar naming. R convention is my_var (snake_case). Run styler::style_file() to auto-format.",
+            "codeExamples": [],
+            "keyTakeaway": "Follow tidyverse style. Use lintr for linting and styler for auto-formatting.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.code-quality.vectorized",
+          "text": "Are operations vectorized instead of using loops?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "R is optimized for vectorized operations. Use apply/map/mutate instead of for loops. Use dplyr verbs for data frame operations.",
+            "whyItMatters": "For loops in R are orders of magnitude slower than vectorized operations. A loop over 1M rows takes seconds; vectorized takes milliseconds.",
+            "howToVerify": "Look for for loops iterating over data frame rows. These should usually be vectorized with mutate(), apply(), or map().",
+            "exampleComment": "This for loop calculates a new column row by row. Use mutate(df, new_col = old_col * 2) for a 100x speedup.",
+            "codeExamples": [],
+            "keyTakeaway": "Vectorize operations. Use dplyr, purrr, and apply family instead of explicit loops.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.code-quality.functions",
+          "text": "Are repeated operations extracted into well-documented functions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Extract repeated code into functions with clear names, roxygen2 documentation, and input validation.",
+            "whyItMatters": "Copy-pasted analysis code is the top source of bugs in R. Functions enable testing, reuse, and documentation.",
+            "howToVerify": "Look for duplicated code blocks. Check that functions have roxygen2 comments documenting parameters and return values.",
+            "exampleComment": "This data cleaning logic appears in 3 scripts. Extract it into a function in a shared R file.",
+            "codeExamples": [],
+            "keyTakeaway": "Extract repeated code into functions. Document with roxygen2.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.code-quality.dependencies",
+          "text": "Are package dependencies managed properly (renv, explicit library calls)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use renv for reproducible environments. Load packages explicitly with library() at the top. Avoid library() inside functions.",
+            "whyItMatters": "Without renv, code that works on your machine fails on others due to version mismatches. Hidden package loads cause confusion.",
+            "howToVerify": "Check for renv.lock file. Verify all library() calls are at the top of the script. Check for :: usage vs library().",
+            "exampleComment": "There's no renv.lock. Running this on another machine may fail with different package versions. Initialize renv.",
+            "codeExamples": [],
+            "keyTakeaway": "Use renv for reproducibility. Load packages at the top of scripts.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.code-quality.no-global-state",
+          "text": "Is global state avoided (no modifying the global environment inside functions)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Functions should not use <<- to modify global variables. They should take inputs as parameters and return outputs.",
+            "whyItMatters": "Global state makes functions unpredictable. The same function call can produce different results depending on hidden global variables.",
+            "howToVerify": "Search for <<- assignment. Check for functions that rely on variables not passed as parameters.",
+            "exampleComment": "This function uses <<- to modify a global counter. Pass it as a parameter and return the updated value instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Avoid global state. Functions should take inputs and return outputs. Never use <<-.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "r-lang.data-manipulation",
+      "title": "Data Manipulation",
+      "items": [
+        {
+          "id": "r-lang.data-manipulation.dplyr-verbs",
+          "text": "Are dplyr verbs used correctly (mutate, filter, select, group_by, summarize)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use the right dplyr verb for each operation. Don't use filter() when you mean select(). Use across() for operations on multiple columns.",
+            "whyItMatters": "Wrong verbs produce wrong results silently. Using base R subsetting instead of dplyr is less readable and more error-prone.",
+            "howToVerify": "Check that verb chains produce the intended output. Verify group_by() is followed by summarize() or ungroup().",
+            "exampleComment": "This filter() selects columns — use select() instead. filter() is for rows.",
+            "codeExamples": [],
+            "keyTakeaway": "Use the right verb: filter for rows, select for columns, mutate for new columns, summarize for aggregation.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.data-manipulation.joins",
+          "text": "Are join operations type-correct and handling missing matches?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use the right join type (left_join, inner_join, anti_join). Check for unexpected row multiplication from many-to-many joins.",
+            "whyItMatters": "Wrong join types silently drop rows (inner) or create NAs (left). Many-to-many joins multiply rows, inflating results.",
+            "howToVerify": "Check row counts before and after joins. Verify the join key is unique in at least one table. Check for unexpected NAs.",
+            "exampleComment": "This left_join increases row count from 1000 to 3500 — the join key isn't unique in the right table. Check for duplicates.",
+            "codeExamples": [],
+            "keyTakeaway": "Check row counts after joins. Verify join keys are unique. Handle NAs from unmatched rows.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.data-manipulation.na-handling",
+          "text": "Are NA values handled explicitly?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "NA handling should be explicit: use na.rm = TRUE in aggregations, is.na() for checking, tidyr::drop_na() or replace_na() for cleaning.",
+            "whyItMatters": "NAs propagate silently in R. mean(c(1, 2, NA)) returns NA. Unhandled NAs produce NA results throughout the analysis.",
+            "howToVerify": "Check aggregation functions for na.rm parameter. Verify NA handling strategy is documented and consistent.",
+            "exampleComment": "mean(x) returns NA if any value is NA. Add na.rm = TRUE or handle NAs explicitly before aggregating.",
+            "codeExamples": [],
+            "keyTakeaway": "Handle NAs explicitly. Document your NA strategy (remove, impute, or propagate).",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.data-manipulation.type-coercion",
+          "text": "Are data types checked after reading data (chr vs num, factors)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Check column types after reading CSV/Excel. Numeric columns may import as character. Dates may need parsing with lubridate.",
+            "whyItMatters": "Type mismatches cause silent errors. Summing a character column returns an error or wrong result. Factor levels affect plots.",
+            "howToVerify": "Check str() or glimpse() output. Verify numeric columns are numeric, dates are Date/POSIXct, and factors have correct levels.",
+            "exampleComment": "The price column imported as character due to a '$' in the CSV. Parse with parse_number() or readr's col_double().",
+            "codeExamples": [],
+            "keyTakeaway": "Always check column types after import. Use readr's col_types for explicit type specification.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "r-lang.visualization",
+      "title": "Visualization",
+      "items": [
+        {
+          "id": "r-lang.visualization.ggplot-layers",
+          "text": "Are ggplot layers well-organized and aesthetics mapped correctly?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Map aesthetics in aes() (data-dependent) not outside (fixed values). Layer geoms logically. Use theme_* for consistent styling.",
+            "whyItMatters": "Aesthetics mapped outside aes() don't show legends. Poorly layered plots hide data. Inconsistent themes look unprofessional.",
+            "howToVerify": "Check that color/size inside aes() map to data variables. Verify fixed colors are outside aes(). Check theme consistency.",
+            "exampleComment": "color = 'blue' inside aes() creates a legend entry 'blue'. Move it outside aes() for a fixed blue color.",
+            "codeExamples": [],
+            "keyTakeaway": "Data-mapped aesthetics go in aes(). Fixed visual properties go outside. Use a consistent theme.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.visualization.labels",
+          "text": "Do plots have clear titles, axis labels, and legends?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every published plot should have a descriptive title, labeled axes with units, and clear legend entries.",
+            "whyItMatters": "Unlabeled plots are ambiguous. Readers can't interpret results without knowing what axes represent and what units are used.",
+            "howToVerify": "Check for labs() or ggtitle(). Verify axis labels include units. Check that legend titles are descriptive.",
+            "exampleComment": "This plot has no title and the y-axis says 'value'. Add labs(title = 'Monthly Revenue', y = 'Revenue (USD)').",
+            "codeExamples": [],
+            "keyTakeaway": "Label everything. Titles, axes, and legends should be self-explanatory.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.visualization.scale-appropriate",
+          "text": "Are scales and transformations appropriate for the data?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use log scales for exponential data, date scales for time series, and appropriate color scales (viridis for continuous, qualitative for categories).",
+            "whyItMatters": "Linear scales on exponential data hide patterns. Truncated axes exaggerate differences. Poor color choices mislead readers.",
+            "howToVerify": "Check that y-axis starts at 0 for bar charts. Verify log scales are labeled. Check color accessibility.",
+            "exampleComment": "This bar chart's y-axis starts at 90, exaggerating a 5% difference to look like 500%. Start at 0.",
+            "codeExamples": [],
+            "keyTakeaway": "Choose scales that honestly represent the data. Start bar charts at zero. Use log scales for exponential data.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "r-lang.reproducibility",
+      "title": "Reproducibility & Testing",
+      "items": [
+        {
+          "id": "r-lang.reproducibility.seeds",
+          "text": "Are random seeds set for reproducible results?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use set.seed() before any random operations (sampling, simulations, cross-validation). Document the seed value.",
+            "whyItMatters": "Without set.seed(), results change on every run. Other researchers can't reproduce your findings. Tests become flaky.",
+            "howToVerify": "Check for random operations (sample, rnorm, train/test splits). Verify set.seed() is called before them.",
+            "exampleComment": "This cross-validation has no set.seed(). Results will differ on every run. Add set.seed(42) before the split.",
+            "codeExamples": [],
+            "keyTakeaway": "Always set seeds before random operations. Document which seed was used.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.reproducibility.paths",
+          "text": "Are file paths relative (no hardcoded absolute paths)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use relative paths from the project root, here::here(), or rprojroot. Never use /Users/yourname/... or setwd().",
+            "whyItMatters": "Absolute paths break on any other machine. setwd() changes global state and breaks when scripts are sourced in different order.",
+            "howToVerify": "Search for absolute paths and setwd(). Replace with here::here() or relative paths from the project root.",
+            "exampleComment": "This uses setwd('/Users/john/project'). Use here::here('data', 'input.csv') for portable paths.",
+            "codeExamples": [],
+            "keyTakeaway": "Use here::here() for file paths. Never hardcode absolute paths or use setwd().",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.reproducibility.testthat",
+          "text": "Are functions tested with testthat?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use testthat for unit testing R functions. Test edge cases: empty inputs, NAs, wrong types, boundary values.",
+            "whyItMatters": "Untested data processing functions silently produce wrong results. Tests catch regressions when code or data changes.",
+            "howToVerify": "Check for test files in tests/testthat/. Verify new functions have corresponding tests.",
+            "exampleComment": "This data cleaning function has no tests. Add tests for empty data frames, NAs in key columns, and expected output shape.",
+            "codeExamples": [],
+            "keyTakeaway": "Test data processing functions with testthat. Cover edge cases like empty data and NAs.",
+            "references": []
+          }
+        },
+        {
+          "id": "r-lang.reproducibility.rmarkdown",
+          "text": "Are R Markdown documents structured for reproducibility?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "R Markdown should load packages in the first chunk, set global options, and run top-to-bottom without manual intervention.",
+            "whyItMatters": "R Markdown that requires running chunks out of order or manual variable setup is not reproducible.",
+            "howToVerify": "Knit the document fresh (clear environment first). Verify it runs top-to-bottom without errors.",
+            "exampleComment": "This R Markdown depends on variables from the global environment. Add all data loading to the document itself.",
+            "codeExamples": [],
+            "keyTakeaway": "R Markdown must run top-to-bottom from a clean environment. Include all data loading.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}
