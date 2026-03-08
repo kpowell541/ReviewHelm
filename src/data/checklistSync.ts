@@ -17,7 +17,7 @@ const CHECKLIST_ALLOWLIST_HOSTS = (
 
 const MAX_CHECKLIST_PAYLOAD_BYTES = Math.max(
   1,
-  Number(process.env.EXPO_PUBLIC_CHECKLIST_MAX_PAYLOAD_BYTES) || 131072,
+  Number(process.env.EXPO_PUBLIC_CHECKLIST_MAX_PAYLOAD_BYTES) || 524288,
 );
 
 function checklistFilename(id: ChecklistId): string {

@@ -224,7 +224,28 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
       const remote = remoteById.get(local.id);
       if (!remote || new Date(local.updatedAt) > new Date(remote.updatedAt)) {
         try {
-          await api.put(`/tracked-prs/${local.id}`, local);
+          await api.put(`/tracked-prs/${local.id}`, {
+            id: local.id,
+            title: local.title,
+            url: local.url,
+            status: local.status,
+            role: local.role,
+            priority: local.priority,
+            isEmergency: local.isEmergency ?? false,
+            size: local.size,
+            repo: local.repo,
+            prNumber: local.prNumber,
+            prAuthor: local.prAuthor,
+            dependencies: local.dependencies,
+            ciPassing: local.ciPassing,
+            linkedSessionId: local.linkedSessionId,
+            notes: local.notes,
+            resolvedAt: local.resolvedAt,
+            lastReviewedAt: local.lastReviewedAt,
+            archivedAt: local.archivedAt,
+            createdAt: local.createdAt,
+            updatedAt: local.updatedAt,
+          });
           pushed++;
         } catch (err: any) {
           errors.push(`PR ${local.id}: ${err.message}`);
