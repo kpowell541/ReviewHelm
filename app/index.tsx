@@ -157,7 +157,7 @@ export default function HomeScreen() {
             style={styles.headerSettingsBtn}
             onPress={() => router.push('/settings')}
           >
-            <Text style={styles.headerSettingsIcon}>&#x2699;</Text>
+            <Text style={styles.headerSettingsIcon}>&#x2699;&#xFE0E;</Text>
           </Pressable>
         </View>
         <Text style={styles.appSubtitle}>
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   headerSettingsIcon: {
-    fontSize: 18,
+    fontSize: 20,
     color: colors.textSecondary,
   },
   appSubtitle: {
