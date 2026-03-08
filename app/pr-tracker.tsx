@@ -22,6 +22,8 @@ import type {
   CIPassing,
   PRDependency,
   TrackedPR,
+  AcceptanceOutcome,
+  ReviewOutcome,
 } from '../src/data/types';
 import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
@@ -81,6 +83,8 @@ export default function PRTrackerScreen() {
   const updatePR = usePRTrackerStore((s) => s.updatePR);
   const deletePR = usePRTrackerStore((s) => s.deletePR);
   const markReviewed = usePRTrackerStore((s) => s.markReviewed);
+  const markAccepted = usePRTrackerStore((s) => s.markAccepted);
+  const setReviewOutcome = usePRTrackerStore((s) => s.setReviewOutcome);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -494,6 +498,92 @@ export default function PRTrackerScreen() {
               </Text>
             )}
           </View>
+          {/* Author: acceptance outcome toggles */}
+          {pr.role === 'author' && PR_ACTIVE_STATUSES.includes(pr.status) && (
+            <View style={styles.outcomeRow}>
+              <Pressable
+                style={[
+                  styles.outcomeBtn,
+                  pr.acceptanceOutcome === 'accepted-clean' && styles.outcomeBtnActiveGood,
+                ]}
+                onPress={() => {
+                  void Haptics.selectionAsync();
+                  markAccepted(pr.id, 'accepted-clean');
+                }}
+                hitSlop={4}
+              >
+                <Text style={[
+                  styles.outcomeBtnText,
+                  pr.acceptanceOutcome === 'accepted-clean' && styles.outcomeBtnTextActive,
+                ]}>Accepted (no changes)</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.outcomeBtn,
+                  pr.acceptanceOutcome === 'accepted-with-changes' && styles.outcomeBtnActiveWarn,
+                ]}
+                onPress={() => {
+                  void Haptics.selectionAsync();
+                  markAccepted(pr.id, 'accepted-with-changes');
+                }}
+                hitSlop={4}
+              >
+                <Text style={[
+                  styles.outcomeBtnText,
+                  pr.acceptanceOutcome === 'accepted-with-changes' && styles.outcomeBtnTextActive,
+                ]}>Changes requested</Text>
+              </Pressable>
+            </View>
+          )}
+          {pr.role === 'author' && pr.acceptanceOutcome && (
+            <Text style={styles.outcomeLabel}>
+              {pr.acceptanceOutcome === 'accepted-clean'
+                ? 'Merged without changes requested'
+                : 'Merged after changes were requested'}
+            </Text>
+          )}
+          {/* Reviewer: review outcome toggles */}
+          {pr.role === 'reviewer' && (
+            <View style={styles.outcomeRow}>
+              <Pressable
+                style={[
+                  styles.outcomeBtn,
+                  pr.reviewOutcome === 'requested-changes' && styles.outcomeBtnActiveWarn,
+                ]}
+                onPress={() => {
+                  void Haptics.selectionAsync();
+                  setReviewOutcome(pr.id, 'requested-changes');
+                }}
+                hitSlop={4}
+              >
+                <Text style={[
+                  styles.outcomeBtnText,
+                  pr.reviewOutcome === 'requested-changes' && styles.outcomeBtnTextActive,
+                ]}>Requested changes</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.outcomeBtn,
+                  pr.reviewOutcome === 'no-changes-requested' && styles.outcomeBtnActiveGood,
+                ]}
+                onPress={() => {
+                  void Haptics.selectionAsync();
+                  setReviewOutcome(pr.id, 'no-changes-requested');
+                }}
+                hitSlop={4}
+              >
+                <Text style={[
+                  styles.outcomeBtnText,
+                  pr.reviewOutcome === 'no-changes-requested' && styles.outcomeBtnTextActive,
+                ]}>No changes needed</Text>
+              </Pressable>
+            </View>
+          )}
+          {pr.role === 'reviewer' && !pr.reviewOutcome && (
+            <Text style={styles.outcomeDisclaimer}>
+              Only request changes that truly need to be made and add value.
+            </Text>
+          )}
         </View>
         {pr.role === 'reviewer' && (
           <View style={styles.reviewActions}>
@@ -1113,6 +1203,49 @@ const styles = StyleSheet.create({
   emergencyBadge: {
     backgroundColor: colors.error + '25',
     color: colors.error,
+  },
+
+  // Outcome toggles
+  outcomeRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  outcomeBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'transparent',
+  },
+  outcomeBtnActiveGood: {
+    backgroundColor: colors.looksGood + '20',
+    borderColor: colors.looksGood,
+  },
+  outcomeBtnActiveWarn: {
+    backgroundColor: colors.warning + '20',
+    borderColor: colors.warning,
+  },
+  outcomeBtnText: {
+    fontSize: fontSizes.xs,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  outcomeBtnTextActive: {
+    color: colors.textPrimary,
+  },
+  outcomeLabel: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  outcomeDisclaimer: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
 
   // Review actions

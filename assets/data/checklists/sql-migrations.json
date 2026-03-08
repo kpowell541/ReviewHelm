@@ -6,7 +6,7 @@
     "shortTitle": "SQL/Migrations",
     "description": "Review checklist for SQL queries, schema changes, and database migrations",
     "icon": "🗄️",
-    "totalItems": 30,
+    "totalItems": 28,
     "version": "1.0.0"
   },
   "sections": [
@@ -225,7 +225,9 @@
           "id": "sql-migrations.query-quality.parameterized",
           "text": "Are all queries parameterized (no string concatenation)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "SQL queries must use parameterized queries or prepared statements. Never concatenate user input into SQL strings.",
             "whyItMatters": "SQL injection is one of the most dangerous and common vulnerabilities. It can lead to complete database compromise.",
@@ -291,7 +293,9 @@
           "id": "sql-migrations.security.permissions",
           "text": "Are database permissions properly scoped?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Application database users should have minimum necessary permissions. Don't use superuser or admin roles for application connections.",
             "whyItMatters": "An overprivileged database user turns a SQL injection vulnerability into a complete database compromise including schema changes and data export.",
@@ -306,7 +310,9 @@
           "id": "sql-migrations.security.sensitive-data",
           "text": "Is sensitive data properly handled (encryption, hashing)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Passwords must be hashed (bcrypt/argon2). PII and sensitive fields should be encrypted at rest. Consider column-level encryption for highly sensitive data.",
             "whyItMatters": "A database breach exposes all stored data. Proper hashing and encryption limit the damage.",
@@ -321,7 +327,9 @@
           "id": "sql-migrations.security.row-level-security",
           "text": "Is row-level access control enforced where needed?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Multi-tenant applications should enforce tenant isolation at the database level using RLS policies or always including tenant_id in queries.",
             "whyItMatters": "Missing tenant isolation allows one user to access another user's data. This is a critical security vulnerability in multi-tenant systems.",

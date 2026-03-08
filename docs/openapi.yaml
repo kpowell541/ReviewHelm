@@ -1276,6 +1276,31 @@ paths:
                         type: integer
                       acceptanceRatePct:
                         type: number
+                  prAcceptance:
+                    type: object
+                    properties:
+                      selfPRs:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          acceptedClean:
+                            type: integer
+                          acceptedWithChanges:
+                            type: integer
+                          cleanAcceptancePct:
+                            type: number
+                      reviewedPRs:
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                          requestedChanges:
+                            type: integer
+                          noChangesRequested:
+                            type: integer
+                          changesRequestedPct:
+                            type: number
                   checklistStaleness:
                     type: object
                   checklistJob:
@@ -1426,6 +1451,14 @@ components:
         notes:
           type: string
           nullable: true
+        acceptanceOutcome:
+          type: string
+          enum: [accepted-clean, accepted-with-changes]
+          nullable: true
+        reviewOutcome:
+          type: string
+          enum: [requested-changes, no-changes-requested]
+          nullable: true
         resolvedAt:
           type: string
           format: date-time
@@ -1476,6 +1509,40 @@ components:
         - ruby
         - lua
         - c-lang
+        - data-formats
+        - postgresql
+        - graphql
+        - rest-api
+        - rust
+        - csharp-dotnet
+        - kotlin-android
+        - security
+        - dart-flutter
+        - php
+        - vue
+        - angular
+        - cpp
+        - shell
+        - sql-migrations
+        - nextjs
+        - django
+        - spring-boot
+        - elixir-phoenix
+        - scala
+        - docker-k8s
+        - cicd
+        - code-review-meta
+        - typescript
+        - css-styling
+        - r-lang
+        - nosql
+        - package-bundler
+        - bdd-testing
+        - unit-testing
+        - e2e-testing
+        - api-testing
+        - performance-testing
+        - mobile-testing
 
     ChecklistMode:
       type: string

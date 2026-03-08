@@ -6,7 +6,7 @@
     "shortTitle": "Angular",
     "description": "Review checklist for Angular applications (standalone components, signals, RxJS)",
     "icon": "🅰️",
-    "totalItems": 30,
+    "totalItems": 15,
     "version": "1.0.0"
   },
   "sections": [
@@ -125,7 +125,9 @@
           "id": "angular.component-design.change-detection",
           "text": "Is OnPush change detection used for performance?",
           "severity": "minor",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Components with changeDetection: ChangeDetectionStrategy.OnPush only re-render when inputs change or events fire, not on every change detection cycle.",
             "whyItMatters": "Default change detection checks every component on every cycle, which is wasteful for pure presentational components.",
@@ -219,7 +221,9 @@
           "id": "angular.routing-di.lazy-loading",
           "text": "Are feature routes lazy-loaded?",
           "severity": "minor",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Feature modules or standalone component routes should use loadComponent or loadChildren for code splitting.",
             "whyItMatters": "Eager loading all routes in a large app creates a massive initial bundle that slows first paint.",
@@ -249,7 +253,9 @@
           "id": "angular.routing-di.guard-protection",
           "text": "Are routes protected with appropriate guards?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Routes requiring authentication or authorization should have canActivate guards that redirect unauthenticated users.",
             "whyItMatters": "Without guards, users can navigate directly to protected routes. Even if API calls fail, the page renders with broken state.",

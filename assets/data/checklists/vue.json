@@ -6,7 +6,7 @@
     "shortTitle": "Vue",
     "description": "Review checklist for Vue.js applications (Vue 3, Composition API, Nuxt)",
     "icon": "💚",
-    "totalItems": 30,
+    "totalItems": 18,
     "version": "1.0.0"
   },
   "sections": [
@@ -311,7 +311,9 @@
           "id": "vue.performance.async-components",
           "text": "Are heavy components lazy-loaded where appropriate?",
           "severity": "minor",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Large components not needed on initial render should use defineAsyncComponent() or dynamic import() for code splitting.",
             "whyItMatters": "Bundling everything upfront increases initial load time. Lazy loading defers non-critical code until it is needed.",
@@ -341,7 +343,9 @@
           "id": "vue.performance.unnecessary-renders",
           "text": "Are unnecessary re-renders avoided?",
           "severity": "minor",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Avoid reactive dependencies that change frequently but do not affect the rendered output. Use shallowRef for large objects that replace rather than mutate.",
             "whyItMatters": "Unnecessary re-renders degrade performance, especially in lists or complex component trees.",

@@ -6,7 +6,7 @@
     "shortTitle": "Scala",
     "description": "Scala applications with functional patterns, Akka, and big data (Spark)",
     "icon": "🔴",
-    "totalItems": 30,
+    "totalItems": 19,
     "version": "1.0.0"
   },
   "sections": [

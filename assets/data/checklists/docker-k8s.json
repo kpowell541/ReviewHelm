@@ -6,7 +6,7 @@
     "shortTitle": "Docker/K8s",
     "description": "Dockerfiles, container security, Kubernetes manifests, and deployment configs",
     "icon": "🐳",
-    "totalItems": 30,
+    "totalItems": 20,
     "version": "1.0.0"
   },
   "sections": [
@@ -63,7 +63,9 @@
           "id": "docker-k8s.dockerfile.non-root",
           "text": "Does the container run as a non-root user?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Add a USER directive to run the process as a non-root user. Create a dedicated user with minimal permissions.",
             "whyItMatters": "Running as root inside a container means a container escape gives root access to the host. Non-root limits blast radius.",
@@ -78,7 +80,9 @@
           "id": "docker-k8s.dockerfile.secrets-build",
           "text": "Are secrets kept out of the image (no COPY .env, no ARG for secrets)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Never COPY secret files (.env, credentials) into the image. Don't pass secrets as build ARGs (visible in image history).",
             "whyItMatters": "Secrets baked into images are visible to anyone who pulls the image. ARG values appear in docker history.",
@@ -195,7 +199,9 @@
           "id": "docker-k8s.security.security-context",
           "text": "Are security contexts configured (non-root, read-only, no privilege escalation)?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Set securityContext with runAsNonRoot: true, readOnlyRootFilesystem: true, and allowPrivilegeEscalation: false.",
             "whyItMatters": "Without security contexts, containers run as root with writable filesystems, maximizing the impact of container escapes.",
@@ -210,7 +216,9 @@
           "id": "docker-k8s.security.secrets-management",
           "text": "Are Kubernetes Secrets used correctly (not ConfigMaps for sensitive data)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Sensitive data must use Kubernetes Secrets, not ConfigMaps. Consider external secret managers (Vault, AWS Secrets Manager) for production.",
             "whyItMatters": "ConfigMaps are not encrypted and are easier to accidentally expose. Secrets get basic base64 encoding and can be encrypted at rest.",
@@ -225,7 +233,9 @@
           "id": "docker-k8s.security.network-policies",
           "text": "Are NetworkPolicies defined to restrict pod communication?",
           "severity": "minor",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "NetworkPolicies restrict which pods can communicate. By default, all pods can reach all other pods in the cluster.",
             "whyItMatters": "Without network policies, a compromised pod can access any service in the cluster, including databases and internal APIs.",
@@ -240,7 +250,9 @@
           "id": "docker-k8s.security.image-scanning",
           "text": "Are container images scanned for vulnerabilities?",
           "severity": "minor",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Container images should be scanned for known CVEs using tools like Trivy, Snyk, or registry-native scanning.",
             "whyItMatters": "Base images contain OS packages with known vulnerabilities. Unpatched CVEs in production images are common attack vectors.",
@@ -276,7 +288,9 @@
           "id": "docker-k8s.networking.ingress",
           "text": "Is Ingress configured with TLS and appropriate annotations?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Ingress should terminate TLS, enforce HTTPS redirects, and have appropriate rate limiting and security headers.",
             "whyItMatters": "Ingress without TLS exposes traffic in plaintext. Missing security headers enable clickjacking and other attacks.",

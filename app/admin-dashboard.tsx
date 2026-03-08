@@ -49,6 +49,20 @@ interface DashboardPayload {
     rejected: number;
     acceptanceRatePct: number;
   };
+  prAcceptance: {
+    selfPRs: {
+      total: number;
+      acceptedClean: number;
+      acceptedWithChanges: number;
+      cleanAcceptancePct: number;
+    };
+    reviewedPRs: {
+      total: number;
+      requestedChanges: number;
+      noChangesRequested: number;
+      changesRequestedPct: number;
+    };
+  };
   checklistJob: {
     cadence: {
       weeklyScanCronUtc: string;
@@ -296,6 +310,39 @@ export default function AdminDashboardScreen() {
               <View style={styles.statsRow}>
                 <StatCard label="Total PRs" value={data.trackedPrs.total} />
                 <StatCard label="Active PRs" value={data.trackedPrs.active} />
+              </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>PR Acceptance (Self PRs)</Text>
+              <Text style={styles.metaText}>
+                High clean acceptance % = checklists are adding value
+              </Text>
+              <View style={styles.statsRow}>
+                <StatCard label="Total Tracked" value={data.prAcceptance.selfPRs.total} />
+                <StatCard
+                  label="Clean Accept %"
+                  value={`${data.prAcceptance.selfPRs.cleanAcceptancePct}%`}
+                  tone={data.prAcceptance.selfPRs.cleanAcceptancePct >= 70 ? 'good' : data.prAcceptance.selfPRs.cleanAcceptancePct >= 40 ? 'warn' : 'danger'}
+                />
+                <StatCard label="No Changes" value={data.prAcceptance.selfPRs.acceptedClean} tone="good" />
+                <StatCard label="With Changes" value={data.prAcceptance.selfPRs.acceptedWithChanges} tone="warn" />
+              </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Review Outcomes (Others' PRs)</Text>
+              <Text style={styles.metaText}>
+                % of reviewed PRs where changes were requested
+              </Text>
+              <View style={styles.statsRow}>
+                <StatCard label="Total Reviewed" value={data.prAcceptance.reviewedPRs.total} />
+                <StatCard
+                  label="Changes Requested %"
+                  value={`${data.prAcceptance.reviewedPRs.changesRequestedPct}%`}
+                />
+                <StatCard label="Requested Changes" value={data.prAcceptance.reviewedPRs.requestedChanges} />
+                <StatCard label="No Changes" value={data.prAcceptance.reviewedPRs.noChangesRequested} tone="good" />
               </View>
             </View>
           </>

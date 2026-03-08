@@ -6,7 +6,7 @@
     "shortTitle": "CI/CD",
     "description": "CI/CD pipeline design with GitHub Actions, GitLab CI, secret handling, and workflow patterns",
     "icon": "🔄",
-    "totalItems": 30,
+    "totalItems": 19,
     "version": "1.0.0"
   },
   "sections": [
@@ -99,7 +99,9 @@
           "id": "cicd.secrets.no-hardcoded",
           "text": "Are all secrets stored in CI secret management (not hardcoded in pipeline files)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Passwords, tokens, and API keys must be stored in the CI platform's secret storage, never in workflow files or environment variables in plain text.",
             "whyItMatters": "Secrets in pipeline files are visible to everyone with repository access. They persist in git history even after deletion.",
@@ -114,7 +116,9 @@
           "id": "cicd.secrets.least-privilege",
           "text": "Do CI tokens and service accounts have minimum necessary permissions?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "CI service accounts should only have permissions needed for their tasks. GitHub tokens should use minimal permissions: scope.",
             "whyItMatters": "Over-privileged CI tokens can be used to modify code, delete branches, access other repos, or exfiltrate secrets.",
@@ -129,7 +133,9 @@
           "id": "cicd.secrets.pr-security",
           "text": "Are workflows triggered by PRs from forks handled securely?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "pull_request_target runs with repository secrets but in the context of the target branch. Forked PRs with pull_request don't get secrets. Mixing these incorrectly is dangerous.",
             "whyItMatters": "Giving secrets to forked PR code allows attackers to exfiltrate credentials by submitting malicious PRs.",
@@ -144,7 +150,9 @@
           "id": "cicd.secrets.env-separation",
           "text": "Are staging and production secrets separated (different values per environment)?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Staging and production should use different credentials, API keys, and service accounts. Use environment protection rules.",
             "whyItMatters": "Shared credentials mean a staging breach compromises production. Environment separation limits blast radius.",
@@ -282,7 +290,9 @@
           "id": "cicd.actions-deps.pinned-actions",
           "text": "Are third-party actions pinned to specific versions or commit SHAs?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Third-party GitHub Actions should be pinned to a commit SHA or specific version tag, not @latest or @main.",
             "whyItMatters": "An unpinned action can be updated by its maintainer to include malicious code. SHA pinning prevents supply chain attacks.",
@@ -312,7 +322,9 @@
           "id": "cicd.actions-deps.script-injection",
           "text": "Are workflow expressions protected against script injection?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Using ${{ github.event.issue.title }} directly in run: steps allows injection. Use environment variables instead.",
             "whyItMatters": "A PR title or issue body containing shell commands will execute in the workflow context, potentially exfiltrating secrets.",

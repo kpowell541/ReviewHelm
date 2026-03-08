@@ -6,7 +6,7 @@
     "shortTitle": "PHP",
     "description": "Review checklist for PHP applications (Laravel, Symfony, WordPress)",
     "icon": "🐘",
-    "totalItems": 35,
+    "totalItems": 20,
     "version": "1.0.0"
   },
   "sections": [
@@ -183,7 +183,9 @@
           "id": "php.security.sql-injection",
           "text": "Are database queries parameterized?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "User input must never be concatenated directly into SQL queries. Use prepared statements or the query builder's parameter binding.",
             "whyItMatters": "SQL injection is one of the most common and devastating web vulnerabilities. It can lead to data theft, modification, or complete database compromise.",
@@ -209,7 +211,9 @@
           "id": "php.security.xss-prevention",
           "text": "Is output properly escaped to prevent XSS?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Any user-provided content rendered in HTML must be escaped. Blade's {{ }} auto-escapes, but {!! !!} does not.",
             "whyItMatters": "Cross-site scripting allows attackers to execute arbitrary JavaScript in other users' browsers, stealing sessions or credentials.",
@@ -224,7 +228,9 @@
           "id": "php.security.mass-assignment",
           "text": "Are mass assignment protections in place?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "In Laravel, models should define $fillable or $guarded to prevent users from setting arbitrary columns via request data.",
             "whyItMatters": "Without mass assignment protection, an attacker could set is_admin=true or other sensitive fields by adding extra form fields.",
@@ -239,7 +245,9 @@
           "id": "php.security.csrf-protection",
           "text": "Are forms and state-changing routes protected against CSRF?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "POST/PUT/DELETE routes should verify a CSRF token. Laravel includes this via the @csrf Blade directive and VerifyCsrfToken middleware.",
             "whyItMatters": "Without CSRF protection, an attacker can trick authenticated users into submitting malicious requests from another site.",
@@ -254,7 +262,9 @@
           "id": "php.security.secrets-not-hardcoded",
           "text": "Are secrets and credentials kept out of source code?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "API keys, database passwords, and encryption keys should come from environment variables or a secret manager, not hardcoded in PHP files.",
             "whyItMatters": "Hardcoded secrets in source code can be leaked through version control, logs, or error pages.",
@@ -316,7 +326,9 @@
           "id": "php.architecture.n-plus-one-queries",
           "text": "Are N+1 query problems avoided with eager loading?",
           "severity": "major",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Accessing a relationship in a loop without eager loading triggers one query per iteration instead of a single joined query.",
             "whyItMatters": "N+1 queries can cause hundreds of database queries for a single page load, severely degrading performance.",

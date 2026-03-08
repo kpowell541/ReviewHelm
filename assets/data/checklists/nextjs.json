@@ -6,7 +6,7 @@
     "shortTitle": "Next.js",
     "description": "Next.js applications with App Router, server components, and data fetching",
     "icon": "▲",
-    "totalItems": 30,
+    "totalItems": 22,
     "version": "1.0.0"
   },
   "sections": [
@@ -129,7 +129,9 @@
           "id": "nextjs.server-client.no-secrets-client",
           "text": "Are server-only secrets and API keys kept out of client components?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Environment variables without NEXT_PUBLIC_ prefix are server-only. Database connections, API keys, and secrets must never be used in client components.",
             "whyItMatters": "Secrets used in client components are exposed in the browser bundle, visible to anyone inspecting the page source.",
@@ -333,7 +335,9 @@
           "id": "nextjs.security.csrf",
           "text": "Are server actions and API routes protected against CSRF?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Server actions have built-in CSRF protection, but custom API routes may need explicit protection. Verify Origin headers are checked.",
             "whyItMatters": "CSRF attacks can trick authenticated users into performing unwanted actions like changing passwords or transferring funds.",
@@ -348,7 +352,9 @@
           "id": "nextjs.security.auth-middleware",
           "text": "Is authentication checked in middleware AND in server components/actions?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Middleware can redirect unauthenticated users, but server components and actions should also verify authentication. Defense in depth.",
             "whyItMatters": "Middleware alone can be bypassed. Server-side auth checks prevent unauthorized data access even if middleware is misconfigured.",
@@ -363,7 +369,9 @@
           "id": "nextjs.security.xss-dangerously",
           "text": "Is dangerouslySetInnerHTML avoided or properly sanitized?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "dangerouslySetInnerHTML renders raw HTML and bypasses React's XSS protection. If used, the HTML must be sanitized.",
             "whyItMatters": "Unsanitized HTML from user input or external sources enables XSS attacks that can steal sessions and credentials.",
