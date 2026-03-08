@@ -470,6 +470,7 @@ export function ChecklistScreen({ sessionId }: Props) {
         ref={sectionListRef}
         sections={sections}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
         stickySectionHeadersEnabled
         renderSectionHeader={({ section: sectionEntry }) => {
           const progress = getSectionProgress(sectionEntry.items);

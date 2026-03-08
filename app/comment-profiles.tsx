@@ -169,6 +169,7 @@ export default function CommentProfilesScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>
           {editingProfile.id ? 'Edit Profile' : 'New Profile'}

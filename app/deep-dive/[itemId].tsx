@@ -265,6 +265,7 @@ export default function DeepDiveScreen() {
         <ScrollView
           style={styles.contentScroll}
           contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
         >
           {hasBaseContent ? (
             <BaseContentView content={item.baseContent} />
@@ -310,6 +311,7 @@ export default function DeepDiveScreen() {
             ref={scrollRef}
             style={styles.chatScroll}
             contentContainerStyle={styles.chatContent}
+            keyboardShouldPersistTaps="handled"
             onContentSizeChange={() =>
               scrollRef.current?.scrollToEnd({ animated: true })
             }

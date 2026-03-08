@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Alert, AppState, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { AppStateStatus } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useFonts, Quicksand_400Regular, Quicksand_500Medium, Quicksand_600SemiBold, Quicksand_700Bold } from '@expo-google-fonts/quicksand';
 import { colors, spacing, fontSizes, ThemeProvider, useThemeColors } from '../src/theme';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
@@ -136,17 +137,21 @@ export default function RootLayout() {
 
   if (!storesReady || authIsLoading) {
     return (
-      <View style={styles.loadingScreen}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading ReviewHelm...</Text>
-      </View>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.loadingScreen}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>Loading ReviewHelm...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
     );
   }
 
   return (
+    <SafeAreaProvider>
     <ErrorBoundary>
     <ThemeProvider>
       <StatusBar style="auto" />
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
@@ -316,12 +321,18 @@ export default function RootLayout() {
           options={{ title: 'Terms of Use' }}
         />
       </Stack>
+      </SafeAreaView>
     </ThemeProvider>
     </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
   loadingScreen: {
     flex: 1,
     justifyContent: 'center',

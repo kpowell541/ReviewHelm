@@ -511,7 +511,7 @@ export default function SettingsScreen() {
 
   return (
     <DesktopContainer>
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
       <Text style={styles.sectionTitle}>AI Tutor</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Claude API Key</Text>

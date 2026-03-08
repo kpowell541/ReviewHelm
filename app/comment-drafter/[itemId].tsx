@@ -217,6 +217,7 @@ export default function CommentDrafterScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.itemCard}>
           <Text style={styles.itemLabel}>Drafting comment for:</Text>

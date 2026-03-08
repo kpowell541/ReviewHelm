@@ -612,7 +612,7 @@ export default function PRTrackerScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <DesktopContainer>
-      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
         {renderWipGauge()}
         {renderTodaysPlan()}
         {renderDailyProgress()}
