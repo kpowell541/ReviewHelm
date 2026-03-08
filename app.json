@@ -26,8 +26,6 @@
       "expo-font",
       "expo-sharing",
       "expo-secure-store",
-      "expo-crypto",
-      "expo-haptics",
       "expo-document-picker"
     ],
     "extra": {
