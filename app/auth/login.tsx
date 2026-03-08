@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
+import { DesktopContainer } from '../../src/components/DesktopContainer';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -36,71 +37,76 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.content}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>
-            Sign in to sync your data across devices
-          </Text>
-
-          {error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={colors.textMuted}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            autoComplete="email"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textMuted}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            textContentType="password"
-            autoComplete="password"
-          />
-
-          <Pressable
-            style={[
-              styles.primaryButton,
-              (!isValid || isLoading) && styles.buttonDisabled,
-            ]}
-            onPress={handleSignIn}
-            disabled={!isValid || isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Sign In</Text>
-            )}
-          </Pressable>
-
-          <Pressable
-            style={styles.secondaryButton}
-            onPress={() => router.push('/auth/signup')}
-          >
-            <Text style={styles.secondaryButtonText}>
-              Don't have an account? Sign Up
+      <DesktopContainer>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.content}>
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>
+              Sign in to sync your data across devices
             </Text>
-          </Pressable>
 
-        </View>
-      </KeyboardAvoidingView>
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={colors.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              returnKeyType="next"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={colors.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              textContentType="password"
+              autoComplete="password"
+              returnKeyType="done"
+              onSubmitEditing={() => { if (isValid && !isLoading) handleSignIn(); }}
+            />
+
+            <Pressable
+              style={[
+                styles.primaryButton,
+                (!isValid || isLoading) && styles.buttonDisabled,
+              ]}
+              onPress={handleSignIn}
+              disabled={!isValid || isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Sign In</Text>
+              )}
+            </Pressable>
+
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => router.push('/auth/signup')}
+            >
+              <Text style={styles.secondaryButtonText}>
+                Don't have an account? Sign Up
+              </Text>
+            </Pressable>
+
+          </View>
+        </KeyboardAvoidingView>
+      </DesktopContainer>
     </SafeAreaView>
   );
 }

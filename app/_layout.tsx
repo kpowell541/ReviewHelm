@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Alert, AppState, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -52,6 +52,15 @@ export default function RootLayout() {
 
   const [cacheReady, setCacheReady] = useState(false);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+
+  // Fix web scroll: ensure html/body/#root fill the viewport
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const style = document.createElement('style');
+    style.textContent = 'html,body,#root{height:100%;overflow:hidden}';
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
 
   useEffect(() => {
     void loadApiKey();

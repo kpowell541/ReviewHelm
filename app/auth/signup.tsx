@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
+import { DesktopContainer } from '../../src/components/DesktopContainer';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -44,106 +45,114 @@ export default function SignupScreen() {
   if (success) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.content}>
-          <Text style={styles.successIcon}>✅</Text>
-          <Text style={styles.title}>Check Your Email</Text>
-          <Text style={styles.subtitle}>
-            We sent a confirmation link to {email}. Click it to activate
-            your account, then sign in.
-          </Text>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => router.replace('/auth/login')}
-          >
-            <Text style={styles.primaryButtonText}>Go to Sign In</Text>
-          </Pressable>
-        </View>
+        <DesktopContainer>
+          <View style={styles.content}>
+            <Text style={styles.successIcon}>✅</Text>
+            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.subtitle}>
+              We sent a confirmation link to {email}. Click it to activate
+              your account, then sign in.
+            </Text>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => router.replace('/auth/login')}
+            >
+              <Text style={styles.primaryButtonText}>Go to Sign In</Text>
+            </Pressable>
+          </View>
+        </DesktopContainer>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.content}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>
-            Sign up to sync your reviews and progress
-          </Text>
-
-          {error && (
-            <View style={styles.errorBox}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={colors.textMuted}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            autoComplete="email"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Password (min 6 characters)"
-            placeholderTextColor={colors.textMuted}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            textContentType="newPassword"
-            autoComplete="new-password"
-          />
-
-          <TextInput
-            style={[
-              styles.input,
-              passwordMismatch && styles.inputError,
-            ]}
-            placeholder="Confirm Password"
-            placeholderTextColor={colors.textMuted}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            textContentType="newPassword"
-          />
-          {passwordMismatch && (
-            <Text style={styles.fieldError}>Passwords do not match</Text>
-          )}
-
-          <Pressable
-            style={[
-              styles.primaryButton,
-              (!isValid || isLoading) && styles.buttonDisabled,
-            ]}
-            onPress={handleSignUp}
-            disabled={!isValid || isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.primaryButtonText}>Sign Up</Text>
-            )}
-          </Pressable>
-
-          <Pressable
-            style={styles.secondaryButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.secondaryButtonText}>
-              Already have an account? Sign In
+      <DesktopContainer>
+        <KeyboardAvoidingView
+          style={styles.keyboardView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.content}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>
+              Sign up to sync your reviews and progress
             </Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={colors.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              returnKeyType="next"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Password (min 6 characters)"
+              placeholderTextColor={colors.textMuted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              textContentType="newPassword"
+              autoComplete="new-password"
+              returnKeyType="next"
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                passwordMismatch && styles.inputError,
+              ]}
+              placeholder="Confirm Password"
+              placeholderTextColor={colors.textMuted}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              textContentType="newPassword"
+              returnKeyType="done"
+              onSubmitEditing={() => { if (isValid && !isLoading) handleSignUp(); }}
+            />
+            {passwordMismatch && (
+              <Text style={styles.fieldError}>Passwords do not match</Text>
+            )}
+
+            <Pressable
+              style={[
+                styles.primaryButton,
+                (!isValid || isLoading) && styles.buttonDisabled,
+              ]}
+              onPress={handleSignUp}
+              disabled={!isValid || isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Sign Up</Text>
+              )}
+            </Pressable>
+
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.secondaryButtonText}>
+                Already have an account? Sign In
+              </Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </DesktopContainer>
     </SafeAreaView>
   );
 }
