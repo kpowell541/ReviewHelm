@@ -1,0 +1,302 @@
+{
+  "meta": {
+    "id": "angular",
+    "mode": "review",
+    "title": "Angular",
+    "shortTitle": "Angular",
+    "description": "Review checklist for Angular applications (standalone components, signals, RxJS)",
+    "icon": "🅰️",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "angular.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "angular.general-code-quality.clear-pr-description",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The PR description should explain the purpose of the change and any relevant context.",
+            "whyItMatters": "Reviewers without context waste time reverse-engineering intent from code.",
+            "howToVerify": "Read the PR description. Can you understand what changed and why without reading the code?",
+            "exampleComment": "Could you add more context about why this service was restructured?",
+            "codeExamples": [],
+            "keyTakeaway": "A good PR description saves reviewer time.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.general-code-quality.change-scoped",
+          "text": "Is the change scoped appropriately?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each PR should do one thing. Mixing a feature with a refactor makes review harder.",
+            "whyItMatters": "Large multi-concern PRs are slow to review and difficult to revert.",
+            "howToVerify": "Check if the PR touches multiple unrelated areas.",
+            "exampleComment": "This PR adds a new route and refactors the auth guard. Could we split these?",
+            "codeExamples": [],
+            "keyTakeaway": "One concern per PR.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "angular.component-design",
+      "title": "Component Design",
+      "items": [
+        {
+          "id": "angular.component-design.standalone-components",
+          "text": "Are new components standalone rather than declared in NgModules?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Angular 14+ supports standalone components that do not require NgModule declarations. This is now the recommended approach.",
+            "whyItMatters": "Standalone components are simpler, reduce boilerplate, and enable better tree-shaking and lazy loading.",
+            "howToVerify": "Check new components for standalone: true in the @Component decorator. Flag NgModule-declared components in standalone codebases.",
+            "exampleComment": "This new component is declared in a module. Since we are using standalone components, add standalone: true and import dependencies directly.",
+            "codeExamples": [],
+            "keyTakeaway": "Use standalone components for all new work. They are simpler and the future of Angular.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.component-design.smart-dumb-split",
+          "text": "Is there a clear separation between smart (container) and dumb (presentational) components?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Smart components handle data fetching and state. Dumb components receive data via @Input and emit events via @Output.",
+            "whyItMatters": "Dumb components are reusable, easy to test, and easy to reason about. Smart components centralize side effects.",
+            "howToVerify": "Check if components both fetch data and render complex UI. Look for inject() or HTTP calls in presentational components.",
+            "exampleComment": "This list item component directly calls the API service. Consider passing data via @Input and emitting events for actions.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep data fetching in smart components. Keep rendering in dumb components.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.component-design.signals-usage",
+          "text": "Are Angular signals used for local state where appropriate?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Angular 16+ signals (signal(), computed(), effect()) provide fine-grained reactivity without RxJS overhead for synchronous state.",
+            "whyItMatters": "Signals are simpler than BehaviorSubject for local component state and enable future zoneless change detection.",
+            "howToVerify": "Check for new BehaviorSubject usage for simple synchronous state that could be a signal instead.",
+            "exampleComment": "This BehaviorSubject holds a simple boolean toggle. A signal() would be simpler and does not require unsubscription.",
+            "codeExamples": [
+              {
+                "label": "RxJS (complex)",
+                "language": "typescript",
+                "code": "isOpen$ = new BehaviorSubject(false);\ntoggle() { this.isOpen$.next(!this.isOpen$.value); }"
+              },
+              {
+                "label": "Signal (simple)",
+                "language": "typescript",
+                "code": "isOpen = signal(false);\ntoggle() { this.isOpen.update(v => !v); }"
+              }
+            ],
+            "keyTakeaway": "Use signals for local synchronous state. Use RxJS for async streams and complex event composition.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.component-design.input-output-typed",
+          "text": "Are @Input and @Output properly typed?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Component inputs and outputs should have explicit TypeScript types and use required where appropriate.",
+            "whyItMatters": "Untyped inputs default to any, bypassing TypeScript's safety and making templates error-prone.",
+            "howToVerify": "Check @Input() and @Output() declarations for type annotations. Look for input() and output() signal-based APIs.",
+            "exampleComment": "This @Input() has no type annotation. Add the type to enable template type checking.",
+            "codeExamples": [],
+            "keyTakeaway": "Always type inputs and outputs. Use required: true for mandatory inputs.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.component-design.change-detection",
+          "text": "Is OnPush change detection used for performance?",
+          "severity": "minor",
+          "tags": ["performance"],
+          "baseContent": {
+            "whatItMeans": "Components with changeDetection: ChangeDetectionStrategy.OnPush only re-render when inputs change or events fire, not on every change detection cycle.",
+            "whyItMatters": "Default change detection checks every component on every cycle, which is wasteful for pure presentational components.",
+            "howToVerify": "Check new components for changeDetection: ChangeDetectionStrategy.OnPush in the @Component decorator.",
+            "exampleComment": "This presentational component uses default change detection. Adding OnPush would improve performance.",
+            "codeExamples": [],
+            "keyTakeaway": "Use OnPush for all presentational components. It is easy to add and meaningfully improves performance.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "angular.rxjs",
+      "title": "RxJS & Async",
+      "items": [
+        {
+          "id": "angular.rxjs.unsubscribe",
+          "text": "Are subscriptions properly unsubscribed?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Manual subscriptions must be unsubscribed on destroy. Use takeUntilDestroyed(), the async pipe, or toSignal() to automate this.",
+            "whyItMatters": "Leaked subscriptions cause memory leaks, phantom updates to unmounted components, and subtle bugs.",
+            "howToVerify": "Search for .subscribe() without corresponding unsubscribe logic. Check for missing takeUntilDestroyed().",
+            "exampleComment": "This subscription has no unsubscribe. Use takeUntilDestroyed() or the async pipe to auto-clean up.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "ngOnInit() {\n  this.dataService.getData().subscribe(data => this.data = data);\n}"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "data = toSignal(this.dataService.getData());\n// or\nngOnInit() {\n  this.dataService.getData()\n    .pipe(takeUntilDestroyed(this.destroyRef))\n    .subscribe(data => this.data = data);\n}"
+              }
+            ],
+            "keyTakeaway": "Never subscribe without a cleanup strategy. Prefer async pipe, toSignal(), or takeUntilDestroyed().",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.rxjs.nested-subscribes",
+          "text": "Are nested subscribes avoided in favor of RxJS operators?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Subscribing inside a subscribe callback is an anti-pattern. Use switchMap, mergeMap, concatMap, or exhaustMap instead.",
+            "whyItMatters": "Nested subscribes create callback hell, miss error propagation, and make unsubscription complex.",
+            "howToVerify": "Search for .subscribe() calls inside other .subscribe() callbacks.",
+            "exampleComment": "This has a nested subscribe. Use switchMap to flatten the observable chain.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "this.route.params.subscribe(params => {\n  this.userService.getUser(params['id']).subscribe(user => {\n    this.user = user;\n  });\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "this.route.params.pipe(\n  switchMap(params => this.userService.getUser(params['id']))\n).subscribe(user => this.user = user);"
+              }
+            ],
+            "keyTakeaway": "Flatten observables with switchMap/mergeMap instead of nesting subscribes.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.rxjs.error-handling",
+          "text": "Are observable errors handled gracefully?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Observable chains should handle errors with catchError rather than letting them propagate and kill the stream.",
+            "whyItMatters": "An unhandled error in an observable kills the entire stream. For long-lived observables like store selectors, this means the UI stops updating.",
+            "howToVerify": "Check HTTP call chains for catchError or error callbacks. Verify retry logic where appropriate.",
+            "exampleComment": "This HTTP call has no error handling. Add catchError to show a user-friendly message and keep the stream alive.",
+            "codeExamples": [],
+            "keyTakeaway": "Always handle errors in observable chains. Unhandled errors kill the stream permanently.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "angular.routing-di",
+      "title": "Routing & Dependency Injection",
+      "items": [
+        {
+          "id": "angular.routing-di.lazy-loading",
+          "text": "Are feature routes lazy-loaded?",
+          "severity": "minor",
+          "tags": ["performance"],
+          "baseContent": {
+            "whatItMeans": "Feature modules or standalone component routes should use loadComponent or loadChildren for code splitting.",
+            "whyItMatters": "Eager loading all routes in a large app creates a massive initial bundle that slows first paint.",
+            "howToVerify": "Check route configurations for static component imports vs dynamic loadComponent/loadChildren.",
+            "exampleComment": "This route eagerly imports a large feature component. Use loadComponent: () => import(...) for code splitting.",
+            "codeExamples": [],
+            "keyTakeaway": "Lazy-load feature routes. Only eagerly load the shell and critical path.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.routing-di.inject-function",
+          "text": "Is the inject() function used instead of constructor injection where appropriate?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Angular 14+ inject() function can replace constructor injection, especially useful in standalone components and functional guards.",
+            "whyItMatters": "inject() reduces boilerplate and works in functional contexts where constructor injection is not available.",
+            "howToVerify": "Check for consistency. If the codebase uses inject(), new code should too. Not a hard rule.",
+            "exampleComment": "This guard uses a class with constructor injection. A functional guard with inject() would be simpler.",
+            "codeExamples": [],
+            "keyTakeaway": "Use inject() for consistency in codebases that have adopted it. Both patterns are valid.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.routing-di.guard-protection",
+          "text": "Are routes protected with appropriate guards?",
+          "severity": "major",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Routes requiring authentication or authorization should have canActivate guards that redirect unauthenticated users.",
+            "whyItMatters": "Without guards, users can navigate directly to protected routes. Even if API calls fail, the page renders with broken state.",
+            "howToVerify": "Check new routes for canActivate/canMatch guards. Verify they redirect to login when unauthorized.",
+            "exampleComment": "This admin route has no auth guard. Add canActivate: [authGuard] to prevent unauthorized access.",
+            "codeExamples": [],
+            "keyTakeaway": "Protect all routes that require authentication or specific roles with guards.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "angular.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "angular.testing.tests-included",
+          "text": "Are tests included for new or changed behavior?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New components, services, and pipes should have spec files. Bug fixes should include a regression test.",
+            "whyItMatters": "Without tests, regressions go undetected until production. Tests document expected behavior.",
+            "howToVerify": "Check for new .spec.ts files or additions to existing ones. Verify edge cases are covered.",
+            "exampleComment": "This new service has no tests. Could we add unit tests covering the success and error cases?",
+            "codeExamples": [],
+            "keyTakeaway": "Every behavioral change should have a corresponding test.",
+            "references": []
+          }
+        },
+        {
+          "id": "angular.testing.testbed-minimal",
+          "text": "Is TestBed configured with minimal dependencies?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test modules should only import what the component under test needs. Importing entire application modules makes tests slow and brittle.",
+            "whyItMatters": "Bloated TestBed configs slow down test suites and break when unrelated dependencies change.",
+            "howToVerify": "Check TestBed.configureTestingModule for unnecessary imports or declarations.",
+            "exampleComment": "This test imports the entire SharedModule. Only import the specific components and services needed.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep TestBed lean. Only declare and import what the test actually needs.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

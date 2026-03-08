@@ -1,0 +1,410 @@
+{
+  "meta": {
+    "id": "php",
+    "mode": "review",
+    "title": "PHP",
+    "shortTitle": "PHP",
+    "description": "Review checklist for PHP applications (Laravel, Symfony, WordPress)",
+    "icon": "🐘",
+    "totalItems": 35,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "php.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "php.general-code-quality.does-the-pr-have-a-clear-description",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The PR description should explain the purpose of the change, the problem it solves, and any relevant context.",
+            "whyItMatters": "Reviewers without context waste time reverse-engineering intent from code. A clear description speeds up review and creates a searchable historical record.",
+            "howToVerify": "Read the PR description. Can you understand what changed and why without reading the code?",
+            "exampleComment": "Could you add more context to the PR description? It would help to know why we are restructuring the service layer.",
+            "codeExamples": [],
+            "keyTakeaway": "A good PR description saves more reviewer time than it costs to write.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.general-code-quality.is-the-change-scoped-appropriately",
+          "text": "Is the change scoped appropriately?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each PR should do one thing. Mixing a bug fix with a refactor makes review harder and rollbacks riskier.",
+            "whyItMatters": "Large multi-concern PRs are slow to review and difficult to revert if one part causes issues.",
+            "howToVerify": "Check if the PR touches multiple unrelated areas. Could any part ship independently?",
+            "exampleComment": "This PR adds the new API endpoint and also refactors the middleware stack. Could we split these into two PRs?",
+            "codeExamples": [],
+            "keyTakeaway": "One concern per PR. If you need a paragraph to explain what it does, it is probably too big.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.general-code-quality.is-dead-code-removed",
+          "text": "Is dead code removed rather than commented out?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Code that is no longer used should be deleted, not commented out. Version control preserves history.",
+            "whyItMatters": "Commented-out code creates confusion about whether it is temporarily disabled or leftover. It adds noise and often never gets cleaned up.",
+            "howToVerify": "Search the diff for blocks of commented-out code or unused functions.",
+            "exampleComment": "This commented-out controller method has been here since the migration. Since we have git history, let us remove it.",
+            "codeExamples": [],
+            "keyTakeaway": "Delete dead code. Git remembers.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.general-code-quality.naming-conventions",
+          "text": "Do classes, methods, and variables follow PSR naming conventions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "PHP-FIG PSR standards define camelCase for methods/variables, PascalCase for classes, and UPPER_SNAKE_CASE for constants.",
+            "whyItMatters": "Consistent naming reduces cognitive load when reading unfamiliar code and helps IDE autocompletion work predictably.",
+            "howToVerify": "Check that class names are PascalCase, methods are camelCase, and constants are UPPER_SNAKE_CASE. Verify namespace casing matches directory structure.",
+            "exampleComment": "This method uses snake_case (get_user_data) but PSR standards prefer camelCase (getUserData).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "php",
+                "code": "class user_service {\n    const default_limit = 10;\n    public function Get_Users() { }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "php",
+                "code": "class UserService {\n    const DEFAULT_LIMIT = 10;\n    public function getUsers() { }\n}"
+              }
+            ],
+            "keyTakeaway": "Follow PSR naming conventions for consistency across the PHP ecosystem.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "php.type-safety",
+      "title": "Type Safety & Error Handling",
+      "items": [
+        {
+          "id": "php.type-safety.uses-type-declarations",
+          "text": "Are parameter and return type declarations used?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "PHP 7+ supports scalar type declarations, return types, nullable types, and union types. PHP 8+ adds intersection types and enums.",
+            "whyItMatters": "Type declarations catch bugs at runtime (or statically with PHPStan/Psalm), serve as documentation, and enable IDE autocompletion.",
+            "howToVerify": "Check new or modified function signatures for missing type hints. Look for mixed or no return type.",
+            "exampleComment": "This method accepts and returns untyped values. Adding type declarations would help catch misuse early.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "php",
+                "code": "function findUser($id) {\n    return DB::table('users')->find($id);\n}"
+              },
+              {
+                "label": "Good",
+                "language": "php",
+                "code": "function findUser(int $id): ?User {\n    return DB::table('users')->find($id);\n}"
+              }
+            ],
+            "keyTakeaway": "Type every parameter and return value. Use strict_types where possible.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.type-safety.strict-types-declared",
+          "text": "Is declare(strict_types=1) used in new files?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "strict_types enforces scalar type declarations at call sites, preventing silent type coercion like '5' being accepted as int.",
+            "whyItMatters": "Without strict_types, PHP silently coerces types which can mask bugs. A string '0' coercing to int 0 has caused real production issues.",
+            "howToVerify": "Check the first line of new PHP files for declare(strict_types=1).",
+            "exampleComment": "This new file is missing declare(strict_types=1). Adding it prevents silent type coercion bugs.",
+            "codeExamples": [],
+            "keyTakeaway": "Always declare strict_types=1 at the top of new PHP files.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.type-safety.exception-handling",
+          "text": "Are exceptions caught at appropriate boundaries?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Exceptions should be caught at service boundaries, not swallowed silently or caught too broadly with catch (Exception $e).",
+            "whyItMatters": "Catching too broadly hides bugs. Not catching at boundaries leaks implementation details to callers or crashes the application.",
+            "howToVerify": "Look for catch (Exception $e) or catch (Throwable $e) blocks. Check if they log/rethrow or silently swallow.",
+            "exampleComment": "This catch block swallows all exceptions silently. At minimum we should log the error.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "php",
+                "code": "try {\n    $result = $this->paymentGateway->charge($amount);\n} catch (Exception $e) {\n    // silently ignore\n    return null;\n}"
+              },
+              {
+                "label": "Good",
+                "language": "php",
+                "code": "try {\n    $result = $this->paymentGateway->charge($amount);\n} catch (PaymentDeclinedException $e) {\n    Log::warning('Payment declined', ['error' => $e->getMessage()]);\n    throw new CheckoutFailedException('Payment was declined', previous: $e);\n}"
+              }
+            ],
+            "keyTakeaway": "Catch specific exceptions. Log or rethrow. Never silently swallow errors.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.type-safety.null-safety",
+          "text": "Is null handled explicitly rather than relying on falsy checks?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "PHP treats null, 0, '', false, and [] all as falsy. Using if ($value) when you mean if ($value !== null) can cause subtle bugs.",
+            "whyItMatters": "A string value of '0' or integer 0 is falsy in PHP, which can silently skip valid data.",
+            "howToVerify": "Look for if ($var) checks where null-specific checks (=== null or !== null) would be more correct.",
+            "exampleComment": "This checks if ($username) but an empty string could be a valid edge case. Should this be if ($username !== null)?",
+            "codeExamples": [],
+            "keyTakeaway": "Use strict null checks (=== null) instead of relying on PHP's loose truthiness.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "php.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "php.security.sql-injection",
+          "text": "Are database queries parameterized?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "User input must never be concatenated directly into SQL queries. Use prepared statements or the query builder's parameter binding.",
+            "whyItMatters": "SQL injection is one of the most common and devastating web vulnerabilities. It can lead to data theft, modification, or complete database compromise.",
+            "howToVerify": "Search for string concatenation in SQL queries. Look for DB::raw() with unescaped variables. Verify whereRaw() uses bindings.",
+            "exampleComment": "This query concatenates user input directly into SQL. Use parameter binding to prevent SQL injection.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "php",
+                "code": "$users = DB::select(\"SELECT * FROM users WHERE name = '$name'\");"
+              },
+              {
+                "label": "Good",
+                "language": "php",
+                "code": "$users = DB::select('SELECT * FROM users WHERE name = ?', [$name]);"
+              }
+            ],
+            "keyTakeaway": "Always use parameterized queries. Never concatenate user input into SQL.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.security.xss-prevention",
+          "text": "Is output properly escaped to prevent XSS?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Any user-provided content rendered in HTML must be escaped. Blade's {{ }} auto-escapes, but {!! !!} does not.",
+            "whyItMatters": "Cross-site scripting allows attackers to execute arbitrary JavaScript in other users' browsers, stealing sessions or credentials.",
+            "howToVerify": "Search for {!! !!} in Blade templates and echo statements without htmlspecialchars(). Verify any raw output is intentional and sanitized.",
+            "exampleComment": "This uses {!! $userComment !!} which renders raw HTML. Unless this is intentionally sanitized, use {{ $userComment }} instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use {{ }} in Blade, htmlspecialchars() in raw PHP. Only use raw output for trusted, sanitized content.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.security.mass-assignment",
+          "text": "Are mass assignment protections in place?",
+          "severity": "major",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "In Laravel, models should define $fillable or $guarded to prevent users from setting arbitrary columns via request data.",
+            "whyItMatters": "Without mass assignment protection, an attacker could set is_admin=true or other sensitive fields by adding extra form fields.",
+            "howToVerify": "Check new or modified Eloquent models for $fillable or $guarded. Look for Model::create($request->all()) without validation.",
+            "exampleComment": "This model has no $fillable defined and uses $request->all() to create records. An attacker could set any column.",
+            "codeExamples": [],
+            "keyTakeaway": "Always define $fillable on models and validate input before mass assignment.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.security.csrf-protection",
+          "text": "Are forms and state-changing routes protected against CSRF?",
+          "severity": "major",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "POST/PUT/DELETE routes should verify a CSRF token. Laravel includes this via the @csrf Blade directive and VerifyCsrfToken middleware.",
+            "whyItMatters": "Without CSRF protection, an attacker can trick authenticated users into submitting malicious requests from another site.",
+            "howToVerify": "Check that forms include @csrf and that routes are not excluded from CSRF middleware without good reason.",
+            "exampleComment": "This form is missing @csrf. Without it, the route is vulnerable to cross-site request forgery.",
+            "codeExamples": [],
+            "keyTakeaway": "Include @csrf in all forms. Only exclude routes from CSRF middleware for webhook endpoints with their own verification.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.security.secrets-not-hardcoded",
+          "text": "Are secrets and credentials kept out of source code?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "API keys, database passwords, and encryption keys should come from environment variables or a secret manager, not hardcoded in PHP files.",
+            "whyItMatters": "Hardcoded secrets in source code can be leaked through version control, logs, or error pages.",
+            "howToVerify": "Search for hardcoded strings that look like passwords, API keys, or tokens. Check that .env is gitignored.",
+            "exampleComment": "This API key is hardcoded in the service class. Move it to .env and reference it via config().",
+            "codeExamples": [],
+            "keyTakeaway": "Use environment variables for all secrets. Never commit .env files.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "php.architecture",
+      "title": "Architecture & Patterns",
+      "items": [
+        {
+          "id": "php.architecture.dependency-injection",
+          "text": "Is dependency injection used instead of static calls or facades where testability matters?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Classes should receive dependencies through constructor injection rather than using static methods, globals, or untestable facade calls.",
+            "whyItMatters": "Constructor injection makes dependencies explicit, enables unit testing with mocks, and prevents hidden coupling.",
+            "howToVerify": "Look for new ClassName() inside methods, static method calls to service classes, or direct use of global state.",
+            "exampleComment": "This controller instantiates the PaymentService directly. Injecting it via the constructor would make this testable.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "php",
+                "code": "class OrderController {\n    public function store(Request $request) {\n        $service = new PaymentService();\n        $service->charge($request->amount);\n    }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "php",
+                "code": "class OrderController {\n    public function __construct(\n        private readonly PaymentService $paymentService\n    ) {}\n\n    public function store(Request $request) {\n        $this->paymentService->charge($request->amount);\n    }\n}"
+              }
+            ],
+            "keyTakeaway": "Inject dependencies through the constructor. It makes code testable and dependencies visible.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.architecture.fat-controllers",
+          "text": "Is business logic kept out of controllers?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Controllers should delegate to services, actions, or domain objects rather than containing complex business logic directly.",
+            "whyItMatters": "Fat controllers are hard to test, hard to reuse, and tend to grow uncontrollably as features are added.",
+            "howToVerify": "Check if controller methods exceed 15-20 lines or contain complex conditionals, loops, or multiple database calls.",
+            "exampleComment": "This controller method has 60 lines of business logic. Consider extracting it into a service or action class.",
+            "codeExamples": [],
+            "keyTakeaway": "Controllers should validate, delegate, and respond. Business logic belongs in services.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.architecture.n-plus-one-queries",
+          "text": "Are N+1 query problems avoided with eager loading?",
+          "severity": "major",
+          "tags": ["performance"],
+          "baseContent": {
+            "whatItMeans": "Accessing a relationship in a loop without eager loading triggers one query per iteration instead of a single joined query.",
+            "whyItMatters": "N+1 queries can cause hundreds of database queries for a single page load, severely degrading performance.",
+            "howToVerify": "Look for relationship access inside loops (foreach ($posts as $post) { $post->author->name }). Check for missing with() or load() calls.",
+            "exampleComment": "This loop accesses $order->customer inside a foreach without eager loading. Use Order::with('customer')->get() to avoid N+1 queries.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "php",
+                "code": "$orders = Order::all();\nforeach ($orders as $order) {\n    echo $order->customer->name; // N+1!\n}"
+              },
+              {
+                "label": "Good",
+                "language": "php",
+                "code": "$orders = Order::with('customer')->get();\nforeach ($orders as $order) {\n    echo $order->customer->name; // single query\n}"
+              }
+            ],
+            "keyTakeaway": "Always eager-load relationships you know you will access in a loop.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.architecture.validation",
+          "text": "Is request input validated before use?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "All user input should be validated using form requests, validation rules, or explicit checks before being used in business logic.",
+            "whyItMatters": "Unvalidated input can cause unexpected types, missing fields, or malicious data to reach business logic or the database.",
+            "howToVerify": "Check that controller methods validate input before using it. Look for $request->input() used without prior validation.",
+            "exampleComment": "This endpoint uses $request->email directly without validation. Use a FormRequest or $request->validate().",
+            "codeExamples": [],
+            "keyTakeaway": "Validate all input at the boundary. Use FormRequest classes for complex validation.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "php.testing",
+      "title": "Testing & Quality",
+      "items": [
+        {
+          "id": "php.testing.tests-included",
+          "text": "Are tests included for new or changed behavior?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New features and bug fixes should include tests that verify the behavior. PHPUnit for unit tests, feature tests for HTTP endpoints.",
+            "whyItMatters": "Without tests, regressions go undetected until they hit production. Tests document expected behavior.",
+            "howToVerify": "Check for new test files or additions to existing test files. Verify edge cases and error paths are covered.",
+            "exampleComment": "This new service method has no tests. Could we add a unit test covering the happy path and the error case?",
+            "codeExamples": [],
+            "keyTakeaway": "Every behavioral change should have a corresponding test.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.testing.migration-reversible",
+          "text": "Are database migrations reversible?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Migrations should implement a down() method that reverses the up() changes, enabling rollbacks.",
+            "whyItMatters": "If a deployment fails, irreversible migrations prevent quick rollbacks, turning a minor issue into a major incident.",
+            "howToVerify": "Check that migration files have a down() method that correctly reverses the schema changes.",
+            "exampleComment": "This migration adds a column but the down() method is empty. Add Schema::dropColumn() for rollback support.",
+            "codeExamples": [],
+            "keyTakeaway": "Always implement down() in migrations. Test rollbacks before deploying.",
+            "references": []
+          }
+        },
+        {
+          "id": "php.testing.env-parity",
+          "text": "Will this change work across all environments (dev, staging, production)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Changes should not depend on environment-specific state like local file paths, specific PHP extensions, or dev-only services.",
+            "whyItMatters": "Code that works locally but fails in production causes incidents and erodes confidence in deployments.",
+            "howToVerify": "Check for hardcoded paths, environment-specific assumptions, or dependencies not listed in composer.json.",
+            "exampleComment": "This uses file_get_contents with an absolute path. Use storage_path() or a config value for portability.",
+            "codeExamples": [],
+            "keyTakeaway": "Write code that works the same everywhere. Use config and environment variables for differences.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}
