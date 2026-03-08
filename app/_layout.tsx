@@ -164,7 +164,7 @@ export default function RootLayout() {
                   { color: tintColor ?? colors.textPrimary },
                 ]}
               >
-                {canGoBack ? 'Back' : 'Home'}
+                {'< Back'}
               </Text>
             </Pressable>
           ),
@@ -340,8 +340,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   headerNavButton: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginLeft: spacing.xs,
   },
   headerNavButtonText: {
     fontSize: fontSizes.md,
