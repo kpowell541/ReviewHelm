@@ -27,6 +27,7 @@ import type {
 } from '../../data/types';
 import { computeSessionScores } from '../../utils/scoring';
 import { colors, spacing, fontSizes, radius } from '../../theme';
+import { DesktopContainer } from '../DesktopContainer';
 import { ChecklistItemRow } from './ChecklistItemRow';
 
 interface Props {
@@ -371,6 +372,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const hasSessionNotes = sessionNotesDraft.trim().length > 0;
 
   return (
+    <DesktopContainer>
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
@@ -620,6 +622,7 @@ export function ChecklistScreen({ sessionId }: Props) {
         </View>
       )}
     </View>
+    </DesktopContainer>
   );
 }
 
