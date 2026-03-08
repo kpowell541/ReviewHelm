@@ -28,12 +28,27 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const supabase = getSupabaseClient();
       set({ isConfigured: true });
 
+      // getSession returns the cached session which may have expired tokens.
+      // Always attempt a refresh to ensure the session is valid.
       const {
-        data: { session },
+        data: { session: cached },
       } = await supabase.auth.getSession();
+
+      let validSession = cached;
+      if (cached) {
+        const { data, error } = await supabase.auth.refreshSession();
+        if (error || !data.session) {
+          // Refresh failed — session is stale, clear it
+          await supabase.auth.signOut();
+          validSession = null;
+        } else {
+          validSession = data.session;
+        }
+      }
+
       set({
-        session,
-        user: session?.user ?? null,
+        session: validSession,
+        user: validSession?.user ?? null,
         isLoading: false,
       });
 
