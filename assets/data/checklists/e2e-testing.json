@@ -5,8 +5,8 @@
     "title": "E2E Testing",
     "shortTitle": "E2E Tests",
     "description": "Cypress, Playwright, Selenium end-to-end testing patterns and best practices",
-    "icon": "\ud83c\udfad",
-    "totalItems": 30,
+    "icon": "🎭",
+    "totalItems": 26,
     "version": "1.0.0"
   },
   "sections": [

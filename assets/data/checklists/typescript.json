@@ -6,7 +6,7 @@
     "shortTitle": "TypeScript",
     "description": "TypeScript type safety, generics, utility types, and compiler configuration",
     "icon": "🔷",
-    "totalItems": 30,
+    "totalItems": 19,
     "version": "1.0.0"
   },
   "sections": [

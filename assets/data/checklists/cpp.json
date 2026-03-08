@@ -6,7 +6,7 @@
     "shortTitle": "C++",
     "description": "Review checklist for C++ applications and libraries (C++17/20/23)",
     "icon": "⚙️",
-    "totalItems": 35,
+    "totalItems": 17,
     "version": "1.0.0"
   },
   "sections": [
@@ -198,7 +198,9 @@
           "id": "cpp.modern-features.string-view",
           "text": "Is std::string_view used for non-owning string parameters?",
           "severity": "minor",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Functions that read but do not own strings should take std::string_view instead of const std::string& to avoid unnecessary copies from string literals.",
             "whyItMatters": "Passing a string literal to const std::string& creates a temporary std::string allocation. string_view avoids this.",
@@ -249,7 +251,9 @@
           "id": "cpp.concurrency.lock-scope",
           "text": "Are locks held for the minimum necessary duration?",
           "severity": "major",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Lock scopes should be as small as possible. Do not hold locks during I/O, allocations, or other slow operations.",
             "whyItMatters": "Holding locks too long causes contention, reducing parallelism and throughput. It can also cause deadlocks.",
@@ -300,7 +304,9 @@
           "id": "cpp.build-testing.header-includes",
           "text": "Are includes minimal and forward declarations used where possible?",
           "severity": "minor",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Headers should include only what they need. Use forward declarations in headers and include the full definition in .cpp files.",
             "whyItMatters": "Unnecessary includes increase compile times and create coupling. A change to an included header forces recompilation of everything that includes it.",

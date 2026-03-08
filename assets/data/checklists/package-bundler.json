@@ -6,7 +6,7 @@
     "shortTitle": "Packages/Build",
     "description": "npm/yarn/pnpm package management, webpack/Vite bundler config, and dependency hygiene",
     "icon": "📦",
-    "totalItems": 25,
+    "totalItems": 14,
     "version": "1.0.0"
   },
   "sections": [
@@ -78,7 +78,9 @@
           "id": "package-bundler.dependencies.audit",
           "text": "Are known vulnerabilities in dependencies addressed?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Run npm audit / yarn audit regularly. Address critical and high vulnerabilities. Use Dependabot or Renovate for automated updates.",
             "whyItMatters": "Known vulnerabilities in dependencies are the easiest attack vector. Automated scanners find and exploit them.",
@@ -129,7 +131,9 @@
           "id": "package-bundler.scripts.env-files",
           "text": "Are .env files gitignored with a .env.example template?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Never commit .env files with secrets. Provide .env.example with placeholder values for developer setup.",
             "whyItMatters": "Committed .env files expose secrets (API keys, database passwords) to anyone with repo access. Secrets persist in git history.",

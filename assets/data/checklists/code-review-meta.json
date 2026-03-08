@@ -6,7 +6,7 @@
     "shortTitle": "Review Meta",
     "description": "Meta checklist for reviewing the review itself: PR quality, commit hygiene, test coverage, and review process",
     "icon": "🔍",
-    "totalItems": 25,
+    "totalItems": 18,
     "version": "1.0.0"
   },
   "sections": [

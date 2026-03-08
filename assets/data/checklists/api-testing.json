@@ -5,8 +5,8 @@
     "title": "API & Integration Testing",
     "shortTitle": "API Tests",
     "description": "API testing, contract testing, integration testing with Postman, supertest, REST Assured, and Pact",
-    "icon": "\ud83d\udd0c",
-    "totalItems": 25,
+    "icon": "🔌",
+    "totalItems": 20,
     "version": "1.0.0"
   },
   "sections": [
@@ -99,7 +99,9 @@
           "id": "api-testing.authentication.auth-required",
           "text": "Are endpoints tested for proper authentication enforcement?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Test that protected endpoints reject unauthenticated requests with 401. Verify expired tokens are rejected.",
             "whyItMatters": "Missing authentication checks expose data to anyone. This is OWASP #1: Broken Access Control.",
@@ -114,7 +116,9 @@
           "id": "api-testing.authentication.authorization",
           "text": "Are authorization rules tested (role-based, resource-based)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Test that users can only access their own data and perform allowed operations. Verify role restrictions.",
             "whyItMatters": "IDOR (Insecure Direct Object Reference) lets users access others' data by changing IDs. Authorization tests catch this.",
@@ -129,7 +133,9 @@
           "id": "api-testing.authentication.rate-limiting",
           "text": "Is rate limiting tested?",
           "severity": "minor",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Test that rate-limited endpoints return 429 Too Many Requests after exceeding limits. Verify retry-after headers.",
             "whyItMatters": "Without rate limiting, APIs are vulnerable to brute force attacks and abuse. Tests verify limits are enforced.",
@@ -332,7 +338,7 @@
             "whatItMeans": "Test with large request bodies, special characters, unicode, empty strings, and very long strings to catch edge cases.",
             "whyItMatters": "APIs often break with unexpected input: emoji in names, 10MB payloads, null bytes, or zero-width characters.",
             "howToVerify": "Check for tests with unicode input, very long strings, empty arrays, and large payloads.",
-            "exampleComment": "No tests with unicode names. Add a test with name: '\ud83e\uddd1\u200d\ud83d\udcbb Developer \u00e9\u00e0\u00fc' to verify unicode handling.",
+            "exampleComment": "No tests with unicode names. Add a test with name: '🧑‍💻 Developer éàü' to verify unicode handling.",
             "codeExamples": [],
             "keyTakeaway": "Test edge cases: unicode, empty input, large payloads, special characters.",
             "references": []

@@ -6,7 +6,7 @@
     "shortTitle": "Django",
     "description": "Django web applications, ORM, views, middleware, and template security",
     "icon": "🌿",
-    "totalItems": 30,
+    "totalItems": 21,
     "version": "1.0.0"
   },
   "sections": [
@@ -114,7 +114,9 @@
           "id": "django.views.permissions",
           "text": "Are views protected with appropriate permission checks?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Views should check authentication and authorization. Use @login_required, @permission_required, or LoginRequiredMixin/PermissionRequiredMixin.",
             "whyItMatters": "Missing permission checks allow unauthorized access to data and actions. This is a critical security vulnerability.",
@@ -180,7 +182,9 @@
           "id": "django.security.csrf",
           "text": "Is CSRF protection enabled and properly used?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Django's CSRF middleware should be enabled. Forms must include {% csrf_token %}. AJAX requests need the CSRF cookie header.",
             "whyItMatters": "Disabling CSRF protection or using @csrf_exempt allows cross-site request forgery attacks.",
@@ -195,7 +199,9 @@
           "id": "django.security.raw-sql",
           "text": "Is raw SQL avoided or properly parameterized?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Django's ORM prevents SQL injection by default. Raw SQL (raw(), extra(), RawSQL) must use parameterized queries, never string formatting.",
             "whyItMatters": "SQL injection via raw queries can lead to complete database compromise, data theft, and data destruction.",
@@ -210,7 +216,9 @@
           "id": "django.security.template-escaping",
           "text": "Is template auto-escaping preserved (no unsafe |safe or {% autoescape off %})?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Django auto-escapes template variables to prevent XSS. Using |safe or {% autoescape off %} disables this protection.",
             "whyItMatters": "Marking user input as safe enables XSS attacks. Attackers can inject JavaScript that steals sessions and credentials.",
@@ -225,7 +233,9 @@
           "id": "django.security.secrets",
           "text": "Are SECRET_KEY and credentials kept out of settings.py?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "SECRET_KEY, database passwords, and API keys should be loaded from environment variables or a secrets manager, not hardcoded in settings.",
             "whyItMatters": "Hardcoded secrets in source code are exposed to everyone with repository access. Leaked SECRET_KEY compromises all sessions.",
@@ -240,7 +250,9 @@
           "id": "django.security.debug-production",
           "text": "Is DEBUG=False in production settings?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "DEBUG=True exposes detailed error pages with stack traces, settings, and environment variables to users.",
             "whyItMatters": "Debug pages leak sensitive information: database credentials, API keys, file paths, and installed packages.",
@@ -276,7 +288,9 @@
           "id": "django.rest.permissions",
           "text": "Are DRF permission classes properly configured?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "ViewSets and APIViews should define permission_classes. Use IsAuthenticated, IsAdminUser, or custom permissions as appropriate.",
             "whyItMatters": "The default permission is AllowAny in many configs. Missing permission classes expose endpoints to unauthenticated users.",
@@ -291,7 +305,9 @@
           "id": "django.rest.throttling",
           "text": "Is API rate limiting configured?",
           "severity": "minor",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "DRF provides throttling classes to limit request rates. Configure DEFAULT_THROTTLE_RATES for anonymous and authenticated users.",
             "whyItMatters": "Without rate limiting, APIs are vulnerable to abuse, brute force attacks, and resource exhaustion.",

@@ -6,7 +6,7 @@
     "shortTitle": "BDD/ATDD",
     "description": "Cucumber, Gherkin, acceptance test-driven development, and behavior-driven testing patterns",
     "icon": "🥒",
-    "totalItems": 25,
+    "totalItems": 17,
     "version": "1.0.0"
   },
   "sections": [

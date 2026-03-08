@@ -5,8 +5,8 @@
     "title": "Performance & Load Testing",
     "shortTitle": "Perf Tests",
     "description": "Load testing with k6, JMeter, Locust, Lighthouse audits, and performance profiling",
-    "icon": "\u26a1",
-    "totalItems": 25,
+    "icon": "⚡",
+    "totalItems": 23,
     "version": "1.0.0"
   },
   "sections": [

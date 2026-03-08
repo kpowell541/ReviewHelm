@@ -6,7 +6,7 @@
     "shortTitle": "NoSQL",
     "description": "MongoDB, Redis, DynamoDB, Elasticsearch, Hadoop, and NoSQL data modeling",
     "icon": "🍃",
-    "totalItems": 30,
+    "totalItems": 18,
     "version": "1.0.0"
   },
   "sections": [
@@ -216,7 +216,9 @@
           "id": "nosql.security.injection",
           "text": "Is NoSQL injection prevented (no user input in query operators)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "User input should not be used directly in query operators ($gt, $ne, $where). Sanitize input and validate types.",
             "whyItMatters": "NoSQL injection can bypass authentication, extract data, or execute arbitrary code (with $where in MongoDB).",
@@ -231,7 +233,9 @@
           "id": "nosql.security.authentication",
           "text": "Is database authentication enabled (not running without auth)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "MongoDB, Redis, and other NoSQL databases should have authentication enabled. Never expose unauthenticated databases to the network.",
             "whyItMatters": "Unauthenticated MongoDB/Redis instances are the most common cause of data breaches. Bots scan for open databases continuously.",

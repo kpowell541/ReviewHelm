@@ -6,7 +6,7 @@
     "shortTitle": "Elixir",
     "description": "Elixir applications with OTP, GenServer, Phoenix LiveView, and Ecto",
     "icon": "💧",
-    "totalItems": 30,
+    "totalItems": 20,
     "version": "1.0.0"
   },
   "sections": [
@@ -246,7 +246,9 @@
           "id": "elixir-phoenix.phoenix.auth-plugs",
           "text": "Are authentication and authorization enforced in the router pipeline?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Use plugs in the router pipeline for authentication. Use on_mount hooks for LiveView authorization.",
             "whyItMatters": "Missing auth plugs expose protected routes. LiveView must re-check auth on mount since WebSocket connections persist.",

@@ -6,7 +6,7 @@
     "shortTitle": "Rust",
     "description": "Review checklist for Rust applications and libraries",
     "icon": "🦀",
-    "totalItems": 38,
+    "totalItems": 31,
     "version": "1.0.0"
   },
   "sections": [
@@ -18,7 +18,10 @@
           "id": "rust.ownership-borrowing.unnecessary-clones",
           "text": "Are there unnecessary .clone() calls that could be replaced with borrows?",
           "severity": "minor",
-          "tags": ["performance", "idiom"],
+          "tags": [
+            "performance",
+            "idiom"
+          ],
           "baseContent": {
             "whatItMeans": "Cloning creates a deep copy of data. If a function only needs to read data, passing a reference (&T) avoids the allocation.",
             "whyItMatters": "Unnecessary clones waste memory and CPU. They also signal that the author may not fully understand ownership, which can hide real design issues.",
@@ -37,14 +40,18 @@
               }
             ],
             "keyTakeaway": "Borrow by default. Clone only when you genuinely need an independent copy.",
-            "references": ["https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html"
+            ]
           }
         },
         {
           "id": "rust.ownership-borrowing.lifetime-annotations",
           "text": "Are lifetime annotations used correctly and only where necessary?",
           "severity": "major",
-          "tags": ["correctness"],
+          "tags": [
+            "correctness"
+          ],
           "baseContent": {
             "whatItMeans": "Lifetime annotations tell the compiler how long references are valid. Rust elides them when the rules are unambiguous, so explicit annotations should only appear when needed.",
             "whyItMatters": "Incorrect lifetimes cause compile errors or force the programmer into awkward workarounds. Unnecessary annotations add visual noise.",
@@ -63,14 +70,18 @@
               }
             ],
             "keyTakeaway": "Let the compiler elide lifetimes. Add annotations only when the compiler asks.",
-            "references": ["https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch10-03-lifetime-syntax.html"
+            ]
           }
         },
         {
           "id": "rust.ownership-borrowing.move-semantics",
           "text": "Does the code handle move semantics correctly, avoiding use-after-move?",
           "severity": "blocker",
-          "tags": ["correctness"],
+          "tags": [
+            "correctness"
+          ],
           "baseContent": {
             "whatItMeans": "When a value is moved in Rust, the original binding is no longer valid. The compiler catches this, but the design intent matters for readability.",
             "whyItMatters": "While the compiler prevents use-after-move, poor ownership design leads to excessive cloning or convoluted code restructuring.",
@@ -78,14 +89,19 @@
             "exampleComment": "Builder::build() takes self by value, which means the builder cannot be reused. Is that intentional? Consider taking &self if reuse is expected.",
             "codeExamples": [],
             "keyTakeaway": "Design APIs around whether they consume, borrow, or mutably borrow their arguments.",
-            "references": ["https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html"
+            ]
           }
         },
         {
           "id": "rust.ownership-borrowing.interior-mutability",
           "text": "Is interior mutability (Cell, RefCell, Mutex) used appropriately?",
           "severity": "major",
-          "tags": ["correctness", "concurrency"],
+          "tags": [
+            "correctness",
+            "concurrency"
+          ],
           "baseContent": {
             "whatItMeans": "Interior mutability lets you mutate data behind a shared reference. Cell and RefCell are for single-threaded use; Mutex and RwLock for multi-threaded.",
             "whyItMatters": "RefCell panics at runtime if borrow rules are violated. Using RefCell where Mutex is needed (or vice versa) leads to data races or unnecessary overhead.",
@@ -93,7 +109,9 @@
             "exampleComment": "This RefCell<Vec<Event>> is stored in an Arc, which means it can be shared across threads. Switch to Mutex<Vec<Event>> for thread safety.",
             "codeExamples": [],
             "keyTakeaway": "Single thread: Cell/RefCell. Multi-thread: Mutex/RwLock. Never mix them up.",
-            "references": ["https://doc.rust-lang.org/book/ch15-05-interior-mutability.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch15-05-interior-mutability.html"
+            ]
           }
         }
       ]
@@ -106,7 +124,9 @@
           "id": "rust.error-handling.unwrap-expect",
           "text": "Are .unwrap() and .expect() avoided in production code paths?",
           "severity": "blocker",
-          "tags": ["reliability"],
+          "tags": [
+            "reliability"
+          ],
           "baseContent": {
             "whatItMeans": ".unwrap() and .expect() panic on None/Err, crashing the program. They are acceptable in tests and truly impossible-to-fail cases, but not in general application code.",
             "whyItMatters": "A panic in production brings down the entire process (or the async task). Proper error propagation with ? allows callers to decide how to handle failures.",
@@ -125,14 +145,18 @@
               }
             ],
             "keyTakeaway": "Reserve unwrap for impossible-to-fail cases. Use ? everywhere else.",
-            "references": ["https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch09-02-recoverable-errors-with-result.html"
+            ]
           }
         },
         {
           "id": "rust.error-handling.error-types",
           "text": "Are custom error types well-defined with thiserror or similar?",
           "severity": "minor",
-          "tags": ["design"],
+          "tags": [
+            "design"
+          ],
           "baseContent": {
             "whatItMeans": "Libraries should define domain-specific error enums. thiserror derives Display and Error implementations. anyhow is for applications that do not need structured errors.",
             "whyItMatters": "String errors (Box<dyn Error>) lose type information, making it impossible for callers to match on specific failures. Good error types enable proper error handling upstream.",
@@ -151,14 +175,18 @@
               }
             ],
             "keyTakeaway": "Libraries: thiserror with specific variants. Binaries: anyhow for convenience.",
-            "references": ["https://docs.rs/thiserror/latest/thiserror/"]
+            "references": [
+              "https://docs.rs/thiserror/latest/thiserror/"
+            ]
           }
         },
         {
           "id": "rust.error-handling.error-context",
           "text": "Do errors carry sufficient context for debugging?",
           "severity": "minor",
-          "tags": ["observability"],
+          "tags": [
+            "observability"
+          ],
           "baseContent": {
             "whatItMeans": "When propagating errors, adding context (e.g., the file path that failed to open) helps operators diagnose issues without needing a debugger.",
             "whyItMatters": "A bare io::Error saying 'file not found' is useless without knowing which file. Context turns cryptic errors into actionable messages.",
@@ -173,7 +201,9 @@
           "id": "rust.error-handling.panic-boundaries",
           "text": "Are panic boundaries established for FFI and thread boundaries?",
           "severity": "blocker",
-          "tags": ["safety"],
+          "tags": [
+            "safety"
+          ],
           "baseContent": {
             "whatItMeans": "Panics unwinding across FFI boundaries is undefined behavior. Panics in spawned threads crash silently unless caught with catch_unwind or JoinHandle.",
             "whyItMatters": "An uncaught panic in a thread pool worker can silently drop work. A panic across FFI corrupts memory. Both are hard to debug in production.",
@@ -181,7 +211,9 @@
             "exampleComment": "This FFI-exported function does not use catch_unwind. If the Rust code panics, it is undefined behavior for the C caller.",
             "codeExamples": [],
             "keyTakeaway": "Catch panics at thread and FFI boundaries. Never let them unwind into foreign code.",
-            "references": ["https://doc.rust-lang.org/nomicon/ffi.html#ffi-and-panics"]
+            "references": [
+              "https://doc.rust-lang.org/nomicon/ffi.html#ffi-and-panics"
+            ]
           }
         }
       ]
@@ -194,7 +226,10 @@
           "id": "rust.concurrency.send-sync",
           "text": "Are Send and Sync bounds correct for types shared across threads?",
           "severity": "blocker",
-          "tags": ["concurrency", "correctness"],
+          "tags": [
+            "concurrency",
+            "correctness"
+          ],
           "baseContent": {
             "whatItMeans": "Send means a type can be transferred to another thread. Sync means it can be shared via &T across threads. The compiler enforces these, but unsafe code can opt out incorrectly.",
             "whyItMatters": "Incorrect unsafe impl Send/Sync is a data race waiting to happen. It undermines Rust's core safety guarantee.",
@@ -202,14 +237,19 @@
             "exampleComment": "This unsafe impl Send for Handle is risky since Handle wraps a *mut that points into thread-local storage. This can cause data races.",
             "codeExamples": [],
             "keyTakeaway": "Never add unsafe impl Send/Sync without proving the type is genuinely thread-safe.",
-            "references": ["https://doc.rust-lang.org/nomicon/send-and-sync.html"]
+            "references": [
+              "https://doc.rust-lang.org/nomicon/send-and-sync.html"
+            ]
           }
         },
         {
           "id": "rust.concurrency.mutex-across-await",
           "text": "Are Mutex guards not held across .await points?",
           "severity": "blocker",
-          "tags": ["concurrency", "async"],
+          "tags": [
+            "concurrency",
+            "async"
+          ],
           "baseContent": {
             "whatItMeans": "Holding a std::sync::Mutex guard across an .await means the lock is held while the task is suspended, potentially blocking the executor thread.",
             "whyItMatters": "This can deadlock the async runtime. Even with tokio::sync::Mutex (which is await-aware), holding locks across awaits increases contention.",
@@ -235,7 +275,9 @@
           "id": "rust.concurrency.arc-usage",
           "text": "Is Arc used correctly for shared ownership across threads?",
           "severity": "major",
-          "tags": ["concurrency"],
+          "tags": [
+            "concurrency"
+          ],
           "baseContent": {
             "whatItMeans": "Arc provides thread-safe reference counting. It should wrap shared data, not individual fields. Arc<Mutex<T>> is the standard pattern for shared mutable state.",
             "whyItMatters": "Wrapping each field in its own Arc creates fragmented ownership and makes it easy to get into inconsistent states. A single Arc<SharedState> is simpler.",
@@ -243,14 +285,19 @@
             "exampleComment": "Each field is wrapped in its own Arc<Mutex<_>>. Consider grouping related fields into a single struct behind one Arc<Mutex<State>>.",
             "codeExamples": [],
             "keyTakeaway": "One Arc<Mutex<SharedState>> beats five Arc<Mutex<field>> every time.",
-            "references": ["https://doc.rust-lang.org/book/ch16-03-shared-state.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch16-03-shared-state.html"
+            ]
           }
         },
         {
           "id": "rust.concurrency.tokio-blocking",
           "text": "Is blocking I/O properly handled with spawn_blocking in async contexts?",
           "severity": "major",
-          "tags": ["async", "performance"],
+          "tags": [
+            "async",
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Calling blocking operations (file I/O, DNS, CPU-heavy work) on an async runtime thread starves other tasks. Use tokio::task::spawn_blocking or tokio::fs for these.",
             "whyItMatters": "A single blocking call on the tokio runtime thread can freeze all other tasks on that thread. This causes latency spikes and can cascade into timeouts.",
@@ -258,7 +305,9 @@
             "exampleComment": "std::fs::read_to_string blocks the runtime thread. Use tokio::fs::read_to_string or wrap it in spawn_blocking.",
             "codeExamples": [],
             "keyTakeaway": "Never block the async runtime. Use spawn_blocking for anything that takes more than a few microseconds.",
-            "references": ["https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html"]
+            "references": [
+              "https://docs.rs/tokio/latest/tokio/task/fn.spawn_blocking.html"
+            ]
           }
         }
       ]
@@ -271,7 +320,9 @@
           "id": "rust.unsafe-code.minimized",
           "text": "Is unsafe code minimized and well-documented?",
           "severity": "blocker",
-          "tags": ["safety"],
+          "tags": [
+            "safety"
+          ],
           "baseContent": {
             "whatItMeans": "unsafe blocks should be as small as possible, with a SAFETY comment explaining why the invariants are upheld.",
             "whyItMatters": "unsafe disables the borrow checker. Without documentation, future maintainers cannot verify the invariants still hold after changes.",
@@ -290,14 +341,18 @@
               }
             ],
             "keyTakeaway": "Minimize unsafe scope. Document invariants with SAFETY comments.",
-            "references": ["https://doc.rust-lang.org/nomicon/"]
+            "references": [
+              "https://doc.rust-lang.org/nomicon/"
+            ]
           }
         },
         {
           "id": "rust.unsafe-code.raw-pointers",
           "text": "Are raw pointer dereferences guarded by validity checks?",
           "severity": "blocker",
-          "tags": ["safety"],
+          "tags": [
+            "safety"
+          ],
           "baseContent": {
             "whatItMeans": "Dereferencing a raw pointer (*const T / *mut T) is undefined behavior if the pointer is null, dangling, or misaligned.",
             "whyItMatters": "UB can cause anything from silent data corruption to security exploits. Rust's safety guarantees do not apply inside unsafe blocks.",
@@ -305,14 +360,18 @@
             "exampleComment": "This raw pointer from FFI is dereferenced without a null check. Add a null check or use NonNull to encode the invariant.",
             "codeExamples": [],
             "keyTakeaway": "Validate every raw pointer before dereferencing. Use NonNull where nullability is impossible.",
-            "references": ["https://doc.rust-lang.org/std/ptr/struct.NonNull.html"]
+            "references": [
+              "https://doc.rust-lang.org/std/ptr/struct.NonNull.html"
+            ]
           }
         },
         {
           "id": "rust.unsafe-code.undefined-behavior",
           "text": "Does the code avoid common sources of undefined behavior?",
           "severity": "blocker",
-          "tags": ["safety"],
+          "tags": [
+            "safety"
+          ],
           "baseContent": {
             "whatItMeans": "Common UB sources: creating invalid references, data races, calling functions with wrong ABIs, reading uninitialized memory, and breaking aliasing rules.",
             "whyItMatters": "UB makes the program's behavior unpredictable. The compiler assumes UB never happens and optimizes accordingly, which can remove safety checks.",
@@ -320,7 +379,9 @@
             "exampleComment": "This transmute from u8 to bool is UB for any value other than 0 or 1. Use match or != 0 instead.",
             "codeExamples": [],
             "keyTakeaway": "When in doubt, run Miri. It catches many forms of UB at runtime.",
-            "references": ["https://github.com/rust-lang/miri"]
+            "references": [
+              "https://github.com/rust-lang/miri"
+            ]
           }
         }
       ]
@@ -333,7 +394,10 @@
           "id": "rust.api-design.builder-pattern",
           "text": "Are complex constructors using the builder pattern?",
           "severity": "minor",
-          "tags": ["design", "ergonomics"],
+          "tags": [
+            "design",
+            "ergonomics"
+          ],
           "baseContent": {
             "whatItMeans": "Functions with many parameters should use the builder or options-struct pattern for clarity and extensibility.",
             "whyItMatters": "Positional parameters beyond 3-4 are error-prone. Builders make call sites self-documenting and allow adding optional parameters without breaking callers.",
@@ -352,14 +416,18 @@
               }
             ],
             "keyTakeaway": "When constructors grow beyond 3 parameters, switch to the builder pattern.",
-            "references": ["https://rust-lang.github.io/api-guidelines/type-safety.html"]
+            "references": [
+              "https://rust-lang.github.io/api-guidelines/type-safety.html"
+            ]
           }
         },
         {
           "id": "rust.api-design.newtype",
           "text": "Are newtypes used to prevent type confusion?",
           "severity": "minor",
-          "tags": ["type-safety"],
+          "tags": [
+            "type-safety"
+          ],
           "baseContent": {
             "whatItMeans": "Wrapping primitives in newtypes (struct UserId(u64)) prevents accidentally passing a user ID where a post ID is expected.",
             "whyItMatters": "Two u64 parameters next to each other are easy to swap. Newtypes make the compiler catch these bugs at zero runtime cost.",
@@ -367,14 +435,18 @@
             "exampleComment": "transfer(from_id, to_id, amount) takes three u64s. Wrapping IDs in newtypes (UserId, AccountId) would prevent accidental swaps.",
             "codeExamples": [],
             "keyTakeaway": "Newtypes are free at runtime and prevent an entire class of bugs.",
-            "references": ["https://doc.rust-lang.org/book/ch19-04-advanced-types.html#using-the-newtype-pattern"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch19-04-advanced-types.html#using-the-newtype-pattern"
+            ]
           }
         },
         {
           "id": "rust.api-design.trait-bounds",
           "text": "Are trait bounds minimal and appropriate?",
           "severity": "minor",
-          "tags": ["design"],
+          "tags": [
+            "design"
+          ],
           "baseContent": {
             "whatItMeans": "Generic functions should require only the traits they actually use. Overly broad bounds (T: Clone + Debug + Send + Sync + 'static) restrict callers unnecessarily.",
             "whyItMatters": "Broad bounds reduce the set of types that can use the API. They also create confusing error messages when bounds are not met.",
@@ -382,14 +454,18 @@
             "exampleComment": "This function requires T: Clone but never clones the value. Remove the Clone bound to widen the set of usable types.",
             "codeExamples": [],
             "keyTakeaway": "Only require the traits you use. Every unnecessary bound is a door closed to some caller.",
-            "references": ["https://rust-lang.github.io/api-guidelines/flexibility.html"]
+            "references": [
+              "https://rust-lang.github.io/api-guidelines/flexibility.html"
+            ]
           }
         },
         {
           "id": "rust.api-design.public-api",
           "text": "Are pub items minimized and intentional?",
           "severity": "minor",
-          "tags": ["design"],
+          "tags": [
+            "design"
+          ],
           "baseContent": {
             "whatItMeans": "Only items that form the public API should be pub. Internal helpers should use pub(crate) or remain private.",
             "whyItMatters": "Every pub item is a commitment. Changing it later is a breaking change. Exposing internals encourages coupling.",
@@ -397,7 +473,9 @@
             "exampleComment": "This helper function is pub but only used within the crate. Change to pub(crate) to keep the public API surface small.",
             "codeExamples": [],
             "keyTakeaway": "Default to private. Promote to pub(crate), then pub, only when needed.",
-            "references": ["https://rust-lang.github.io/api-guidelines/"]
+            "references": [
+              "https://rust-lang.github.io/api-guidelines/"
+            ]
           }
         }
       ]
@@ -410,7 +488,9 @@
           "id": "rust.performance.allocations",
           "text": "Are heap allocations minimized in hot paths?",
           "severity": "minor",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "In performance-critical code, prefer stack allocation (arrays, SmallVec) over heap allocation (Vec, Box). Reuse buffers instead of reallocating.",
             "whyItMatters": "Heap allocations involve the global allocator, which can be a bottleneck under contention. They also cause cache misses.",
@@ -436,7 +516,10 @@
           "id": "rust.performance.iterator-chains",
           "text": "Are iterator chains preferred over manual index loops?",
           "severity": "nit",
-          "tags": ["idiom", "performance"],
+          "tags": [
+            "idiom",
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Rust iterators are zero-cost abstractions. Chains like .filter().map().collect() often optimize better than manual indexing because bounds checks are elided.",
             "whyItMatters": "Iterator chains are more readable and less error-prone than manual indexing. The compiler can also vectorize them more easily.",
@@ -444,14 +527,18 @@
             "exampleComment": "This manual index loop can be simplified to items.iter().filter(|i| i.active).map(|i| i.name).collect().",
             "codeExamples": [],
             "keyTakeaway": "Prefer iterator chains. They are more idiomatic and often faster.",
-            "references": ["https://doc.rust-lang.org/book/ch13-04-performance.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch13-04-performance.html"
+            ]
           }
         },
         {
           "id": "rust.performance.cow",
           "text": "Is Cow used where data may or may not need cloning?",
           "severity": "nit",
-          "tags": ["performance"],
+          "tags": [
+            "performance"
+          ],
           "baseContent": {
             "whatItMeans": "Cow<str> (Clone on Write) avoids cloning when the borrowed form suffices. It only allocates when mutation is needed.",
             "whyItMatters": "Functions that sometimes return borrowed data and sometimes owned data benefit from Cow, avoiding unnecessary allocations in the common case.",
@@ -459,7 +546,9 @@
             "exampleComment": "normalize_path clones the input in every case, but most paths are already normalized. Cow<str> would avoid the clone in the common case.",
             "codeExamples": [],
             "keyTakeaway": "Cow avoids cloning when you might not need to. Use it for functions that usually return the input unchanged.",
-            "references": ["https://doc.rust-lang.org/std/borrow/enum.Cow.html"]
+            "references": [
+              "https://doc.rust-lang.org/std/borrow/enum.Cow.html"
+            ]
           }
         }
       ]
@@ -472,7 +561,9 @@
           "id": "rust.testing.unit-test-modules",
           "text": "Are unit tests in a #[cfg(test)] mod tests block?",
           "severity": "minor",
-          "tags": ["testing"],
+          "tags": [
+            "testing"
+          ],
           "baseContent": {
             "whatItMeans": "Rust convention places unit tests in a mod tests block at the bottom of the source file, gated by #[cfg(test)] so they are excluded from release builds.",
             "whyItMatters": "Following the convention makes tests discoverable. #[cfg(test)] ensures test helpers and test dependencies are not compiled into production.",
@@ -480,14 +571,18 @@
             "exampleComment": "These tests are at the module level without #[cfg(test)]. Move them into a mod tests block.",
             "codeExamples": [],
             "keyTakeaway": "Unit tests in #[cfg(test)] mod tests. Integration tests in tests/.",
-            "references": ["https://doc.rust-lang.org/book/ch11-03-test-organization.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch11-03-test-organization.html"
+            ]
           }
         },
         {
           "id": "rust.testing.proptest",
           "text": "Would property-based testing (proptest) catch edge cases here?",
           "severity": "nit",
-          "tags": ["testing"],
+          "tags": [
+            "testing"
+          ],
           "baseContent": {
             "whatItMeans": "Property-based testing generates random inputs and verifies invariants hold. It excels at finding edge cases humans miss, like empty inputs, unicode, or integer overflow.",
             "whyItMatters": "Hand-written test cases only cover what the author thinks of. Proptest explores the input space automatically.",
@@ -495,14 +590,18 @@
             "exampleComment": "This parser has 5 hand-crafted test cases. Consider adding a proptest that generates random valid inputs and verifies roundtrip parsing.",
             "codeExamples": [],
             "keyTakeaway": "If it parses, serializes, or transforms data, proptest it.",
-            "references": ["https://docs.rs/proptest/latest/proptest/"]
+            "references": [
+              "https://docs.rs/proptest/latest/proptest/"
+            ]
           }
         },
         {
           "id": "rust.testing.test-coverage",
           "text": "Are error paths and edge cases tested, not just the happy path?",
           "severity": "minor",
-          "tags": ["testing"],
+          "tags": [
+            "testing"
+          ],
           "baseContent": {
             "whatItMeans": "Tests should cover error conditions, boundary values, empty inputs, and concurrent scenarios, not just the expected success case.",
             "whyItMatters": "Happy-path tests give false confidence. Bugs live in error handling, edge cases, and unexpected input combinations.",
@@ -523,7 +622,9 @@
           "id": "rust.dependencies.minimal-features",
           "text": "Are dependency features scoped to only what is needed?",
           "severity": "minor",
-          "tags": ["build"],
+          "tags": [
+            "build"
+          ],
           "baseContent": {
             "whatItMeans": "Cargo features are additive. Enabling unused features pulls in extra code, increasing compile times and binary size.",
             "whyItMatters": "default-features = true often enables things you do not need (like tokio's full feature set when you only need rt and macros).",
@@ -531,14 +632,18 @@
             "exampleComment": "tokio is added with default features. Consider default-features = false with only [\"rt-multi-thread\", \"macros\"] to reduce compile time.",
             "codeExamples": [],
             "keyTakeaway": "Disable default features and enable only what you use.",
-            "references": ["https://doc.rust-lang.org/cargo/reference/features.html"]
+            "references": [
+              "https://doc.rust-lang.org/cargo/reference/features.html"
+            ]
           }
         },
         {
           "id": "rust.dependencies.version-pinning",
           "text": "Are dependencies version-pinned appropriately?",
           "severity": "minor",
-          "tags": ["build"],
+          "tags": [
+            "build"
+          ],
           "baseContent": {
             "whatItMeans": "Cargo.lock pins exact versions for binaries. Libraries should use semver ranges in Cargo.toml. Check that Cargo.lock is committed for binaries but not for libraries.",
             "whyItMatters": "Without Cargo.lock, binary builds are not reproducible. Libraries should not pin to allow consumers flexibility.",
@@ -546,14 +651,19 @@
             "exampleComment": "This binary crate does not commit Cargo.lock. Add it to ensure reproducible builds.",
             "codeExamples": [],
             "keyTakeaway": "Commit Cargo.lock for binaries. Use semver ranges for libraries.",
-            "references": ["https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html"]
+            "references": [
+              "https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html"
+            ]
           }
         },
         {
           "id": "rust.dependencies.audit",
           "text": "Have new dependencies been audited for security and maintenance?",
           "severity": "major",
-          "tags": ["security", "supply-chain"],
+          "tags": [
+            "security",
+            "supply-chain"
+          ],
           "baseContent": {
             "whatItMeans": "New crate dependencies should be checked for known vulnerabilities (cargo audit), maintenance status, and transitive dependency count.",
             "whyItMatters": "Each dependency is code you trust with your program's safety. Unmaintained or vulnerable crates are a supply chain risk.",
@@ -561,7 +671,9 @@
             "exampleComment": "This new dependency has not been updated in 2 years and has an open advisory. Consider an alternative or fork.",
             "codeExamples": [],
             "keyTakeaway": "cargo audit before merging. Check maintenance status of new dependencies.",
-            "references": ["https://docs.rs/cargo-audit/latest/cargo_audit/"]
+            "references": [
+              "https://docs.rs/cargo-audit/latest/cargo_audit/"
+            ]
           }
         }
       ]
@@ -574,7 +686,9 @@
           "id": "rust.clippy-idioms.clippy-clean",
           "text": "Does the code pass clippy with no warnings?",
           "severity": "minor",
-          "tags": ["lint"],
+          "tags": [
+            "lint"
+          ],
           "baseContent": {
             "whatItMeans": "Clippy catches common mistakes, non-idiomatic patterns, and performance pitfalls. CI should run cargo clippy -- -D warnings.",
             "whyItMatters": "Clippy lints encode collective Rust community knowledge. Ignoring them often means missing a simpler or safer approach.",
@@ -582,14 +696,18 @@
             "exampleComment": "Clippy warns about this manual match on Option. Use .map_or() or .unwrap_or_default() instead.",
             "codeExamples": [],
             "keyTakeaway": "Treat clippy warnings as errors in CI. Fix them, do not suppress them without good reason.",
-            "references": ["https://doc.rust-lang.org/clippy/"]
+            "references": [
+              "https://doc.rust-lang.org/clippy/"
+            ]
           }
         },
         {
           "id": "rust.clippy-idioms.pattern-matching",
           "text": "Is pattern matching used idiomatically instead of if-let chains?",
           "severity": "nit",
-          "tags": ["idiom"],
+          "tags": [
+            "idiom"
+          ],
           "baseContent": {
             "whatItMeans": "Rust's match expression is exhaustive and catches missing cases at compile time. Prefer match over chains of if let when handling enums.",
             "whyItMatters": "match forces you to handle all variants. If a new variant is added, the compiler flags every match that misses it. if-let chains silently ignore new variants.",
@@ -597,14 +715,18 @@
             "exampleComment": "This chain of if-let on the Result variants would be clearer as a match statement. It also ensures new variants are handled.",
             "codeExamples": [],
             "keyTakeaway": "Use match for enums. The exhaustiveness check is one of Rust's superpowers.",
-            "references": ["https://doc.rust-lang.org/book/ch06-02-match.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/ch06-02-match.html"
+            ]
           }
         },
         {
           "id": "rust.clippy-idioms.derive-traits",
           "text": "Are standard traits (Debug, Clone, PartialEq) derived where appropriate?",
           "severity": "nit",
-          "tags": ["idiom"],
+          "tags": [
+            "idiom"
+          ],
           "baseContent": {
             "whatItMeans": "Most structs should derive Debug for logging, Clone if they are value types, and PartialEq for testing. Deriving is zero-effort and enables ecosystem interoperability.",
             "whyItMatters": "Without Debug, values cannot be printed in error messages or logs. Without PartialEq, values cannot be compared in assertions.",
@@ -612,7 +734,9 @@
             "exampleComment": "This struct does not derive Debug, which makes it impossible to log or include in error messages. Add #[derive(Debug)].",
             "codeExamples": [],
             "keyTakeaway": "Derive Debug on everything. Add Clone and PartialEq when they make sense.",
-            "references": ["https://doc.rust-lang.org/book/appendix-03-derivable-traits.html"]
+            "references": [
+              "https://doc.rust-lang.org/book/appendix-03-derivable-traits.html"
+            ]
           }
         }
       ]

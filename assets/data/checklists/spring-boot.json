@@ -6,7 +6,7 @@
     "shortTitle": "Spring Boot",
     "description": "Spring Boot applications with dependency injection, JPA, security, and actuators",
     "icon": "🍃",
-    "totalItems": 30,
+    "totalItems": 18,
     "version": "1.0.0"
   },
   "sections": [
@@ -150,7 +150,9 @@
           "id": "spring-boot.security.security-config",
           "text": "Is Spring Security configured correctly?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "SecurityFilterChain should define which endpoints require authentication. Use .authenticated() for protected routes and .permitAll() for public ones.",
             "whyItMatters": "Misconfigured security rules can expose admin endpoints to unauthenticated users or lock out legitimate users.",
@@ -165,7 +167,9 @@
           "id": "spring-boot.security.secrets-config",
           "text": "Are secrets externalized (not in application.yml)?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Database passwords, API keys, and JWT secrets should come from environment variables, Vault, or Spring Cloud Config — not committed in config files.",
             "whyItMatters": "Secrets in application.yml are visible to anyone with repository access. Leaked database credentials compromise all data.",
@@ -180,7 +184,9 @@
           "id": "spring-boot.security.method-security",
           "text": "Is method-level security used for fine-grained access control?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Use @PreAuthorize, @Secured, or @RolesAllowed on service methods for authorization beyond URL-pattern matching.",
             "whyItMatters": "URL-based security alone can't enforce object-level permissions like 'users can only edit their own resources'.",
@@ -195,7 +201,9 @@
           "id": "spring-boot.security.actuator",
           "text": "Are actuator endpoints secured?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Spring Actuator exposes /actuator/health, /actuator/env, /actuator/beans, etc. Sensitive endpoints must be secured or disabled.",
             "whyItMatters": "/actuator/env exposes all environment variables including secrets. /actuator/heapdump can leak sensitive memory contents.",

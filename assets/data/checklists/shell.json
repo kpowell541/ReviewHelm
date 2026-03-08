@@ -6,7 +6,7 @@
     "shortTitle": "Shell",
     "description": "Review checklist for shell scripts (Bash, sh, CI/CD pipelines)",
     "icon": "💻",
-    "totalItems": 30,
+    "totalItems": 14,
     "version": "1.0.0"
   },
   "sections": [
@@ -75,7 +75,9 @@
           "id": "shell.safety.quoting",
           "text": "Are all variable expansions quoted?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Variables should be quoted with double quotes: \"$var\" not $var. Unquoted variables are subject to word splitting and glob expansion.",
             "whyItMatters": "Unquoted variables with spaces or special characters cause broken commands, accidental file deletion, or security vulnerabilities.",
@@ -101,7 +103,9 @@
           "id": "shell.safety.no-eval",
           "text": "Is eval avoided?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "eval executes arbitrary strings as shell commands. It is almost never necessary and is a common source of injection vulnerabilities.",
             "whyItMatters": "eval with user-controlled input enables command injection. Even with trusted input, it makes code hard to reason about.",
@@ -116,7 +120,9 @@
           "id": "shell.safety.temp-files",
           "text": "Are temporary files created safely with mktemp?",
           "severity": "major",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Temporary files should be created with mktemp, not hardcoded paths like /tmp/myfile. Use trap to clean up on exit.",
             "whyItMatters": "Hardcoded temp files are vulnerable to symlink attacks and race conditions in multi-user environments.",
@@ -229,7 +235,9 @@
           "id": "shell.ci-cd.secrets-not-logged",
           "text": "Are secrets not printed or logged?",
           "severity": "blocker",
-          "tags": ["security"],
+          "tags": [
+            "security"
+          ],
           "baseContent": {
             "whatItMeans": "Scripts must not echo, print, or log secrets like API keys, tokens, or passwords. Use set +x around secret handling.",
             "whyItMatters": "CI/CD logs are often accessible to many people. Leaked secrets in logs have caused major security breaches.",
