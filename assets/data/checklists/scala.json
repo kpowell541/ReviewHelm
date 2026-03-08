@@ -1,0 +1,329 @@
+{
+  "meta": {
+    "id": "scala",
+    "mode": "review",
+    "title": "Scala",
+    "shortTitle": "Scala",
+    "description": "Scala applications with functional patterns, Akka, and big data (Spark)",
+    "icon": "🔴",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "scala.functional",
+      "title": "Functional Patterns",
+      "items": [
+        {
+          "id": "scala.functional.immutability",
+          "text": "Are vals preferred over vars, and immutable collections used by default?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use val instead of var. Use immutable collections (List, Map, Set) from scala.collection.immutable by default.",
+            "whyItMatters": "Mutable state causes concurrency bugs and makes code harder to reason about. Immutability prevents entire classes of bugs.",
+            "howToVerify": "Search for var declarations. Check imports for scala.collection.mutable. Verify mutability is justified (performance-critical code).",
+            "exampleComment": "This var is only assigned once after declaration. Use val with a single expression instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to val and immutable collections. Use var only when mutability provides a clear benefit.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.functional.option-handling",
+          "text": "Is Option used correctly instead of null, with map/flatMap/getOrElse?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Option[T] instead of nullable T. Process Options with map, flatMap, fold, or getOrElse — not .get or pattern matching on every access.",
+            "whyItMatters": "Using .get on None throws NoSuchElementException. Using null defeats Scala's type safety. Excessive pattern matching is verbose.",
+            "howToVerify": "Search for .get on Option values. Check for null usage. Look for nested pattern matching that could be flatMap chains.",
+            "exampleComment": "user.name.get will throw if name is None. Use user.name.getOrElse(\"Unknown\") or map over it.",
+            "codeExamples": [],
+            "keyTakeaway": "Never call .get on Option. Use map/flatMap/getOrElse for safe access.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.functional.either-try",
+          "text": "Are Either and Try used for error handling instead of exceptions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Either[Error, Result] or Try[Result] for operations that can fail. Reserve exceptions for truly exceptional conditions.",
+            "whyItMatters": "Exceptions bypass the type system and are invisible in function signatures. Either/Try make failure cases explicit and composable.",
+            "howToVerify": "Check for try/catch blocks that handle expected failures. These should use Either or Try instead.",
+            "exampleComment": "This catches NumberFormatException to handle invalid input. Use Try(value.toInt) or value.toIntOption instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Either/Try for expected failures. Reserve exceptions for programmer errors and unrecoverable failures.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.functional.for-comprehension",
+          "text": "Are for-comprehensions used appropriately for monadic composition?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use for-comprehensions to compose Option, Either, Future, or other monadic types. Don't use them as fancy loops.",
+            "whyItMatters": "For-comprehensions make monadic chains readable. But mixing different monad types or using them for simple maps adds confusion.",
+            "howToVerify": "Check that for-comprehensions combine the same monad type. Verify they aren't overused for simple map/filter operations.",
+            "exampleComment": "This for-comprehension mixes Option and Try types. Use flatMap to explicitly convert between them or normalize to one type.",
+            "codeExamples": [],
+            "keyTakeaway": "Use for-comprehensions for chaining operations on the same monad type.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.functional.sealed-traits",
+          "text": "Are sealed traits/enums used for algebraic data types?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use sealed traits (Scala 2) or enums (Scala 3) for types with a fixed set of variants. The compiler checks exhaustiveness.",
+            "whyItMatters": "Unsealed traits allow anyone to add variants, breaking pattern matching. Sealed traits enable exhaustive compiler checks.",
+            "howToVerify": "Check pattern matches on trait hierarchies. If all variants are in one file, the trait should be sealed.",
+            "exampleComment": "This trait has only 3 implementations, all in this file. Seal it so the compiler warns about non-exhaustive matches.",
+            "codeExamples": [],
+            "keyTakeaway": "Seal traits when all variants are known. Let the compiler catch missing cases in pattern matches.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "scala.implicits",
+      "title": "Implicits & Type Classes",
+      "items": [
+        {
+          "id": "scala.implicits.scope",
+          "text": "Are implicits well-scoped and discoverable?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Implicits should be defined in companion objects, package objects, or clearly named implicit objects. Avoid scattered implicits.",
+            "whyItMatters": "Hard-to-find implicits make code impossible to understand. Developers can't tell what conversions or instances are in scope.",
+            "howToVerify": "Check where implicit values/conversions are defined. Verify they're in standard locations (companion objects, dedicated implicits trait).",
+            "exampleComment": "This implicit conversion is defined in a random utility object. Move it to the companion object of the target type.",
+            "codeExamples": [],
+            "keyTakeaway": "Put implicits in predictable locations. Companion objects and dedicated implicit objects are standard.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.implicits.conversions",
+          "text": "Are implicit conversions avoided (use extension methods instead)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Implicit conversions are dangerous and deprecated in Scala 3. Use extension methods or explicit conversions instead.",
+            "whyItMatters": "Implicit conversions hide type changes, cause surprising behavior, and make debugging extremely difficult.",
+            "howToVerify": "Search for implicit def that takes one parameter and returns a different type. These are implicit conversions.",
+            "exampleComment": "This implicit conversion from String to UserId is dangerous. Use an explicit UserId.fromString() method instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Avoid implicit conversions. Use extension methods (Scala 3) or enrichment pattern (Scala 2) instead.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.implicits.given-using",
+          "text": "Is the Scala 3 given/using syntax used instead of implicit (if on Scala 3)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Scala 3 replaces implicit with given/using for clearer intent. given defines instances, using requests them.",
+            "whyItMatters": "given/using separates implicit definitions from implicit parameters, making code clearer and easier to understand.",
+            "howToVerify": "Check for Scala 2-style implicit keyword in Scala 3 code. Verify new code uses given/using.",
+            "exampleComment": "This uses 'implicit val' in a Scala 3 project. Use 'given' instead for the idiomatic Scala 3 syntax.",
+            "codeExamples": [],
+            "keyTakeaway": "Use given/using in Scala 3. Migrate from implicit during refactoring.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "scala.concurrency",
+      "title": "Concurrency & Akka",
+      "items": [
+        {
+          "id": "scala.concurrency.future-ec",
+          "text": "Are Futures using appropriate ExecutionContexts?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "CPU-bound work should use a sized thread pool. Blocking I/O should use a separate blocking execution context, not the global one.",
+            "whyItMatters": "Running blocking I/O on the global ExecutionContext starves CPU-bound futures. All async operations slow down or deadlock.",
+            "howToVerify": "Check for Future { blocking { ... } } without a dedicated blocking EC. Verify ExecutionContext.global isn't used for I/O.",
+            "exampleComment": "This blocking database call runs on ExecutionContext.global. Use a dedicated blocking EC to avoid starving the thread pool.",
+            "codeExamples": [],
+            "keyTakeaway": "Use separate ExecutionContexts for CPU-bound and I/O-bound work. Never block on the global EC.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.concurrency.actor-messages",
+          "text": "Are Akka actor messages immutable case classes/objects?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Actor messages must be immutable. Use case classes and case objects. Never send mutable objects between actors.",
+            "whyItMatters": "Mutable messages shared between actors cause race conditions. The actor model's safety depends on message immutability.",
+            "howToVerify": "Check message types for var fields or mutable collections. Verify messages are case classes/objects.",
+            "exampleComment": "This message contains a mutable ArrayBuffer. Use an immutable List instead to prevent concurrent modification.",
+            "codeExamples": [],
+            "keyTakeaway": "Actor messages must be immutable case classes. Never share mutable state between actors.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.concurrency.supervision",
+          "text": "Are Akka actor supervision strategies configured?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Actors should define supervision strategies (Resume, Restart, Stop, Escalate) based on child failure types.",
+            "whyItMatters": "The default strategy may not be appropriate. Without proper supervision, failures either crash the system or are silently ignored.",
+            "howToVerify": "Check that parent actors define supervisorStrategy. Verify the strategy matches the failure semantics of child actors.",
+            "exampleComment": "This parent actor has no supervisorStrategy. Child failures will use the default (restart). Define an explicit strategy.",
+            "codeExamples": [],
+            "keyTakeaway": "Define explicit supervision strategies. Match the strategy to the failure characteristics of child actors.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.concurrency.ask-pattern",
+          "text": "Is the ask pattern used with appropriate timeouts?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The ask pattern (?) creates a temporary actor for responses. Always set a timeout. Prefer tell (!) when a response isn't needed.",
+            "whyItMatters": "Ask without timeout leaks actors if the target never responds. Overuse of ask defeats the async benefits of actors.",
+            "howToVerify": "Check for ask (?) patterns. Verify timeouts are set. Consider if tell (!) with a callback is more appropriate.",
+            "exampleComment": "This ask has no implicit timeout. Add implicit val timeout: Timeout = Timeout(5.seconds) or use tell with a response actor.",
+            "codeExamples": [],
+            "keyTakeaway": "Always set timeouts on ask. Prefer tell when you don't need a response.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "scala.spark",
+      "title": "Spark & Big Data",
+      "items": [
+        {
+          "id": "scala.spark.serialization",
+          "text": "Are closures and objects sent to executors serializable?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Spark ships closures to executor nodes. Any object referenced inside a closure must be serializable.",
+            "whyItMatters": "NotSerializableException is the most common Spark error. It crashes jobs at runtime, often after expensive computation.",
+            "howToVerify": "Check closures in map/filter/flatMap for references to non-serializable objects (connections, SparkContext, unserializable classes).",
+            "exampleComment": "This map closure references a database connection. Connections aren't serializable. Use forEachPartition and create connections inside.",
+            "codeExamples": [],
+            "keyTakeaway": "Only reference serializable objects in Spark closures. Create connections inside partition-level operations.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.spark.partitioning",
+          "text": "Is data partitioning appropriate for the workload?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Data should be partitioned by key for joins and aggregations. Too few partitions waste parallelism, too many create overhead.",
+            "whyItMatters": "Wrong partitioning causes data skew (one partition with 90% of data) or excessive shuffle (repartitioning on every operation).",
+            "howToVerify": "Check repartition() and coalesce() calls. Verify partition count matches cluster resources. Watch for skewed keys.",
+            "exampleComment": "This join repartitions both DataFrames. Pre-partition by the join key to avoid shuffles: df.repartition(col(\"user_id\")).",
+            "codeExamples": [],
+            "keyTakeaway": "Partition by join/aggregation keys. Size partitions to match cluster resources (2-4x cores).",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.spark.collect-avoid",
+          "text": "Is collect() avoided on large datasets?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "collect() brings all data to the driver. On large datasets, this causes OutOfMemoryError on the driver node.",
+            "whyItMatters": "collect() on a billion-row DataFrame tries to load it all into driver memory, crashing the application.",
+            "howToVerify": "Search for .collect(). Verify the data is guaranteed to be small. Use .take(n) or .show() for debugging.",
+            "exampleComment": "This collects the full result DataFrame. With 10M rows, this will OOM. Use .write to save results or .take(100) to sample.",
+            "codeExamples": [],
+            "keyTakeaway": "Never collect() large datasets. Use write operations or take() for sampling.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.spark.caching",
+          "text": "Are RDDs/DataFrames cached only when reused?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "cache()/persist() keeps data in memory across operations. Only cache data that's accessed multiple times.",
+            "whyItMatters": "Unnecessary caching wastes executor memory, potentially causing spills to disk or OOM errors.",
+            "howToVerify": "Check for .cache() or .persist() calls. Verify the cached data is actually used more than once. Call .unpersist() when done.",
+            "exampleComment": "This DataFrame is cached but only used once. Remove .cache() to free executor memory for other operations.",
+            "codeExamples": [],
+            "keyTakeaway": "Only cache DataFrames used multiple times. Unpersist when done.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "scala.testing",
+      "title": "Testing & Build",
+      "items": [
+        {
+          "id": "scala.testing.scalatest-style",
+          "text": "Are tests using a consistent ScalaTest style?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Pick one ScalaTest style (FlatSpec, FunSuite, WordSpec, etc.) and use it consistently. Mix in appropriate matchers.",
+            "whyItMatters": "Mixing test styles makes the test suite inconsistent and harder to read. Different styles have different conventions.",
+            "howToVerify": "Check that new tests use the same ScalaTest style as existing tests in the project.",
+            "exampleComment": "Existing tests use FlatSpec but this new test uses FunSuite. Use FlatSpec for consistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Use one consistent ScalaTest style throughout the project.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.testing.property-testing",
+          "text": "Are property-based tests used for pure functions with complex inputs?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use ScalaCheck for property-based testing of pure functions. Define properties that hold for all valid inputs.",
+            "whyItMatters": "Example-based tests only cover cases you think of. Property-based tests find edge cases automatically.",
+            "howToVerify": "Check for pure functions with complex input domains. These are good candidates for property-based testing.",
+            "exampleComment": "This serialization/deserialization pair is a good candidate for property testing: forAll { (x: T) => deserialize(serialize(x)) == x }.",
+            "codeExamples": [],
+            "keyTakeaway": "Use property-based tests for serialization, parsing, and mathematical functions.",
+            "references": []
+          }
+        },
+        {
+          "id": "scala.testing.sbt-dependencies",
+          "text": "Are SBT dependencies correctly scoped and versioned?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Dependencies should use the correct scope (% vs %%, Test scope). Cross-version suffixes (%%) must match the Scala major version.",
+            "whyItMatters": "Wrong dependency scope includes test libraries in production. Wrong cross-version suffix causes NoClassDefFoundError at runtime.",
+            "howToVerify": "Check for test libraries without % Test scope. Verify %% is used for Scala libraries and % for Java libraries.",
+            "exampleComment": "scalatest is not scoped to Test. Add % Test to avoid shipping test code to production.",
+            "codeExamples": [],
+            "keyTakeaway": "Scope test dependencies with % Test. Use %% for Scala libraries, % for Java libraries.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

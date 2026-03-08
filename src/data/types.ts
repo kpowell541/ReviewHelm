@@ -29,7 +29,15 @@ export type StackId =
   | 'angular'
   | 'cpp'
   | 'shell'
-  | 'sql-migrations';
+  | 'sql-migrations'
+  | 'nextjs'
+  | 'django'
+  | 'spring-boot'
+  | 'elixir-phoenix'
+  | 'scala'
+  | 'docker-k8s'
+  | 'cicd'
+  | 'code-review-meta';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,

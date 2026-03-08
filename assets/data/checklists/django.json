@@ -1,0 +1,359 @@
+{
+  "meta": {
+    "id": "django",
+    "mode": "review",
+    "title": "Django",
+    "shortTitle": "Django",
+    "description": "Django web applications, ORM, views, middleware, and template security",
+    "icon": "🌿",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "django.models",
+      "title": "Models & ORM",
+      "items": [
+        {
+          "id": "django.models.field-types",
+          "text": "Are model field types and constraints appropriate?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Model fields should use the most appropriate type (CharField vs TextField, DecimalField vs FloatField). Constraints like max_length, unique, and blank/null should be set correctly.",
+            "whyItMatters": "Wrong field types cause data integrity issues. Using FloatField for money loses precision. Missing constraints allow invalid data.",
+            "howToVerify": "Review each field type against the data it stores. Check that null=True and blank=True are used intentionally, not as defaults.",
+            "exampleComment": "price uses FloatField which has precision issues. Use DecimalField(max_digits=10, decimal_places=2) for monetary values.",
+            "codeExamples": [],
+            "keyTakeaway": "Choose field types deliberately. Understand the difference between null and blank.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.models.migrations",
+          "text": "Are migrations correct, reversible, and safe for production?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Django migrations should be reviewed for correctness. RunPython operations need reverse functions. Large table alterations may need special handling.",
+            "whyItMatters": "Broken migrations can corrupt data or cause downtime. Irreversible migrations prevent rollbacks during failed deployments.",
+            "howToVerify": "Check that RunPython has a reverse_code. Verify AddField on large tables won't lock them. Test with --fake-initial if needed.",
+            "exampleComment": "This RunPython migration has no reverse_code. Add a reverse function or use migrations.RunPython.noop if truly irreversible.",
+            "codeExamples": [],
+            "keyTakeaway": "Always provide reverse migrations. Test migrations against production-scale data.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.models.querysets",
+          "text": "Are QuerySet operations efficient (no N+1, proper select_related/prefetch_related)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Accessing related objects without select_related (ForeignKey) or prefetch_related (ManyToMany/reverse FK) causes N+1 queries.",
+            "whyItMatters": "N+1 queries are the #1 Django performance issue. Listing 100 items with related objects makes 101 queries instead of 2.",
+            "howToVerify": "Check templates and serializers for related object access. Use django-debug-toolbar or django-silk to count queries.",
+            "exampleComment": "This view accesses post.author in a loop but doesn't use select_related('author'). Add it to the queryset.",
+            "codeExamples": [],
+            "keyTakeaway": "Use select_related for ForeignKey, prefetch_related for ManyToMany. Always check query counts.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.models.indexes",
+          "text": "Are database indexes defined for frequently queried fields?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Fields used in filter(), order_by(), or lookups should have db_index=True or be included in Meta.indexes.",
+            "whyItMatters": "Missing indexes cause full table scans that get slower as data grows. A query filtering by status on 1M rows without an index is very slow.",
+            "howToVerify": "Check filter() and order_by() calls. Verify the filtered fields have indexes. Use Meta.indexes for composite indexes.",
+            "exampleComment": "This view filters by status and created_at but neither field is indexed. Add a composite index in Meta.indexes.",
+            "codeExamples": [],
+            "keyTakeaway": "Index fields you filter and sort by. Use composite indexes for multi-field queries.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.models.managers",
+          "text": "Are custom managers and querysets used for reusable query logic?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Repeated query patterns should be encapsulated in custom managers or QuerySet methods rather than duplicated across views.",
+            "whyItMatters": "Duplicated query logic is error-prone. Changing the logic requires finding and updating every copy.",
+            "howToVerify": "Look for repeated filter chains across views. Check if they could be extracted to a custom manager or queryset method.",
+            "exampleComment": "The active/published filter is repeated in 4 views. Consider a PublishedManager with get_queryset filtering by is_published=True.",
+            "codeExamples": [],
+            "keyTakeaway": "Encapsulate reusable query patterns in managers. Keep views focused on request/response logic.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "django.views",
+      "title": "Views & URLs",
+      "items": [
+        {
+          "id": "django.views.cbv-fbv",
+          "text": "Is the choice between class-based and function-based views appropriate?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "CBVs are good for standard CRUD. FBVs are better for complex custom logic. The choice should be consistent within the project.",
+            "whyItMatters": "Using CBVs for simple custom logic leads to overriding too many methods. Using FBVs for CRUD leads to boilerplate.",
+            "howToVerify": "Check that CBVs aren't overriding most methods (sign to use FBV). Check that FBVs doing CRUD aren't reimplementing what a CBV provides.",
+            "exampleComment": "This CBV overrides get, post, get_context_data, and form_valid. A function-based view would be clearer here.",
+            "codeExamples": [],
+            "keyTakeaway": "Use CBVs for standard patterns, FBVs for custom logic. Be consistent within the project.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.views.permissions",
+          "text": "Are views protected with appropriate permission checks?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Views should check authentication and authorization. Use @login_required, @permission_required, or LoginRequiredMixin/PermissionRequiredMixin.",
+            "whyItMatters": "Missing permission checks allow unauthorized access to data and actions. This is a critical security vulnerability.",
+            "howToVerify": "Check that views handling sensitive data have permission decorators or mixins. Verify object-level permissions for owner-only access.",
+            "exampleComment": "This view shows user profile data but has no @login_required. Any anonymous user can access other users' profiles.",
+            "codeExamples": [],
+            "keyTakeaway": "Always add permission checks. Use object-level permissions for owner-specific resources.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.views.form-validation",
+          "text": "Are forms properly validated and errors displayed?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Django forms should be used for input validation. Errors should be displayed to users. Never trust request.POST directly.",
+            "whyItMatters": "Skipping form validation allows invalid or malicious data into the database. Missing error display frustrates users.",
+            "howToVerify": "Check that views use form.is_valid() before processing. Verify form errors are rendered in templates.",
+            "exampleComment": "This view accesses request.POST['email'] directly without form validation. Use a Django form to validate the input.",
+            "codeExamples": [],
+            "keyTakeaway": "Always validate input through Django forms. Display validation errors clearly to users.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.views.http-methods",
+          "text": "Do views handle HTTP methods correctly?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Views should respond to appropriate HTTP methods. State changes should use POST/PUT/DELETE, not GET. Use @require_http_methods or allowed_methods.",
+            "whyItMatters": "GET requests for state changes are vulnerable to CSRF (via img tags, links) and can be triggered by crawlers.",
+            "howToVerify": "Check for views that modify data on GET requests. Verify function-based views restrict to appropriate methods.",
+            "exampleComment": "This view deletes a record on GET request. Use POST or DELETE with @require_POST decorator.",
+            "codeExamples": [],
+            "keyTakeaway": "Never modify state on GET. Use @require_POST or @require_http_methods for mutation views.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.views.pagination",
+          "text": "Are list views paginated?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Views that list objects should use Django's Paginator or ListView's paginate_by to limit results per page.",
+            "whyItMatters": "Unpaginated lists load all objects into memory, causing OOM errors and slow response times as data grows.",
+            "howToVerify": "Check list views for pagination. Verify paginate_by is set on ListViews. Check that templates include pagination controls.",
+            "exampleComment": "This ListView has no paginate_by. With 100K records, this will be extremely slow. Add paginate_by = 25.",
+            "codeExamples": [],
+            "keyTakeaway": "Always paginate list views. Set a reasonable page size based on your UI.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "django.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "django.security.csrf",
+          "text": "Is CSRF protection enabled and properly used?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Django's CSRF middleware should be enabled. Forms must include {% csrf_token %}. AJAX requests need the CSRF cookie header.",
+            "whyItMatters": "Disabling CSRF protection or using @csrf_exempt allows cross-site request forgery attacks.",
+            "howToVerify": "Check for @csrf_exempt usage. Verify forms include {% csrf_token %}. Check that AJAX setups include CSRF headers.",
+            "exampleComment": "This view uses @csrf_exempt without justification. Remove it or add a comment explaining why CSRF protection is disabled.",
+            "codeExamples": [],
+            "keyTakeaway": "Never disable CSRF without a documented reason. Always include {% csrf_token %} in forms.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.security.raw-sql",
+          "text": "Is raw SQL avoided or properly parameterized?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Django's ORM prevents SQL injection by default. Raw SQL (raw(), extra(), RawSQL) must use parameterized queries, never string formatting.",
+            "whyItMatters": "SQL injection via raw queries can lead to complete database compromise, data theft, and data destruction.",
+            "howToVerify": "Search for .raw(), .extra(), RawSQL, and cursor.execute(). Verify they use parameterized queries with %s placeholders.",
+            "exampleComment": "This uses f-string formatting in raw(): Model.objects.raw(f'SELECT * WHERE id={id}'). Use parameterized: raw('SELECT * WHERE id=%s', [id]).",
+            "codeExamples": [],
+            "keyTakeaway": "Use the ORM whenever possible. When raw SQL is needed, always parameterize.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.security.template-escaping",
+          "text": "Is template auto-escaping preserved (no unsafe |safe or {% autoescape off %})?",
+          "severity": "major",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Django auto-escapes template variables to prevent XSS. Using |safe or {% autoescape off %} disables this protection.",
+            "whyItMatters": "Marking user input as safe enables XSS attacks. Attackers can inject JavaScript that steals sessions and credentials.",
+            "howToVerify": "Search for |safe and {% autoescape off %}. Verify the content is truly trusted (not user-generated) before marking safe.",
+            "exampleComment": "This renders user.bio|safe. If users can edit their bio, this is an XSS vulnerability. Remove |safe or sanitize the HTML.",
+            "codeExamples": [],
+            "keyTakeaway": "Never mark user input as safe. Use bleach or similar to sanitize HTML if needed.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.security.secrets",
+          "text": "Are SECRET_KEY and credentials kept out of settings.py?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "SECRET_KEY, database passwords, and API keys should be loaded from environment variables or a secrets manager, not hardcoded in settings.",
+            "whyItMatters": "Hardcoded secrets in source code are exposed to everyone with repository access. Leaked SECRET_KEY compromises all sessions.",
+            "howToVerify": "Check settings.py for hardcoded credentials. Verify SECRET_KEY, DATABASE_PASSWORD, and API keys use os.environ or django-environ.",
+            "exampleComment": "SECRET_KEY is hardcoded in settings.py. Load it from an environment variable: SECRET_KEY = os.environ['DJANGO_SECRET_KEY'].",
+            "codeExamples": [],
+            "keyTakeaway": "Never hardcode secrets. Use environment variables or a secrets manager.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.security.debug-production",
+          "text": "Is DEBUG=False in production settings?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "DEBUG=True exposes detailed error pages with stack traces, settings, and environment variables to users.",
+            "whyItMatters": "Debug pages leak sensitive information: database credentials, API keys, file paths, and installed packages.",
+            "howToVerify": "Check production settings for DEBUG=True. Verify ALLOWED_HOSTS is set (required when DEBUG=False).",
+            "exampleComment": "DEBUG is set to True in the production settings file. Set it to False and configure ALLOWED_HOSTS.",
+            "codeExamples": [],
+            "keyTakeaway": "Never run DEBUG=True in production. Use separate settings files for development and production.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "django.rest",
+      "title": "Django REST Framework",
+      "items": [
+        {
+          "id": "django.rest.serializer-validation",
+          "text": "Do serializers validate all input fields?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "DRF serializers should validate input using field-level validators, validate() method, or Meta.extra_kwargs.",
+            "whyItMatters": "Missing validation allows invalid data into the database. Over-permissive serializers may allow mass-assignment attacks.",
+            "howToVerify": "Check that serializers define fields explicitly (not fields = '__all__'). Verify read_only_fields excludes sensitive fields.",
+            "exampleComment": "This serializer uses fields = '__all__' which exposes is_staff and is_superuser. List fields explicitly.",
+            "codeExamples": [],
+            "keyTakeaway": "Always list serializer fields explicitly. Use read_only_fields for fields users shouldn't modify.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.rest.permissions",
+          "text": "Are DRF permission classes properly configured?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "ViewSets and APIViews should define permission_classes. Use IsAuthenticated, IsAdminUser, or custom permissions as appropriate.",
+            "whyItMatters": "The default permission is AllowAny in many configs. Missing permission classes expose endpoints to unauthenticated users.",
+            "howToVerify": "Check that sensitive ViewSets have permission_classes. Verify DEFAULT_PERMISSION_CLASSES in settings is restrictive.",
+            "exampleComment": "This ViewSet has no permission_classes and the default is AllowAny. Add permission_classes = [IsAuthenticated].",
+            "codeExamples": [],
+            "keyTakeaway": "Set restrictive default permissions. Override per-view only when needed.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.rest.throttling",
+          "text": "Is API rate limiting configured?",
+          "severity": "minor",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "DRF provides throttling classes to limit request rates. Configure DEFAULT_THROTTLE_RATES for anonymous and authenticated users.",
+            "whyItMatters": "Without rate limiting, APIs are vulnerable to abuse, brute force attacks, and resource exhaustion.",
+            "howToVerify": "Check settings for DEFAULT_THROTTLE_CLASSES and DEFAULT_THROTTLE_RATES. Verify sensitive endpoints have tighter limits.",
+            "exampleComment": "There's no throttling configured. Add DEFAULT_THROTTLE_RATES: {'anon': '100/hour', 'user': '1000/hour'} to settings.",
+            "codeExamples": [],
+            "keyTakeaway": "Configure rate limiting for all APIs. Use tighter limits for authentication endpoints.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "django.testing",
+      "title": "Testing & Quality",
+      "items": [
+        {
+          "id": "django.testing.test-coverage",
+          "text": "Are views and models tested with meaningful test cases?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Views should be tested for correct status codes, template usage, and context. Models should test custom methods and constraints.",
+            "whyItMatters": "Untested views can break silently. Missing model tests allow business logic regressions.",
+            "howToVerify": "Check for test files matching the views and models being changed. Verify tests cover success, failure, and edge cases.",
+            "exampleComment": "This new view has no tests. Add tests for authenticated/unauthenticated access, valid/invalid input, and the success case.",
+            "codeExamples": [],
+            "keyTakeaway": "Test views for access control, input validation, and correct responses. Test models for business logic.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.testing.test-client",
+          "text": "Do tests use Django's test client and RequestFactory appropriately?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use TestCase with self.client for integration tests. Use RequestFactory for unit-testing individual views without middleware.",
+            "whyItMatters": "Using the wrong test tool makes tests either too slow (full client for unit tests) or too shallow (missing middleware effects).",
+            "howToVerify": "Check that integration tests use the test client (tests middleware, URL routing). Check that unit tests use RequestFactory when appropriate.",
+            "exampleComment": "This test creates a Request manually. Use self.client.get() to test through the full middleware stack.",
+            "codeExamples": [],
+            "keyTakeaway": "Use the test client for full integration tests. Use RequestFactory when you need to test a view function in isolation.",
+            "references": []
+          }
+        },
+        {
+          "id": "django.testing.fixtures",
+          "text": "Are test fixtures manageable and not overly coupled?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use factory_boy or model_bakery instead of large JSON fixtures. Create only the data each test needs.",
+            "whyItMatters": "Large shared fixtures are fragile, slow to load, and hard to maintain. Changes to one fixture can break unrelated tests.",
+            "howToVerify": "Check for large fixture files. Verify tests create their own data or use factories rather than depending on shared state.",
+            "exampleComment": "This test depends on a 500-line fixture file. Use factory_boy to create only the objects this test needs.",
+            "codeExamples": [],
+            "keyTakeaway": "Use factories over fixtures. Each test should create its own minimal data.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

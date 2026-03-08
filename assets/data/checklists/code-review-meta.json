@@ -1,0 +1,314 @@
+{
+  "meta": {
+    "id": "code-review-meta",
+    "mode": "review",
+    "title": "Code Review Meta",
+    "shortTitle": "Review Meta",
+    "description": "Meta checklist for reviewing the review itself: PR quality, commit hygiene, test coverage, and review process",
+    "icon": "🔍",
+    "totalItems": 25,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "code-review-meta.pr-quality",
+      "title": "PR Quality",
+      "items": [
+        {
+          "id": "code-review-meta.pr-quality.pr-size",
+          "text": "Is the PR a reasonable size (< 400 lines of meaningful changes)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "PRs should be small enough to review thoroughly. Large PRs get rubber-stamped because reviewers lose focus.",
+            "whyItMatters": "Studies show review quality drops sharply after 200-400 lines. Large PRs hide bugs in the volume of changes.",
+            "howToVerify": "Check the total lines changed. Exclude auto-generated files, lockfiles, and migrations from the count. If over 400 meaningful lines, consider splitting.",
+            "exampleComment": "This PR changes 1200 lines across 30 files. Consider splitting into smaller, independently reviewable PRs.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep PRs under 400 meaningful lines. Split large changes into a stack of smaller PRs.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.pr-quality.single-purpose",
+          "text": "Does the PR have a single, clear purpose?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "A PR should do one thing: fix a bug, add a feature, or refactor code. Don't mix unrelated changes.",
+            "whyItMatters": "Multi-purpose PRs are hard to review, hard to revert, and hard to bisect when bugs are found later.",
+            "howToVerify": "Read the PR description. Can the purpose be stated in one sentence? Are there changes unrelated to that purpose?",
+            "exampleComment": "This PR adds a new endpoint AND refactors the auth middleware AND fixes a typo in docs. Split these into 3 separate PRs.",
+            "codeExamples": [],
+            "keyTakeaway": "One PR, one purpose. Separate refactoring from feature work.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.pr-quality.description",
+          "text": "Does the PR have a clear description explaining what and why?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The PR description should explain what changed, why, any trade-offs made, and how to test it.",
+            "whyItMatters": "Without context, reviewers waste time understanding the motivation. Future developers can't understand historical decisions.",
+            "howToVerify": "Check the PR description. Does it explain the motivation? Is there a test plan? Are trade-offs documented?",
+            "exampleComment": "The PR description is empty. Please add what problem this solves, the approach taken, and how to test it.",
+            "codeExamples": [],
+            "keyTakeaway": "Write PR descriptions for the reviewer and for future developers. Explain why, not just what.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.pr-quality.linked-issue",
+          "text": "Is the PR linked to a ticket/issue for traceability?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "PRs should reference the ticket or issue they address. Use 'Closes #123' or link to the Jira/Linear ticket.",
+            "whyItMatters": "Unlinked PRs make it impossible to trace why a change was made. This matters during debugging and audits.",
+            "howToVerify": "Check the PR description for a ticket reference. Verify the ticket exists and the PR addresses it.",
+            "exampleComment": "Which ticket does this PR address? Please add a reference (e.g., Closes #123) for traceability.",
+            "codeExamples": [],
+            "keyTakeaway": "Link PRs to tickets. It enables traceability and automatic ticket updates.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "code-review-meta.commit-hygiene",
+      "title": "Commit Hygiene",
+      "items": [
+        {
+          "id": "code-review-meta.commit-hygiene.meaningful-commits",
+          "text": "Are commit messages meaningful and descriptive?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Commit messages should describe what changed and why. Use conventional commits or the project's commit convention.",
+            "whyItMatters": "Good commit messages enable git blame/log investigations. 'fix stuff' or 'wip' messages provide no useful context.",
+            "howToVerify": "Read the commit messages. Do they explain the change? Would they help someone debugging this code in 6 months?",
+            "exampleComment": "Commit messages like 'fix' and 'update' are not helpful. Please rewrite to describe what was fixed and why.",
+            "codeExamples": [],
+            "keyTakeaway": "Write commit messages for future developers. Describe the why, not just the what.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.commit-hygiene.logical-commits",
+          "text": "Are commits logically organized (not 'fix typo' after 'add feature')?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each commit should be a logical unit of work. Fixup commits should be squashed. The commit history should tell a story.",
+            "whyItMatters": "A clean commit history enables git bisect, makes reverts easier, and helps reviewers understand the progression.",
+            "howToVerify": "Check if commits build on each other logically. Look for fixup/WIP commits that should be squashed before merge.",
+            "exampleComment": "There are 3 'fix typo' commits after the feature commit. Squash these into the original commit before merging.",
+            "codeExamples": [],
+            "keyTakeaway": "Organize commits logically. Squash fixup commits before merging.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.commit-hygiene.no-unrelated",
+          "text": "Are there no unrelated changes snuck into commits?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Commits should only contain changes related to their message. Unrelated formatting, refactoring, or fixes should be separate.",
+            "whyItMatters": "Unrelated changes in commits make reverts risky (reverting the feature also reverts the unrelated fix) and obscure git blame.",
+            "howToVerify": "Review each commit's diff. Check if all changes relate to the commit message.",
+            "exampleComment": "This commit 'add user endpoint' also reformats 5 unrelated files. Move the formatting to a separate commit.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep commits focused. Separate unrelated changes into their own commits or PRs.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "code-review-meta.testing",
+      "title": "Test Coverage & Quality",
+      "items": [
+        {
+          "id": "code-review-meta.testing.new-tests",
+          "text": "Are new features and bug fixes accompanied by tests?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New features should have tests proving they work. Bug fixes should have tests proving the bug is fixed and preventing regression.",
+            "whyItMatters": "Code without tests will break silently in the future. Bug fixes without tests will regress when the code is changed.",
+            "howToVerify": "Check for new/modified test files. Verify tests cover the happy path, error cases, and edge cases.",
+            "exampleComment": "This adds a new payment processing function with no tests. Please add tests covering successful payment, declined card, and network errors.",
+            "codeExamples": [],
+            "keyTakeaway": "Every feature needs tests. Every bug fix needs a regression test.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.testing.test-quality",
+          "text": "Do tests actually test meaningful behavior (not just coverage)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should assert on behavior and outcomes, not implementation details. A test that passes regardless of bugs is useless.",
+            "whyItMatters": "Tests that only check 'no error thrown' or mock everything provide false confidence. They pass even when the code is broken.",
+            "howToVerify": "Read the test assertions. Would the test fail if the feature was broken? Does it test the actual behavior users care about?",
+            "exampleComment": "This test calls the function but only asserts it doesn't throw. Add assertions on the return value and side effects.",
+            "codeExamples": [],
+            "keyTakeaway": "Tests should fail when features break. Assert on behavior and outcomes, not implementation.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.testing.edge-cases",
+          "text": "Are edge cases and error paths tested?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should cover boundary conditions: empty inputs, null values, maximum sizes, concurrent access, and error responses.",
+            "whyItMatters": "Most bugs live in edge cases. Happy path tests only catch the most obvious failures.",
+            "howToVerify": "Check for tests with empty lists, null/undefined, very large inputs, duplicate entries, and error responses.",
+            "exampleComment": "Tests only cover the happy path. What happens with an empty list? A null user? A duplicate email? Add edge case tests.",
+            "codeExamples": [],
+            "keyTakeaway": "Test edge cases: empty, null, max, duplicate, concurrent, and error scenarios.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.testing.ci-passes",
+          "text": "Does CI pass (all tests, lint, build)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "All CI checks must pass before the PR is approved. Don't approve PRs with failing CI.",
+            "whyItMatters": "Approving PRs with failing CI normalizes broken builds. It's the most basic quality gate.",
+            "howToVerify": "Check the CI status on the PR. All required checks should show green. If CI is flaky, fix the flaky test.",
+            "exampleComment": "CI is failing on this PR. Please fix the failing tests before requesting review.",
+            "codeExamples": [],
+            "keyTakeaway": "Never approve a PR with failing CI. Fix tests, don't skip them.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "code-review-meta.review-process",
+      "title": "Review Process",
+      "items": [
+        {
+          "id": "code-review-meta.review-process.understand-context",
+          "text": "Do you understand the full context before leaving comments?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Read the PR description, linked tickets, and the full diff before commenting. Understand the constraints and trade-offs.",
+            "whyItMatters": "Comments without context waste everyone's time. Suggesting a change that was already considered and rejected creates friction.",
+            "howToVerify": "Before commenting, ask yourself: Did I read the PR description? Do I understand why this approach was chosen?",
+            "exampleComment": "I see this uses approach X instead of Y. Was Y considered? The PR description doesn't mention the trade-off.",
+            "codeExamples": [],
+            "keyTakeaway": "Understand the context before commenting. Read the description and linked tickets first.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.review-process.comment-severity",
+          "text": "Are review comments labeled by severity (blocker, suggestion, nit)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Prefix comments with severity: 'blocker:', 'suggestion:', 'nit:', 'question:'. This helps authors prioritize.",
+            "whyItMatters": "Without severity labels, authors don't know which comments must be addressed vs which are optional suggestions.",
+            "howToVerify": "Check if your comments clearly indicate whether they block approval or are optional improvements.",
+            "exampleComment": "nit: consider renaming this variable for clarity (non-blocking).",
+            "codeExamples": [],
+            "keyTakeaway": "Label comment severity. Make it clear what blocks approval vs what's a nice-to-have.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.review-process.constructive",
+          "text": "Are comments constructive (suggesting solutions, not just pointing out problems)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Don't just say 'this is wrong'. Explain why and suggest an alternative. Share knowledge, don't gatekeep.",
+            "whyItMatters": "Unhelpful comments create friction and slow development. Constructive reviews teach and build team capability.",
+            "howToVerify": "Read your comments from the author's perspective. Would you know how to address each comment? Is the tone respectful?",
+            "exampleComment": "Instead of 'This is wrong', try: 'This could cause X because of Y. Consider using Z approach instead — here's an example: ...'",
+            "codeExamples": [],
+            "keyTakeaway": "Be constructive. Suggest solutions, explain reasoning, and share knowledge.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.review-process.bias-check",
+          "text": "Are you reviewing the code objectively (not the person)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Review code on its merits regardless of who wrote it. Don't hold junior devs to different standards or rubber-stamp senior devs.",
+            "whyItMatters": "Biased reviews miss bugs in senior code and discourage junior developers. Everyone's code deserves equal scrutiny.",
+            "howToVerify": "Ask yourself: Would I make the same comment if someone else wrote this code? Am I being more/less critical based on the author?",
+            "exampleComment": "This is a good practice to apply consistently — the same quality standards should apply regardless of who authored the code.",
+            "codeExamples": [],
+            "keyTakeaway": "Review code, not people. Apply consistent standards regardless of author seniority.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "code-review-meta.documentation",
+      "title": "Documentation & Changelog",
+      "items": [
+        {
+          "id": "code-review-meta.documentation.breaking-changes",
+          "text": "Are breaking changes documented and communicated?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "API changes, schema changes, config changes, and removed features must be documented in the PR and changelog.",
+            "whyItMatters": "Undocumented breaking changes silently break dependent teams/services. Migration pain is multiplied by every consumer.",
+            "howToVerify": "Check if the PR changes any public API, config format, or database schema. Verify breaking changes are called out in the description.",
+            "exampleComment": "This renames the config key from 'db_url' to 'database_url'. This is a breaking change — document it and provide migration instructions.",
+            "codeExamples": [],
+            "keyTakeaway": "Document all breaking changes. Provide migration instructions for consumers.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.documentation.updated-docs",
+          "text": "Are relevant docs, comments, and README updated with the code change?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Code changes that affect behavior should update corresponding documentation, API docs, and inline comments.",
+            "whyItMatters": "Outdated documentation is worse than no documentation. It actively misleads developers and users.",
+            "howToVerify": "Check if the changed code has corresponding documentation. Verify docs, README, and API specs are updated.",
+            "exampleComment": "The README still references the old configuration format. Please update it to match the new structure.",
+            "codeExamples": [],
+            "keyTakeaway": "Update docs with code changes. Outdated docs are worse than no docs.",
+            "references": []
+          }
+        },
+        {
+          "id": "code-review-meta.documentation.deprecation",
+          "text": "Are deprecated features properly marked and scheduled for removal?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Deprecated features should be marked with @deprecated annotations, documented in the changelog, and have a planned removal date.",
+            "whyItMatters": "Undocumented deprecation surprises users. No removal timeline means deprecated code lingers forever, increasing maintenance burden.",
+            "howToVerify": "Check for deprecated code without @deprecated annotations. Verify the deprecation notice includes what to use instead and when it will be removed.",
+            "exampleComment": "This function is being replaced but has no @deprecated annotation. Add one with the alternative and planned removal version.",
+            "codeExamples": [],
+            "keyTakeaway": "Mark deprecations clearly. Include the alternative and planned removal timeline.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -29,6 +29,14 @@ import angularData from '../../assets/data/checklists/angular.json';
 import cppData from '../../assets/data/checklists/cpp.json';
 import shellData from '../../assets/data/checklists/shell.json';
 import sqlMigrationsData from '../../assets/data/checklists/sql-migrations.json';
+import nextjsData from '../../assets/data/checklists/nextjs.json';
+import djangoData from '../../assets/data/checklists/django.json';
+import springBootData from '../../assets/data/checklists/spring-boot.json';
+import elixirPhoenixData from '../../assets/data/checklists/elixir-phoenix.json';
+import scalaData from '../../assets/data/checklists/scala.json';
+import dockerK8sData from '../../assets/data/checklists/docker-k8s.json';
+import cicdData from '../../assets/data/checklists/cicd.json';
+import codeReviewMetaData from '../../assets/data/checklists/code-review-meta.json';
 
 export const CHECKLIST_IDS = [
   'java-protobuf',
@@ -56,6 +64,14 @@ export const CHECKLIST_IDS = [
   'cpp',
   'shell',
   'sql-migrations',
+  'nextjs',
+  'django',
+  'spring-boot',
+  'elixir-phoenix',
+  'scala',
+  'docker-k8s',
+  'cicd',
+  'code-review-meta',
   'polish-my-pr',
 ] as const;
 
@@ -90,6 +106,14 @@ const bundledChecklists: ChecklistMap = {
   cpp: cppData as unknown as Checklist,
   shell: shellData as unknown as Checklist,
   'sql-migrations': sqlMigrationsData as unknown as Checklist,
+  nextjs: nextjsData as unknown as Checklist,
+  django: djangoData as unknown as Checklist,
+  'spring-boot': springBootData as unknown as Checklist,
+  'elixir-phoenix': elixirPhoenixData as unknown as Checklist,
+  scala: scalaData as unknown as Checklist,
+  'docker-k8s': dockerK8sData as unknown as Checklist,
+  cicd: cicdData as unknown as Checklist,
+  'code-review-meta': codeReviewMetaData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -196,6 +220,14 @@ export function getAllReviewChecklists(): Checklist[] {
     'cpp',
     'shell',
     'sql-migrations',
+    'nextjs',
+    'django',
+    'spring-boot',
+    'elixir-phoenix',
+    'scala',
+    'docker-k8s',
+    'cicd',
+    'code-review-meta',
   ].map((id) => getChecklist(id));
 }
 
@@ -235,6 +267,38 @@ export function withSecurityChecklist(checklist: Checklist): Checklist {
       ...securityChecklist.sections.map((s) => ({
         ...s,
         title: `[Security] ${s.title}`,
+      })),
+    ],
+  };
+}
+
+/**
+ * Append code review meta checklist sections to any checklist if not already present.
+ * Code review meta is auto-included in every review and polish session.
+ */
+export function withCodeReviewMeta(checklist: Checklist): Checklist {
+  const metaChecklist = getChecklist('code-review-meta');
+  const hasMetaSections = checklist.sections.some((s) =>
+    s.id.startsWith('code-review-meta.'),
+  );
+  if (hasMetaSections) return checklist;
+
+  const metaItems = metaChecklist.sections.reduce(
+    (sum, s) => sum + getSectionItems(s).length,
+    0,
+  );
+
+  return {
+    ...checklist,
+    meta: {
+      ...checklist.meta,
+      totalItems: checklist.meta.totalItems + metaItems,
+    },
+    sections: [
+      ...checklist.sections,
+      ...metaChecklist.sections.map((s) => ({
+        ...s,
+        title: `[Review Meta] ${s.title}`,
       })),
     ],
   };

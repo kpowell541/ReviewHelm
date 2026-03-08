@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useConfidenceStore } from '../../store/useConfidenceStore';
 import { usePreferencesStore } from '../../store/usePreferencesStore';
-import { getChecklist, getPolishChecklist, getMergedChecklist, withSecurityChecklist } from '../../data/checklistLoader';
+import { getChecklist, getPolishChecklist, getMergedChecklist, withSecurityChecklist, withCodeReviewMeta } from '../../data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../../data/types';
 import type {
   Checklist,
@@ -115,7 +115,7 @@ export function ChecklistScreen({ sessionId }: Props) {
     if (!session) return null;
     if (session.mode === 'polish') {
       const effectiveIds = getEffectiveStackIds(session);
-      if (effectiveIds.length === 0) return withSecurityChecklist(getPolishChecklist());
+      if (effectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
       // Merge domain checklists + polish checklist for self-reviews with a stack
       const domainChecklist = effectiveIds.length === 1
         ? getChecklist(effectiveIds[0])
@@ -132,14 +132,14 @@ export function ChecklistScreen({ sessionId }: Props) {
         },
         sections: [...domainChecklist.sections, ...polishChecklist.sections],
       };
-      return withSecurityChecklist(merged);
+      return withCodeReviewMeta(withSecurityChecklist(merged));
     }
     const effectiveIds = getEffectiveStackIds(session);
     if (effectiveIds.length === 0) return null;
     const base = effectiveIds.length === 1
       ? getChecklist(effectiveIds[0])
       : getMergedChecklist(effectiveIds, session.selectedSections);
-    return withSecurityChecklist(base);
+    return withCodeReviewMeta(withSecurityChecklist(base));
   }, [session]);
 
   const allItems = useMemo(() => (checklist ? getAllChecklistItems(checklist) : []), [checklist]);

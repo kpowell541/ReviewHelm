@@ -17,6 +17,7 @@ import {
   getPolishChecklist,
   getMergedChecklist,
   withSecurityChecklist,
+  withCodeReviewMeta,
 } from '../../src/data/checklistLoader';
 import {
   getAllChecklistItems,
@@ -52,12 +53,12 @@ export default function SessionSummaryScreen() {
     if (!session) return null;
     if (session.mode === 'polish') {
       const effectiveIds = getEffectiveStackIds(session);
-      if (effectiveIds.length === 0) return withSecurityChecklist(getPolishChecklist());
+      if (effectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
       const domainChecklist = effectiveIds.length === 1
         ? getChecklist(effectiveIds[0])
         : getMergedChecklist(effectiveIds, session.selectedSections);
       const polishCl = getPolishChecklist();
-      return withSecurityChecklist({
+      return withCodeReviewMeta(withSecurityChecklist({
         ...domainChecklist,
         meta: {
           ...domainChecklist.meta,
@@ -67,14 +68,14 @@ export default function SessionSummaryScreen() {
           totalItems: domainChecklist.meta.totalItems + polishCl.meta.totalItems,
         },
         sections: [...domainChecklist.sections, ...polishCl.sections],
-      });
+      }));
     }
     const effectiveIds = getEffectiveStackIds(session);
     if (effectiveIds.length === 0) return null;
     const base = effectiveIds.length === 1
       ? getChecklist(effectiveIds[0])
       : getMergedChecklist(effectiveIds, session.selectedSections);
-    return withSecurityChecklist(base);
+    return withCodeReviewMeta(withSecurityChecklist(base));
   }, [session]);
 
   const allItems = useMemo(
