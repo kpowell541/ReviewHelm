@@ -1,3 +1,4 @@
+import 'expo-crypto';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
