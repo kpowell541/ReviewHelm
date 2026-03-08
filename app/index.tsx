@@ -157,7 +157,7 @@ export default function HomeScreen() {
             style={styles.headerSettingsBtn}
             onPress={() => router.push('/settings')}
           >
-            <Text style={styles.headerSettingsIcon}>&#x2638;</Text>
+            <Text style={styles.headerSettingsIcon}>&#x2699;&#xFE0E;</Text>
           </Pressable>
         </View>
         <Text style={styles.appSubtitle}>

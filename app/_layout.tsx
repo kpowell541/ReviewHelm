@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Alert, AppState, Image, Platform, StyleSheet, Text, View } from 'react-native';
 import type { AppStateStatus } from 'react-native';
@@ -134,54 +134,12 @@ export default function RootLayout() {
     );
   }
 
-  // Gate: onboarding first, then auth, then app
-  if (!hasCompletedOnboarding) {
-    return (
-      <ErrorBoundary>
-      <ThemeProvider>
-        <StatusBar style="auto" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.bg },
-            headerTintColor: colors.textPrimary,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          <Stack.Screen
-            name="onboarding"
-            options={{ headerShown: false, animation: 'fade' }}
-          />
-        </Stack>
-      </ThemeProvider>
-      </ErrorBoundary>
-    );
-  }
-
-  if (!authUser) {
-    return (
-      <ErrorBoundary>
-      <ThemeProvider>
-        <StatusBar style="auto" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.bg },
-            headerTintColor: colors.textPrimary,
-            contentStyle: { backgroundColor: colors.bg },
-          }}
-        >
-          <Stack.Screen
-            name="auth/login"
-            options={{ title: 'Sign In', headerShown: false }}
-          />
-          <Stack.Screen
-            name="auth/signup"
-            options={{ title: 'Sign Up' }}
-          />
-        </Stack>
-      </ThemeProvider>
-      </ErrorBoundary>
-    );
-  }
+  // Determine redirect target based on auth state
+  const redirectTo = !hasCompletedOnboarding
+    ? '/onboarding'
+    : !authUser
+      ? '/auth/login'
+      : null;
 
   return (
     <ErrorBoundary>
@@ -207,9 +165,22 @@ export default function RootLayout() {
           ),
         }}
       >
+        {redirectTo && <Redirect href={redirectTo} />}
         <Stack.Screen
           name="index"
           options={{ title: 'Home', headerShown: false }}
+        />
+        <Stack.Screen
+          name="onboarding"
+          options={{ headerShown: false, animation: 'fade' }}
+        />
+        <Stack.Screen
+          name="auth/login"
+          options={{ title: 'Sign In', headerShown: false }}
+        />
+        <Stack.Screen
+          name="auth/signup"
+          options={{ title: 'Sign Up' }}
         />
         <Stack.Screen
           name="review/stack-select"
