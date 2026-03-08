@@ -1,11 +1,13 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Modal, TextInput, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { AppFooter } from '../src/components/AppFooter';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { usePreferencesStore } from '../src/store/usePreferencesStore';
+import { useAuthStore } from '../src/store/useAuthStore';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
@@ -70,6 +72,20 @@ function RecentSessionCard({ session }: { session: { id: string; title: string; 
       </Text>
     </Pressable>
   );
+}
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const hasCompletedOnboarding = usePreferencesStore((s) => s.hasCompletedOnboarding);
+  const authUser = useAuthStore((s) => s.user);
+
+  if (!hasCompletedOnboarding) {
+    return <Redirect href="/onboarding" />;
+  }
+  if (!authUser) {
+    return <Redirect href="/auth/login" />;
+  }
+
+  return <>{children}</>;
 }
 
 export default function HomeScreen() {
@@ -139,6 +155,7 @@ export default function HomeScreen() {
   }, [prs]);
 
   return (
+    <AuthGate>
     <SafeAreaView style={styles.container}>
       <DesktopContainer>
       <ScrollView contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}>
@@ -487,6 +504,7 @@ export default function HomeScreen() {
         </Pressable>
       </Modal>
     </SafeAreaView>
+    </AuthGate>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Stack, Redirect } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Alert, AppState, Image, Platform, StyleSheet, Text, View } from 'react-native';
 import type { AppStateStatus } from 'react-native';
@@ -22,7 +22,6 @@ export default function RootLayout() {
   const preferencesHydrated = usePreferencesStore((s) => s.hasHydrated);
   const loadApiKey = usePreferencesStore((s) => s.loadApiKey);
   const isApiKeyLoaded = usePreferencesStore((s) => s.isApiKeyLoaded);
-  const hasCompletedOnboarding = usePreferencesStore((s) => s.hasCompletedOnboarding);
 
   const sessionsHydrated = useSessionStore((s) => s.hasHydrated);
   const confidenceHydrated = useConfidenceStore((s) => s.hasHydrated);
@@ -134,13 +133,6 @@ export default function RootLayout() {
     );
   }
 
-  // Determine redirect target based on auth state
-  const redirectTo = !hasCompletedOnboarding
-    ? '/onboarding'
-    : !authUser
-      ? '/auth/login'
-      : null;
-
   return (
     <ErrorBoundary>
     <ThemeProvider>
@@ -165,7 +157,6 @@ export default function RootLayout() {
           ),
         }}
       >
-        {redirectTo && <Redirect href={redirectTo} />}
         <Stack.Screen
           name="index"
           options={{ title: 'Home', headerShown: false }}
