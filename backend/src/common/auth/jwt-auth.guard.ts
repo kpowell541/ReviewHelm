@@ -118,7 +118,7 @@ export class JwtAuthGuard implements CanActivate {
       const verified = await jose.jwtVerify(token, jwks, {
         issuer: this.issuer,
         audience: this.audience,
-        algorithms: ['RS256'],
+        algorithms: ['RS256', 'ES256'],
       });
       return verified.payload as Record<string, unknown>;
     } catch {
