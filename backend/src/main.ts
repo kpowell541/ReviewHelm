@@ -1,5 +1,11 @@
 import 'reflect-metadata';
-import { randomUUID } from 'node:crypto';
+import { webcrypto, randomUUID } from 'node:crypto';
+
+// Polyfill globalThis.crypto for jose ES256 verification on Node < 20
+if (typeof globalThis.crypto === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (globalThis as any).crypto = webcrypto;
+}
 import express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
