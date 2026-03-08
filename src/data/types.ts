@@ -43,7 +43,12 @@ export type StackId =
   | 'r-lang'
   | 'nosql'
   | 'package-bundler'
-  | 'bdd-testing';
+  | 'bdd-testing'
+  | 'unit-testing'
+  | 'e2e-testing'
+  | 'api-testing'
+  | 'performance-testing'
+  | 'mobile-testing';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,

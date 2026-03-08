@@ -322,6 +322,46 @@ export const STACKS: StackInfo[] = [
     icon: '🥒',
     color: '#23D96C',
   },
+  {
+    id: 'unit-testing',
+    title: 'Unit Testing',
+    shortTitle: 'Unit Tests',
+    description: 'Jest, Vitest, pytest, JUnit unit testing patterns and best practices',
+    icon: '🧪',
+    color: '#C21325',
+  },
+  {
+    id: 'e2e-testing',
+    title: 'E2E Testing',
+    shortTitle: 'E2E Tests',
+    description: 'Cypress, Playwright, Selenium end-to-end testing patterns',
+    icon: '🎭',
+    color: '#2EAD33',
+  },
+  {
+    id: 'api-testing',
+    title: 'API & Integration Testing',
+    shortTitle: 'API Tests',
+    description: 'API testing, contract testing, and integration testing',
+    icon: '🔌',
+    color: '#FF6C37',
+  },
+  {
+    id: 'performance-testing',
+    title: 'Performance & Load Testing',
+    shortTitle: 'Perf Tests',
+    description: 'Load testing with k6/JMeter, Lighthouse, and performance profiling',
+    icon: '⚡',
+    color: '#7B61FF',
+  },
+  {
+    id: 'mobile-testing',
+    title: 'Mobile Testing',
+    shortTitle: 'Mobile Tests',
+    description: 'Detox, XCTest, Espresso, device testing, and mobile accessibility',
+    icon: '📱',
+    color: '#61DAFB',
+  },
 ];
 
 export function getStackInfo(stackId: StackId): StackInfo {

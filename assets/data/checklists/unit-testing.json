@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "id": "unit-testing",
+    "mode": "review",
+    "title": "Unit Testing",
+    "shortTitle": "Unit Tests",
+    "description": "Jest, Vitest, pytest, JUnit, xUnit unit testing patterns and best practices",
+    "icon": "\ud83e\uddea",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "unit-testing.structure",
+      "title": "Test Structure & Organization",
+      "items": [
+        {
+          "id": "unit-testing.structure.arrange-act-assert",
+          "text": "Do tests follow the Arrange-Act-Assert (AAA) pattern?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each test should have three clear phases: set up inputs (Arrange), call the code under test (Act), verify the result (Assert).",
+            "whyItMatters": "AAA makes tests readable and consistent. Readers instantly know what's being tested and what the expectation is.",
+            "howToVerify": "Check that each test has a clear setup, a single action, and explicit assertions. Look for tests that mix these phases.",
+            "exampleComment": "This test mixes setup and assertions throughout. Restructure into clear Arrange/Act/Assert sections.",
+            "codeExamples": [],
+            "keyTakeaway": "Follow AAA: set up, act, assert. One action per test.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.structure.descriptive-names",
+          "text": "Do test names describe the behavior being tested?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test names should describe what is being tested, under what conditions, and the expected outcome. Not 'test1' or 'testFunction'.",
+            "whyItMatters": "When a test fails, the name is the first thing you read. Good names tell you exactly what broke without reading the test body.",
+            "howToVerify": "Read test names without the test body. Can you tell what behavior is being verified? If not, the name needs improvement.",
+            "exampleComment": "'testCalculate' doesn't describe the behavior. Use 'should return total with tax when items have taxable flag'.",
+            "codeExamples": [],
+            "keyTakeaway": "Name tests by behavior: 'should [expected] when [condition]'. The name should explain the failure.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.structure.single-assertion",
+          "text": "Does each test verify a single concept?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each test should verify one behavior or concept. Multiple unrelated assertions in one test make it hard to diagnose failures.",
+            "whyItMatters": "Multi-assertion tests hide failures. If the first assertion fails, you never know if the others would have passed.",
+            "howToVerify": "Check for tests with many unrelated assertions. Related assertions (e.g., checking multiple properties of a result) are fine.",
+            "exampleComment": "This test checks creation, update, and deletion in one test. Split into three tests, each verifying one operation.",
+            "codeExamples": [],
+            "keyTakeaway": "One concept per test. Multiple related assertions are fine; multiple unrelated behaviors are not.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.structure.test-grouping",
+          "text": "Are tests logically grouped (describe/context blocks)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Group related tests using describe/context blocks. Group by method, feature, or scenario for clear organization.",
+            "whyItMatters": "Grouped tests are easier to navigate. describe blocks provide context and allow shared setup via beforeEach.",
+            "howToVerify": "Check that related tests are in the same describe block. Verify nesting isn't too deep (3 levels max).",
+            "exampleComment": "These 20 tests are all at the top level. Group by method: describe('calculate'), describe('validate'), etc.",
+            "codeExamples": [],
+            "keyTakeaway": "Group tests with describe/context. Keep nesting shallow (2-3 levels max).",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.structure.no-logic-in-tests",
+          "text": "Are tests free of conditional logic (no if/else, loops, try/catch)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should be simple, linear code. No if/else, for loops, or try/catch. Each test should be a straight line from setup to assertion.",
+            "whyItMatters": "Logic in tests can silently skip assertions. A try/catch that swallows errors means the test always passes.",
+            "howToVerify": "Search for if/else, for/while, and try/catch in test files. Each should be replaced with separate test cases.",
+            "exampleComment": "This test has a for loop over test cases. Use parameterized tests (test.each/pytest.mark.parametrize) instead.",
+            "codeExamples": [],
+            "keyTakeaway": "No logic in tests. Use parameterized tests for data-driven scenarios.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.structure.setup-teardown",
+          "text": "Is shared setup in beforeEach/setUp, not duplicated across tests?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Common setup code shared by multiple tests should be in beforeEach/setUp hooks. Test-specific setup stays in the test.",
+            "whyItMatters": "Duplicated setup is hard to maintain and makes tests verbose. Shared setup in hooks keeps tests focused on what's unique.",
+            "howToVerify": "Look for identical setup code repeated across tests. This should be in beforeEach. Verify beforeEach isn't doing too much.",
+            "exampleComment": "Every test creates a new User with the same data. Move user creation to beforeEach.",
+            "codeExamples": [],
+            "keyTakeaway": "Share common setup in hooks. Keep test-specific setup in the test.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "unit-testing.mocking",
+      "title": "Mocking & Test Doubles",
+      "items": [
+        {
+          "id": "unit-testing.mocking.minimal-mocks",
+          "text": "Are mocks kept to a minimum (only external dependencies)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Only mock what you must: external services, databases, network calls, time. Don't mock the code under test or simple value objects.",
+            "whyItMatters": "Over-mocking tests the mocks, not the code. Tests pass but the real code is broken because mocks don't behave like the real thing.",
+            "howToVerify": "Check if mocks replace internal code that could be used directly. Verify each mock represents a genuine external dependency.",
+            "exampleComment": "This mocks the Calculator class to test OrderService. Use the real Calculator — it's fast and deterministic.",
+            "codeExamples": [],
+            "keyTakeaway": "Mock boundaries (APIs, databases, clocks). Don't mock the code you're testing.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.mocking.mock-verification",
+          "text": "Are mock interactions verified (calls, arguments, call count)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When using mocks for side effects, verify the mock was called with correct arguments. Don't just check the return value.",
+            "whyItMatters": "A test that mocks an email service but never verifies send() was called doesn't actually test that emails are sent.",
+            "howToVerify": "Check that mocked side effects (API calls, database writes, events) have corresponding verification assertions.",
+            "exampleComment": "This mocks the payment service but never verifies charge() was called. Add expect(paymentService.charge).toHaveBeenCalledWith(amount).",
+            "codeExamples": [],
+            "keyTakeaway": "Verify mock interactions: what was called, with what arguments, how many times.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.mocking.mock-cleanup",
+          "text": "Are mocks properly reset between tests?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Reset or restore mocks in afterEach/tearDown. Leaked mocks from one test affect subsequent tests, causing flaky failures.",
+            "whyItMatters": "A mock from test A leaking into test B causes order-dependent failures. Tests pass individually but fail together.",
+            "howToVerify": "Check for jest.restoreAllMocks(), mockReset(), or equivalent in afterEach. Verify module-level mocks are cleaned up.",
+            "exampleComment": "jest.spyOn(Date, 'now') is never restored. Add jest.restoreAllMocks() in afterEach to prevent leaking.",
+            "codeExamples": [],
+            "keyTakeaway": "Always clean up mocks. Use afterEach with restoreAllMocks() or equivalent.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.mocking.implementation-coupling",
+          "text": "Do mocks avoid coupling tests to implementation details?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Don't mock internal methods or verify private implementation. Test the public interface and observable behavior.",
+            "whyItMatters": "Tests coupled to implementation break on every refactor. You can't rename a private method without fixing dozens of tests.",
+            "howToVerify": "Check if tests mock internal/private methods. Verify tests would still pass after an internal refactor.",
+            "exampleComment": "This test mocks the private _calculateDiscount method. Test the public getTotal() method instead and verify the final result.",
+            "codeExamples": [],
+            "keyTakeaway": "Test public behavior, not private implementation. Tests should survive refactoring.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.mocking.realistic-data",
+          "text": "Do test fixtures use realistic data (not 'foo', 'bar', 123)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use realistic test data that resembles production. Real names, valid emails, plausible amounts. Use factories or builders.",
+            "whyItMatters": "Placeholder data hides edge cases. 'foo@bar.com' won't catch email parsing bugs that 'user+tag@sub.domain.co.uk' would.",
+            "howToVerify": "Check for 'test', 'foo', 'bar', '123' in test data. Verify test data represents realistic production scenarios.",
+            "exampleComment": "Using name: 'foo' and amount: 1 doesn't test real scenarios. Use realistic data: name: 'Jane Smith', amount: 49.99.",
+            "codeExamples": [],
+            "keyTakeaway": "Use realistic test data. Consider factories (fishery, factory_bot, AutoFixture) for consistency.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.mocking.snapshot-overuse",
+          "text": "Are snapshot tests used appropriately (not as a lazy catch-all)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Snapshot tests capture output and compare to a stored file. They're good for UI components but bad for logic testing.",
+            "whyItMatters": "Large snapshots are never actually reviewed. Developers update them blindly, defeating their purpose. They catch changes, not bugs.",
+            "howToVerify": "Check snapshot size — large snapshots are red flags. Verify snapshots test visual output, not logic or data structures.",
+            "exampleComment": "This 500-line snapshot tests an API response. Write explicit assertions on the fields that matter instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use snapshots for UI output. Use explicit assertions for logic. Keep snapshots small and focused.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "unit-testing.assertions",
+      "title": "Assertions & Coverage",
+      "items": [
+        {
+          "id": "unit-testing.assertions.specific-matchers",
+          "text": "Are specific matchers used instead of generic assertTrue/toBeTruthy?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use toEqual, toContain, toThrow instead of toBeTruthy/assertTrue. Specific matchers give better error messages on failure.",
+            "whyItMatters": "assertTrue(result.includes('error')) says 'expected true, got false'. toContain('error') says 'expected array to contain error'.",
+            "howToVerify": "Check for assertTrue/toBeTruthy with computed expressions. These should use specific matchers.",
+            "exampleComment": "expect(result.length > 0).toBe(true) gives a bad error message. Use expect(result).toHaveLength(expect.any(Number)) or similar.",
+            "codeExamples": [],
+            "keyTakeaway": "Use specific matchers. Better error messages mean faster debugging.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.assertions.error-cases",
+          "text": "Are error cases and edge cases tested (not just happy paths)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test what happens with invalid input, empty data, null values, boundary conditions, and concurrent access.",
+            "whyItMatters": "Happy-path-only tests miss the most common bugs. Errors in error handling are the hardest to debug in production.",
+            "howToVerify": "For each function tested, verify there are tests for: empty input, null/undefined, boundary values, invalid types, error conditions.",
+            "exampleComment": "This only tests successful login. Add tests for: wrong password, locked account, expired token, missing fields.",
+            "codeExamples": [],
+            "keyTakeaway": "Test error paths as thoroughly as happy paths. Every if/else branch should have a test.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.assertions.async-handling",
+          "text": "Are async tests properly awaited (no fire-and-forget)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Async tests must await promises or use done callbacks. A test without await on an async call passes before assertions run.",
+            "whyItMatters": "Un-awaited async tests always pass because assertions run after the test completes. The test is green but tests nothing.",
+            "howToVerify": "Check for async operations without await. Verify promise rejections are caught with rejects/toThrow. Check for floating promises.",
+            "exampleComment": "This calls fetchUser() without await. The test passes before the assertion executes. Add await before fetchUser().",
+            "codeExamples": [],
+            "keyTakeaway": "Always await async operations in tests. Un-awaited tests silently pass without testing anything.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.assertions.exception-testing",
+          "text": "Are exceptions tested for type, message, and conditions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When testing that code throws, verify the exception type and message. Don't just check that any exception was thrown.",
+            "whyItMatters": "expect(() => fn()).toThrow() passes for any error, including unexpected ones. Check the specific error you expect.",
+            "howToVerify": "Check exception tests for specific error types and messages. Verify they wouldn't pass on an unrelated error.",
+            "exampleComment": "toThrow() would pass even if the error is a TypeError from a typo. Use toThrow(new ValidationError('email required')).",
+            "codeExamples": [],
+            "keyTakeaway": "Assert on exception type and message. Generic toThrow() catches the wrong errors.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.assertions.boundary-values",
+          "text": "Are boundary values tested (0, -1, MAX_INT, empty string, null)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test at the edges: 0, 1, -1, empty arrays, max values, min values. Off-by-one errors live at boundaries.",
+            "whyItMatters": "Most bugs occur at boundaries. A pagination function that works for page 5 might break at page 0 or the last page.",
+            "howToVerify": "Check for boundary value tests. For numeric inputs, test 0, negative, max. For strings, test empty and very long.",
+            "exampleComment": "This tests pagination with page 1 and 5 but not page 0 or the last page. Add boundary tests.",
+            "codeExamples": [],
+            "keyTakeaway": "Test boundaries: 0, empty, negative, max. Most bugs hide at the edges.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.assertions.coverage-quality",
+          "text": "Does code coverage reflect meaningful tests (not just line coverage)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "High line coverage with weak assertions is useless. Tests should verify behavior, not just execute code paths.",
+            "whyItMatters": "100% coverage with no assertions tests nothing. A test that calls a function without checking the result inflates coverage.",
+            "howToVerify": "Check for tests that call functions without assertions. Verify assertions are meaningful, not just expect(result).toBeDefined().",
+            "exampleComment": "This test calls processOrder() but never checks the result. It adds coverage but tests nothing. Assert on the return value.",
+            "codeExamples": [],
+            "keyTakeaway": "Measure assertion quality, not just line coverage. Every test needs meaningful assertions.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "unit-testing.isolation",
+      "title": "Test Isolation & Reliability",
+      "items": [
+        {
+          "id": "unit-testing.isolation.no-shared-state",
+          "text": "Are tests fully isolated (no shared mutable state)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each test must create its own state. No module-level variables modified across tests. No test depending on another's output.",
+            "whyItMatters": "Shared state causes the most frustrating test failures. Tests pass individually, fail together, pass in different order.",
+            "howToVerify": "Check for module-level let variables modified in tests. Verify tests don't depend on execution order.",
+            "exampleComment": "Tests share a module-level 'users' array. Each test pushes to it, so later tests see accumulated data. Create fresh arrays per test.",
+            "codeExamples": [],
+            "keyTakeaway": "Each test gets fresh state. No shared mutable variables between tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.isolation.no-network",
+          "text": "Do unit tests avoid real network calls, file I/O, and databases?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Unit tests should be fast and isolated. Mock all external I/O: HTTP requests, database queries, file system access, timers.",
+            "whyItMatters": "Real I/O makes tests slow, flaky, and environment-dependent. A test that calls a real API fails when the API is down.",
+            "howToVerify": "Check for unmocked fetch/axios/http calls, database connections, or file system access in unit tests.",
+            "exampleComment": "This unit test calls the real payment API. Mock the HTTP client to return test responses. Integration tests can use the real API.",
+            "codeExamples": [],
+            "keyTakeaway": "Unit tests mock all I/O. Save real calls for integration tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.isolation.deterministic",
+          "text": "Are tests deterministic (no random data, no time-dependent assertions)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should produce the same result every time. Mock Date.now(), Math.random(), and other non-deterministic sources.",
+            "whyItMatters": "Non-deterministic tests are flaky. A test that fails on the 29th of February or at midnight is nearly impossible to debug.",
+            "howToVerify": "Check for Date.now(), new Date(), Math.random() without mocking. Verify time-dependent assertions use fixed timestamps.",
+            "exampleComment": "This test asserts createdAt equals new Date(). If the test runs at a millisecond boundary, it fails. Use a fixed mock time.",
+            "codeExamples": [],
+            "keyTakeaway": "Mock time and randomness. Tests must produce the same result every run.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.isolation.fast-execution",
+          "text": "Do tests run fast (under 10ms per test)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Unit tests should be extremely fast. If a test takes more than 10ms, it's probably doing real I/O or unnecessary computation.",
+            "whyItMatters": "Slow tests don't get run. A 30-second test suite gets run on every save. A 10-minute suite gets skipped or run only in CI.",
+            "howToVerify": "Check test execution times. Identify tests over 100ms. These likely need mocking or belong in integration tests.",
+            "exampleComment": "This test takes 500ms because it waits for a real timeout. Mock the timer or use fake timers.",
+            "codeExamples": [],
+            "keyTakeaway": "Unit tests should be nearly instant. Slow tests indicate missing mocks.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.isolation.no-sleep",
+          "text": "Are there no arbitrary sleeps/delays in tests?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Never use setTimeout, sleep, or Thread.sleep in tests to wait for async operations. Use proper async patterns.",
+            "whyItMatters": "Sleep-based tests are slow and flaky. 100ms is too short on CI, too long for fast feedback. Use proper async waiting.",
+            "howToVerify": "Search for sleep, setTimeout, Thread.sleep, time.sleep in test files. Replace with await, waitFor, or fake timers.",
+            "exampleComment": "This test sleeps 500ms waiting for a state update. Use waitFor() or act() to properly wait for the update.",
+            "codeExamples": [],
+            "keyTakeaway": "Never sleep in tests. Use async utilities (waitFor, act, fake timers) instead.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.isolation.parallel-safe",
+          "text": "Can tests run in parallel without interference?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should not interfere when run in parallel. No shared files, ports, database tables, or global state.",
+            "whyItMatters": "Parallel execution dramatically speeds up test suites. Tests that can't parallelize slow down CI and developer feedback.",
+            "howToVerify": "Check for hardcoded ports, shared temp files, or global singletons. Verify tests use unique identifiers for shared resources.",
+            "exampleComment": "Tests write to /tmp/test-output.json. When parallel, they overwrite each other. Use unique temp dirs per test.",
+            "codeExamples": [],
+            "keyTakeaway": "Design tests for parallel execution. Use unique resources per test.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "unit-testing.maintenance",
+      "title": "Test Maintenance & Patterns",
+      "items": [
+        {
+          "id": "unit-testing.maintenance.dry-vs-clarity",
+          "text": "Do tests prioritize clarity over DRY (some duplication is OK)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests should be readable in isolation. Some code duplication is acceptable if it makes each test self-explanatory.",
+            "whyItMatters": "Over-abstracted tests require jumping between helpers to understand. A developer should read one test and understand the full scenario.",
+            "howToVerify": "Check if test helpers obscure what's being tested. Verify each test can be understood without reading 5 other functions.",
+            "exampleComment": "This test calls setupScenario7() — what does that set up? Inline the relevant setup so the test is self-documenting.",
+            "codeExamples": [],
+            "keyTakeaway": "Tests should be readable standalone. DRY is less important than clarity in tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.maintenance.test-utilities",
+          "text": "Are test utilities (factories, builders, custom matchers) well-designed?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use factories to create test objects with sensible defaults. Use custom matchers for domain-specific assertions.",
+            "whyItMatters": "Good test utilities reduce boilerplate and make tests more expressive. Bad utilities hide important details.",
+            "howToVerify": "Check that factories allow overriding relevant fields. Verify custom matchers provide clear error messages.",
+            "exampleComment": "Every test creates a User with 10 fields. Create a userFactory that provides defaults and allows overrides.",
+            "codeExamples": [],
+            "keyTakeaway": "Build factories for test objects. Create custom matchers for domain assertions.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.maintenance.parameterized",
+          "text": "Are parameterized tests used for data-driven scenarios?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When multiple tests differ only in input/output data, use parameterized tests (test.each, @pytest.mark.parametrize, @ParameterizedTest).",
+            "whyItMatters": "Copy-pasted tests with different values are hard to maintain. Parameterized tests make it trivial to add new cases.",
+            "howToVerify": "Look for test methods that are identical except for values. These should use parameterized test features.",
+            "exampleComment": "These 5 tests only differ in the input currency. Use test.each to cover all currencies in one parameterized test.",
+            "codeExamples": [],
+            "keyTakeaway": "Use parameterized tests for data-driven scenarios. One test template, many data points.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.maintenance.no-commented-tests",
+          "text": "Are there no commented-out or skipped tests without explanation?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Commented-out tests and test.skip/xit without a reason indicate hidden failures. Fix, remove, or document why they're skipped.",
+            "whyItMatters": "Skipped tests rot. After a month, nobody remembers why they were skipped. They represent untested code.",
+            "howToVerify": "Search for xit, test.skip, @Ignore, @pytest.mark.skip, and commented-out test methods. Each needs a reason or should be removed.",
+            "exampleComment": "This test has been skipped for 6 months with no explanation. Either fix the underlying issue or remove the test.",
+            "codeExamples": [],
+            "keyTakeaway": "No unexplained skipped tests. Fix them, delete them, or add a comment explaining why.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.maintenance.test-coverage-gaps",
+          "text": "Are new code paths covered by corresponding tests?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every new function, branch, or error path should have a corresponding test. New code without tests is a regression waiting to happen.",
+            "whyItMatters": "Untested code changes are the primary source of production bugs. Tests catch regressions before they reach users.",
+            "howToVerify": "Compare new/changed code with new/changed tests. Every new if/else branch should have a test for both paths.",
+            "exampleComment": "This PR adds a new discount calculation but no tests. Add tests for: no discount, percentage discount, fixed discount, and max cap.",
+            "codeExamples": [],
+            "keyTakeaway": "New code needs new tests. No exceptions for 'simple' code — simple code has bugs too.",
+            "references": []
+          }
+        },
+        {
+          "id": "unit-testing.maintenance.regression-tests",
+          "text": "Are bug fixes accompanied by regression tests?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every bug fix should include a test that fails without the fix and passes with it. This prevents the bug from recurring.",
+            "whyItMatters": "Without a regression test, the same bug can be reintroduced by future changes. The test is proof the bug is fixed.",
+            "howToVerify": "Check bug fix PRs for accompanying tests. Verify the test would fail if the fix were reverted.",
+            "exampleComment": "This fixes a null pointer but adds no test. Add a test with the null input that triggered the bug.",
+            "codeExamples": [],
+            "keyTakeaway": "Every bug fix gets a regression test. The test should fail without the fix.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

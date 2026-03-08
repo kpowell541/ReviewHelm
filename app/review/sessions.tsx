@@ -107,7 +107,7 @@ export default function ReviewSessionsScreen() {
   const activeSessions = useMemo(() => allSessions.filter((s) => !s.isComplete), [allSessions]);
   const completedSessions = useMemo(() => allSessions.filter((s) => s.isComplete), [allSessions]);
 
-  const handleNewSession = () => {
+  const handleStartWithExistingPr = () => {
     setShowPRPicker(true);
   };
 
@@ -172,14 +172,16 @@ export default function ReviewSessionsScreen() {
         </View>
 
         <Pressable
-          onPress={handleNewSession}
+          onPress={handleStartWithExistingPr}
           style={({ pressed }) => [
             styles.newButton,
             { opacity: pressed ? 0.85 : 1 },
           ]}
         >
-          <Text style={styles.newButtonText}>+ New Review Session</Text>
+          <Text style={styles.newButtonText}>Start a new session with an existing PR</Text>
         </Pressable>
+
+        <Text style={styles.orText}>OR</Text>
 
         <Pressable
           onPress={() => setShowAddPR(true)}
@@ -188,7 +190,7 @@ export default function ReviewSessionsScreen() {
             { opacity: pressed ? 0.85 : 1 },
           ]}
         >
-          <Text style={styles.addPRButtonText}>+ Add a PR to Review</Text>
+          <Text style={styles.addPRButtonText}>Add a new PR to review</Text>
         </Pressable>
 
         {activeSessions.length > 0 && (
@@ -554,12 +556,19 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
-    marginBottom: spacing.sm,
   },
   newButtonText: {
     fontSize: fontSizes.md,
     fontWeight: '600',
     color: '#fff',
+  },
+  orText: {
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    fontSize: fontSizes['2xl'],
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 2,
   },
   addPRButton: {
     backgroundColor: colors.bgCard,

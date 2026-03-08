@@ -1201,6 +1201,90 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
 
+  /admin/dashboard/overview:
+    get:
+      tags: [Admin]
+      summary: Get admin dashboard overview with aggregate metrics
+      description: |
+        Returns anonymous aggregate metrics including user counts,
+        session statistics, AI usage, tracked PR counts, comment feedback,
+        and checklist staleness. No PII is included.
+      responses:
+        '200':
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generatedAt:
+                    type: string
+                    format: date-time
+                  privacy:
+                    type: object
+                    properties:
+                      mode:
+                        type: string
+                      piiIncluded:
+                        type: boolean
+                  users:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      active30d:
+                        type: integer
+                      new30d:
+                        type: integer
+                  sessions:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      completedTotal:
+                        type: integer
+                      completed30d:
+                        type: integer
+                      completionRatePct:
+                        type: number
+                  ai:
+                    type: object
+                    properties:
+                      calls30d:
+                        type: integer
+                      inputTokens30d:
+                        type: integer
+                      outputTokens30d:
+                        type: integer
+                  trackedPrs:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      active:
+                        type: integer
+                  commentFeedback:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      accepted:
+                        type: integer
+                      edited:
+                        type: integer
+                      rejected:
+                        type: integer
+                      acceptanceRatePct:
+                        type: number
+                  checklistStaleness:
+                    type: object
+                  checklistJob:
+                    type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
 components:
   securitySchemes:
     bearerAuth:

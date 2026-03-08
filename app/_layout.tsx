@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Alert, AppState, Image, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { AppStateStatus } from 'react-native';
 import { useFonts, Quicksand_400Regular, Quicksand_500Medium, Quicksand_600SemiBold, Quicksand_700Bold } from '@expo-google-fonts/quicksand';
 import { colors, spacing, fontSizes, ThemeProvider, useThemeColors } from '../src/theme';
@@ -19,6 +19,7 @@ import { runSync } from '../src/sync/syncEngine';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 export default function RootLayout() {
+  const router = useRouter();
   const preferencesHydrated = usePreferencesStore((s) => s.hasHydrated);
   const loadApiKey = usePreferencesStore((s) => s.loadApiKey);
   const isApiKeyLoaded = usePreferencesStore((s) => s.isApiKeyLoaded);
@@ -145,6 +146,28 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.bg },
           animation: 'slide_from_right',
           headerBackTitle: 'Back',
+          headerLeft: ({ canGoBack, tintColor }) => (
+            <Pressable
+              onPress={() => {
+                if (canGoBack) {
+                  router.back();
+                  return;
+                }
+                router.replace('/');
+              }}
+              hitSlop={8}
+              style={styles.headerNavButton}
+            >
+              <Text
+                style={[
+                  styles.headerNavButtonText,
+                  { color: tintColor ?? colors.textPrimary },
+                ]}
+              >
+                {canGoBack ? 'Back' : 'Home'}
+              </Text>
+            </Pressable>
+          ),
           headerTitleAlign: 'center',
           headerTitle: ({ children }) => (
             <View style={styles.headerTitleRow}>
@@ -315,5 +338,13 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     fontFamily: 'Quicksand_600SemiBold',
     color: colors.textPrimary,
+  },
+  headerNavButton: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  headerNavButtonText: {
+    fontSize: fontSizes.md,
+    fontFamily: 'Quicksand_600SemiBold',
   },
 });
