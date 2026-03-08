@@ -287,10 +287,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   }, [bulkSelected, sessionId, setItemResponse]);
 
   const finalizeCompletion = useCallback(() => {
-    if (!session || !checklist || session.isComplete) {
-      router.replace(`/session-summary/${sessionId}`);
-      return;
-    }
+    if (!session || !checklist) return;
 
     const itemSeverities: Record<string, { severity: Severity; sectionId: string }> = {};
     for (const section of checklist.sections) {
@@ -328,29 +325,31 @@ export function ChecklistScreen({ sessionId }: Props) {
 
   const handleComplete = useCallback(() => {
     if (!session || !scores) return;
-    if (session.isComplete) {
-      router.replace(`/session-summary/${sessionId}`);
-      return;
-    }
 
+    const isRecomplete = session.isComplete;
     const lowCoverage = scores.coverage < 70;
-    const warningSuffix = lowCoverage
+    const warningSuffix = lowCoverage && !isRecomplete
       ? `\n\nCoverage is ${scores.coverage}%. You may miss important issues if you finish now.`
       : '';
 
+    const title = isRecomplete ? 'Re-complete session?' : 'Complete session?';
+    const message = isRecomplete
+      ? 'This will update your scores and gap tracking with your latest answers.'
+      : `This will lock in your scores and save gap tracking.${warningSuffix}`;
+
     Alert.alert(
-      'Complete session?',
-      `This will lock in your scores and save gap tracking.${warningSuffix}`,
+      title,
+      message,
       [
         { text: 'Keep reviewing', style: 'cancel' },
         {
-          text: 'Complete',
+          text: isRecomplete ? 'Re-complete' : 'Complete',
           style: 'default',
           onPress: finalizeCompletion,
         },
       ],
     );
-  }, [session, scores, router, sessionId, finalizeCompletion]);
+  }, [session, scores, finalizeCompletion]);
 
   if (!session || !checklist || !scores) {
     return (
@@ -534,15 +533,13 @@ export function ChecklistScreen({ sessionId }: Props) {
           <View style={styles.footer}>
             <Pressable
               onPress={handleComplete}
-              disabled={session.isComplete}
               style={({ pressed }) => [
                 styles.completeButton,
-                session.isComplete && styles.completeButtonDisabled,
                 { opacity: pressed ? 0.85 : 1 },
               ]}
             >
               <Text style={styles.completeButtonText}>
-                {session.isComplete ? 'Session Completed' : 'Complete Session'}
+                {session.isComplete ? 'Re-complete Session' : 'Complete Session'}
               </Text>
             </Pressable>
           </View>
