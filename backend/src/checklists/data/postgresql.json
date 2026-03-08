@@ -1,0 +1,898 @@
+{
+  "meta": {
+    "id": "postgresql",
+    "mode": "review",
+    "title": "PostgreSQL",
+    "shortTitle": "PostgreSQL",
+    "description": "Review checklist for PostgreSQL migrations, schema design, and queries",
+    "icon": "\ud83d\udc18",
+    "totalItems": 38,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "postgresql.migration-safety",
+      "title": "Migration Safety",
+      "items": [
+        {
+          "id": "postgresql.migration-safety.reversible-migration",
+          "text": "Is the migration reversible (has a corresponding down/rollback)?",
+          "severity": "major",
+          "tags": [
+            "migration"
+          ],
+          "baseContent": {
+            "whatItMeans": "Every migration should have a rollback strategy \u2014 either a down migration or a documented manual rollback plan.",
+            "whyItMatters": "If a deployment goes wrong, you need to roll back quickly. Irreversible migrations force you to write a new forward migration under pressure.",
+            "howToVerify": "Check if a down migration exists. Does it correctly undo the up migration? Has the rollback been tested?",
+            "exampleComment": "This migration adds a column and backfills data but has no down migration. Add one that removes the column.",
+            "codeExamples": [
+              {
+                "label": "Reversible",
+                "language": "sql",
+                "code": "-- Up\nALTER TABLE users ADD COLUMN display_name TEXT;\n\n-- Down\nALTER TABLE users DROP COLUMN display_name;"
+              }
+            ],
+            "keyTakeaway": "Every up migration needs a down migration. Test both directions.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.migration-safety.zero-downtime-safe",
+          "text": "Can this migration run without downtime (no exclusive locks on hot tables)?",
+          "severity": "blocker",
+          "tags": [
+            "migration",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Migrations that take exclusive locks on heavily-used tables cause downtime. ALTER TABLE operations vary in lock requirements.",
+            "whyItMatters": "An ALTER TABLE on a table with millions of rows can lock it for minutes, blocking all reads and writes and causing an outage.",
+            "howToVerify": "Check for ALTER TABLE on large tables. Adding a column with a default (pre-PG11) requires a full table rewrite. Adding NOT NULL without a default requires a full scan.",
+            "exampleComment": "This adds a NOT NULL constraint to a table with 50M rows. Use ADD CONSTRAINT ... NOT VALID followed by VALIDATE CONSTRAINT to avoid a full table lock.",
+            "codeExamples": [
+              {
+                "label": "Blocking",
+                "language": "sql",
+                "code": "ALTER TABLE orders ADD COLUMN status TEXT NOT NULL DEFAULT 'pending';"
+              },
+              {
+                "label": "Non-blocking (PG 11+)",
+                "language": "sql",
+                "code": "-- PG 11+ adds columns with defaults without rewriting\nALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'pending';\n-- Then add NOT NULL separately:\nALTER TABLE orders ALTER COLUMN status SET NOT NULL;"
+              }
+            ],
+            "keyTakeaway": "Test migrations against production-sized data. What takes 1ms on dev can take 10 minutes on prod.",
+            "references": [
+              "https://www.postgresql.org/docs/current/sql-altertable.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.migration-safety.transaction-wrapped",
+          "text": "Is the migration wrapped in a transaction (or explicitly opted out)?",
+          "severity": "major",
+          "tags": [
+            "migration"
+          ],
+          "baseContent": {
+            "whatItMeans": "DDL in PostgreSQL is transactional \u2014 migrations should use transactions so partial failures don't leave the schema in a broken state.",
+            "whyItMatters": "A migration that fails halfway without a transaction leaves the database in an inconsistent state that's painful to fix manually.",
+            "howToVerify": "Does the migration tool wrap DDL in a transaction? If not, is there a BEGIN/COMMIT? Are there operations that can't run in a transaction (CREATE INDEX CONCURRENTLY)?",
+            "exampleComment": "This migration creates a table and then creates an index. If the index creation fails, the table exists but the index doesn't. Wrap in a transaction.",
+            "codeExamples": [
+              {
+                "label": "Note",
+                "language": "sql",
+                "code": "-- CREATE INDEX CONCURRENTLY cannot run inside a transaction.\n-- Split it into a separate migration."
+              }
+            ],
+            "keyTakeaway": "Use transactions for DDL. Split out operations that can't run in transactions (CONCURRENTLY, ENUM values).",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.migration-safety.data-migration-separate",
+          "text": "Are schema changes and data migrations in separate steps?",
+          "severity": "major",
+          "tags": [
+            "migration"
+          ],
+          "baseContent": {
+            "whatItMeans": "Schema migrations (DDL) and data migrations (DML) should be separate. Mixing them makes rollbacks harder and increases lock time.",
+            "whyItMatters": "A migration that alters a table AND backfills data holds locks longer and is harder to roll back if the backfill fails.",
+            "howToVerify": "Does the migration mix CREATE/ALTER with UPDATE/INSERT? Can the data migration run as a separate step?",
+            "exampleComment": "This migration adds a column AND backfills 10M rows in one step. Split into: 1) add column, 2) backfill in batches, 3) add NOT NULL.",
+            "codeExamples": [],
+            "keyTakeaway": "Separate DDL from DML. Deploy schema first, then migrate data in batches.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.migration-safety.concurrent-index-creation",
+          "text": "Are indexes on large tables created with CONCURRENTLY?",
+          "severity": "major",
+          "tags": [
+            "migration",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "CREATE INDEX locks the table for writes during the build. CONCURRENTLY builds the index without blocking writes (but takes longer).",
+            "whyItMatters": "A regular CREATE INDEX on a 100M-row table can block writes for minutes, causing application errors and timeouts.",
+            "howToVerify": "Is CREATE INDEX used on a large table? Should it be CREATE INDEX CONCURRENTLY? Note: CONCURRENTLY can't run in a transaction.",
+            "exampleComment": "This creates an index on a 50M-row table without CONCURRENTLY. This will block all writes for several minutes. Use CREATE INDEX CONCURRENTLY.",
+            "codeExamples": [
+              {
+                "label": "Non-blocking",
+                "language": "sql",
+                "code": "CREATE INDEX CONCURRENTLY idx_orders_user_id ON orders (user_id);"
+              }
+            ],
+            "keyTakeaway": "Always use CONCURRENTLY for indexes on large production tables.",
+            "references": [
+              "https://www.postgresql.org/docs/current/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.migration-safety.enum-addition-safe",
+          "text": "Are new enum values added safely (not inside a transaction if using CONCURRENTLY)?",
+          "severity": "minor",
+          "tags": [
+            "migration"
+          ],
+          "baseContent": {
+            "whatItMeans": "Adding enum values in PostgreSQL is safe but has quirks: ALTER TYPE ... ADD VALUE cannot run inside a transaction block in some versions.",
+            "whyItMatters": "If your migration tool wraps everything in a transaction, ALTER TYPE ADD VALUE will fail. It needs its own non-transactional migration.",
+            "howToVerify": "Is a new enum value being added? Is the migration tool configured to run it outside a transaction?",
+            "exampleComment": "Split the ALTER TYPE ADD VALUE into its own migration file with transaction disabled, since it can't run inside a transaction.",
+            "codeExamples": [
+              {
+                "label": "Add enum value",
+                "language": "sql",
+                "code": "-- Must be outside a transaction in some migration tools\nALTER TYPE order_status ADD VALUE 'refunded';"
+              }
+            ],
+            "keyTakeaway": "Enum additions need their own migration without a transaction wrapper.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "postgresql.schema-design",
+      "title": "Schema Design",
+      "items": [
+        {
+          "id": "postgresql.schema-design.naming-conventions",
+          "text": "Do table and column names follow consistent naming conventions?",
+          "severity": "nit",
+          "tags": [
+            "schema",
+            "naming"
+          ],
+          "baseContent": {
+            "whatItMeans": "PostgreSQL conventions: lowercase snake_case for tables and columns, plural table names (users, orders), singular for join tables.",
+            "whyItMatters": "Inconsistent naming makes queries harder to write and the schema harder to navigate. It's a constant source of friction.",
+            "howToVerify": "Are table names plural and snake_case? Are column names descriptive? Are foreign keys named consistently (user_id, not userId or fk_user)?",
+            "exampleComment": "The table is named `OrderItem` (PascalCase) while others use `order_items` (snake_case). Use snake_case for consistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Use lowercase snake_case everywhere. Be consistent \u2014 it matters more than which convention you pick.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.schema-design.appropriate-data-types",
+          "text": "Are columns using the most appropriate PostgreSQL data types?",
+          "severity": "major",
+          "tags": [
+            "schema",
+            "types"
+          ],
+          "baseContent": {
+            "whatItMeans": "PostgreSQL has rich type support. Using TEXT for everything wastes the benefits of type safety, indexing, and storage efficiency.",
+            "whyItMatters": "Wrong types waste storage, prevent useful constraints, hurt query performance, and allow invalid data. Using VARCHAR(255) everywhere is a MySQL habit.",
+            "howToVerify": "Is TEXT used where an enum, integer, or timestamp would be better? Is VARCHAR(255) used without a reason? Are UUIDs stored as TEXT instead of UUID?",
+            "exampleComment": "The `status` column is TEXT but only has 5 valid values. Use a PostgreSQL enum or a CHECK constraint for type safety.",
+            "codeExamples": [
+              {
+                "label": "Better types",
+                "language": "sql",
+                "code": "CREATE TABLE orders (\n  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n  status order_status NOT NULL,  -- enum\n  total_cents INTEGER NOT NULL,   -- not DECIMAL for money\n  created_at TIMESTAMPTZ NOT NULL DEFAULT now()\n);"
+              }
+            ],
+            "keyTakeaway": "Use PostgreSQL's rich type system. UUID for IDs, TIMESTAMPTZ for times, enums for fixed sets, INTEGER for counts.",
+            "references": [
+              "https://www.postgresql.org/docs/current/datatype.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.schema-design.timestamps-with-timezone",
+          "text": "Are timestamp columns using TIMESTAMPTZ (not TIMESTAMP)?",
+          "severity": "major",
+          "tags": [
+            "schema",
+            "types"
+          ],
+          "baseContent": {
+            "whatItMeans": "TIMESTAMPTZ stores timestamps in UTC and converts to the session timezone on read. TIMESTAMP WITHOUT TIME ZONE stores ambiguous local times.",
+            "whyItMatters": "TIMESTAMP without timezone causes bugs when servers are in different timezones, during DST transitions, and when migrating data between systems.",
+            "howToVerify": "Check all timestamp columns. Are they TIMESTAMPTZ? The only exception is when you intentionally need a timezone-unaware local time.",
+            "exampleComment": "Change `created_at TIMESTAMP` to `created_at TIMESTAMPTZ`. Without timezone info, this timestamp is ambiguous across timezones.",
+            "codeExamples": [
+              {
+                "label": "Correct",
+                "language": "sql",
+                "code": "created_at TIMESTAMPTZ NOT NULL DEFAULT now()"
+              }
+            ],
+            "keyTakeaway": "Always use TIMESTAMPTZ. The \"without timezone\" variant is almost never what you want.",
+            "references": [
+              "https://wiki.postgresql.org/wiki/Don%27t_Do_This#Don.27t_use_timestamp_.28without_time_zone.29"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.schema-design.primary-key-defined",
+          "text": "Does every table have an appropriate primary key?",
+          "severity": "blocker",
+          "tags": [
+            "schema"
+          ],
+          "baseContent": {
+            "whatItMeans": "Every table should have a primary key. It enables efficient lookups, is required for replication, and prevents duplicate rows.",
+            "whyItMatters": "Tables without primary keys can't be efficiently replicated, can accumulate duplicate rows, and make certain queries very slow.",
+            "howToVerify": "Does the new table have a PRIMARY KEY? Is the key type appropriate (UUID vs SERIAL vs natural key)?",
+            "exampleComment": "This table has no primary key. Add `id UUID PRIMARY KEY DEFAULT gen_random_uuid()` or use an appropriate natural key.",
+            "codeExamples": [],
+            "keyTakeaway": "Every table needs a primary key. Prefer UUIDs for distributed systems, BIGSERIAL for simple apps.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.schema-design.foreign-keys-defined",
+          "text": "Are foreign key relationships properly defined?",
+          "severity": "major",
+          "tags": [
+            "schema",
+            "integrity"
+          ],
+          "baseContent": {
+            "whatItMeans": "Foreign keys enforce referential integrity \u2014 they prevent orphaned rows and make relationships explicit in the schema.",
+            "whyItMatters": "Without foreign keys, orphaned data accumulates silently. Deleting a user leaves their orders pointing at nothing, causing application errors.",
+            "howToVerify": "Are relationships between tables enforced with FOREIGN KEY constraints? Is ON DELETE behavior specified (CASCADE, SET NULL, RESTRICT)?",
+            "exampleComment": "The `orders.user_id` column references `users.id` but has no FOREIGN KEY constraint. Add one with ON DELETE CASCADE.",
+            "codeExamples": [
+              {
+                "label": "With FK",
+                "language": "sql",
+                "code": "ALTER TABLE orders\n  ADD CONSTRAINT fk_orders_user\n  FOREIGN KEY (user_id) REFERENCES users(id)\n  ON DELETE CASCADE;"
+              }
+            ],
+            "keyTakeaway": "Define foreign keys for all relationships. Choose ON DELETE behavior intentionally.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.schema-design.not-null-constraints",
+          "text": "Are NOT NULL constraints applied where appropriate?",
+          "severity": "minor",
+          "tags": [
+            "schema",
+            "integrity"
+          ],
+          "baseContent": {
+            "whatItMeans": "Columns that should always have values need NOT NULL constraints. Nullable columns should be intentionally nullable.",
+            "whyItMatters": "Missing NOT NULL allows null values where they don't make sense, leading to unexpected NullPointerExceptions and broken aggregations.",
+            "howToVerify": "For each new column, should it allow nulls? Is there a meaningful default? Are required fields marked NOT NULL?",
+            "exampleComment": "The `email` column allows NULL but every user must have an email. Add NOT NULL.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to NOT NULL. Make columns nullable only when null has a clear meaning.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "postgresql.indexes",
+      "title": "Indexes",
+      "items": [
+        {
+          "id": "postgresql.indexes.missing-index-for-queries",
+          "text": "Are there indexes supporting the application's query patterns?",
+          "severity": "major",
+          "tags": [
+            "indexes",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Queries that filter, join, or order by columns need indexes on those columns. Without them, PostgreSQL does full table scans.",
+            "whyItMatters": "A missing index on a frequently-queried column causes O(n) sequential scans instead of O(log n) index lookups. This gets worse as data grows.",
+            "howToVerify": "Check the application's queries against this table. Do WHERE clauses and JOIN conditions have supporting indexes?",
+            "exampleComment": "The app queries `SELECT * FROM orders WHERE user_id = ? AND status = ?` but there's no index on `(user_id, status)`. Add a composite index.",
+            "codeExamples": [
+              {
+                "label": "Composite index",
+                "language": "sql",
+                "code": "CREATE INDEX idx_orders_user_status ON orders (user_id, status);"
+              }
+            ],
+            "keyTakeaway": "Index the columns you query by. Use EXPLAIN to verify your queries use them.",
+            "references": [
+              "https://www.postgresql.org/docs/current/indexes.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.indexes.covering-index-considered",
+          "text": "Could a covering index (INCLUDE) avoid table lookups?",
+          "severity": "minor",
+          "tags": [
+            "indexes",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "A covering index includes all columns needed by a query, allowing index-only scans without reading the table heap.",
+            "whyItMatters": "Index-only scans are significantly faster because they skip the random I/O of reading table pages.",
+            "howToVerify": "Does a frequently-run query select columns not in the index? Would adding INCLUDE columns enable index-only scans?",
+            "exampleComment": "This query always selects `user_id, status, total`. Adding `INCLUDE (total)` to the `(user_id, status)` index enables index-only scans.",
+            "codeExamples": [
+              {
+                "label": "Covering index",
+                "language": "sql",
+                "code": "CREATE INDEX idx_orders_covering\n  ON orders (user_id, status)\n  INCLUDE (total, created_at);"
+              }
+            ],
+            "keyTakeaway": "Use INCLUDE for columns that are selected but not filtered on. Check with EXPLAIN for index-only scans.",
+            "references": [
+              "https://www.postgresql.org/docs/current/indexes-index-only-scans.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.indexes.partial-index-applicable",
+          "text": "Could a partial index reduce index size for filtered queries?",
+          "severity": "minor",
+          "tags": [
+            "indexes",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Partial indexes only index rows matching a WHERE condition. They're smaller and faster when queries always filter on that condition.",
+            "whyItMatters": "A full index on a status column where 95% of rows are 'completed' wastes space. A partial index on active rows is much smaller.",
+            "howToVerify": "Does the application always query with a specific filter (e.g., WHERE active = true, WHERE deleted_at IS NULL)? A partial index would help.",
+            "exampleComment": "Since queries always filter `WHERE status = 'active'`, use a partial index: `CREATE INDEX ... WHERE status = 'active'`.",
+            "codeExamples": [
+              {
+                "label": "Partial index",
+                "language": "sql",
+                "code": "CREATE INDEX idx_orders_active\n  ON orders (user_id, created_at)\n  WHERE status = 'active';"
+              }
+            ],
+            "keyTakeaway": "Partial indexes are smaller and faster. Use them when queries always include the same filter condition.",
+            "references": [
+              "https://www.postgresql.org/docs/current/indexes-partial.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.indexes.index-column-order",
+          "text": "Is the column order in composite indexes optimal?",
+          "severity": "minor",
+          "tags": [
+            "indexes"
+          ],
+          "baseContent": {
+            "whatItMeans": "In composite indexes, column order matters. The leftmost columns must match the query's filter/sort pattern for the index to be used.",
+            "whyItMatters": "An index on (status, user_id) won't be used for `WHERE user_id = ?` queries. Column order must match query patterns.",
+            "howToVerify": "Check query patterns. Does the index column order match the most selective filters first? Can one composite index serve multiple queries?",
+            "exampleComment": "The index is `(status, user_id)` but most queries filter on `user_id` only. Reverse the order to `(user_id, status)`.",
+            "codeExamples": [],
+            "keyTakeaway": "Put the most selective and most frequently filtered column first in composite indexes.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.indexes.no-duplicate-indexes",
+          "text": "Are there duplicate or redundant indexes?",
+          "severity": "nit",
+          "tags": [
+            "indexes",
+            "maintenance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Duplicate indexes waste storage, slow down writes, and confuse the query planner. An index on (a, b) makes a standalone index on (a) redundant.",
+            "whyItMatters": "Each index adds overhead to every INSERT, UPDATE, and DELETE. Redundant indexes double this cost with no benefit.",
+            "howToVerify": "Check for indexes with the same leading columns. Is there both an index on (user_id) and (user_id, status)?",
+            "exampleComment": "There's already an index on `(user_id, status)` which covers queries on `user_id` alone. The standalone `user_id` index is redundant.",
+            "codeExamples": [],
+            "keyTakeaway": "Audit indexes periodically. A composite index on (a, b) covers queries on (a).",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "postgresql.query-performance",
+      "title": "Query Performance",
+      "items": [
+        {
+          "id": "postgresql.query-performance.n-plus-one-avoided",
+          "text": "Does the query pattern avoid N+1 queries?",
+          "severity": "major",
+          "tags": [
+            "performance",
+            "queries"
+          ],
+          "baseContent": {
+            "whatItMeans": "N+1 queries happen when code fetches a list, then makes one query per item to fetch related data. This causes O(n) queries instead of O(1).",
+            "whyItMatters": "N+1 queries are the most common performance problem. 100 orders with N+1 means 101 queries instead of 1-2 with a JOIN or IN clause.",
+            "howToVerify": "Does the code fetch a list then loop to fetch related data? Could a JOIN, subquery, or IN clause combine these?",
+            "exampleComment": "This fetches all orders, then queries the user for each order in a loop. Use a JOIN: `SELECT o.*, u.name FROM orders o JOIN users u ON o.user_id = u.id`.",
+            "codeExamples": [
+              {
+                "label": "N+1 problem",
+                "language": "sql",
+                "code": "-- 1 query for orders\nSELECT * FROM orders WHERE status = 'active';\n-- Then N queries, one per order\nSELECT * FROM users WHERE id = $1;  -- repeated N times"
+              },
+              {
+                "label": "Fixed with JOIN",
+                "language": "sql",
+                "code": "SELECT o.*, u.name, u.email\nFROM orders o\nJOIN users u ON o.user_id = u.id\nWHERE o.status = 'active';"
+              }
+            ],
+            "keyTakeaway": "JOINs and IN clauses replace N+1 queries. Always batch related data fetches.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.query-performance.explain-analyzed",
+          "text": "Has EXPLAIN ANALYZE been run on new or modified queries?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "queries"
+          ],
+          "baseContent": {
+            "whatItMeans": "EXPLAIN ANALYZE shows the actual query plan, execution time, and row estimates. It reveals sequential scans, bad estimates, and missing indexes.",
+            "whyItMatters": "A query that's fast on dev with 100 rows can be catastrophically slow on production with 10M rows. EXPLAIN catches this early.",
+            "howToVerify": "Has the developer run EXPLAIN ANALYZE on the new query with production-representative data? Are there sequential scans on large tables?",
+            "exampleComment": "Please include EXPLAIN ANALYZE output for this new query. It joins 3 tables and I want to verify it uses indexes properly.",
+            "codeExamples": [
+              {
+                "label": "Running EXPLAIN",
+                "language": "sql",
+                "code": "EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)\nSELECT * FROM orders\nWHERE user_id = '...' AND status = 'active'\nORDER BY created_at DESC\nLIMIT 20;"
+              }
+            ],
+            "keyTakeaway": "Run EXPLAIN ANALYZE on every new query before deploying. It's the single best way to catch performance issues.",
+            "references": [
+              "https://www.postgresql.org/docs/current/using-explain.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.query-performance.pagination-efficient",
+          "text": "Is pagination implemented efficiently (keyset, not OFFSET)?",
+          "severity": "major",
+          "tags": [
+            "performance",
+            "queries"
+          ],
+          "baseContent": {
+            "whatItMeans": "OFFSET-based pagination gets slower as pages increase because the database must scan and discard all preceding rows. Keyset pagination stays constant.",
+            "whyItMatters": "Page 1000 with OFFSET 10000 requires scanning 10000 rows just to discard them. Keyset pagination scans only the rows it returns.",
+            "howToVerify": "Does the query use OFFSET for pagination? Could it use keyset pagination (WHERE id > last_seen_id) instead?",
+            "exampleComment": "This query uses `OFFSET $page * 20` which gets slower on later pages. Use keyset pagination: `WHERE created_at < $last_created_at ORDER BY created_at DESC LIMIT 20`.",
+            "codeExamples": [
+              {
+                "label": "Keyset pagination",
+                "language": "sql",
+                "code": "SELECT * FROM orders\nWHERE user_id = $1\n  AND created_at < $2  -- cursor from previous page\nORDER BY created_at DESC\nLIMIT 20;"
+              }
+            ],
+            "keyTakeaway": "Use keyset (cursor) pagination for any list that could be large. OFFSET is only acceptable for small datasets.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.query-performance.select-star-avoided",
+          "text": "Are SELECT * queries avoided in production code?",
+          "severity": "minor",
+          "tags": [
+            "performance",
+            "queries"
+          ],
+          "baseContent": {
+            "whatItMeans": "SELECT * fetches all columns, including large TEXT/JSONB fields that may not be needed. It also breaks when columns are added.",
+            "whyItMatters": "Fetching unnecessary columns wastes bandwidth, memory, and can prevent index-only scans. It also couples code to the table schema.",
+            "howToVerify": "Does the query use SELECT *? Would listing specific columns improve performance or clarity?",
+            "exampleComment": "This query uses `SELECT *` but only needs `id`, `title`, and `status`. The `notes` column is a large TEXT field that's wasted here.",
+            "codeExamples": [],
+            "keyTakeaway": "List the columns you need. SELECT * is for debugging, not production queries.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.query-performance.lock-contention-minimized",
+          "text": "Do write queries minimize lock contention?",
+          "severity": "major",
+          "tags": [
+            "performance",
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "Long-running transactions and batch updates can hold row locks for extended periods, blocking other queries.",
+            "whyItMatters": "A batch UPDATE that locks 10000 rows for 30 seconds blocks all other writes to those rows, causing timeouts and queue buildup.",
+            "howToVerify": "Are batch operations chunked? Are transactions kept short? Do updates touch only necessary rows?",
+            "exampleComment": "This batch update processes 100K rows in one transaction. Chunk it into batches of 1000 with a brief pause between batches.",
+            "codeExamples": [
+              {
+                "label": "Batched update",
+                "language": "sql",
+                "code": "-- Process in chunks\nUPDATE orders SET status = 'archived'\nWHERE id IN (\n  SELECT id FROM orders\n  WHERE status = 'completed'\n    AND completed_at < now() - interval '1 year'\n  LIMIT 1000\n  FOR UPDATE SKIP LOCKED\n);"
+              }
+            ],
+            "keyTakeaway": "Keep transactions short. Chunk batch operations. Use SKIP LOCKED for queue-like patterns.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "postgresql.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "postgresql.security.sql-injection-prevented",
+          "text": "Are all queries parameterized (no string concatenation)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "SQL queries must use parameterized queries ($1, $2) or prepared statements. Never concatenate user input into SQL strings.",
+            "whyItMatters": "SQL injection is one of the most critical vulnerabilities. An attacker can read, modify, or delete all data in the database.",
+            "howToVerify": "Check all query construction. Is user input concatenated into SQL strings? Are query builders used safely?",
+            "exampleComment": "This query concatenates `username` directly into the SQL string. Use a parameterized query: `WHERE username = $1`.",
+            "codeExamples": [
+              {
+                "label": "Vulnerable",
+                "language": "python",
+                "code": "cursor.execute(f\"SELECT * FROM users WHERE name = '{name}'\")"
+              },
+              {
+                "label": "Safe",
+                "language": "python",
+                "code": "cursor.execute(\"SELECT * FROM users WHERE name = %s\", (name,))"
+              }
+            ],
+            "keyTakeaway": "Always parameterize. There are no exceptions. If you think you need dynamic SQL, use a query builder.",
+            "references": [
+              "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.security.least-privilege-roles",
+          "text": "Does the application use a database role with minimal privileges?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "The application's database role should have only the permissions it needs \u2014 typically SELECT, INSERT, UPDATE, DELETE on specific tables.",
+            "whyItMatters": "An app role with SUPERUSER or CREATEDB permissions means a SQL injection attack can drop databases or read system files.",
+            "howToVerify": "What role does the app connect with? Does it have more permissions than needed? Can it DROP tables or access system catalogs?",
+            "exampleComment": "The application connects as the postgres superuser. Create a dedicated role with only SELECT/INSERT/UPDATE/DELETE on application tables.",
+            "codeExamples": [
+              {
+                "label": "Least privilege",
+                "language": "sql",
+                "code": "CREATE ROLE app_user LOGIN PASSWORD 'xxx';\nGRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;\nREVOKE CREATE ON SCHEMA public FROM app_user;"
+              }
+            ],
+            "keyTakeaway": "Never use superuser for application connections. Create a role with minimal permissions.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.security.row-level-security",
+          "text": "Is row-level security considered for multi-tenant data?",
+          "severity": "minor",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "PostgreSQL Row-Level Security (RLS) enforces data isolation at the database level, preventing one tenant from seeing another's data.",
+            "whyItMatters": "Application-level tenant isolation relies on every query including the correct WHERE clause. One missed filter leaks data across tenants.",
+            "howToVerify": "Is this a multi-tenant application? Are WHERE clauses the only thing preventing cross-tenant data access? Would RLS add a safety net?",
+            "exampleComment": "This multi-tenant app relies on `WHERE tenant_id = $1` in every query. Consider adding RLS as a defense-in-depth measure.",
+            "codeExamples": [
+              {
+                "label": "RLS policy",
+                "language": "sql",
+                "code": "ALTER TABLE orders ENABLE ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON orders\n  USING (tenant_id = current_setting('app.tenant_id')::uuid);"
+              }
+            ],
+            "keyTakeaway": "RLS is defense-in-depth for multi-tenant apps. It catches the queries where you forgot the tenant filter.",
+            "references": [
+              "https://www.postgresql.org/docs/current/ddl-rowsecurity.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.security.sensitive-data-encrypted",
+          "text": "Is sensitive data encrypted at rest or properly handled?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Sensitive data (PII, credentials, tokens) should be encrypted in the database or handled with appropriate access controls.",
+            "whyItMatters": "Unencrypted sensitive data is exposed in backups, replicas, logs, and to anyone with database read access.",
+            "howToVerify": "Are there columns containing PII, passwords, or tokens? Are they encrypted with pgcrypto or application-level encryption?",
+            "exampleComment": "The `social_security_number` column is stored as plain TEXT. Encrypt it with pgcrypto or application-level encryption.",
+            "codeExamples": [],
+            "keyTakeaway": "Encrypt sensitive data. Use pgcrypto for database-level encryption or handle it in the application layer.",
+            "references": [
+              "https://www.postgresql.org/docs/current/pgcrypto.html"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "postgresql.transactions",
+      "title": "Transactions & Concurrency",
+      "items": [
+        {
+          "id": "postgresql.transactions.isolation-level-appropriate",
+          "text": "Is the transaction isolation level appropriate for the operation?",
+          "severity": "major",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "PostgreSQL supports READ COMMITTED (default), REPEATABLE READ, and SERIALIZABLE. Each has different consistency guarantees and performance characteristics.",
+            "whyItMatters": "The wrong isolation level can cause phantom reads, lost updates, or unnecessary serialization failures.",
+            "howToVerify": "Does the transaction require stronger isolation than READ COMMITTED? Would SERIALIZABLE prevent the race condition being guarded against?",
+            "exampleComment": "This read-then-write pattern has a race condition under READ COMMITTED. Either use SERIALIZABLE or add explicit row locking with SELECT FOR UPDATE.",
+            "codeExamples": [
+              {
+                "label": "Explicit locking",
+                "language": "sql",
+                "code": "BEGIN;\nSELECT * FROM accounts WHERE id = $1 FOR UPDATE;\n-- Now the row is locked until COMMIT\nUPDATE accounts SET balance = balance - 100 WHERE id = $1;\nCOMMIT;"
+              }
+            ],
+            "keyTakeaway": "Know your isolation levels. Use SELECT FOR UPDATE for read-then-write patterns.",
+            "references": [
+              "https://www.postgresql.org/docs/current/transaction-iso.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.transactions.deadlock-risk-assessed",
+          "text": "Is there a risk of deadlocks with this transaction pattern?",
+          "severity": "major",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "Deadlocks occur when two transactions lock resources in different orders. PostgreSQL detects and resolves them by aborting one transaction.",
+            "whyItMatters": "Deadlocks cause transaction failures that must be retried. Frequent deadlocks indicate a design problem that degrades performance.",
+            "howToVerify": "Does this transaction lock multiple rows or tables? Could another transaction lock the same resources in a different order?",
+            "exampleComment": "This transaction updates orders then users, but another code path updates users then orders. Standardize the lock order to prevent deadlocks.",
+            "codeExamples": [],
+            "keyTakeaway": "Lock resources in a consistent order across all code paths. Document the expected lock order.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.transactions.transaction-duration-short",
+          "text": "Are transactions kept as short as possible?",
+          "severity": "major",
+          "tags": [
+            "concurrency",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Long-running transactions hold locks, prevent vacuum from cleaning up dead tuples, and increase the risk of conflicts.",
+            "whyItMatters": "A transaction open for minutes causes table bloat (dead tuples), increases lock contention, and can cause replication lag.",
+            "howToVerify": "Does the transaction do any slow operations (HTTP calls, file I/O) while holding locks? Can it be shortened?",
+            "exampleComment": "This transaction makes an HTTP call to an external API while holding a row lock. Move the API call outside the transaction.",
+            "codeExamples": [],
+            "keyTakeaway": "Do I/O outside transactions. Keep transactions to the minimum: read, compute, write, commit.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.transactions.retry-on-serialization-failure",
+          "text": "Are serialization failures handled with retries?",
+          "severity": "minor",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "SERIALIZABLE and REPEATABLE READ transactions can fail with serialization errors. The application must retry these transparently.",
+            "whyItMatters": "Without retry logic, serialization failures surface as user-visible errors even though they're expected and transient.",
+            "howToVerify": "If using SERIALIZABLE isolation, does the code retry on error code 40001 (serialization failure)?",
+            "exampleComment": "This code uses SERIALIZABLE but doesn't retry on serialization failures. Add a retry loop for error code 40001.",
+            "codeExamples": [
+              {
+                "label": "Retry pattern",
+                "language": "python",
+                "code": "for attempt in range(3):\n    try:\n        with db.transaction(isolation='serializable'):\n            do_work()\n            break\n    except SerializationFailure:\n        if attempt == 2: raise\n        continue"
+              }
+            ],
+            "keyTakeaway": "Always retry serialization failures. They're expected, not exceptional.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "postgresql.data-integrity",
+      "title": "Data Integrity",
+      "items": [
+        {
+          "id": "postgresql.data-integrity.check-constraints",
+          "text": "Are CHECK constraints used to enforce business rules?",
+          "severity": "minor",
+          "tags": [
+            "integrity"
+          ],
+          "baseContent": {
+            "whatItMeans": "CHECK constraints enforce domain rules at the database level (e.g., price > 0, status IN ('active', 'inactive')).",
+            "whyItMatters": "Application-level validation can be bypassed by direct SQL, migrations, or other services. Database constraints are the last line of defense.",
+            "howToVerify": "Are there business rules that should be enforced at the database level? Are numeric ranges validated? Are string values constrained?",
+            "exampleComment": "The `price` column allows negative values. Add a CHECK constraint: `CHECK (price >= 0)`.",
+            "codeExamples": [
+              {
+                "label": "CHECK constraint",
+                "language": "sql",
+                "code": "ALTER TABLE products\n  ADD CONSTRAINT chk_price_positive CHECK (price >= 0);"
+              }
+            ],
+            "keyTakeaway": "Database constraints survive code changes, migrations, and direct SQL. Use them for critical business rules.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.data-integrity.unique-constraints",
+          "text": "Are unique constraints defined where duplicates would be invalid?",
+          "severity": "major",
+          "tags": [
+            "integrity"
+          ],
+          "baseContent": {
+            "whatItMeans": "UNIQUE constraints prevent duplicate values. They're essential for email addresses, usernames, natural keys, and combination uniqueness.",
+            "whyItMatters": "Without unique constraints, duplicate data can slip in through race conditions, bulk imports, or bugs \u2014 corrupting the dataset.",
+            "howToVerify": "Should any column or combination of columns be unique? Is there a UNIQUE constraint or unique index?",
+            "exampleComment": "The `email` column should be unique but has no UNIQUE constraint. Two users can register with the same email.",
+            "codeExamples": [
+              {
+                "label": "Unique constraint",
+                "language": "sql",
+                "code": "ALTER TABLE users ADD CONSTRAINT uq_users_email UNIQUE (email);"
+              }
+            ],
+            "keyTakeaway": "If duplicates would be a bug, add a UNIQUE constraint. Don't rely on application code alone.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.data-integrity.cascade-behavior-explicit",
+          "text": "Is ON DELETE/UPDATE behavior explicitly specified for foreign keys?",
+          "severity": "minor",
+          "tags": [
+            "integrity"
+          ],
+          "baseContent": {
+            "whatItMeans": "Foreign keys should explicitly state what happens on delete/update: CASCADE, SET NULL, RESTRICT, or NO ACTION.",
+            "whyItMatters": "The default (NO ACTION) blocks deletion of referenced rows, which may not be the intended behavior. Explicit declaration prevents surprises.",
+            "howToVerify": "Do foreign keys specify ON DELETE behavior? Is CASCADE used intentionally (not accidentally deleting important data)?",
+            "exampleComment": "This foreign key uses the default NO ACTION. When a user is deleted, their orders become orphaned. Use CASCADE or SET NULL intentionally.",
+            "codeExamples": [],
+            "keyTakeaway": "Be explicit about ON DELETE behavior. Document why CASCADE vs SET NULL was chosen.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.data-integrity.default-values-appropriate",
+          "text": "Are DEFAULT values appropriate and intentional?",
+          "severity": "minor",
+          "tags": [
+            "schema"
+          ],
+          "baseContent": {
+            "whatItMeans": "Default values should be intentional. Defaulting to empty string instead of NULL, or 0 instead of NULL, can mask missing data.",
+            "whyItMatters": "Bad defaults hide missing data. A default of 0 for a price field means you can't distinguish 'free' from 'not yet set'.",
+            "howToVerify": "Are DEFAULT values appropriate? Would NULL be better for optional fields? Is `now()` used for timestamps?",
+            "exampleComment": "The `deleted_at` column defaults to `'1970-01-01'` instead of NULL. Use NULL to indicate 'not deleted'.",
+            "codeExamples": [],
+            "keyTakeaway": "Use NULL for 'not set'. Use meaningful defaults only when there's a sensible value.",
+            "references": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "postgresql.operational",
+      "title": "Operational Concerns",
+      "items": [
+        {
+          "id": "postgresql.operational.vacuum-impact-considered",
+          "text": "Has the impact on autovacuum been considered for bulk operations?",
+          "severity": "minor",
+          "tags": [
+            "operations"
+          ],
+          "baseContent": {
+            "whatItMeans": "Bulk updates and deletes create dead tuples that autovacuum must clean up. Large batch operations can overwhelm autovacuum.",
+            "whyItMatters": "If autovacuum can't keep up, table bloat increases, queries slow down, and eventually transaction ID wraparound becomes a risk.",
+            "howToVerify": "Does this migration or batch job update/delete many rows? Will autovacuum be able to keep up? Should vacuum be run manually after?",
+            "exampleComment": "This migration updates 10M rows. Schedule a manual VACUUM ANALYZE on the table after the migration completes.",
+            "codeExamples": [],
+            "keyTakeaway": "Monitor autovacuum after large data changes. Run VACUUM ANALYZE manually for bulk operations.",
+            "references": [
+              "https://www.postgresql.org/docs/current/routine-vacuuming.html"
+            ]
+          }
+        },
+        {
+          "id": "postgresql.operational.connection-pooling",
+          "text": "Is connection pooling configured for the application?",
+          "severity": "major",
+          "tags": [
+            "operations"
+          ],
+          "baseContent": {
+            "whatItMeans": "PostgreSQL has a per-connection process model. Each connection uses ~10MB RAM. Without pooling, connection storms can exhaust server resources.",
+            "whyItMatters": "100 application instances each opening 10 connections = 1000 connections = 10GB RAM just for connections. PgBouncer or application pooling is essential.",
+            "howToVerify": "Is the application using a connection pool? What's the max pool size? Is PgBouncer or pgpool used for production?",
+            "exampleComment": "Each Lambda invocation opens a new database connection. Use RDS Proxy or PgBouncer to pool connections.",
+            "codeExamples": [],
+            "keyTakeaway": "Always use connection pooling in production. Size pools based on available connections.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.operational.monitoring-queries",
+          "text": "Are there monitoring queries or alerts for the new tables?",
+          "severity": "nit",
+          "tags": [
+            "operations"
+          ],
+          "baseContent": {
+            "whatItMeans": "New tables should be added to monitoring: table size, row counts, dead tuple ratios, and query performance.",
+            "whyItMatters": "Tables that aren't monitored silently grow, accumulate bloat, or develop performance issues that go unnoticed until they cause outages.",
+            "howToVerify": "Is the new table added to monitoring dashboards? Are there alerts for table size thresholds or slow queries?",
+            "exampleComment": "Add this new table to the pg_stat_user_tables monitoring dashboard so we can track its growth and vacuum health.",
+            "codeExamples": [],
+            "keyTakeaway": "Monitor what you deploy. Add new tables to dashboards and alert rules.",
+            "references": ""
+          }
+        },
+        {
+          "id": "postgresql.operational.backup-restore-tested",
+          "text": "Has backup and restore been tested for the new schema?",
+          "severity": "minor",
+          "tags": [
+            "operations"
+          ],
+          "baseContent": {
+            "whatItMeans": "Schema changes should be tested against backup/restore procedures to ensure backups are still restorable.",
+            "whyItMatters": "A schema change that breaks restore means your backups are useless when you need them most.",
+            "howToVerify": "Has pg_dump/pg_restore been tested with the new schema? Are there new tables that need to be included in selective backups?",
+            "exampleComment": "The new `tracked_prs` table should be included in the backup configuration. Verify pg_restore works with the updated schema.",
+            "codeExamples": [],
+            "keyTakeaway": "Test backup and restore after schema changes. Untested backups are not backups.",
+            "references": ""
+          }
+        }
+      ]
+    }
+  ]
+}

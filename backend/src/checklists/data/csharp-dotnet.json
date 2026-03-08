@@ -1,0 +1,676 @@
+{
+  "meta": {
+    "id": "csharp-dotnet",
+    "mode": "review",
+    "title": "C# / .NET",
+    "shortTitle": "C#/.NET",
+    "description": "Review checklist for C# and .NET applications",
+    "icon": "#️⃣",
+    "totalItems": 27,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "csharp-dotnet.async-patterns",
+      "title": "Async & Concurrency",
+      "items": [
+        {
+          "id": "csharp-dotnet.async-patterns.async-all-the-way",
+          "text": "Is async/await used consistently without mixing .Result or .Wait()?",
+          "severity": "blocker",
+          "tags": [
+            "async",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "Calling .Result or .Wait() on a Task in an async context can deadlock, especially in ASP.NET. Async should propagate all the way up the call stack.",
+            "whyItMatters": "Mixing sync and async causes thread pool starvation and deadlocks. The classic ASP.NET deadlock occurs when .Result blocks the synchronization context that the awaited task needs to resume on.",
+            "howToVerify": "Search for .Result and .Wait() on Task objects. Ensure the calling method is async and uses await instead.",
+            "exampleComment": "This .Result call will deadlock in the ASP.NET request pipeline. Change the method to async and await the task instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "public ActionResult GetUser(int id)\n{\n    var user = _userService.GetUserAsync(id).Result; // deadlock risk\n    return Ok(user);\n}"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "public async Task<ActionResult> GetUser(int id)\n{\n    var user = await _userService.GetUserAsync(id);\n    return Ok(user);\n}"
+              }
+            ],
+            "keyTakeaway": "Never call .Result or .Wait() in async code. Async all the way.",
+            "references": [
+              "https://learn.microsoft.com/en-us/archive/msdn-magazine/2013/march/async-await-best-practices-in-asynchronous-programming"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.async-patterns.configure-await",
+          "text": "Is ConfigureAwait(false) used in library code where appropriate?",
+          "severity": "minor",
+          "tags": [
+            "async",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "ConfigureAwait(false) tells the awaiter not to capture the synchronization context. Library code should use it to avoid deadlocks and improve performance.",
+            "whyItMatters": "Without ConfigureAwait(false), library code captures the caller's SynchronizationContext, which can cause deadlocks when the caller blocks. It also wastes resources posting back to the original context.",
+            "howToVerify": "Check await calls in library code (not ASP.NET controllers). They should use ConfigureAwait(false). Application-level code in ASP.NET Core generally does not need it.",
+            "exampleComment": "This library method awaits without ConfigureAwait(false). Add it to prevent deadlocks when called from UI or legacy ASP.NET contexts.",
+            "codeExamples": [],
+            "keyTakeaway": "Library code: ConfigureAwait(false). App code in ASP.NET Core: not needed.",
+            "references": [
+              "https://devblogs.microsoft.com/dotnet/configureawait-faq/"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.async-patterns.cancellation-tokens",
+          "text": "Are CancellationTokens threaded through async operations?",
+          "severity": "major",
+          "tags": [
+            "async",
+            "reliability"
+          ],
+          "baseContent": {
+            "whatItMeans": "Long-running async operations should accept a CancellationToken so callers (like HTTP request pipelines) can cancel them when the client disconnects.",
+            "whyItMatters": "Without cancellation support, abandoned requests continue consuming resources. In ASP.NET, this means wasted database queries and CPU after the client has already disconnected.",
+            "howToVerify": "Check async methods that do I/O or long computation. Do they accept and pass through a CancellationToken?",
+            "exampleComment": "This database query does not accept a CancellationToken. Pass the request's cancellation token to stop the query if the client disconnects.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "public async Task<List<Order>> GetOrdersAsync(int userId)\n{\n    return await _context.Orders\n        .Where(o => o.UserId == userId)\n        .ToListAsync();\n}"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "public async Task<List<Order>> GetOrdersAsync(int userId, CancellationToken ct = default)\n{\n    return await _context.Orders\n        .Where(o => o.UserId == userId)\n        .ToListAsync(ct);\n}"
+              }
+            ],
+            "keyTakeaway": "Thread CancellationTokens through every async chain. Let callers cancel cleanly.",
+            "references": [
+              "https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.async-patterns.fire-and-forget",
+          "text": "Are fire-and-forget tasks avoided or properly handled?",
+          "severity": "major",
+          "tags": [
+            "reliability"
+          ],
+          "baseContent": {
+            "whatItMeans": "Calling an async method without awaiting it means exceptions are silently swallowed and the operation may not complete before the process exits.",
+            "whyItMatters": "Unobserved task exceptions can crash the process (depending on framework version) or silently lose data. Fire-and-forget tasks are a common source of hard-to-debug production issues.",
+            "howToVerify": "Look for async method calls without await. If fire-and-forget is intentional, ensure the task is at least logged on failure.",
+            "exampleComment": "SendEmailAsync is called without await. If it fails, the error is silently lost. Either await it or use a background queue.",
+            "codeExamples": [],
+            "keyTakeaway": "Always await async calls. Use a background job system for true fire-and-forget work.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-dotnet.linq-collections",
+      "title": "LINQ & Collections",
+      "items": [
+        {
+          "id": "csharp-dotnet.linq-collections.multiple-enumeration",
+          "text": "Are IEnumerable results materialized before multiple enumeration?",
+          "severity": "major",
+          "tags": [
+            "performance",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "IEnumerable is lazily evaluated. Enumerating it multiple times re-executes the query (including database calls). Call .ToList() or .ToArray() to materialize.",
+            "whyItMatters": "Double enumeration of a database query means two round trips. Even for in-memory queries, it doubles the computation. Worse, results may differ between enumerations if the source changes.",
+            "howToVerify": "Check if an IEnumerable variable is used in multiple foreach loops, .Count() + iteration, or passed to multiple methods.",
+            "exampleComment": "This IEnumerable from the database query is enumerated twice: once for .Count() and once for the foreach. Materialize with .ToList() first.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "IEnumerable<User> users = _context.Users.Where(u => u.Active);\nvar count = users.Count();  // first DB query\nforeach (var user in users)  // second DB query\n    Process(user);"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "var users = _context.Users.Where(u => u.Active).ToList();\nvar count = users.Count;  // O(1) on List\nforeach (var user in users)\n    Process(user);"
+              }
+            ],
+            "keyTakeaway": "Materialize IEnumerable before using it more than once.",
+            "references": []
+          }
+        },
+        {
+          "id": "csharp-dotnet.linq-collections.n-plus-one",
+          "text": "Are N+1 query patterns avoided with eager loading or projections?",
+          "severity": "blocker",
+          "tags": [
+            "performance",
+            "database"
+          ],
+          "baseContent": {
+            "whatItMeans": "Accessing navigation properties in a loop triggers a separate query for each entity. Use .Include() for eager loading or .Select() to project only needed fields.",
+            "whyItMatters": "An N+1 pattern on 1000 entities sends 1001 queries. This is the most common performance killer in EF Core applications.",
+            "howToVerify": "Enable EF Core query logging. Look for loops that access navigation properties without .Include() in the original query.",
+            "exampleComment": "Accessing order.Customer inside the loop triggers a separate query per order. Add .Include(o => o.Customer) to the original query.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "var orders = await _context.Orders.ToListAsync();\nforeach (var order in orders)\n    Console.WriteLine(order.Customer.Name); // N queries"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "var orders = await _context.Orders\n    .Include(o => o.Customer)\n    .ToListAsync();\nforeach (var order in orders)\n    Console.WriteLine(order.Customer.Name); // 1 query"
+              }
+            ],
+            "keyTakeaway": "Always .Include() navigation properties accessed in loops. Check EF query logs.",
+            "references": [
+              "https://learn.microsoft.com/en-us/ef/core/querying/related-data"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.linq-collections.client-evaluation",
+          "text": "Are LINQ queries evaluated server-side, not client-side?",
+          "severity": "major",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "EF Core throws on client-side evaluation by default, but some operations silently pull all data to memory. Ensure .Where() and .OrderBy() translate to SQL.",
+            "whyItMatters": "Client-side evaluation fetches all rows then filters in memory. On large tables this means transferring millions of rows instead of a targeted query.",
+            "howToVerify": "Check for custom C# methods in .Where() clauses that cannot translate to SQL. Enable EF Core logging to see the generated SQL.",
+            "exampleComment": "FormatName() in the .Where() clause cannot translate to SQL, forcing client evaluation. Move the filter to a SQL-translatable expression.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep LINQ predicates SQL-translatable. Watch EF Core's query log for warnings.",
+            "references": [
+              "https://learn.microsoft.com/en-us/ef/core/querying/client-eval"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.linq-collections.immutable-collections",
+          "text": "Are thread-shared collections using concurrent or immutable types?",
+          "severity": "major",
+          "tags": [
+            "concurrency"
+          ],
+          "baseContent": {
+            "whatItMeans": "Dictionary<K,V> and List<T> are not thread-safe. Use ConcurrentDictionary, ImmutableList, or lock for shared state.",
+            "whyItMatters": "Concurrent reads and writes to a Dictionary can corrupt its internal state, causing infinite loops or lost data. These bugs are intermittent and hard to reproduce.",
+            "howToVerify": "Check static or singleton collections that are written to. Are they protected by a lock, or using a concurrent type?",
+            "exampleComment": "This static Dictionary<string, Cache> is written to from multiple request threads. Switch to ConcurrentDictionary to avoid corruption.",
+            "codeExamples": [],
+            "keyTakeaway": "Non-concurrent collections + multiple threads = corruption. Always use concurrent types.",
+            "references": [
+              "https://learn.microsoft.com/en-us/dotnet/api/system.collections.concurrent"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-dotnet.dependency-injection",
+      "title": "Dependency Injection",
+      "items": [
+        {
+          "id": "csharp-dotnet.dependency-injection.lifetime-mismatches",
+          "text": "Are DI service lifetimes correct (Scoped, Transient, Singleton)?",
+          "severity": "blocker",
+          "tags": [
+            "di",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "Injecting a Scoped service into a Singleton creates a captive dependency: the scoped instance is reused across all requests, leaking state.",
+            "whyItMatters": "Captive dependency bugs cause data leaks between requests (e.g., one user seeing another's data via a shared DbContext). ASP.NET Core detects this in Development but not in Production.",
+            "howToVerify": "Check that Singleton services do not inject Scoped services. Enable ValidateScopes in the host builder for runtime detection.",
+            "exampleComment": "CacheService is Singleton but injects AppDbContext (Scoped). The DbContext will be reused across requests, causing stale data and threading issues.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "services.AddSingleton<CacheService>();  // Singleton\nservices.AddScoped<AppDbContext>();       // Scoped\n\npublic class CacheService(AppDbContext db) // captive Scoped!\n{ }"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "services.AddSingleton<CacheService>();\nservices.AddScoped<AppDbContext>();\n\npublic class CacheService(IServiceScopeFactory scopeFactory)\n{\n    public async Task Refresh()\n    {\n        using var scope = scopeFactory.CreateScope();\n        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();\n    }\n}"
+              }
+            ],
+            "keyTakeaway": "Never inject Scoped into Singleton. Use IServiceScopeFactory when a Singleton needs scoped services.",
+            "references": [
+              "https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-guidelines"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.dependency-injection.service-locator",
+          "text": "Is the service locator anti-pattern avoided?",
+          "severity": "minor",
+          "tags": [
+            "di",
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "Injecting IServiceProvider and resolving services manually hides dependencies and makes testing harder. Prefer constructor injection.",
+            "whyItMatters": "Service locator makes it impossible to see a class's dependencies from its constructor. It also bypasses the DI container's lifetime management.",
+            "howToVerify": "Search for IServiceProvider.GetService or GetRequiredService outside of factory methods or middleware. These should usually be constructor-injected dependencies.",
+            "exampleComment": "This class resolves ILogger from IServiceProvider manually. Inject ILogger<T> through the constructor instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Constructor injection over service locator. Reserve IServiceProvider for factories.",
+            "references": []
+          }
+        },
+        {
+          "id": "csharp-dotnet.dependency-injection.disposable",
+          "text": "Are IDisposable services properly disposed?",
+          "severity": "major",
+          "tags": [
+            "reliability"
+          ],
+          "baseContent": {
+            "whatItMeans": "Services that implement IDisposable (DbContext, HttpClient, streams) must be disposed to release unmanaged resources. The DI container handles this for registered services, but manually created instances must be disposed explicitly.",
+            "whyItMatters": "Leaked disposables cause connection pool exhaustion, file handle leaks, and memory pressure. HttpClient is especially problematic: creating new instances per request exhausts sockets.",
+            "howToVerify": "Check for new HttpClient() (use IHttpClientFactory instead). Check for manually created disposables that are not in a using block.",
+            "exampleComment": "new HttpClient() per request will exhaust sockets. Use IHttpClientFactory or inject HttpClient via DI.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "public async Task<string> Fetch(string url)\n{\n    var client = new HttpClient(); // socket leak\n    return await client.GetStringAsync(url);\n}"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "public class MyService(IHttpClientFactory factory)\n{\n    public async Task<string> Fetch(string url)\n    {\n        var client = factory.CreateClient();\n        return await client.GetStringAsync(url);\n    }\n}"
+              }
+            ],
+            "keyTakeaway": "Use IHttpClientFactory. Dispose manually created resources. Let DI handle registered services.",
+            "references": [
+              "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-httpclientfactory-to-implement-resilient-http-requests"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-dotnet.null-safety",
+      "title": "Null Safety & Types",
+      "items": [
+        {
+          "id": "csharp-dotnet.null-safety.nullable-reference-types",
+          "text": "Are nullable reference types (NRT) enabled and used correctly?",
+          "severity": "major",
+          "tags": [
+            "null-safety"
+          ],
+          "baseContent": {
+            "whatItMeans": "C# nullable reference types make nullability explicit. string is non-null, string? is nullable. The compiler warns on potential null dereferences.",
+            "whyItMatters": "NullReferenceException is the most common runtime error in .NET. NRT catches these at compile time instead of production.",
+            "howToVerify": "Check that <Nullable>enable</Nullable> is in the .csproj. Look for ! (null-forgiving operator) usage, which suppresses warnings and defeats the purpose.",
+            "exampleComment": "The ! operator on line 12 suppresses a legitimate null warning. Handle the null case explicitly instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "string name = user.DisplayName!; // suppresses warning\nConsole.WriteLine(name.Length);"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "string name = user.DisplayName ?? \"Unknown\";\nConsole.WriteLine(name.Length);"
+              }
+            ],
+            "keyTakeaway": "Enable NRT. Avoid the ! operator. Handle nulls explicitly.",
+            "references": [
+              "https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.null-safety.records-value-objects",
+          "text": "Are records used for immutable data transfer objects?",
+          "severity": "nit",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "C# records provide value equality, immutability, and concise syntax. They are ideal for DTOs, events, and value objects.",
+            "whyItMatters": "Records reduce boilerplate (no manual Equals/GetHashCode), prevent accidental mutation, and make intent clear.",
+            "howToVerify": "Check new DTOs and value types. Are they classes with only getters? They would be better as records.",
+            "exampleComment": "This UserDto class has only init properties and no behavior. Convert to a record for built-in equality and immutability.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "public class UserDto\n{\n    public int Id { get; init; }\n    public string Name { get; init; }\n    public string Email { get; init; }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "public record UserDto(int Id, string Name, string Email);"
+              }
+            ],
+            "keyTakeaway": "Use records for data carriers. Classes for entities with behavior.",
+            "references": [
+              "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/record"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.null-safety.pattern-matching",
+          "text": "Is pattern matching used instead of type-checking casts?",
+          "severity": "nit",
+          "tags": [
+            "idiom"
+          ],
+          "baseContent": {
+            "whatItMeans": "C# pattern matching (is, switch expressions) replaces verbose if-is-cast chains with cleaner syntax.",
+            "whyItMatters": "Pattern matching is more readable, avoids double evaluation, and enables exhaustiveness checking with switch expressions.",
+            "howToVerify": "Look for if (x is Type t) or cast chains that could be simplified with switch expressions.",
+            "exampleComment": "This if-else chain checking types would be clearer as a switch expression with pattern matching.",
+            "codeExamples": [],
+            "keyTakeaway": "Prefer switch expressions with patterns for type-based dispatch.",
+            "references": [
+              "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/functional/pattern-matching"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-dotnet.aspnet-core",
+      "title": "ASP.NET Core",
+      "items": [
+        {
+          "id": "csharp-dotnet.aspnet-core.model-validation",
+          "text": "Is model validation applied to all API inputs?",
+          "severity": "major",
+          "tags": [
+            "security",
+            "api"
+          ],
+          "baseContent": {
+            "whatItMeans": "API endpoints should validate request bodies using data annotations ([Required], [Range], etc.) or FluentValidation. The framework handles 400 responses automatically.",
+            "whyItMatters": "Unvalidated input is the root of injection attacks, data corruption, and crashes. Validation at the API boundary catches bad data before it reaches business logic.",
+            "howToVerify": "Check [FromBody] and [FromQuery] parameters. Do they have validation attributes? Is [ApiController] on the controller (enables automatic model validation)?",
+            "exampleComment": "The CreateOrderRequest model has no validation. Add [Required] to Name and [Range(1, 10000)] to Quantity.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate all inputs at the API boundary. Trust nothing from the client.",
+            "references": [
+              "https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.aspnet-core.middleware-order",
+          "text": "Is middleware registered in the correct order?",
+          "severity": "major",
+          "tags": [
+            "config"
+          ],
+          "baseContent": {
+            "whatItMeans": "ASP.NET Core middleware runs in the order registered. Authentication must come before Authorization, which must come before endpoint routing.",
+            "whyItMatters": "Middleware in the wrong order can bypass security (auth after endpoints), cause errors (CORS after routing), or silently misbehave.",
+            "howToVerify": "Check Program.cs / Startup.cs. The typical order: ExceptionHandler, HSTS, HttpsRedirection, Static Files, Routing, CORS, Authentication, Authorization, Endpoints.",
+            "exampleComment": "UseAuthorization is called before UseAuthentication. This means authorization runs without a user identity. Swap the order.",
+            "codeExamples": [],
+            "keyTakeaway": "Middleware order matters. Authentication before Authorization before Endpoints.",
+            "references": [
+              "https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.aspnet-core.minimal-api",
+          "text": "Are minimal API endpoints following conventions?",
+          "severity": "minor",
+          "tags": [
+            "api",
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "Minimal APIs should use typed Results (Results.Ok, Results.NotFound), group endpoints with MapGroup, and use TypedResults for OpenAPI metadata.",
+            "whyItMatters": "Consistent endpoint conventions make the API predictable, improve OpenAPI generation, and make testing easier.",
+            "howToVerify": "Check that endpoints return TypedResults, use [FromBody]/[FromQuery] correctly, and follow REST naming conventions.",
+            "exampleComment": "This endpoint returns Ok(new {}) for errors. Use Results.Problem or Results.NotFound for proper HTTP semantics.",
+            "codeExamples": [],
+            "keyTakeaway": "Use TypedResults for OpenAPI. Follow REST conventions.",
+            "references": [
+              "https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.aspnet-core.exception-handling",
+          "text": "Are exceptions handled centrally, not in each controller?",
+          "severity": "minor",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "Use middleware (UseExceptionHandler) or IExceptionHandler for centralized error handling instead of try-catch in every action method.",
+            "whyItMatters": "Scattered try-catch blocks lead to inconsistent error responses, duplicated logging, and missed exceptions. Central handling ensures consistent error format.",
+            "howToVerify": "Check if controllers have try-catch blocks. These usually belong in middleware. Exceptions should bubble up and be caught centrally.",
+            "exampleComment": "This try-catch in the controller duplicates the error handling in 5 other controllers. Move to UseExceptionHandler middleware.",
+            "codeExamples": [],
+            "keyTakeaway": "Handle exceptions in middleware, not in controllers. Let exceptions bubble.",
+            "references": [
+              "https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-dotnet.ef-core",
+      "title": "Entity Framework Core",
+      "items": [
+        {
+          "id": "csharp-dotnet.ef-core.migrations-safe",
+          "text": "Are EF Core migrations safe for production rollout?",
+          "severity": "blocker",
+          "tags": [
+            "database",
+            "deployment"
+          ],
+          "baseContent": {
+            "whatItMeans": "Migrations should be backwards-compatible, avoid data loss, and not lock tables for extended periods. Column renames, type changes, and NOT NULL additions require care.",
+            "whyItMatters": "A migration that locks a table for minutes causes downtime. A migration that drops a column loses data. These are not reversible with a rollback.",
+            "howToVerify": "Review the generated migration SQL. Check for ALTER TABLE on large tables, DROP COLUMN, and data-type changes. Test on a production-sized dataset.",
+            "exampleComment": "This migration adds a NOT NULL column without a default value. Existing rows will fail. Add a default value or make it nullable first.",
+            "codeExamples": [],
+            "keyTakeaway": "Review generated SQL, not just the C# migration. Test on production-sized data.",
+            "references": [
+              "https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.ef-core.tracking",
+          "text": "Is change tracking disabled for read-only queries?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "EF Core tracks all queried entities by default, which adds memory and CPU overhead. For read-only queries, use .AsNoTracking().",
+            "whyItMatters": "Tracking 10,000 entities for a read-only list page wastes memory and slows down DetectChanges. AsNoTracking can be 2-5x faster for read-heavy workloads.",
+            "howToVerify": "Check queries that do not modify data. Are they using .AsNoTracking()? Consider UseQueryTrackingBehavior(NoTracking) as the default.",
+            "exampleComment": "This list endpoint fetches 500 orders for display only. Add .AsNoTracking() to avoid unnecessary change tracking overhead.",
+            "codeExamples": [],
+            "keyTakeaway": "Read-only queries should use AsNoTracking(). Consider making it the default.",
+            "references": [
+              "https://learn.microsoft.com/en-us/ef/core/querying/tracking"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.ef-core.dbcontext-lifetime",
+          "text": "Is DbContext scoped per request, not singleton or static?",
+          "severity": "blocker",
+          "tags": [
+            "database",
+            "di"
+          ],
+          "baseContent": {
+            "whatItMeans": "DbContext is not thread-safe. It must be scoped per request in web apps. Never store it in a static field or register it as singleton.",
+            "whyItMatters": "A shared DbContext causes data corruption, stale data, and concurrency exceptions. Each request should get its own instance.",
+            "howToVerify": "Check DI registration. AddDbContext defaults to Scoped, which is correct. Look for static DbContext fields or manual instantiation.",
+            "exampleComment": "This static DbContext field is shared across all requests. Remove it and inject DbContext through the constructor.",
+            "codeExamples": [],
+            "keyTakeaway": "DbContext is per-request. Never share it across threads.",
+            "references": [
+              "https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-dotnet.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "csharp-dotnet.security.sql-injection",
+          "text": "Are raw SQL queries parameterized?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "When using FromSqlRaw or ExecuteSqlRaw, parameters must use {0} placeholders or SqlParameter objects, never string interpolation.",
+            "whyItMatters": "SQL injection remains the most dangerous web vulnerability. EF's FromSqlInterpolated is safe, but FromSqlRaw with concatenation is not.",
+            "howToVerify": "Search for FromSqlRaw and ExecuteSqlRaw. Ensure they use parameterized placeholders. Prefer FromSqlInterpolated which handles parameters automatically.",
+            "exampleComment": "This FromSqlRaw uses string concatenation with user input. Switch to FromSqlInterpolated to prevent SQL injection.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "csharp",
+                "code": "var users = _context.Users\n    .FromSqlRaw($\"SELECT * FROM Users WHERE Name = '{name}'\")\n    .ToList();"
+              },
+              {
+                "label": "Good",
+                "language": "csharp",
+                "code": "var users = _context.Users\n    .FromSqlInterpolated($\"SELECT * FROM Users WHERE Name = {name}\")\n    .ToList();"
+              }
+            ],
+            "keyTakeaway": "Use FromSqlInterpolated, not FromSqlRaw with concatenation. EF handles parameterization.",
+            "references": [
+              "https://learn.microsoft.com/en-us/ef/core/querying/sql-queries"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.security.secrets-management",
+          "text": "Are secrets stored in configuration, not in source code?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Connection strings, API keys, and passwords should come from environment variables, Azure Key Vault, or user-secrets, never hardcoded.",
+            "whyItMatters": "Secrets in source code end up in version control. Even private repos can be compromised. Secrets should be managed externally and rotated regularly.",
+            "howToVerify": "Search for hardcoded strings that look like passwords, API keys, or connection strings. Check appsettings.json for production secrets.",
+            "exampleComment": "The connection string in appsettings.json contains a password. Use environment variables or user-secrets for local dev, Key Vault for production.",
+            "codeExamples": [],
+            "keyTakeaway": "No secrets in code or config files. Use environment variables, user-secrets, or a vault.",
+            "references": [
+              "https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.security.authorization",
+          "text": "Are endpoints protected with appropriate authorization?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Every endpoint that modifies data or returns sensitive information should have [Authorize] or policy-based authorization.",
+            "whyItMatters": "Missing authorization means any authenticated (or unauthenticated) user can access the endpoint. This is a common source of privilege escalation.",
+            "howToVerify": "Check new endpoints for [Authorize], [AllowAnonymous], or RequireAuthorization(). Ensure role/policy checks match the endpoint's sensitivity.",
+            "exampleComment": "This admin endpoint has no [Authorize] attribute. Any user can call it. Add [Authorize(Roles = \"Admin\")] or a policy.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to authorized. Explicitly mark public endpoints with [AllowAnonymous].",
+            "references": [
+              "https://learn.microsoft.com/en-us/aspnet/core/security/authorization/introduction"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "csharp-dotnet.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "csharp-dotnet.testing.arrange-act-assert",
+          "text": "Do tests follow the Arrange-Act-Assert pattern?",
+          "severity": "nit",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "Each test should have three clear phases: set up data (Arrange), execute the code under test (Act), and verify the outcome (Assert).",
+            "whyItMatters": "AAA makes tests readable and maintainable. Tests without clear structure are hard to debug when they fail.",
+            "howToVerify": "Check that each test method has a clear separation between setup, execution, and assertions. Avoid multiple acts in one test.",
+            "exampleComment": "This test mixes setup and assertions. Restructure with clear Arrange, Act, Assert sections.",
+            "codeExamples": [],
+            "keyTakeaway": "One Act per test. Arrange, Act, Assert. Every time.",
+            "references": []
+          }
+        },
+        {
+          "id": "csharp-dotnet.testing.webapplicationfactory",
+          "text": "Are integration tests using WebApplicationFactory?",
+          "severity": "minor",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "WebApplicationFactory<Program> creates an in-memory test server. It is the standard way to write integration tests for ASP.NET Core without deploying.",
+            "whyItMatters": "Integration tests catch issues that unit tests miss: middleware, DI configuration, routing, and serialization. WebApplicationFactory makes them easy to write.",
+            "howToVerify": "Check that API tests use WebApplicationFactory, not manual HttpClient setup against a running server.",
+            "exampleComment": "These tests spin up a real server on localhost. Use WebApplicationFactory for faster, more reliable integration tests.",
+            "codeExamples": [],
+            "keyTakeaway": "WebApplicationFactory for integration tests. It boots the full pipeline in-process.",
+            "references": [
+              "https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests"
+            ]
+          }
+        },
+        {
+          "id": "csharp-dotnet.testing.mock-boundaries",
+          "text": "Are mocks used only at boundaries, not for internal logic?",
+          "severity": "minor",
+          "tags": [
+            "testing",
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "Mock external dependencies (databases, APIs, file systems) but not internal classes. Over-mocking creates brittle tests that break on refactoring.",
+            "whyItMatters": "Tests that mock every dependency test the mocking setup, not the code. They give false confidence and slow down refactoring.",
+            "howToVerify": "Check for tests with 5+ mock setups. Usually that means the class has too many dependencies or the tests are over-specified.",
+            "exampleComment": "This test mocks 6 internal services. Consider testing with real implementations and only mocking the external API calls.",
+            "codeExamples": [],
+            "keyTakeaway": "Mock at boundaries (DB, API, filesystem). Use real objects for internal logic.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

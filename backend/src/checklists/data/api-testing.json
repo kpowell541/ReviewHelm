@@ -1,0 +1,350 @@
+{
+  "meta": {
+    "id": "api-testing",
+    "mode": "review",
+    "title": "API & Integration Testing",
+    "shortTitle": "API Tests",
+    "description": "API testing, contract testing, integration testing with Postman, supertest, REST Assured, and Pact",
+    "icon": "🔌",
+    "totalItems": 20,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "api-testing.request-validation",
+      "title": "Request & Response Validation",
+      "items": [
+        {
+          "id": "api-testing.request-validation.status-codes",
+          "text": "Are correct HTTP status codes tested for success and error cases?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test that endpoints return correct status codes: 200 for success, 201 for creation, 400 for bad input, 401 for unauthorized, 404 for not found, 422 for validation errors.",
+            "whyItMatters": "Wrong status codes break API clients. A 200 with an error body means the client treats errors as success.",
+            "howToVerify": "Check that tests assert on status codes, not just response body. Verify error cases return appropriate 4xx/5xx codes.",
+            "exampleComment": "This test only checks the response body. Also assert expect(response.status).toBe(201) for the creation endpoint.",
+            "codeExamples": [],
+            "keyTakeaway": "Always assert status codes. 200 vs 201 vs 204 matters to API consumers.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.request-validation.response-schema",
+          "text": "Is the response schema validated (not just individual fields)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Validate the entire response structure against a JSON schema. Check required fields, types, and nested objects.",
+            "whyItMatters": "Checking individual fields misses added or removed fields. Schema validation catches structural changes.",
+            "howToVerify": "Check for JSON schema validation (ajv, joi, zod). Verify the schema matches the API documentation.",
+            "exampleComment": "This only checks response.body.name. If the API removes 'email' or adds unexpected fields, the test won't catch it.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate response schemas, not just individual fields. Catch structural changes automatically.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.request-validation.error-responses",
+          "text": "Are error responses tested for proper format and messages?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test that error responses have consistent format: error code, message, field-level validation errors, request ID.",
+            "whyItMatters": "API clients depend on consistent error formats to show user-friendly messages. Inconsistent errors break client error handling.",
+            "howToVerify": "Send invalid requests and verify the error response format. Check for field-level errors, error codes, and helpful messages.",
+            "exampleComment": "Sending an invalid email returns a generic 400 'Bad Request'. Return { errors: [{ field: 'email', message: 'Invalid email format' }] }.",
+            "codeExamples": [],
+            "keyTakeaway": "Test error responses as thoroughly as success responses. Consistent error format is an API contract.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.request-validation.content-types",
+          "text": "Are Content-Type headers tested for requests and responses?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Verify that the API sets correct Content-Type headers and rejects requests with wrong Content-Type.",
+            "whyItMatters": "Missing Content-Type headers cause parsing failures. Accepting any Content-Type can lead to security issues.",
+            "howToVerify": "Check that responses include correct Content-Type. Test sending requests with wrong Content-Type (text/plain to a JSON endpoint).",
+            "exampleComment": "This endpoint accepts text/plain but expects JSON body. Add Content-Type validation and return 415 Unsupported Media Type.",
+            "codeExamples": [],
+            "keyTakeaway": "Test Content-Type headers. Reject requests with unexpected Content-Type.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.request-validation.pagination",
+          "text": "Are pagination, sorting, and filtering tested?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test list endpoints with pagination params (page, limit, offset), sorting (sort=name:asc), and filtering (status=active).",
+            "whyItMatters": "Pagination bugs are common: off-by-one errors, missing last page, wrong total count. These affect UI rendering.",
+            "howToVerify": "Test first page, last page, empty page, page beyond data. Verify total count, page metadata, and sorting order.",
+            "exampleComment": "This tests page 1 only. Add tests for: last page, empty results, page 0, page beyond max, different sort orders.",
+            "codeExamples": [],
+            "keyTakeaway": "Test pagination boundaries: first, last, empty, beyond-max. Verify total counts and sorting.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-testing.authentication",
+      "title": "Authentication & Authorization",
+      "items": [
+        {
+          "id": "api-testing.authentication.auth-required",
+          "text": "Are endpoints tested for proper authentication enforcement?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Test that protected endpoints reject unauthenticated requests with 401. Verify expired tokens are rejected.",
+            "whyItMatters": "Missing authentication checks expose data to anyone. This is OWASP #1: Broken Access Control.",
+            "howToVerify": "Call every protected endpoint without a token. Verify 401 response. Test with expired and invalid tokens.",
+            "exampleComment": "GET /api/users returns 200 without any authentication token. This endpoint must require a valid auth token.",
+            "codeExamples": [],
+            "keyTakeaway": "Test that every protected endpoint returns 401 without authentication.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.authentication.authorization",
+          "text": "Are authorization rules tested (role-based, resource-based)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Test that users can only access their own data and perform allowed operations. Verify role restrictions.",
+            "whyItMatters": "IDOR (Insecure Direct Object Reference) lets users access others' data by changing IDs. Authorization tests catch this.",
+            "howToVerify": "Authenticate as user A and try to access user B's resources. Verify 403 or 404 response.",
+            "exampleComment": "Authenticated as user A, GET /api/users/B/orders returns user B's orders. Must return 403 Forbidden.",
+            "codeExamples": [],
+            "keyTakeaway": "Test horizontal (user-to-user) and vertical (role-based) authorization for every endpoint.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.authentication.rate-limiting",
+          "text": "Is rate limiting tested?",
+          "severity": "minor",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Test that rate-limited endpoints return 429 Too Many Requests after exceeding limits. Verify retry-after headers.",
+            "whyItMatters": "Without rate limiting, APIs are vulnerable to brute force attacks and abuse. Tests verify limits are enforced.",
+            "howToVerify": "Send requests exceeding the rate limit. Verify 429 response with appropriate retry-after header.",
+            "exampleComment": "The login endpoint has no rate limiting test. Send 100 requests in 10 seconds and verify rate limiting kicks in.",
+            "codeExamples": [],
+            "keyTakeaway": "Test rate limiting on sensitive endpoints (login, registration, password reset).",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-testing.contract",
+      "title": "Contract & Schema Testing",
+      "items": [
+        {
+          "id": "api-testing.contract.consumer-driven",
+          "text": "Are consumer-driven contract tests in place for service-to-service APIs?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Pact, Spring Cloud Contract, or similar to verify API contracts between services. Consumer defines expectations, provider verifies.",
+            "whyItMatters": "Without contract tests, provider changes break consumers silently. Contract tests catch breaking changes before deployment.",
+            "howToVerify": "Check for contract test files (Pact, OpenAPI). Verify both consumer and provider sides are tested.",
+            "exampleComment": "Service A depends on Service B's /users endpoint but there's no contract test. Add a Pact contract for this dependency.",
+            "codeExamples": [],
+            "keyTakeaway": "Use contract tests between services. Consumer defines, provider verifies.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.contract.backward-compatibility",
+          "text": "Are API changes tested for backward compatibility?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New API versions must not break existing clients. Adding fields is safe. Removing or renaming fields is breaking.",
+            "whyItMatters": "Breaking API changes cause production outages for all consumers. Even internal APIs have multiple consumers.",
+            "howToVerify": "Check for removed fields, renamed fields, changed types, or removed endpoints. These are breaking changes.",
+            "exampleComment": "This renames 'user_name' to 'username' in the response. This breaks all existing clients. Add 'username' and keep 'user_name'.",
+            "codeExamples": [],
+            "keyTakeaway": "Never remove or rename API fields. Add new fields alongside old ones. Deprecate gradually.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.contract.openapi-validation",
+          "text": "Does the API implementation match the OpenAPI/Swagger spec?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Validate that actual API responses match the documented OpenAPI specification. Use automated spec testing.",
+            "whyItMatters": "Documentation drift makes API specs useless. Consumers build against the spec, but the implementation differs.",
+            "howToVerify": "Use tools like Dredd, Schemathesis, or openapi-backend to validate responses against the spec automatically.",
+            "exampleComment": "The OpenAPI spec says 'email' is required, but the API returns responses without it. Fix the API or update the spec.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate API responses against OpenAPI specs automatically. Catch documentation drift.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.contract.versioning",
+          "text": "Is API versioning strategy tested?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "If the API is versioned (v1, v2), test that old versions still work correctly and new versions have expected changes.",
+            "whyItMatters": "Breaking old API versions without notice strands clients on unsupported versions.",
+            "howToVerify": "Run tests against all supported API versions. Verify deprecated endpoints return proper warnings.",
+            "exampleComment": "API v1 is still listed as supported but has no tests. Add tests to verify v1 continues to work with the latest code.",
+            "codeExamples": [],
+            "keyTakeaway": "Test all supported API versions. Verify deprecated versions return sunset headers.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-testing.integration",
+      "title": "Integration Testing",
+      "items": [
+        {
+          "id": "api-testing.integration.database",
+          "text": "Do integration tests verify database state changes?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "After API calls that modify data, verify the database state matches expectations. Don't just check the API response.",
+            "whyItMatters": "An API can return 200 but fail to persist data. Integration tests should verify the full round-trip.",
+            "howToVerify": "Check that POST/PUT/DELETE tests query the database afterward to verify changes were persisted correctly.",
+            "exampleComment": "The create user test checks the API response but doesn't verify the user exists in the database. Add a database assertion.",
+            "codeExamples": [],
+            "keyTakeaway": "Verify database state after write operations. API response alone isn't proof of persistence.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.integration.transaction-rollback",
+          "text": "Are integration tests isolated with transaction rollback?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Wrap each integration test in a database transaction and roll back afterward. This keeps tests isolated and fast.",
+            "whyItMatters": "Without rollback, tests accumulate data and interfere with each other. Cleanup scripts are fragile and slow.",
+            "howToVerify": "Check for transaction management in test setup/teardown. Verify the database is clean between tests.",
+            "exampleComment": "Tests insert data without rollback. After 50 runs, there are 5000 test records. Use transactions with rollback.",
+            "codeExamples": [],
+            "keyTakeaway": "Use transaction rollback for test isolation. Faster and more reliable than manual cleanup.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.integration.third-party-mocking",
+          "text": "Are third-party service calls mocked (not calling real external APIs)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Mock external service calls (payment, email, SMS) in integration tests. Use WireMock, MSW, or nock for HTTP mocking.",
+            "whyItMatters": "Real third-party calls are slow, costly, and flaky. A test that sends real emails or charges real credit cards is dangerous.",
+            "howToVerify": "Check for real HTTP calls to external services. Verify payment, email, and notification services are mocked.",
+            "exampleComment": "This integration test calls the real Stripe API. Mock it with nock/WireMock to avoid charges and flakiness.",
+            "codeExamples": [],
+            "keyTakeaway": "Mock external services. Test your integration with them using contract tests separately.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.integration.test-containers",
+          "text": "Are real databases used via test containers (not in-memory substitutes)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Testcontainers to run real database instances (PostgreSQL, Redis, MongoDB) in Docker for integration tests.",
+            "whyItMatters": "In-memory databases (H2, SQLite) behave differently from production databases. SQL syntax, constraints, and behavior differ.",
+            "howToVerify": "Check if tests use in-memory database substitutes. Verify integration tests use the same database engine as production.",
+            "exampleComment": "Tests use H2 instead of PostgreSQL. H2 doesn't support PostgreSQL-specific features. Use Testcontainers for a real PostgreSQL.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Testcontainers for real database testing. In-memory substitutes miss database-specific bugs.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-testing.data-management",
+      "title": "Test Data & Performance",
+      "items": [
+        {
+          "id": "api-testing.data-management.fixtures",
+          "text": "Is test data managed with fixtures or factories (not hardcoded)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use fixture files or factory functions to create test data. Don't hardcode JSON payloads throughout test files.",
+            "whyItMatters": "Hardcoded test data is duplicated and hard to update. Factories provide defaults with easy overrides.",
+            "howToVerify": "Check for large inline JSON objects in tests. These should use shared factories or fixtures.",
+            "exampleComment": "This 30-line JSON payload is copy-pasted in 10 tests. Create a userFactory() that returns defaults with overrides.",
+            "codeExamples": [],
+            "keyTakeaway": "Use factories for test data. Avoid copy-pasting JSON payloads across tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.data-management.idempotent",
+          "text": "Are tests idempotent (safe to run multiple times)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Running tests twice should produce the same results. Tests shouldn't fail on the second run due to leftover data.",
+            "whyItMatters": "Non-idempotent tests fail on re-run: unique constraint violations, already-exists errors, stale data from previous run.",
+            "howToVerify": "Run the test suite twice without resetting the database. If the second run fails, tests aren't idempotent.",
+            "exampleComment": "Second run fails with 'email already exists'. Use unique test data per run or clean up in beforeEach.",
+            "codeExamples": [],
+            "keyTakeaway": "Tests must be idempotent. Use unique data or clean up before/after each test.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.data-management.performance-baselines",
+          "text": "Are response time assertions included for critical endpoints?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Assert that critical endpoints respond within acceptable time limits. Catch performance regressions early.",
+            "whyItMatters": "A query that goes from 50ms to 5s won't be caught by functional tests. Response time assertions catch regressions.",
+            "howToVerify": "Check for response time assertions on critical endpoints. Verify thresholds are reasonable for the test environment.",
+            "exampleComment": "The user search endpoint should respond within 200ms. Add expect(response.time).toBeLessThan(200) to catch regressions.",
+            "codeExamples": [],
+            "keyTakeaway": "Add response time assertions for critical endpoints. Catch performance regressions in tests.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-testing.data-management.large-payloads",
+          "text": "Are edge cases tested (large payloads, special characters, unicode)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test with large request bodies, special characters, unicode, empty strings, and very long strings to catch edge cases.",
+            "whyItMatters": "APIs often break with unexpected input: emoji in names, 10MB payloads, null bytes, or zero-width characters.",
+            "howToVerify": "Check for tests with unicode input, very long strings, empty arrays, and large payloads.",
+            "exampleComment": "No tests with unicode names. Add a test with name: '🧑‍💻 Developer éàü' to verify unicode handling.",
+            "codeExamples": [],
+            "keyTakeaway": "Test edge cases: unicode, empty input, large payloads, special characters.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

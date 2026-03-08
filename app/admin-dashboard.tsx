@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { api, ApiError } from '../src/api/client';
 import { useAuthStore } from '../src/store/useAuthStore';
@@ -135,9 +135,10 @@ export default function AdminDashboardScreen() {
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isAllowed) return;
+  const fetchDashboard = useCallback(() => {
     setLoading(true);
     setError(null);
     api
@@ -151,7 +152,36 @@ export default function AdminDashboardScreen() {
         }
       })
       .finally(() => setLoading(false));
-  }, [isAllowed]);
+  }, []);
+
+  useEffect(() => {
+    if (!isAllowed) return;
+    fetchDashboard();
+  }, [isAllowed, fetchDashboard]);
+
+  const handlePublishAll = useCallback(async () => {
+    if (!data) return;
+    setPublishing(true);
+    setPublishResult(null);
+    try {
+      const byId: Record<string, string> = {};
+      for (const item of data.checklistStaleness.items) {
+        byId[item.checklistId] = item.version;
+      }
+      const result = await api.post<{ ok: boolean; publishedAt: string }>(
+        '/admin/checklists/publish',
+        { version: data.checklistStaleness.items[0]?.version ?? '1.0.0', byId },
+      );
+      setPublishResult(`Published at ${new Date(result.publishedAt).toLocaleString()}`);
+      fetchDashboard();
+    } catch (err) {
+      setPublishResult(
+        err instanceof ApiError ? err.message : 'Failed to publish checklists.',
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }, [data, fetchDashboard]);
 
   const staleCount = useMemo(
     () => data?.checklistStaleness.summary.stale ?? 0,
@@ -289,6 +319,20 @@ export default function AdminDashboardScreen() {
                   </View>
                 );
               })}
+              <Pressable
+                style={[styles.publishButton, publishing && styles.publishButtonDisabled]}
+                onPress={handlePublishAll}
+                disabled={publishing}
+              >
+                {publishing ? (
+                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                ) : (
+                  <Text style={styles.publishButtonText}>Publish All Checklists</Text>
+                )}
+              </Pressable>
+              {publishResult && (
+                <Text style={styles.metaText}>{publishResult}</Text>
+              )}
             </View>
 
             <View style={styles.card}>
@@ -452,5 +496,21 @@ const styles = StyleSheet.create({
     color: colors.error,
     fontSize: fontSizes.md,
     fontFamily: 'Quicksand_600SemiBold',
+  },
+  publishButton: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center' as const,
+    marginTop: spacing.sm,
+  },
+  publishButtonDisabled: {
+    opacity: 0.6,
+  },
+  publishButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    fontFamily: 'Quicksand_700Bold',
   },
 });

@@ -1,0 +1,389 @@
+{
+  "meta": {
+    "id": "performance-testing",
+    "mode": "review",
+    "title": "Performance & Load Testing",
+    "shortTitle": "Perf Tests",
+    "description": "Load testing with k6, JMeter, Locust, Lighthouse audits, and performance profiling",
+    "icon": "⚡",
+    "totalItems": 23,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "performance-testing.load-testing",
+      "title": "Load & Stress Testing",
+      "items": [
+        {
+          "id": "performance-testing.load-testing.realistic-load",
+          "text": "Does the load test simulate realistic traffic patterns?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Load tests should model real user behavior: ramp-up time, think time between requests, mix of endpoints, and realistic data.",
+            "whyItMatters": "Blasting 10,000 RPS at one endpoint doesn't simulate reality. Real traffic has varied patterns, concurrent users, and mixed operations.",
+            "howToVerify": "Check for ramp-up stages, think time (sleep between requests), and a mix of read/write operations matching production ratios.",
+            "exampleComment": "This test sends 1000 RPS to /api/users instantly. Real traffic ramps up gradually. Add stages: 0->100->500->1000 over 10 minutes.",
+            "codeExamples": [],
+            "keyTakeaway": "Model real traffic: ramp-up, think time, endpoint mix. Don't just blast one endpoint.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.load-testing.thresholds",
+          "text": "Are pass/fail thresholds defined (p95 response time, error rate)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Define explicit pass/fail criteria: p95 response time < 500ms, error rate < 1%, throughput > 100 RPS.",
+            "whyItMatters": "Without thresholds, load tests produce data but never fail. A 5-second p95 response time passes because nobody defined 'too slow'.",
+            "howToVerify": "Check for threshold definitions in load test configuration. Verify thresholds align with SLOs.",
+            "exampleComment": "This k6 test has no thresholds. Add: thresholds: { http_req_duration: ['p(95)<500'], http_req_failed: ['rate<0.01'] }.",
+            "codeExamples": [],
+            "keyTakeaway": "Define thresholds for every load test. Align with SLOs: p95 latency, error rate, throughput.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.load-testing.stress-testing",
+          "text": "Are stress tests run to find the breaking point?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Beyond normal load tests, run stress tests that increase load until the system breaks. Find the ceiling.",
+            "whyItMatters": "Knowing the breaking point helps capacity planning. You need to know if the system handles 2x or 10x current traffic.",
+            "howToVerify": "Check for stress test scenarios that ramp beyond expected load. Verify the breaking point is documented.",
+            "exampleComment": "Load tests only test normal traffic (100 RPS). Add a stress test that ramps to 1000 RPS to find the breaking point.",
+            "codeExamples": [],
+            "keyTakeaway": "Run stress tests to find breaking points. Know your system's ceiling for capacity planning.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.load-testing.soak-testing",
+          "text": "Are soak tests run for memory leaks and degradation?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Run extended load tests (1-8 hours) at normal traffic to detect memory leaks, connection pool exhaustion, and gradual degradation.",
+            "whyItMatters": "Memory leaks and resource exhaustion don't show in 5-minute tests. They appear after hours of steady load.",
+            "howToVerify": "Check for long-duration test scenarios. Verify memory usage, connection counts, and response times are monitored over time.",
+            "exampleComment": "All load tests run for 5 minutes. Add a 2-hour soak test at normal load to detect memory leaks and connection pool issues.",
+            "codeExamples": [],
+            "keyTakeaway": "Run soak tests for hours to find memory leaks and resource exhaustion.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.load-testing.data-volume",
+          "text": "Are tests run against production-like data volumes?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Load tests should run against databases with production-like data volumes. 100 rows vs 10M rows produces very different results.",
+            "whyItMatters": "A query that's fast on 100 rows can be catastrophically slow on 10M rows. Missing indexes only matter at scale.",
+            "howToVerify": "Check the test database data volume. Compare to production. Verify indexes and query plans match production.",
+            "exampleComment": "Load tests run against a database with 100 users. Production has 5M users. Seed the test database with realistic volume.",
+            "codeExamples": [],
+            "keyTakeaway": "Test against production-like data volumes. Performance at 100 rows doesn't predict performance at 10M.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "performance-testing.frontend",
+      "title": "Frontend Performance",
+      "items": [
+        {
+          "id": "performance-testing.frontend.core-web-vitals",
+          "text": "Are Core Web Vitals measured and within thresholds (LCP, FID, CLS)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Measure Largest Contentful Paint (<2.5s), First Input Delay (<100ms), and Cumulative Layout Shift (<0.1) for key pages.",
+            "whyItMatters": "Core Web Vitals affect SEO ranking and user experience. Google uses them as ranking signals.",
+            "howToVerify": "Run Lighthouse CI on key pages. Check that LCP, FID/INP, and CLS meet 'good' thresholds.",
+            "exampleComment": "The homepage LCP is 4.2s (poor). Optimize the hero image: use next/image, add priority loading, serve WebP format.",
+            "codeExamples": [],
+            "keyTakeaway": "Measure Core Web Vitals in CI. LCP < 2.5s, INP < 200ms, CLS < 0.1.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.frontend.bundle-size",
+          "text": "Is bundle size monitored with size budgets?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Set size budgets for JS bundles. Track bundle size over time. Alert when bundles exceed thresholds.",
+            "whyItMatters": "Bundle size creeps up over time. Without monitoring, a 200KB bundle becomes 2MB and nobody notices until users complain.",
+            "howToVerify": "Check for bundlesize, size-limit, or webpack performance hints configuration. Verify size budgets are set.",
+            "exampleComment": "No bundle size monitoring. Add size-limit with a 250KB budget for the main bundle. CI will fail if it's exceeded.",
+            "codeExamples": [],
+            "keyTakeaway": "Set bundle size budgets. Monitor and alert on size increases in CI.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.frontend.lighthouse-ci",
+          "text": "Is Lighthouse CI integrated into the build pipeline?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Run Lighthouse CI on every PR to catch performance regressions. Set minimum scores for performance, accessibility, and best practices.",
+            "whyItMatters": "Performance regressions are easy to introduce and hard to notice. Automated Lighthouse checks catch them before merge.",
+            "howToVerify": "Check CI configuration for Lighthouse CI steps. Verify minimum score thresholds are configured.",
+            "exampleComment": "No Lighthouse CI configured. Add lighthouse-ci with minimum scores: performance 90, accessibility 95, best-practices 90.",
+            "codeExamples": [],
+            "keyTakeaway": "Run Lighthouse CI on every PR. Set minimum score thresholds.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.frontend.image-optimization",
+          "text": "Are images optimized (format, size, lazy loading)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use modern formats (WebP, AVIF), appropriate sizes, and lazy loading for below-fold images.",
+            "whyItMatters": "Unoptimized images are the #1 cause of slow page loads. A single 5MB PNG can make the page unusable on mobile.",
+            "howToVerify": "Check for unoptimized images: large file sizes, PNG where WebP works, missing lazy loading, missing srcset for responsive.",
+            "exampleComment": "This 3MB PNG hero image loads on every page. Convert to WebP (300KB), add srcset for responsive sizes, lazy-load if below fold.",
+            "codeExamples": [],
+            "keyTakeaway": "Optimize images: modern formats, responsive sizes, lazy loading. Images are usually the biggest payload.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.frontend.render-performance",
+          "text": "Are unnecessary re-renders detected and prevented?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Profile component renders. Avoid unnecessary re-renders from unstable references, missing memoization, or context overuse.",
+            "whyItMatters": "Unnecessary re-renders cause jank, slow interactions, and battery drain on mobile. A list of 1000 items re-rendering on every keystroke freezes the UI.",
+            "howToVerify": "Use React DevTools Profiler or similar to check render counts. Verify large lists use virtualization.",
+            "exampleComment": "This component re-renders 50 times on a single keystroke because the parent passes a new object reference every render.",
+            "codeExamples": [],
+            "keyTakeaway": "Profile render performance. Use memoization, virtualization, and stable references.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "performance-testing.backend",
+      "title": "Backend Performance",
+      "items": [
+        {
+          "id": "performance-testing.backend.query-performance",
+          "text": "Are database queries profiled for N+1 and slow queries?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Profile database queries for N+1 patterns, missing indexes, full table scans, and excessive query counts per request.",
+            "whyItMatters": "N+1 queries are the most common backend performance issue. Loading 100 items with N+1 sends 101 queries instead of 2.",
+            "howToVerify": "Check query counts per API request. Look for loops that execute queries. Verify eager loading for related data.",
+            "exampleComment": "Loading the order list executes 1 query for orders + 1 per order for items (N+1). Use eager loading or a JOIN.",
+            "codeExamples": [],
+            "keyTakeaway": "Profile queries. Fix N+1 with eager loading. Add indexes for slow queries.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.backend.caching",
+          "text": "Are frequently accessed endpoints cached appropriately?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Cache expensive computations and frequently read data. Use appropriate cache headers for HTTP caching.",
+            "whyItMatters": "Hitting the database for the same unchanged data on every request wastes resources and adds latency.",
+            "howToVerify": "Check for caching on read-heavy endpoints. Verify cache invalidation on writes. Check HTTP cache headers.",
+            "exampleComment": "The product catalog endpoint hits the database on every request. Cache it with a 5-minute TTL — products rarely change.",
+            "codeExamples": [],
+            "keyTakeaway": "Cache read-heavy endpoints. Use appropriate TTLs and invalidation strategies.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.backend.connection-pools",
+          "text": "Are connection pool sizes appropriate for expected load?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Database and HTTP connection pool sizes should match expected concurrency. Too small causes queuing, too large wastes resources.",
+            "whyItMatters": "Pool exhaustion under load causes requests to queue and timeout. Oversized pools waste database connections.",
+            "howToVerify": "Check pool size configuration. Verify it aligns with expected concurrent requests and database connection limits.",
+            "exampleComment": "Default pool size of 5 connections with 100 concurrent requests causes 95 to queue. Increase to 20-30 based on load testing.",
+            "codeExamples": [],
+            "keyTakeaway": "Size connection pools based on load testing. Monitor pool usage in production.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.backend.async-processing",
+          "text": "Are slow operations processed asynchronously (queues, background jobs)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Operations that take >500ms (email sending, report generation, image processing) should be queued for background processing.",
+            "whyItMatters": "Synchronous slow operations block the request thread, reducing throughput and causing timeouts.",
+            "howToVerify": "Check for synchronous operations that are slow: email, file processing, external API calls. These should be async.",
+            "exampleComment": "This endpoint generates a PDF synchronously, taking 5 seconds. Queue the generation and return 202 Accepted with a status URL.",
+            "codeExamples": [],
+            "keyTakeaway": "Queue slow operations. Return 202 Accepted with a status endpoint for long-running tasks.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.backend.memory-profiling",
+          "text": "Are memory usage patterns tested for leaks?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Profile memory usage during load tests. Check for growing memory that isn't released (event listeners, caches, closures).",
+            "whyItMatters": "Memory leaks cause OOM crashes in production. They only manifest under sustained load over time.",
+            "howToVerify": "Monitor memory usage during soak tests. Check for steadily increasing memory that doesn't plateau.",
+            "exampleComment": "Memory grows from 200MB to 2GB over 2 hours of steady load. Profile for leaked event listeners or unbounded caches.",
+            "codeExamples": [],
+            "keyTakeaway": "Monitor memory during soak tests. Steadily growing memory indicates a leak.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "performance-testing.monitoring",
+      "title": "Monitoring & Benchmarks",
+      "items": [
+        {
+          "id": "performance-testing.monitoring.baseline-benchmarks",
+          "text": "Are performance baselines established and tracked over time?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Record performance baselines (p50, p95, p99 response times) and track them across releases to detect regressions.",
+            "whyItMatters": "Without baselines, you can't detect gradual degradation. A 10% regression per release compounds to 50% over 5 releases.",
+            "howToVerify": "Check for performance tracking dashboards. Verify baselines are recorded and compared across releases.",
+            "exampleComment": "No performance baselines recorded. Run benchmark tests and record p50/p95/p99 for key endpoints as the baseline.",
+            "codeExamples": [],
+            "keyTakeaway": "Establish baselines. Track p50/p95/p99 across releases to catch regressions.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.monitoring.alerting",
+          "text": "Are performance alerts configured for SLO violations?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Set up alerts when performance metrics exceed SLO thresholds: latency spikes, error rate increases, throughput drops.",
+            "whyItMatters": "Without alerts, performance issues go unnoticed until users complain. Proactive alerting catches issues early.",
+            "howToVerify": "Check for performance alert rules in monitoring configuration. Verify they're based on SLOs, not arbitrary thresholds.",
+            "exampleComment": "No performance alerts configured. Add alerts for: p95 latency > 500ms, error rate > 1%, throughput < 80% of baseline.",
+            "codeExamples": [],
+            "keyTakeaway": "Alert on SLO violations. Use p95 latency and error rate as primary indicators.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.monitoring.profiling-tools",
+          "text": "Are profiling tools used to identify bottlenecks (not guessing)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use profilers (flame graphs, CPU profiles, memory snapshots) to identify actual bottlenecks before optimizing.",
+            "whyItMatters": "Optimizing without profiling is guessing. The actual bottleneck is rarely where you think it is.",
+            "howToVerify": "Check if performance improvements are backed by profiling data. Verify the optimization addresses the actual bottleneck.",
+            "exampleComment": "This PR optimizes string concatenation but the profile shows 90% of time is in database queries. Profile first, optimize second.",
+            "codeExamples": [],
+            "keyTakeaway": "Profile before optimizing. Use flame graphs and CPU profiles to find real bottlenecks.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.monitoring.regression-detection",
+          "text": "Are performance regression tests integrated into CI?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Run micro-benchmarks or targeted load tests in CI to catch performance regressions before they reach production.",
+            "whyItMatters": "Performance regressions caught in CI are cheap to fix. Found in production, they require emergency hotfixes.",
+            "howToVerify": "Check CI for performance test stages. Verify they compare against baselines and fail on significant regressions.",
+            "exampleComment": "No performance tests in CI. Add benchmark tests for critical code paths that fail if performance degrades >10%.",
+            "codeExamples": [],
+            "keyTakeaway": "Run performance tests in CI. Fail the build on significant regressions.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.monitoring.real-user-monitoring",
+          "text": "Is Real User Monitoring (RUM) collecting actual user performance data?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Collect performance metrics from real users' browsers/devices. Synthetic tests don't capture real-world conditions.",
+            "whyItMatters": "Lab tests run on fast machines with good connections. RUM shows actual performance on users' slow phones and spotty WiFi.",
+            "howToVerify": "Check for RUM integration (Web Vitals, Datadog RUM, New Relic Browser). Verify data is segmented by device and connection.",
+            "exampleComment": "Only synthetic Lighthouse tests are used. Add RUM to capture real user metrics and compare with lab results.",
+            "codeExamples": [],
+            "keyTakeaway": "Collect real user metrics alongside synthetic tests. Real-world performance differs from lab results.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "performance-testing.scalability",
+      "title": "Scalability Testing",
+      "items": [
+        {
+          "id": "performance-testing.scalability.horizontal-scaling",
+          "text": "Is the application tested with multiple instances (horizontal scaling)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test the application running on multiple instances behind a load balancer. Verify sessions, state, and file uploads work correctly.",
+            "whyItMatters": "Code that stores state in memory (sessions, file uploads, caches) breaks when running on multiple instances.",
+            "howToVerify": "Deploy multiple instances and run load tests. Verify sticky sessions aren't required. Check for in-memory state.",
+            "exampleComment": "File uploads are stored in local temp directories. With 2 instances, the download request may hit the other instance. Use S3.",
+            "codeExamples": [],
+            "keyTakeaway": "Test with multiple instances. Eliminate local state: use shared storage and external session stores.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.scalability.database-scaling",
+          "text": "Are database performance tests run with expected growth projections?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test database performance with data volumes expected at 6 months and 1 year of growth. Plan for data growth.",
+            "whyItMatters": "Queries fast on current data may be catastrophically slow at 10x volume. Planning prevents emergency migrations.",
+            "howToVerify": "Check if load tests account for data growth. Verify indexes and query plans work at projected volumes.",
+            "exampleComment": "Database has 1M rows now, growing 100K/month. Test performance at 3M and 5M rows to catch future issues.",
+            "codeExamples": [],
+            "keyTakeaway": "Test at projected data volumes. Plan for growth before it becomes an emergency.",
+            "references": []
+          }
+        },
+        {
+          "id": "performance-testing.scalability.graceful-degradation",
+          "text": "Does the system degrade gracefully under extreme load?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Under extreme load, the system should slow down gracefully, not crash. Implement circuit breakers, rate limiting, and load shedding.",
+            "whyItMatters": "A system that crashes under load causes total outage. Graceful degradation serves some users while protecting the system.",
+            "howToVerify": "Run load tests beyond capacity. Verify the system returns errors gracefully, doesn't crash, and recovers automatically.",
+            "exampleComment": "At 5x normal load, the application OOMs and crashes. Implement rate limiting and circuit breakers to shed excess load.",
+            "codeExamples": [],
+            "keyTakeaway": "Systems should degrade gracefully, not crash. Use circuit breakers and rate limiting.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

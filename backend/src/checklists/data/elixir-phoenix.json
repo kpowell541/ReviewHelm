@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "id": "elixir-phoenix",
+    "mode": "review",
+    "title": "Elixir & Phoenix",
+    "shortTitle": "Elixir",
+    "description": "Elixir applications with OTP, GenServer, Phoenix LiveView, and Ecto",
+    "icon": "💧",
+    "totalItems": 20,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "elixir-phoenix.core",
+      "title": "Core Elixir",
+      "items": [
+        {
+          "id": "elixir-phoenix.core.pattern-matching",
+          "text": "Is pattern matching used effectively instead of conditional logic?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Elixir's pattern matching should be used in function heads, case, and with instead of nested if/cond when matching on structure.",
+            "whyItMatters": "Pattern matching is clearer, more idiomatic, and lets the compiler help catch missing cases. Nested conditionals obscure intent.",
+            "howToVerify": "Look for nested if/cond that could be replaced by multiple function clauses or case with pattern matching.",
+            "exampleComment": "This nested if checking map keys could be a multi-clause function with pattern matching: def handle(%{type: :order} = event), etc.",
+            "codeExamples": [],
+            "keyTakeaway": "Use pattern matching in function heads for dispatch. Reserve if/cond for boolean conditions.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.core.pipe-operator",
+          "text": "Is the pipe operator used for clear data transformation chains?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The pipe operator |> should be used for sequential transformations. Don't pipe into functions where the data isn't the first argument.",
+            "whyItMatters": "Well-used pipes make data flow obvious. Misused pipes (single-step, wrong argument position) make code harder to read.",
+            "howToVerify": "Check that pipe chains flow naturally. Verify piped data is the first argument. Watch for single-step pipes (unnecessary).",
+            "exampleComment": "This pipes into Enum.map with an anonymous function that ignores the piped value. The pipe isn't adding clarity here.",
+            "codeExamples": [],
+            "keyTakeaway": "Use pipes for multi-step transformations. Don't pipe for a single function call.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.core.with-statement",
+          "text": "Is the 'with' statement used correctly for chaining operations that may fail?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use 'with' for chaining operations that return {:ok, value} or {:error, reason}. Handle the else clause for failures.",
+            "whyItMatters": "Missing else clauses in 'with' cause cryptic MatchError crashes. Overly long 'with' chains become hard to debug.",
+            "howToVerify": "Check that 'with' statements have else clauses handling error cases. Verify they're not too long (3-5 clauses max).",
+            "exampleComment": "This 'with' has no else clause. If any step returns {:error, reason}, you'll get a MatchError instead of a clear error.",
+            "codeExamples": [],
+            "keyTakeaway": "Always include else in 'with' statements. Keep chains to 3-5 steps.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.core.error-handling",
+          "text": "Does the code follow 'let it crash' philosophy appropriately?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "In Elixir/OTP, unexpected errors should crash the process and let the supervisor restart it. Don't catch errors defensively for everything.",
+            "whyItMatters": "Over-defensive error handling hides bugs and prevents supervisors from doing their job. Under-handling expected errors crashes user-facing processes.",
+            "howToVerify": "Check that expected errors (user input, API responses) are handled. Verify unexpected errors aren't silently rescued.",
+            "exampleComment": "This catch-all try/rescue hides real bugs. Let unexpected errors crash and handle only expected {:error, _} tuples.",
+            "codeExamples": [],
+            "keyTakeaway": "Handle expected errors explicitly. Let unexpected errors crash so supervisors can restart cleanly.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.core.typespec",
+          "text": "Are typespecs defined for public functions?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Public functions should have @spec annotations. Custom types should use @type or @typedoc for documentation.",
+            "whyItMatters": "Typespecs enable Dialyzer static analysis, serve as documentation, and help editors provide better autocomplete.",
+            "howToVerify": "Check that public functions (def, not defp) have @spec. Verify specs match the actual return types.",
+            "exampleComment": "This public function lacks a @spec. Add @spec create_user(map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}.",
+            "codeExamples": [],
+            "keyTakeaway": "Add @spec to public functions. Run Dialyzer in CI to catch type errors.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "elixir-phoenix.otp",
+      "title": "OTP & Concurrency",
+      "items": [
+        {
+          "id": "elixir-phoenix.otp.genserver-state",
+          "text": "Is GenServer state kept minimal and its API well-defined?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "GenServers should have a clear public API (client functions) wrapping call/cast. State should be minimal — don't use GenServer as a database.",
+            "whyItMatters": "Bloated GenServer state is lost on crash. Complex state makes debugging hard. Missing client API forces callers to know implementation details.",
+            "howToVerify": "Check that GenServer has public functions wrapping call/cast. Verify state is minimal and can be reconstructed from persistent storage.",
+            "exampleComment": "This GenServer stores the full user list in state. If it crashes, all data is lost. Use ETS or a database for large datasets.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep GenServer state minimal. Provide a clean client API. Persist important data externally.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.otp.supervision-tree",
+          "text": "Is the supervision tree structured correctly?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Supervisors should group related processes. Use :one_for_one, :one_for_all, or :rest_for_one based on process dependencies.",
+            "whyItMatters": "Wrong supervision strategy causes cascading restarts or leaves dependent processes in broken states.",
+            "howToVerify": "Check that the supervision strategy matches process dependencies. Verify child_spec options (restart, max_restarts) are appropriate.",
+            "exampleComment": "These processes depend on each other but use :one_for_one. Use :one_for_all or :rest_for_one so dependents restart together.",
+            "codeExamples": [],
+            "keyTakeaway": "Choose supervision strategy based on process dependencies. Group related processes under sub-supervisors.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.otp.bottleneck",
+          "text": "Are GenServers not creating bottlenecks (single process handling all requests)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "A single GenServer handling all requests serializes work. Use pooling (poolboy), Registry, or Task for concurrent work.",
+            "whyItMatters": "A single GenServer handling 1000 concurrent requests processes them one at a time, becoming the system bottleneck.",
+            "howToVerify": "Check if a GenServer handles requests from many clients. Consider if the work could be parallelized with Task.async or a pool.",
+            "exampleComment": "This single GenServer handles all API calls sequentially. Use Task.Supervisor with async_nolink for concurrent processing.",
+            "codeExamples": [],
+            "keyTakeaway": "Don't funnel concurrent work through a single GenServer. Use Task, pools, or per-entity processes.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.otp.message-overflow",
+          "text": "Are process mailboxes protected from unbounded growth?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Processes that receive messages faster than they handle them will accumulate a backlog, eventually consuming all memory.",
+            "whyItMatters": "An overflowing mailbox causes OOM crashes. This is especially common with GenServer casts and PubSub subscriptions.",
+            "howToVerify": "Check for high-volume cast/send patterns without backpressure. Verify GenServers handle messages fast enough for their expected load.",
+            "exampleComment": "This GenServer receives a cast for every HTTP request but does expensive work in handle_cast. Add backpressure or use a Task pool.",
+            "codeExamples": [],
+            "keyTakeaway": "Design for backpressure. Use call instead of cast when the sender can wait. Monitor mailbox sizes.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "elixir-phoenix.ecto",
+      "title": "Ecto & Data",
+      "items": [
+        {
+          "id": "elixir-phoenix.ecto.changesets",
+          "text": "Are changesets used for all data validation?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Ecto changesets with validate_required, validate_format, validate_length, etc. for all input validation before database operations.",
+            "whyItMatters": "Bypassing changesets skips validation, allowing invalid data into the database. Changeset errors provide clear user feedback.",
+            "howToVerify": "Check that inserts and updates go through changesets. Verify changesets validate all user-facing fields.",
+            "exampleComment": "This inserts data with Repo.insert(%User{email: email}) bypassing the changeset. Use User.changeset(%User{}, %{email: email}).",
+            "codeExamples": [],
+            "keyTakeaway": "Always use changesets for inserts and updates. Never bypass validation.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.ecto.preloading",
+          "text": "Are associations preloaded to avoid N+1 queries?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Accessing associations without preloading raises or returns nil. Use Repo.preload(), from() with preload:, or join + preload.",
+            "whyItMatters": "Accessing unpreloaded associations either raises UndefinedFunctionError or silently returns incomplete data.",
+            "howToVerify": "Check for association access in templates and serialization. Verify the query preloads the needed associations.",
+            "exampleComment": "This template accesses post.comments but the query doesn't preload comments. Add |> Repo.preload(:comments).",
+            "codeExamples": [],
+            "keyTakeaway": "Preload associations in the query, not in templates. Use join + preload for filtered associations.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.ecto.migrations",
+          "text": "Are Ecto migrations safe for zero-downtime deploys?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Migrations run before new code deploys. Renaming columns, removing columns, or changing types can break the running application.",
+            "whyItMatters": "During deployment, old code runs against the new schema. Breaking changes cause errors for all requests until the new code deploys.",
+            "howToVerify": "Check if the migration would break the currently running code. Renaming, removing, or changing column types requires a multi-step approach.",
+            "exampleComment": "Renaming this column will break the running code. Use a multi-step migration: add new column, backfill, deploy code, remove old column.",
+            "codeExamples": [],
+            "keyTakeaway": "Migrations must be backward-compatible with the currently running code.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.ecto.transactions",
+          "text": "Are multi-step operations wrapped in Repo.transaction or Multi?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Ecto.Multi or Repo.transaction for operations that must succeed or fail atomically.",
+            "whyItMatters": "Without transactions, a failure between two inserts leaves the database in an inconsistent state.",
+            "howToVerify": "Check for sequences of Repo.insert/update that should be atomic. Verify Ecto.Multi is used for complex operations.",
+            "exampleComment": "Creating a user and their profile are separate Repo.insert calls. Use Ecto.Multi to make them atomic.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Ecto.Multi for multi-step database operations. Handle rollbacks explicitly.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "elixir-phoenix.phoenix",
+      "title": "Phoenix Framework",
+      "items": [
+        {
+          "id": "elixir-phoenix.phoenix.liveview-assigns",
+          "text": "Are LiveView assigns minimal and properly managed?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "LiveView assigns are sent to the client on every update. Keep them minimal. Use temporary_assigns for large lists.",
+            "whyItMatters": "Large assigns increase WebSocket payload size and memory usage per connection. Thousands of connections with bloated assigns can OOM.",
+            "howToVerify": "Check assign sizes in LiveView mount and handle_event. Look for large lists that should use temporary_assigns or streams.",
+            "exampleComment": "This LiveView assigns a list of 10K items. Use streams or temporary_assigns to avoid keeping all items in memory.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep LiveView assigns small. Use streams for large collections. Use temporary_assigns for append-only lists.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.phoenix.auth-plugs",
+          "text": "Are authentication and authorization enforced in the router pipeline?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Use plugs in the router pipeline for authentication. Use on_mount hooks for LiveView authorization.",
+            "whyItMatters": "Missing auth plugs expose protected routes. LiveView must re-check auth on mount since WebSocket connections persist.",
+            "howToVerify": "Check that protected route scopes have auth plugs. Verify LiveViews use on_mount for authorization checks.",
+            "exampleComment": "This LiveView has no on_mount auth check. A user who loses their session while connected will retain access.",
+            "codeExamples": [],
+            "keyTakeaway": "Enforce auth in router pipelines for controllers and on_mount for LiveViews.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.phoenix.contexts",
+          "text": "Is business logic in contexts, not in controllers or LiveViews?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Phoenix contexts (e.g., Accounts, Catalog) should encapsulate business logic. Controllers and LiveViews should only handle HTTP/WebSocket concerns.",
+            "whyItMatters": "Logic in controllers can't be reused in LiveViews and vice versa. Contexts provide a clean API that both can use.",
+            "howToVerify": "Check for complex business logic in controllers or LiveView handle_event callbacks. It should be in context modules.",
+            "exampleComment": "This controller calculates order totals inline. Move this to the Orders context so it can be reused in the LiveView.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep controllers and LiveViews thin. Put business logic in contexts.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.phoenix.pubsub",
+          "text": "Is PubSub used correctly for real-time updates?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use Phoenix.PubSub for broadcasting updates to LiveViews. Subscribe in mount, broadcast from contexts, handle in handle_info.",
+            "whyItMatters": "Direct process messaging doesn't scale across nodes. PubSub works with distributed Erlang for multi-node deployments.",
+            "howToVerify": "Check that subscriptions happen in mount. Verify broadcasts include only the data needed (not entire records).",
+            "exampleComment": "This broadcasts the entire user record on every update. Broadcast only the changed fields to reduce payload.",
+            "codeExamples": [],
+            "keyTakeaway": "Subscribe in mount, broadcast from contexts. Keep broadcast payloads minimal.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "elixir-phoenix.testing",
+      "title": "Testing & Quality",
+      "items": [
+        {
+          "id": "elixir-phoenix.testing.context-tests",
+          "text": "Are context functions tested with meaningful assertions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Context modules should have thorough tests covering success, failure, and edge cases. Use ExUnit and Ecto sandbox.",
+            "whyItMatters": "Context functions contain business logic. Untested logic leads to regressions that are hard to catch in integration tests.",
+            "howToVerify": "Check that context functions have test files. Verify tests cover valid input, invalid input, and edge cases.",
+            "exampleComment": "This new context function create_order/1 has no tests. Add tests for valid attrs, missing required fields, and invalid associations.",
+            "codeExamples": [],
+            "keyTakeaway": "Test every public context function. Cover success, validation failures, and edge cases.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.testing.async-tests",
+          "text": "Are tests using async: true where possible?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Tests that use the Ecto SQL sandbox can run concurrently with async: true. This significantly speeds up the test suite.",
+            "whyItMatters": "Synchronous tests run one at a time. A 500-test suite at 50ms each takes 25s sync but under 5s async.",
+            "howToVerify": "Check for use MyApp.DataCase without async: true. Verify tests don't have shared state that prevents async execution.",
+            "exampleComment": "This test module uses async: false but doesn't share state with other tests. Set async: true for faster execution.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to async: true. Only use async: false for tests that require exclusive database access.",
+            "references": []
+          }
+        },
+        {
+          "id": "elixir-phoenix.testing.liveview-tests",
+          "text": "Are LiveView interactions tested with live/2 and render_* helpers?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test LiveViews with conn |> live(), then use render_click, render_submit, render_change to simulate user interactions.",
+            "whyItMatters": "LiveView tests catch rendering bugs, event handling issues, and authorization problems that unit tests miss.",
+            "howToVerify": "Check that LiveViews have corresponding test files using live/2. Verify tests simulate user interactions, not just initial render.",
+            "exampleComment": "This LiveView test only checks initial render. Add tests for form submission, event handling, and navigation.",
+            "codeExamples": [],
+            "keyTakeaway": "Test LiveView interactions, not just rendering. Use render_click/submit/change to simulate user actions.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

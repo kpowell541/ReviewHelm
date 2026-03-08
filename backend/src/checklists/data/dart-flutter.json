@@ -1,0 +1,678 @@
+{
+  "meta": {
+    "id": "dart-flutter",
+    "mode": "review",
+    "title": "Dart & Flutter",
+    "shortTitle": "Flutter",
+    "description": "Review checklist for Dart and Flutter applications",
+    "icon": "🐦",
+    "totalItems": 27,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "dart-flutter.state-management",
+      "title": "State Management",
+      "items": [
+        {
+          "id": "dart-flutter.state-management.provider-riverpod",
+          "text": "Is state management scoped correctly (not over-global)?",
+          "severity": "major",
+          "tags": [
+            "architecture",
+            "state"
+          ],
+          "baseContent": {
+            "whatItMeans": "State should be scoped to where it is needed. Global state (app-level providers) should only hold truly global concerns. Screen-local state should use local providers or StatefulWidget.",
+            "whyItMatters": "Over-global state causes unnecessary rebuilds, makes testing harder, and creates implicit dependencies between unrelated screens.",
+            "howToVerify": "Check if providers are scoped too broadly. Does a single provider manage state for multiple unrelated features? Could it be split or scoped to a subtree?",
+            "exampleComment": "This provider manages both auth state and cart state. Split into separate providers so cart changes do not rebuild auth-dependent widgets.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "// One giant provider for everything\nfinal appStateProvider = StateNotifierProvider<AppState, AppModel>(\n  (ref) => AppState(), // auth + cart + preferences + notifications\n);"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) => AuthNotifier());\nfinal cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) => CartNotifier());"
+              }
+            ],
+            "keyTakeaway": "One concern per provider. Scope as narrowly as possible.",
+            "references": [
+              "https://riverpod.dev/docs/concepts/providers"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.state-management.immutable-state",
+          "text": "Is state immutable, updated via copyWith or new instances?",
+          "severity": "major",
+          "tags": [
+            "state",
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "State objects should be immutable. Updates create new instances via copyWith. Mutating state directly bypasses change detection and causes bugs.",
+            "whyItMatters": "Flutter compares state objects by identity. If you mutate a field on an existing object, the framework does not detect the change and does not rebuild.",
+            "howToVerify": "Check state classes for mutable fields. Are updates done via state = state.copyWith(field: newValue) or by mutating fields directly?",
+            "exampleComment": "state.items.add(item) mutates the list in place. Flutter will not rebuild. Use state = state.copyWith(items: [...state.items, item]).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "void addItem(Item item) {\n  state.items.add(item); // mutation, no rebuild!\n}"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "void addItem(Item item) {\n  state = state.copyWith(items: [...state.items, item]); // new instance\n}"
+              }
+            ],
+            "keyTakeaway": "Never mutate state. Always create new instances with copyWith.",
+            "references": []
+          }
+        },
+        {
+          "id": "dart-flutter.state-management.dispose",
+          "text": "Are controllers and streams properly disposed?",
+          "severity": "major",
+          "tags": [
+            "memory",
+            "lifecycle"
+          ],
+          "baseContent": {
+            "whatItMeans": "TextEditingController, AnimationController, ScrollController, and StreamSubscription must be disposed in the dispose() method to prevent memory leaks.",
+            "whyItMatters": "Undisposed controllers leak memory and can cause 'setState called after dispose' errors when callbacks fire after the widget is removed from the tree.",
+            "howToVerify": "Check StatefulWidget classes for controllers created in initState. Is dispose() overridden to clean them up?",
+            "exampleComment": "This TextEditingController is created in initState but never disposed. Add @override void dispose() { _controller.dispose(); super.dispose(); }.",
+            "codeExamples": [],
+            "keyTakeaway": "Every controller created in initState must be disposed in dispose().",
+            "references": [
+              "https://api.flutter.dev/flutter/widgets/State/dispose.html"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.state-management.build-purity",
+          "text": "Is the build method free of side effects?",
+          "severity": "blocker",
+          "tags": [
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "build() can be called many times per frame. It must not make API calls, write to databases, navigate, or modify state. Side effects go in initState, callbacks, or effect hooks.",
+            "whyItMatters": "Side effects in build() cause infinite loops (setState in build triggers rebuild triggers build), duplicate API calls, and navigation loops.",
+            "howToVerify": "Check build() methods for API calls, setState, Navigator.push, or any non-UI code. These belong in callbacks or lifecycle methods.",
+            "exampleComment": "This API call in build() fires on every rebuild. Move it to initState or a FutureProvider.",
+            "codeExamples": [],
+            "keyTakeaway": "build() returns widgets. Nothing else. Side effects go elsewhere.",
+            "references": [
+              "https://api.flutter.dev/flutter/widgets/State/build.html"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dart-flutter.widget-design",
+      "title": "Widget Design",
+      "items": [
+        {
+          "id": "dart-flutter.widget-design.const-constructors",
+          "text": "Are const constructors used where possible?",
+          "severity": "minor",
+          "tags": [
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Widgets with const constructors are canonicalized by the compiler. Identical const widgets share a single instance, avoiding unnecessary rebuilds.",
+            "whyItMatters": "const widgets are skipped during rebuilds because the framework knows they have not changed. This reduces build time and improves scrolling performance.",
+            "howToVerify": "Check for widgets that could be const but are not. Enable the prefer_const_constructors lint. Look for new Text('...') that could be const Text('...').",
+            "exampleComment": "This SizedBox(height: 16) is recreated on every build. Make it const SizedBox(height: 16) to avoid the rebuild.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "Column(\n  children: [\n    SizedBox(height: 16),      // recreated every build\n    Text('Hello'),             // recreated every build\n    Icon(Icons.star),          // recreated every build\n  ],\n)"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "Column(\n  children: [\n    const SizedBox(height: 16),  // single instance, skipped on rebuild\n    const Text('Hello'),\n    const Icon(Icons.star),\n  ],\n)"
+              }
+            ],
+            "keyTakeaway": "Use const everywhere you can. Enable the lint to catch misses.",
+            "references": [
+              "https://dart.dev/effective-dart/usage#do-use-const-for-const-declarations"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.widget-design.widget-extraction",
+          "text": "Are large build methods broken into smaller widgets?",
+          "severity": "minor",
+          "tags": [
+            "design",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "A build method over 50 lines should be split into smaller widget classes (not helper methods). Widget classes have their own Element and can skip rebuilds independently.",
+            "whyItMatters": "Helper methods rebuild with the parent every time. Extracted widget classes only rebuild when their own inputs change. This also improves readability.",
+            "howToVerify": "Check for build methods over 50 lines. Check for _buildHeader, _buildBody helper methods that should be separate widgets.",
+            "exampleComment": "This 120-line build method has _buildHeader and _buildFooter helpers. Extract them into HeaderWidget and FooterWidget classes for independent rebuilds.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "Widget _buildHeader() { /* rebuilds with parent every time */ }\nWidget _buildBody() { /* rebuilds with parent every time */ }\n\n@override\nWidget build(BuildContext context) {\n  return Column(children: [_buildHeader(), _buildBody()]);\n}"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "class HeaderWidget extends StatelessWidget {\n  const HeaderWidget({super.key}); // independent rebuild scope\n  @override Widget build(BuildContext context) { /* ... */ }\n}"
+              }
+            ],
+            "keyTakeaway": "Extract widgets, not methods. Widget classes have independent rebuild scopes.",
+            "references": [
+              "https://docs.flutter.dev/perf/best-practices"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.widget-design.keys",
+          "text": "Are Keys used correctly for lists and conditional widgets?",
+          "severity": "major",
+          "tags": [
+            "correctness"
+          ],
+          "baseContent": {
+            "whatItMeans": "When widgets in a list can be reordered, added, or removed, each needs a unique Key. Without keys, Flutter may reuse state from the wrong widget.",
+            "whyItMatters": "Missing keys in lists cause input fields to show wrong data after reorder, checkboxes to toggle the wrong item, and animations to glitch.",
+            "howToVerify": "Check ListView.builder and similar. Do items have ValueKey or ObjectKey? Check conditional widget swaps (if/else returning different widget types).",
+            "exampleComment": "This ListView has no keys on its items. Reordering the list will cause text fields to display the wrong user's data. Add ValueKey(user.id).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "ListView.builder(\n  itemCount: users.length,\n  itemBuilder: (context, index) => UserTile(user: users[index]),\n)"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "ListView.builder(\n  itemCount: users.length,\n  itemBuilder: (context, index) => UserTile(\n    key: ValueKey(users[index].id),\n    user: users[index],\n  ),\n)"
+              }
+            ],
+            "keyTakeaway": "Key every item in a dynamic list. Use stable IDs, not indices.",
+            "references": [
+              "https://api.flutter.dev/flutter/foundation/Key-class.html"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.widget-design.responsive",
+          "text": "Does the layout adapt to different screen sizes?",
+          "severity": "major",
+          "tags": [
+            "ux",
+            "responsive"
+          ],
+          "baseContent": {
+            "whatItMeans": "Use MediaQuery, LayoutBuilder, or Flex widgets to adapt layouts. Avoid hardcoded widths. Test on phones, tablets, and (if applicable) desktop.",
+            "whyItMatters": "Flutter runs on phones, tablets, web, and desktop. Hardcoded pixel values cause overflow on small screens and wasted space on large ones.",
+            "howToVerify": "Run on different screen sizes (or use the device preview plugin). Check for hardcoded widths, fixed-height containers, and non-scrollable overflowing layouts.",
+            "exampleComment": "This Container has width: 400, which overflows on small phones. Use ConstrainedBox with maxWidth or a fraction of MediaQuery.sizeOf(context).width.",
+            "codeExamples": [],
+            "keyTakeaway": "Use flexible layouts. Test on multiple screen sizes. Avoid hardcoded dimensions.",
+            "references": [
+              "https://docs.flutter.dev/ui/adaptive-responsive"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dart-flutter.navigation",
+      "title": "Navigation & Routing",
+      "items": [
+        {
+          "id": "dart-flutter.navigation.deep-links",
+          "text": "Does the app handle deep links correctly?",
+          "severity": "minor",
+          "tags": [
+            "navigation"
+          ],
+          "baseContent": {
+            "whatItMeans": "Deep links should navigate to the correct screen with proper state. The back button should navigate to a sensible parent, not exit the app.",
+            "whyItMatters": "Deep links from notifications, emails, and other apps are a primary entry point. Broken deep links frustrate users and hurt engagement.",
+            "howToVerify": "Test deep links with flutter run --route or adb for Android. Does the correct screen load? Does back navigation work?",
+            "exampleComment": "Opening the deep link /orders/123 shows a blank screen because the orders list is not loaded. Ensure the route handler loads required data.",
+            "codeExamples": [],
+            "keyTakeaway": "Deep links must work standalone. Load required data in the route, not the parent.",
+            "references": [
+              "https://docs.flutter.dev/ui/navigation/deep-linking"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.navigation.route-guards",
+          "text": "Are routes guarded for authentication and permissions?",
+          "severity": "major",
+          "tags": [
+            "navigation",
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Protected routes should redirect unauthenticated users to login. Admin routes should check permissions. Use GoRouter's redirect or equivalent.",
+            "whyItMatters": "Without route guards, users can navigate directly to protected screens (via deep links or URL manipulation on web) without authentication.",
+            "howToVerify": "Try navigating to a protected route without logging in. Does it redirect to login? After login, does it return to the intended page?",
+            "exampleComment": "The /settings route is accessible without login via deep link. Add a redirect guard that checks auth state.",
+            "codeExamples": [],
+            "keyTakeaway": "Guard protected routes. Redirect to login. Return after authentication.",
+            "references": [
+              "https://pub.dev/packages/go_router"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.navigation.pop-handling",
+          "text": "Is WillPopScope/PopScope used correctly for unsaved changes?",
+          "severity": "minor",
+          "tags": [
+            "ux",
+            "navigation"
+          ],
+          "baseContent": {
+            "whatItMeans": "Forms with unsaved changes should warn before navigating away. PopScope (Flutter 3.16+) intercepts the back button and system back gesture.",
+            "whyItMatters": "Users accidentally lose form data when they swipe back or press the back button. A confirmation dialog prevents frustration.",
+            "howToVerify": "Fill out a form partially and press back. Is there a confirmation dialog? Check that PopScope.canPop is false when there are unsaved changes.",
+            "exampleComment": "This form has no back navigation guard. If the user accidentally swipes back, all entered data is lost. Add PopScope with a confirmation dialog.",
+            "codeExamples": [],
+            "keyTakeaway": "Guard forms with unsaved changes. Use PopScope to intercept back navigation.",
+            "references": [
+              "https://api.flutter.dev/flutter/widgets/PopScope-class.html"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dart-flutter.async",
+      "title": "Async & Networking",
+      "items": [
+        {
+          "id": "dart-flutter.async.future-builder",
+          "text": "Are FutureBuilder and StreamBuilder handling all states (loading, error, data)?",
+          "severity": "major",
+          "tags": [
+            "async",
+            "ux"
+          ],
+          "baseContent": {
+            "whatItMeans": "FutureBuilder has four connection states: none, waiting, active, done. The builder must handle waiting (loading), error (snapshot.hasError), and data (snapshot.hasData).",
+            "whyItMatters": "Missing state handling causes blank screens (no loading indicator), unhandled errors (red error screen in debug), or null crashes (accessing data before it loads).",
+            "howToVerify": "Check FutureBuilder and StreamBuilder builders. Do they check snapshot.connectionState, snapshot.hasError, and snapshot.hasData?",
+            "exampleComment": "This FutureBuilder only handles the data case. It shows nothing while loading and crashes on error. Handle all states.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "FutureBuilder<User>(\n  future: fetchUser(),\n  builder: (context, snapshot) {\n    return Text(snapshot.data!.name); // crash if loading or error\n  },\n)"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "FutureBuilder<User>(\n  future: fetchUser(),\n  builder: (context, snapshot) {\n    if (snapshot.hasError) return ErrorWidget(snapshot.error!);\n    if (!snapshot.hasData) return const CircularProgressIndicator();\n    return Text(snapshot.data!.name);\n  },\n)"
+              }
+            ],
+            "keyTakeaway": "Handle loading, error, and data states. Never assume data is available.",
+            "references": [
+              "https://api.flutter.dev/flutter/widgets/FutureBuilder-class.html"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.async.future-in-build",
+          "text": "Are Futures not recreated on every build?",
+          "severity": "blocker",
+          "tags": [
+            "async",
+            "performance"
+          ],
+          "baseContent": {
+            "whatItMeans": "Creating a Future inside build() means it is recreated on every rebuild, triggering new API calls each time. Store the Future in initState or a state variable.",
+            "whyItMatters": "A Future in build() causes infinite API calls: the call completes, triggers setState, which triggers build, which creates a new Future, ad infinitum.",
+            "howToVerify": "Check FutureBuilder. Is the future parameter an inline function call? It should reference a stored Future.",
+            "exampleComment": "FutureBuilder(future: fetchUser()) creates a new future on every build. Store it: late final _userFuture = fetchUser(); and use FutureBuilder(future: _userFuture).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "@override\nWidget build(BuildContext context) {\n  return FutureBuilder(\n    future: api.fetchUser(), // new future every build!\n    builder: (context, snapshot) { /* ... */ },\n  );\n}"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "late final _userFuture = api.fetchUser();\n\n@override\nWidget build(BuildContext context) {\n  return FutureBuilder(\n    future: _userFuture, // stable reference\n    builder: (context, snapshot) { /* ... */ },\n  );\n}"
+              }
+            ],
+            "keyTakeaway": "Store Futures in initState or a field. Never create them inline in build.",
+            "references": []
+          }
+        },
+        {
+          "id": "dart-flutter.async.error-handling",
+          "text": "Are async errors caught and displayed to the user?",
+          "severity": "major",
+          "tags": [
+            "async",
+            "ux"
+          ],
+          "baseContent": {
+            "whatItMeans": "Every async call can fail. Errors should be caught, shown to the user in a friendly way, and logged. Uncaught errors surface as red error screens or silent failures.",
+            "whyItMatters": "Unhandled async exceptions crash the app (in debug mode, red error screen; in release, silent failure or freeze). Users see nothing useful.",
+            "howToVerify": "Check async calls for try-catch or .catchError. Is the error displayed to the user (SnackBar, dialog)? Is it logged?",
+            "exampleComment": "This network call has no error handling. If the API is down, the user sees a spinner forever. Add try-catch with a SnackBar for the error.",
+            "codeExamples": [],
+            "keyTakeaway": "Catch every async error. Show a user-friendly message. Log the details.",
+            "references": []
+          }
+        },
+        {
+          "id": "dart-flutter.async.cancellation",
+          "text": "Are async operations cancelled when the widget is disposed?",
+          "severity": "major",
+          "tags": [
+            "lifecycle",
+            "memory"
+          ],
+          "baseContent": {
+            "whatItMeans": "When a widget is removed from the tree, pending async operations should be cancelled. Otherwise, callbacks try to update a disposed widget, causing errors.",
+            "whyItMatters": "Calling setState after dispose throws an exception. Even without setState, completed but unneeded work wastes resources.",
+            "howToVerify": "Check for async calls in StatefulWidget. Is there a mounted check before setState? Are StreamSubscriptions and Timers cancelled in dispose()?",
+            "exampleComment": "This setState in the .then callback will throw after the widget is disposed. Add if (!mounted) return; before setState.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "api.fetchData().then((data) {\n  setState(() { _data = data; }); // crash if disposed\n});"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "api.fetchData().then((data) {\n  if (!mounted) return;\n  setState(() { _data = data; });\n});"
+              }
+            ],
+            "keyTakeaway": "Check mounted before setState. Cancel subscriptions in dispose.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "dart-flutter.dart-idioms",
+      "title": "Dart Idioms",
+      "items": [
+        {
+          "id": "dart-flutter.dart-idioms.null-safety",
+          "text": "Is null safety used correctly without excessive null assertions (!)?",
+          "severity": "major",
+          "tags": [
+            "null-safety"
+          ],
+          "baseContent": {
+            "whatItMeans": "Dart's sound null safety makes nullability explicit. The ! operator asserts non-null at runtime and throws if wrong. Prefer ?., ??, and proper null checks.",
+            "whyItMatters": "Every ! is a potential runtime crash. The point of null safety is to catch null errors at compile time, not defer them to runtime.",
+            "howToVerify": "Search for ! operators (excluding !=). For each, ask: can this actually be null? If yes, handle the null case. If no, refactor to make the type non-nullable.",
+            "exampleComment": "widget.onTap!() will crash if onTap is null. Use widget.onTap?.call() or check with if (widget.onTap != null).",
+            "codeExamples": [],
+            "keyTakeaway": "Minimize ! operators. Use ?., ??, and pattern matching for null handling.",
+            "references": [
+              "https://dart.dev/null-safety"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.dart-idioms.effective-dart",
+          "text": "Does the code follow Effective Dart style guidelines?",
+          "severity": "nit",
+          "tags": [
+            "style"
+          ],
+          "baseContent": {
+            "whatItMeans": "Follow Dart conventions: lowerCamelCase for variables/functions, UpperCamelCase for classes, snake_case for file names. Use analysis_options.yaml with recommended lints.",
+            "whyItMatters": "Consistent style makes code readable and reduces review friction. The analyzer catches many issues automatically.",
+            "howToVerify": "Run dart analyze. Check for naming convention violations. Verify analysis_options.yaml enables flutter_lints or very_good_analysis.",
+            "exampleComment": "The file is named UserProfile.dart. Dart convention is user_profile.dart (snake_case for files).",
+            "codeExamples": [],
+            "keyTakeaway": "Follow Effective Dart. Enable strict analysis options. Run dart analyze in CI.",
+            "references": [
+              "https://dart.dev/effective-dart"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.dart-idioms.freezed-sealed",
+          "text": "Are data classes using freezed or sealed classes for type safety?",
+          "severity": "minor",
+          "tags": [
+            "design"
+          ],
+          "baseContent": {
+            "whatItMeans": "freezed generates immutable data classes with copyWith, equality, and JSON serialization. Dart 3's sealed classes enable exhaustive pattern matching.",
+            "whyItMatters": "Hand-written copyWith and equality are error-prone. Sealed classes with pattern matching ensure all cases are handled at compile time.",
+            "howToVerify": "Check new data classes. Do they have manual copyWith or == implementations? Would freezed reduce boilerplate? Are sum types using sealed classes?",
+            "exampleComment": "This class has a manual copyWith with 12 parameters. Use freezed to generate it. Also, the result type would benefit from a sealed class.",
+            "codeExamples": [],
+            "keyTakeaway": "Use freezed for data classes. Use sealed classes for type hierarchies.",
+            "references": [
+              "https://pub.dev/packages/freezed"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.dart-idioms.extension-methods",
+          "text": "Are extension methods used appropriately for utility functions?",
+          "severity": "nit",
+          "tags": [
+            "idiom"
+          ],
+          "baseContent": {
+            "whatItMeans": "Extension methods add functionality to existing types without inheritance. They are great for domain-specific utilities on String, DateTime, BuildContext, etc.",
+            "whyItMatters": "Extensions make code more readable (context.showSnackBar() vs ScaffoldMessenger.of(context).showSnackBar()). But overuse makes code harder to discover.",
+            "howToVerify": "Check for utility functions that take a type as the first parameter. Would they read better as extensions? Check for overly broad extensions on Object or dynamic.",
+            "exampleComment": "formatCurrency(amount) would read better as amount.formatCurrency() via an extension on num.",
+            "codeExamples": [],
+            "keyTakeaway": "Use extensions for natural syntax. Avoid extending Object or basic types too broadly.",
+            "references": [
+              "https://dart.dev/language/extension-methods"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dart-flutter.platform",
+      "title": "Platform & Packages",
+      "items": [
+        {
+          "id": "dart-flutter.platform.platform-channels",
+          "text": "Are platform channels (MethodChannel) type-safe and error-handled?",
+          "severity": "major",
+          "tags": [
+            "platform"
+          ],
+          "baseContent": {
+            "whatItMeans": "MethodChannel calls between Dart and native code are stringly-typed. Use Pigeon for type-safe codegen. Always handle MissingPluginException for platforms that do not implement the channel.",
+            "whyItMatters": "Typos in channel names or method names cause silent failures. Missing platform implementations crash on web or desktop if not handled.",
+            "howToVerify": "Check for raw MethodChannel usage. Could it use Pigeon? Is MissingPluginException handled? Are all supported platforms implemented?",
+            "exampleComment": "This MethodChannel call has no error handling. It will crash on web where the native plugin is not available. Handle PlatformException.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Pigeon for type safety. Handle MissingPluginException for cross-platform.",
+            "references": [
+              "https://docs.flutter.dev/platform-integration/platform-channels"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.platform.package-versions",
+          "text": "Are package versions constrained appropriately in pubspec.yaml?",
+          "severity": "minor",
+          "tags": [
+            "dependencies"
+          ],
+          "baseContent": {
+            "whatItMeans": "Use caret syntax (^1.2.3) for semver-compatible ranges. Pin exact versions only when necessary. Keep pubspec.lock committed.",
+            "whyItMatters": "Unconstrained versions (any) pull in breaking changes. Over-pinned versions prevent security patches. pubspec.lock ensures reproducible builds.",
+            "howToVerify": "Check pubspec.yaml for version constraints. Are they using ^? Is pubspec.lock committed? Run flutter pub outdated for stale dependencies.",
+            "exampleComment": "This dependency uses 'any' as the version constraint. Pin it to a specific range like ^2.0.0 to prevent unexpected breaking changes.",
+            "codeExamples": [],
+            "keyTakeaway": "Use caret syntax. Commit pubspec.lock. Run pub outdated regularly.",
+            "references": [
+              "https://dart.dev/tools/pub/dependencies"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.platform.web-support",
+          "text": "Is the code compatible with all target platforms (mobile, web, desktop)?",
+          "severity": "minor",
+          "tags": [
+            "platform"
+          ],
+          "baseContent": {
+            "whatItMeans": "Not all packages work on all platforms. dart:io is unavailable on web. Some plugins only support iOS and Android. Check platform compatibility before adding dependencies.",
+            "whyItMatters": "A package that works on mobile but not web will crash at runtime on web. Platform checks should happen at compile time or with conditional imports.",
+            "howToVerify": "Check pub.dev platform badges for new packages. Search for dart:io imports that need conditional imports for web. Test on all target platforms.",
+            "exampleComment": "This package only supports iOS and Android but the app also targets web. Use a conditional import or find a cross-platform alternative.",
+            "codeExamples": [],
+            "keyTakeaway": "Check platform support before adding packages. Use conditional imports for platform-specific code.",
+            "references": [
+              "https://dart.dev/guides/libraries/create-packages#conditionally-importing-and-exporting-library-files"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dart-flutter.testing",
+      "title": "Testing",
+      "items": [
+        {
+          "id": "dart-flutter.testing.widget-tests",
+          "text": "Are widget tests written for key UI components?",
+          "severity": "minor",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "Widget tests render components in isolation and verify their behavior. They are faster than integration tests and more meaningful than unit tests for UI code.",
+            "whyItMatters": "Widget tests catch layout issues, tap handler bugs, and state management problems without running on a device. They run in milliseconds.",
+            "howToVerify": "Check for testWidgets calls for new or modified widgets. Do they cover tap interactions, state changes, and edge cases?",
+            "exampleComment": "This new LoginForm widget has no tests. Add widget tests that verify validation messages, button states, and successful submission.",
+            "codeExamples": [],
+            "keyTakeaway": "Widget tests are Flutter's sweet spot. Fast, meaningful, and easy to write.",
+            "references": [
+              "https://docs.flutter.dev/testing/overview#widget-tests"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.testing.golden-tests",
+          "text": "Are golden tests used for pixel-perfect UI verification?",
+          "severity": "nit",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "Golden tests compare rendered widget output against reference images. They catch unintended visual regressions that other tests miss.",
+            "whyItMatters": "A 1px padding change or wrong color can slip through code review. Golden tests catch visual regressions automatically.",
+            "howToVerify": "Check if visually complex widgets have golden tests. Run flutter test --update-goldens when intentionally changing appearance.",
+            "exampleComment": "This redesigned card component has no golden test. Add one to prevent future visual regressions.",
+            "codeExamples": [],
+            "keyTakeaway": "Golden tests for visual components. Update goldens when the design intentionally changes.",
+            "references": [
+              "https://api.flutter.dev/flutter/flutter_test/matchesGoldenFile.html"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.testing.mockito-fakes",
+          "text": "Are dependencies mocked with Mockito or fakes for unit tests?",
+          "severity": "minor",
+          "tags": [
+            "testing"
+          ],
+          "baseContent": {
+            "whatItMeans": "Unit tests should isolate the code under test by mocking or faking dependencies. Use @GenerateMocks with mockito, or write manual fakes.",
+            "whyItMatters": "Tests that hit real APIs or databases are slow, flaky, and non-deterministic. Mocked dependencies make tests fast and reliable.",
+            "howToVerify": "Check that test files mock external dependencies (API clients, databases). Verify build_runner has generated mock files for @GenerateMocks.",
+            "exampleComment": "This test calls the real API. Create a MockApiClient with Mockito and inject it into the class under test.",
+            "codeExamples": [],
+            "keyTakeaway": "Mock external dependencies. Keep unit tests fast and deterministic.",
+            "references": [
+              "https://pub.dev/packages/mockito"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dart-flutter.accessibility",
+      "title": "Accessibility",
+      "items": [
+        {
+          "id": "dart-flutter.accessibility.semantics",
+          "text": "Are Semantics labels provided for screen readers?",
+          "severity": "major",
+          "tags": [
+            "a11y"
+          ],
+          "baseContent": {
+            "whatItMeans": "Interactive widgets and images need Semantics labels for TalkBack (Android) and VoiceOver (iOS). Use Semantics widget or semanticLabel parameter.",
+            "whyItMatters": "Without semantic labels, screen reader users cannot understand or interact with the app. This excludes a significant portion of users.",
+            "howToVerify": "Enable TalkBack/VoiceOver and navigate the app. Are all interactive elements announced meaningfully? Use the Semantics Debugger overlay.",
+            "exampleComment": "This IconButton has no semantic label. Screen readers will announce 'button' with no context. Add semanticLabel: 'Delete item'.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "dart",
+                "code": "IconButton(\n  icon: const Icon(Icons.delete),\n  onPressed: _deleteItem,\n)"
+              },
+              {
+                "label": "Good",
+                "language": "dart",
+                "code": "IconButton(\n  icon: const Icon(Icons.delete, semanticLabel: 'Delete item'),\n  onPressed: _deleteItem,\n)"
+              }
+            ],
+            "keyTakeaway": "Label all interactive widgets for screen readers. Test with TalkBack/VoiceOver.",
+            "references": [
+              "https://docs.flutter.dev/ui/accessibility-and-internationalization/accessibility"
+            ]
+          }
+        },
+        {
+          "id": "dart-flutter.accessibility.text-scaling",
+          "text": "Does the UI handle text scaling for large font settings?",
+          "severity": "major",
+          "tags": [
+            "a11y",
+            "responsive"
+          ],
+          "baseContent": {
+            "whatItMeans": "Users with low vision set system font scaling to 1.5x or 2x. The app should not overflow, clip, or become unusable at large text sizes.",
+            "whyItMatters": "Text scaling is an accessibility requirement. An app that breaks at 1.5x text size fails accessibility audits and excludes users who need larger text.",
+            "howToVerify": "Set the device text scale to 2x in accessibility settings. Navigate every screen. Check for text overflow, clipped buttons, and layout breaks.",
+            "exampleComment": "At 1.5x text scale, this button text overflows its container. Use Flexible or FittedBox to handle dynamic text sizes.",
+            "codeExamples": [],
+            "keyTakeaway": "Test at 2x text scale. Use flexible layouts that accommodate larger text.",
+            "references": [
+              "https://docs.flutter.dev/ui/accessibility-and-internationalization/accessibility"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

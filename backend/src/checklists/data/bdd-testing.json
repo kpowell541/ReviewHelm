@@ -1,0 +1,293 @@
+{
+  "meta": {
+    "id": "bdd-testing",
+    "mode": "review",
+    "title": "BDD & Acceptance Testing",
+    "shortTitle": "BDD/ATDD",
+    "description": "Cucumber, Gherkin, acceptance test-driven development, and behavior-driven testing patterns",
+    "icon": "🥒",
+    "totalItems": 17,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "bdd-testing.gherkin",
+      "title": "Gherkin & Feature Files",
+      "items": [
+        {
+          "id": "bdd-testing.gherkin.business-language",
+          "text": "Are scenarios written in business language (not technical implementation)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Gherkin scenarios should describe behavior from the user's perspective: 'When I log in' not 'When I POST to /api/auth/login'.",
+            "whyItMatters": "Business-language scenarios serve as living documentation. Technical scenarios are unreadable to stakeholders and become brittle.",
+            "howToVerify": "Read each scenario from a product owner's perspective. If they can't understand it without code knowledge, it's too technical.",
+            "exampleComment": "'When the user sends a POST to /api/orders' is implementation detail. Write 'When the user places an order' instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Write scenarios in business language. They should be readable by non-developers.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.gherkin.single-behavior",
+          "text": "Does each scenario test exactly one behavior?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each scenario should verify one specific behavior with one clear outcome. Multiple behaviors belong in separate scenarios.",
+            "whyItMatters": "Multi-behavior scenarios are hard to debug (which behavior failed?), hard to name, and hard to maintain.",
+            "howToVerify": "Check if the scenario has multiple Then assertions testing unrelated things. Each should be a separate scenario.",
+            "exampleComment": "This scenario tests login, profile update, AND logout. Split into 3 scenarios, each testing one behavior.",
+            "codeExamples": [],
+            "keyTakeaway": "One scenario, one behavior. If you need 'And' in Then more than twice, consider splitting.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.gherkin.given-when-then",
+          "text": "Is the Given/When/Then structure used correctly?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Given = preconditions/state. When = action being tested. Then = expected outcome. Don't mix these roles.",
+            "whyItMatters": "Wrong structure makes scenarios confusing. A When that sets up state or a Given that asserts results breaks the pattern's clarity.",
+            "howToVerify": "Check that Givens only set up state, Whens only perform actions, and Thens only assert outcomes.",
+            "exampleComment": "'When the user has an account' describes state, not an action. This should be a Given. When should describe what the user does.",
+            "codeExamples": [],
+            "keyTakeaway": "Given = arrange, When = act, Then = assert. Follow this strictly.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.gherkin.scenario-outline",
+          "text": "Are Scenario Outlines used for parameterized tests?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When multiple scenarios differ only in data values, use Scenario Outline with Examples tables to reduce duplication.",
+            "whyItMatters": "Copy-pasted scenarios with different values are hard to maintain. Adding a new case requires writing the entire scenario again.",
+            "howToVerify": "Look for scenarios that are identical except for specific values. These should use Scenario Outline with Examples.",
+            "exampleComment": "These 5 scenarios are identical except for the role name. Use a Scenario Outline with an Examples table of roles.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Scenario Outline for data-driven scenarios. Keep Examples tables focused and readable.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.gherkin.backgrounds",
+          "text": "Is Background used appropriately for shared preconditions?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Background runs before every scenario in a feature. Use it for common setup steps. Don't put too many steps in Background.",
+            "whyItMatters": "Repeated Given steps across all scenarios should be in Background. But a complex Background makes scenarios hard to read in isolation.",
+            "howToVerify": "Check for Given steps repeated in every scenario — these should be in Background. Verify Background has 2-3 steps maximum.",
+            "exampleComment": "Every scenario starts with 'Given a logged-in admin user'. Move this to the Background section.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Background for steps common to all scenarios. Keep it short (2-3 steps max).",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "bdd-testing.step-definitions",
+      "title": "Step Definitions",
+      "items": [
+        {
+          "id": "bdd-testing.step-definitions.reusable",
+          "text": "Are step definitions reusable and not duplicated?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Step definitions should be written once and reused across scenarios. Use regex/cucumber expression parameters for flexibility.",
+            "whyItMatters": "Duplicate step definitions cause ambiguous step errors and maintenance burden. A change in behavior requires updating multiple steps.",
+            "howToVerify": "Search for similar step definitions with slightly different wording. These should be consolidated with parameters.",
+            "exampleComment": "'When I click the login button' and 'When I click the submit button' should be one step: 'When I click the {string} button'.",
+            "codeExamples": [],
+            "keyTakeaway": "Write parameterized step definitions. Reuse steps across scenarios.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.step-definitions.thin-steps",
+          "text": "Are step definitions thin (delegating to page objects or helper methods)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Step definitions should be a thin layer that maps Gherkin to code. Complex logic belongs in page objects, helpers, or domain code.",
+            "whyItMatters": "Fat step definitions are hard to maintain and can't be reused. Logic in steps is duplicated instead of shared.",
+            "howToVerify": "Check step definitions for more than 5 lines of code. Complex Selenium/API interactions should be in helper classes.",
+            "exampleComment": "This step definition has 30 lines of Selenium interactions. Extract into a LoginPage class with a login() method.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep step definitions thin. Delegate to page objects, API helpers, or domain services.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.step-definitions.state-management",
+          "text": "Is scenario state managed properly (not leaked between scenarios)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each scenario should start with a clean state. Use hooks (Before/After) for setup and teardown. Don't rely on scenario execution order.",
+            "whyItMatters": "Shared state between scenarios causes flaky tests. A scenario that passes alone fails when another scenario runs first.",
+            "howToVerify": "Check for static variables or global state in step definitions. Verify Before hooks reset state. Check for order-dependent scenarios.",
+            "exampleComment": "This step definition stores the user in a static field. When scenarios run in parallel, they share/overwrite each other's user.",
+            "codeExamples": [],
+            "keyTakeaway": "Isolate scenario state completely. Use Before/After hooks for setup and cleanup.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.step-definitions.assertions",
+          "text": "Do Then steps have clear, specific assertions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Then steps should assert specific, verifiable outcomes. 'Then the order is created' should check a specific order property, not just non-null.",
+            "whyItMatters": "Vague assertions pass even when the behavior is wrong. 'Then something happened' tests nothing.",
+            "howToVerify": "Check Then step implementations. Verify they assert on specific values, not just existence or non-null.",
+            "exampleComment": "'Then the order is created' only checks order != null. Verify the order has correct items, total, and status.",
+            "codeExamples": [],
+            "keyTakeaway": "Assert on specific outcomes. A Then step that can't fail is useless.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "bdd-testing.test-design",
+      "title": "Test Design & Organization",
+      "items": [
+        {
+          "id": "bdd-testing.test-design.feature-organization",
+          "text": "Are features organized by business capability (not by technical layer)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Organize feature files by business domain (ordering, authentication, reporting), not by technical layer (api, ui, database).",
+            "whyItMatters": "Business-organized features map to team ownership and make it easy to find relevant tests. Technical organization scatters related tests.",
+            "howToVerify": "Check the feature file directory structure. Look for business-domain folders rather than technical-layer folders.",
+            "exampleComment": "Features are organized as /api/orders.feature and /ui/orders.feature. Merge into /ordering/place-order.feature.",
+            "codeExamples": [],
+            "keyTakeaway": "Organize by business capability. One feature per business workflow.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.test-design.tags",
+          "text": "Are tags used to categorize and control test execution?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use tags (@smoke, @regression, @wip, @slow) to categorize scenarios. Run subsets by tag in CI for faster feedback.",
+            "whyItMatters": "Without tags, you must run all tests or none. Tags enable smoke tests on PR, full regression nightly, and skipping WIP tests.",
+            "howToVerify": "Check for tag usage on features and scenarios. Verify CI uses tags to run appropriate subsets.",
+            "exampleComment": "This smoke test suite takes 45 minutes because it includes all tests. Tag critical paths with @smoke and run only those on PR.",
+            "codeExamples": [],
+            "keyTakeaway": "Tag scenarios for selective execution. Use @smoke for fast CI feedback, full suite for nightly.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.test-design.data-setup",
+          "text": "Is test data set up through the application (not direct DB manipulation)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Create test data through the application's API or UI, not by inserting directly into the database. This tests the full stack.",
+            "whyItMatters": "Direct DB inserts bypass validation, triggers, and business logic. Tests pass but the same operation fails through the UI.",
+            "howToVerify": "Check Given step implementations. Verify they use API calls or UI actions, not raw SQL or ORM inserts.",
+            "exampleComment": "'Given a user exists' inserts directly into the database, bypassing registration validation. Use the registration API instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Set up test data through the application. Direct DB manipulation hides integration issues.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.test-design.independent-scenarios",
+          "text": "Can scenarios run independently in any order?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each scenario must set up its own preconditions and clean up after itself. No scenario should depend on another running first.",
+            "whyItMatters": "Order-dependent tests fail randomly in parallel execution and are impossible to debug. They also can't be run individually.",
+            "howToVerify": "Run a single scenario in isolation. If it fails without other scenarios running first, it has hidden dependencies.",
+            "exampleComment": "This scenario assumes the user from the previous scenario still exists. Add a Given step to create its own user.",
+            "codeExamples": [],
+            "keyTakeaway": "Every scenario must be self-contained. Run in any order, run in parallel, run alone.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "bdd-testing.anti-patterns",
+      "title": "Anti-Patterns",
+      "items": [
+        {
+          "id": "bdd-testing.anti-patterns.ui-details",
+          "text": "Are UI implementation details kept out of scenarios?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Don't reference CSS selectors, button IDs, or page structure in Gherkin. 'When I click #btn-submit' is too technical.",
+            "whyItMatters": "UI details in scenarios break tests when the UI changes. Scenarios should survive redesigns that don't change behavior.",
+            "howToVerify": "Check for CSS selectors, XPath, HTML element names, or page-specific terminology in Gherkin steps.",
+            "exampleComment": "'When I click the div.submit-btn' should be 'When I submit the form'. Keep UI details in step definitions.",
+            "codeExamples": [],
+            "keyTakeaway": "Describe what users do, not how the UI is structured. 'Submit the form' not 'click the button'.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.anti-patterns.incidental-details",
+          "text": "Are scenarios free of incidental details (irrelevant data)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Only include data relevant to the behavior being tested. Don't specify user's email if the test is about order placement.",
+            "whyItMatters": "Incidental details distract from the behavior being tested. Readers can't tell which details matter and which are noise.",
+            "howToVerify": "For each piece of data in a scenario, ask: 'Does this affect the outcome?' If not, remove it or use a default.",
+            "exampleComment": "This scenario specifies the user's full address, phone, and birthday for a login test. Only username and password are relevant.",
+            "codeExamples": [],
+            "keyTakeaway": "Include only data relevant to the behavior. Hide everything else behind defaults in step definitions.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.anti-patterns.no-imperative-style",
+          "text": "Are scenarios declarative (not imperative step-by-step UI instructions)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Write 'When I log in as admin' (declarative) not 'When I go to /login, And I type admin, And I type password, And I click Login' (imperative).",
+            "whyItMatters": "Imperative scenarios are verbose, fragile, and hard to read. They break when UI steps change even if behavior doesn't.",
+            "howToVerify": "Count the steps in each scenario. More than 7-8 steps usually indicates imperative style. Look for click/type/navigate actions.",
+            "exampleComment": "This 15-step scenario walks through every form field. Collapse into 3 declarative steps: Given/When/Then.",
+            "codeExamples": [],
+            "keyTakeaway": "Be declarative. 'When I place an order' not 'When I click add to cart, And I click checkout, And I fill address...'.",
+            "references": []
+          }
+        },
+        {
+          "id": "bdd-testing.anti-patterns.test-everything-bdd",
+          "text": "Is BDD used only where it adds value (not for every test)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "BDD is best for acceptance tests that verify business behavior. Unit tests and integration tests don't need Gherkin.",
+            "whyItMatters": "Writing unit tests in Gherkin adds overhead without benefit. The Gherkin layer slows development and obscures simple test logic.",
+            "howToVerify": "Check for Cucumber scenarios testing implementation details (sorting algorithms, helper functions). These should be unit tests.",
+            "exampleComment": "This Cucumber scenario tests a utility function that formats dates. Write a simple unit test instead — it's faster and clearer.",
+            "codeExamples": [],
+            "keyTakeaway": "Use BDD for acceptance tests (business behavior). Use unit/integration tests for technical behavior.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

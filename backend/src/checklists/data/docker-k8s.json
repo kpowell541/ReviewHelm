@@ -1,0 +1,358 @@
+{
+  "meta": {
+    "id": "docker-k8s",
+    "mode": "review",
+    "title": "Docker & Kubernetes",
+    "shortTitle": "Docker/K8s",
+    "description": "Dockerfiles, container security, Kubernetes manifests, and deployment configs",
+    "icon": "🐳",
+    "totalItems": 20,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "docker-k8s.dockerfile",
+      "title": "Dockerfile Best Practices",
+      "items": [
+        {
+          "id": "docker-k8s.dockerfile.multi-stage",
+          "text": "Does the Dockerfile use multi-stage builds to minimize image size?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Multi-stage builds separate the build environment from the runtime image. Only copy the compiled output into the final stage.",
+            "whyItMatters": "Single-stage builds include compilers, dev dependencies, and source code — bloating images from 50MB to 1GB+ and increasing attack surface.",
+            "howToVerify": "Check for multiple FROM statements. Verify the final stage uses a minimal base image and only copies built artifacts.",
+            "exampleComment": "This Dockerfile installs build tools in the final image. Use a multi-stage build with a builder stage and a slim runtime stage.",
+            "codeExamples": [],
+            "keyTakeaway": "Use multi-stage builds. Build in a full image, run in a minimal one.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.dockerfile.base-image",
+          "text": "Is the base image pinned to a specific version (not :latest)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Base images should use specific version tags (node:20.11-alpine) or SHA digests, not :latest or unpinned tags.",
+            "whyItMatters": ":latest changes without warning. A build that worked yesterday can break today because the base image updated.",
+            "howToVerify": "Check FROM statements for :latest or missing tags. Verify the tag is specific (includes minor/patch version).",
+            "exampleComment": "FROM node:latest is unpinned. Use FROM node:20.11-alpine for reproducible builds.",
+            "codeExamples": [],
+            "keyTakeaway": "Pin base images to specific versions. Use alpine variants for smaller images.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.dockerfile.layer-caching",
+          "text": "Are Dockerfile layers ordered for optimal cache usage?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Put infrequently changing layers (OS packages, dependencies) before frequently changing ones (source code). Copy package files before source.",
+            "whyItMatters": "Docker rebuilds all layers after a changed layer. Copying source code before installing dependencies invalidates the dependency cache on every code change.",
+            "howToVerify": "Check that COPY package.json + npm install comes before COPY . (source code). Verify system packages are installed early.",
+            "exampleComment": "COPY . . comes before npm install, invalidating the dependency cache on every code change. Copy package.json first, install, then copy source.",
+            "codeExamples": [],
+            "keyTakeaway": "Order Dockerfile layers from least-changing to most-changing for optimal cache hits.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.dockerfile.non-root",
+          "text": "Does the container run as a non-root user?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Add a USER directive to run the process as a non-root user. Create a dedicated user with minimal permissions.",
+            "whyItMatters": "Running as root inside a container means a container escape gives root access to the host. Non-root limits blast radius.",
+            "howToVerify": "Check for a USER directive in the Dockerfile. Verify the application doesn't require root (no binding to port 80, no writing to /etc).",
+            "exampleComment": "This Dockerfile runs as root by default. Add RUN adduser -D appuser && USER appuser before CMD.",
+            "codeExamples": [],
+            "keyTakeaway": "Always run containers as non-root. Create a dedicated application user.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.dockerfile.secrets-build",
+          "text": "Are secrets kept out of the image (no COPY .env, no ARG for secrets)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Never COPY secret files (.env, credentials) into the image. Don't pass secrets as build ARGs (visible in image history).",
+            "whyItMatters": "Secrets baked into images are visible to anyone who pulls the image. ARG values appear in docker history.",
+            "howToVerify": "Check for COPY of .env files, credentials, or key files. Check for ARG used to pass secrets. Verify .dockerignore excludes secrets.",
+            "exampleComment": "This copies .env into the image. Remove it and pass secrets as runtime environment variables instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Never bake secrets into images. Use runtime environment variables or secret managers.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.dockerfile.dockerignore",
+          "text": "Is .dockerignore configured to exclude unnecessary files?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": ".dockerignore should exclude node_modules, .git, test files, docs, and other files not needed in the image.",
+            "whyItMatters": "Without .dockerignore, COPY . . includes .git (huge), node_modules (should be rebuilt), and test files (unnecessary).",
+            "howToVerify": "Check for a .dockerignore file. Verify it excludes .git, node_modules, test/, docs/, and secret files.",
+            "exampleComment": "There's no .dockerignore. The build context includes .git (300MB) and node_modules. Add a .dockerignore file.",
+            "codeExamples": [],
+            "keyTakeaway": "Always have a .dockerignore. Exclude .git, node_modules, tests, and documentation.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "docker-k8s.k8s-manifests",
+      "title": "Kubernetes Manifests",
+      "items": [
+        {
+          "id": "docker-k8s.k8s-manifests.resource-limits",
+          "text": "Are CPU and memory resource requests and limits set?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Pods should define resources.requests (guaranteed) and resources.limits (maximum) for both CPU and memory.",
+            "whyItMatters": "Without limits, a pod can consume all node resources, starving other pods. Without requests, the scheduler can't place pods correctly.",
+            "howToVerify": "Check container specs for resources.requests and resources.limits. Verify values are appropriate for the workload.",
+            "exampleComment": "This deployment has no resource limits. A memory leak will consume all node memory. Add requests and limits.",
+            "codeExamples": [],
+            "keyTakeaway": "Always set resource requests and limits. Monitor actual usage to tune them.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.k8s-manifests.health-probes",
+          "text": "Are liveness, readiness, and startup probes configured?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "livenessProbe restarts unhealthy pods. readinessProbe removes pods from service when not ready. startupProbe handles slow-starting apps.",
+            "whyItMatters": "Without liveness probes, crashed processes stay running (zombie pods). Without readiness, traffic goes to unready pods.",
+            "howToVerify": "Check for livenessProbe and readinessProbe in container specs. Verify probe endpoints, timing, and failure thresholds.",
+            "exampleComment": "This deployment has no readiness probe. During startup, traffic reaches the pod before it's ready, causing errors.",
+            "codeExamples": [],
+            "keyTakeaway": "Always configure readiness and liveness probes. Use startup probes for slow-starting applications.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.k8s-manifests.replicas-hpa",
+          "text": "Are replica counts and autoscaling appropriate?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Production deployments should have at least 2 replicas. Use HPA (Horizontal Pod Autoscaler) for variable load.",
+            "whyItMatters": "A single replica means downtime during deploys, node failures, or crashes. No autoscaling means over/under-provisioning.",
+            "howToVerify": "Check replica count (should be >= 2 for production). Verify HPA targets and min/max replicas if autoscaling is used.",
+            "exampleComment": "replicas: 1 for a production service. Set at least 2 and consider adding an HPA for traffic spikes.",
+            "codeExamples": [],
+            "keyTakeaway": "Run at least 2 replicas in production. Use HPA for variable workloads.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.k8s-manifests.rolling-update",
+          "text": "Is the rolling update strategy configured correctly?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Rolling updates should set maxSurge and maxUnavailable. Use PodDisruptionBudget to ensure minimum availability during updates.",
+            "whyItMatters": "Wrong rolling update settings can cause downtime (all pods replaced at once) or very slow deployments.",
+            "howToVerify": "Check strategy type and maxSurge/maxUnavailable. Verify PodDisruptionBudget exists for critical services.",
+            "exampleComment": "maxUnavailable: 100% will replace all pods at once. Set maxUnavailable: 1 and maxSurge: 1 for zero-downtime deploys.",
+            "codeExamples": [],
+            "keyTakeaway": "Configure rolling updates for zero downtime. Use PodDisruptionBudget for critical services.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.k8s-manifests.labels-selectors",
+          "text": "Are labels and selectors consistent and meaningful?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use consistent labels (app, version, environment, team). Selectors must match pod labels exactly.",
+            "whyItMatters": "Mismatched selectors cause services to route to wrong pods or deployments to not manage their pods.",
+            "howToVerify": "Check that Service selectors match Deployment pod template labels. Verify standard labels are applied consistently.",
+            "exampleComment": "The Service selector uses app: api but the Deployment labels use app: api-service. These must match.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep labels consistent. Verify selectors match pod template labels exactly.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "docker-k8s.security",
+      "title": "Container Security",
+      "items": [
+        {
+          "id": "docker-k8s.security.security-context",
+          "text": "Are security contexts configured (non-root, read-only, no privilege escalation)?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Set securityContext with runAsNonRoot: true, readOnlyRootFilesystem: true, and allowPrivilegeEscalation: false.",
+            "whyItMatters": "Without security contexts, containers run as root with writable filesystems, maximizing the impact of container escapes.",
+            "howToVerify": "Check pod and container securityContext. Verify runAsNonRoot, readOnlyRootFilesystem, and drop ALL capabilities.",
+            "exampleComment": "No securityContext defined. Add runAsNonRoot: true, readOnlyRootFilesystem: true, allowPrivilegeEscalation: false.",
+            "codeExamples": [],
+            "keyTakeaway": "Set restrictive security contexts on all containers. Drop unnecessary Linux capabilities.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.security.secrets-management",
+          "text": "Are Kubernetes Secrets used correctly (not ConfigMaps for sensitive data)?",
+          "severity": "blocker",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Sensitive data must use Kubernetes Secrets, not ConfigMaps. Consider external secret managers (Vault, AWS Secrets Manager) for production.",
+            "whyItMatters": "ConfigMaps are not encrypted and are easier to accidentally expose. Secrets get basic base64 encoding and can be encrypted at rest.",
+            "howToVerify": "Check for sensitive data in ConfigMaps. Verify Secrets are not committed to git. Check for external secret operator usage.",
+            "exampleComment": "The database password is in a ConfigMap. Move it to a Secret and consider using ExternalSecrets for production.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Secrets for sensitive data. Use external secret managers for production workloads.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.security.network-policies",
+          "text": "Are NetworkPolicies defined to restrict pod communication?",
+          "severity": "minor",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "NetworkPolicies restrict which pods can communicate. By default, all pods can reach all other pods in the cluster.",
+            "whyItMatters": "Without network policies, a compromised pod can access any service in the cluster, including databases and internal APIs.",
+            "howToVerify": "Check for NetworkPolicy resources. Verify they restrict ingress and egress to only necessary communication.",
+            "exampleComment": "No NetworkPolicy exists. The API pod can directly access the database pod without going through the service. Add network policies.",
+            "codeExamples": [],
+            "keyTakeaway": "Define NetworkPolicies for defense in depth. Restrict to only necessary communication paths.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.security.image-scanning",
+          "text": "Are container images scanned for vulnerabilities?",
+          "severity": "minor",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Container images should be scanned for known CVEs using tools like Trivy, Snyk, or registry-native scanning.",
+            "whyItMatters": "Base images contain OS packages with known vulnerabilities. Unpatched CVEs in production images are common attack vectors.",
+            "howToVerify": "Check if the CI pipeline includes image scanning. Verify critical/high CVEs are addressed before deployment.",
+            "exampleComment": "This image hasn't been scanned. Add Trivy or Snyk to the CI pipeline to catch known vulnerabilities.",
+            "codeExamples": [],
+            "keyTakeaway": "Scan images in CI. Block deployments with critical CVEs. Keep base images updated.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "docker-k8s.networking",
+      "title": "Networking & Storage",
+      "items": [
+        {
+          "id": "docker-k8s.networking.service-type",
+          "text": "Is the correct Service type used (ClusterIP, NodePort, LoadBalancer)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "ClusterIP for internal services. LoadBalancer/Ingress for external access. NodePort rarely for development only.",
+            "whyItMatters": "Using LoadBalancer for internal services creates unnecessary cloud load balancers (cost). Using NodePort exposes ports on all nodes.",
+            "howToVerify": "Check Service types. Internal services should use ClusterIP. External services should use Ingress with ClusterIP backends.",
+            "exampleComment": "This internal database service uses type: LoadBalancer. Change to ClusterIP — it only needs to be reachable within the cluster.",
+            "codeExamples": [],
+            "keyTakeaway": "Use ClusterIP for internal, Ingress for external. Avoid LoadBalancer per-service — use an Ingress controller.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.networking.ingress",
+          "text": "Is Ingress configured with TLS and appropriate annotations?",
+          "severity": "major",
+          "tags": [
+            "security"
+          ],
+          "baseContent": {
+            "whatItMeans": "Ingress should terminate TLS, enforce HTTPS redirects, and have appropriate rate limiting and security headers.",
+            "whyItMatters": "Ingress without TLS exposes traffic in plaintext. Missing security headers enable clickjacking and other attacks.",
+            "howToVerify": "Check for TLS configuration and cert-manager annotations. Verify HTTPS redirect is enabled.",
+            "exampleComment": "This Ingress has no TLS configuration. Add a tls section with a cert-manager ClusterIssuer for automatic certificate management.",
+            "codeExamples": [],
+            "keyTakeaway": "Always configure TLS on Ingress. Use cert-manager for automatic certificate management.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.networking.persistent-volumes",
+          "text": "Are PersistentVolumeClaims sized and configured appropriately?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "PVCs should have appropriate size, storage class, and access mode. Consider backup and resize strategies.",
+            "whyItMatters": "Undersized PVCs cause disk full errors. Wrong access mode prevents scheduling. No backup means data loss risk.",
+            "howToVerify": "Check PVC size against expected data growth. Verify storage class supports expansion if needed.",
+            "exampleComment": "This database PVC is 5Gi but the data grows 1Gi/month. Size it larger or ensure the StorageClass supports expansion.",
+            "codeExamples": [],
+            "keyTakeaway": "Size PVCs for growth. Use expandable StorageClasses. Plan for backups.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "docker-k8s.observability",
+      "title": "Observability & Operations",
+      "items": [
+        {
+          "id": "docker-k8s.observability.logging",
+          "text": "Does the application log to stdout/stderr (not to files)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Containerized applications should log to stdout/stderr. Kubernetes captures these and routes them to the logging stack.",
+            "whyItMatters": "Logs written to files inside containers are lost when the container restarts. They also fill up the container filesystem.",
+            "howToVerify": "Check application logging configuration. Verify it writes to stdout/stderr, not to /var/log or other file paths.",
+            "exampleComment": "This app writes logs to /var/log/app.log. Configure it to log to stdout so Kubernetes can capture and forward them.",
+            "codeExamples": [],
+            "keyTakeaway": "Log to stdout/stderr in containers. Let the platform handle log collection and routing.",
+            "references": []
+          }
+        },
+        {
+          "id": "docker-k8s.observability.graceful-shutdown",
+          "text": "Does the application handle SIGTERM for graceful shutdown?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Kubernetes sends SIGTERM before killing pods. Applications should handle it by finishing in-flight requests and cleaning up.",
+            "whyItMatters": "Without graceful shutdown, in-flight requests are dropped, connections are broken, and data may be lost.",
+            "howToVerify": "Check that the application handles SIGTERM. Verify terminationGracePeriodSeconds is long enough for cleanup.",
+            "exampleComment": "This Node.js app doesn't handle SIGTERM. Add a handler that stops accepting new requests and waits for in-flight ones.",
+            "codeExamples": [],
+            "keyTakeaway": "Handle SIGTERM for graceful shutdown. Set terminationGracePeriodSeconds to match your shutdown time.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}
