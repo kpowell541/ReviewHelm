@@ -23,6 +23,12 @@ import csharpDotnetData from '../../assets/data/checklists/csharp-dotnet.json';
 import kotlinAndroidData from '../../assets/data/checklists/kotlin-android.json';
 import securityData from '../../assets/data/checklists/security.json';
 import dartFlutterData from '../../assets/data/checklists/dart-flutter.json';
+import phpData from '../../assets/data/checklists/php.json';
+import vueData from '../../assets/data/checklists/vue.json';
+import angularData from '../../assets/data/checklists/angular.json';
+import cppData from '../../assets/data/checklists/cpp.json';
+import shellData from '../../assets/data/checklists/shell.json';
+import sqlMigrationsData from '../../assets/data/checklists/sql-migrations.json';
 
 export const CHECKLIST_IDS = [
   'java-protobuf',
@@ -44,6 +50,12 @@ export const CHECKLIST_IDS = [
   'kotlin-android',
   'security',
   'dart-flutter',
+  'php',
+  'vue',
+  'angular',
+  'cpp',
+  'shell',
+  'sql-migrations',
   'polish-my-pr',
 ] as const;
 
@@ -72,6 +84,12 @@ const bundledChecklists: ChecklistMap = {
   'kotlin-android': kotlinAndroidData as unknown as Checklist,
   security: securityData as unknown as Checklist,
   'dart-flutter': dartFlutterData as unknown as Checklist,
+  php: phpData as unknown as Checklist,
+  vue: vueData as unknown as Checklist,
+  angular: angularData as unknown as Checklist,
+  cpp: cppData as unknown as Checklist,
+  shell: shellData as unknown as Checklist,
+  'sql-migrations': sqlMigrationsData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -172,6 +190,12 @@ export function getAllReviewChecklists(): Checklist[] {
     'kotlin-android',
     'security',
     'dart-flutter',
+    'php',
+    'vue',
+    'angular',
+    'cpp',
+    'shell',
+    'sql-migrations',
   ].map((id) => getChecklist(id));
 }
 

@@ -1,0 +1,332 @@
+{
+  "meta": {
+    "id": "cpp",
+    "mode": "review",
+    "title": "C++",
+    "shortTitle": "C++",
+    "description": "Review checklist for C++ applications and libraries (C++17/20/23)",
+    "icon": "⚙️",
+    "totalItems": 35,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "cpp.general-code-quality",
+      "title": "General Code Quality",
+      "items": [
+        {
+          "id": "cpp.general-code-quality.clear-pr-description",
+          "text": "Does the PR have a clear description of what it does and why?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The PR description should explain the purpose of the change and any relevant context.",
+            "whyItMatters": "Reviewers without context waste time reverse-engineering intent from code.",
+            "howToVerify": "Read the PR description. Can you understand what changed and why without reading the code?",
+            "exampleComment": "Could you add context about why the allocator was changed?",
+            "codeExamples": [],
+            "keyTakeaway": "A good PR description saves reviewer time.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.general-code-quality.naming-conventions",
+          "text": "Do names follow the project's style guide?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Classes, functions, variables, and constants should follow the project's established naming conventions (Google, LLVM, Qt, etc.).",
+            "whyItMatters": "Inconsistent naming increases cognitive load when reading unfamiliar code.",
+            "howToVerify": "Check new names against the project style. Verify consistency within the same file.",
+            "exampleComment": "The project uses snake_case for functions but this new function uses camelCase.",
+            "codeExamples": [],
+            "keyTakeaway": "Match the existing project style. Consistency matters more than any specific convention.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cpp.memory-safety",
+      "title": "Memory Safety & Resource Management",
+      "items": [
+        {
+          "id": "cpp.memory-safety.raii",
+          "text": "Are resources managed with RAII (smart pointers, scope guards)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every resource acquisition (memory, files, locks, sockets) should be tied to an object's lifetime using RAII wrappers.",
+            "whyItMatters": "Manual resource management with new/delete or malloc/free is error-prone. Exceptions, early returns, or forgotten cleanup cause leaks.",
+            "howToVerify": "Search for raw new/delete, malloc/free. Check that resources are wrapped in smart pointers or RAII types.",
+            "exampleComment": "This allocates with new but the delete is only reached on the happy path. Use std::unique_ptr instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "cpp",
+                "code": "Widget* w = new Widget();\nprocess(w); // might throw\ndelete w;   // leaked if process throws"
+              },
+              {
+                "label": "Good",
+                "language": "cpp",
+                "code": "auto w = std::make_unique<Widget>();\nprocess(w.get()); // automatically cleaned up"
+              }
+            ],
+            "keyTakeaway": "Never use raw new/delete. Use std::unique_ptr, std::shared_ptr, or stack allocation.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.memory-safety.no-dangling",
+          "text": "Are there no dangling pointers or references?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Pointers and references must not outlive the object they refer to. Returning a reference to a local variable or using a pointer after free is undefined behavior.",
+            "whyItMatters": "Dangling pointers cause crashes, security vulnerabilities, and unpredictable behavior that may only appear in production.",
+            "howToVerify": "Check for references to temporaries, pointers stored beyond object lifetime, and use-after-move.",
+            "exampleComment": "This returns a reference to a local string. The caller gets a dangling reference. Return by value instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "cpp",
+                "code": "const std::string& getName() {\n    std::string name = computeName();\n    return name; // dangling reference!\n}"
+              },
+              {
+                "label": "Good",
+                "language": "cpp",
+                "code": "std::string getName() {\n    return computeName(); // return by value, NRVO applies\n}"
+              }
+            ],
+            "keyTakeaway": "Never return references or pointers to local variables. Be aware of object lifetimes.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.memory-safety.bounds-checking",
+          "text": "Are array and container accesses bounds-checked where appropriate?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Accessing arrays or containers out of bounds is undefined behavior. Use .at() for checked access or validate indices before use.",
+            "whyItMatters": "Out-of-bounds access causes buffer overflows, which are the most common source of security vulnerabilities in C++.",
+            "howToVerify": "Check for operator[] with unvalidated indices, especially on user-provided or computed indices.",
+            "exampleComment": "This accesses vec[index] without bounds checking. Use vec.at(index) or validate index < vec.size() first.",
+            "codeExamples": [],
+            "keyTakeaway": "Validate indices before access. Use .at() when performance is not critical. Use std::span for safe array views.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.memory-safety.move-semantics",
+          "text": "Are move semantics used correctly?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Objects should be moved (std::move) when transferring ownership to avoid unnecessary copies. But do not use a moved-from object.",
+            "whyItMatters": "Unnecessary copies waste CPU and memory. Using moved-from objects is a common source of bugs.",
+            "howToVerify": "Check for large objects passed by value that could be moved. Look for use-after-move.",
+            "exampleComment": "This passes a large vector by value. Since the caller does not need it afterward, use std::move to avoid the copy.",
+            "codeExamples": [],
+            "keyTakeaway": "Move when transferring ownership. Never use an object after moving from it.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.memory-safety.const-correctness",
+          "text": "Is const used appropriately on references, pointers, and member functions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Parameters, member functions, and variables that do not modify state should be marked const.",
+            "whyItMatters": "Const communicates intent, prevents accidental modification, enables compiler optimizations, and allows use with const objects.",
+            "howToVerify": "Check parameters passed by reference for missing const. Check member functions that do not modify state for missing const qualifier.",
+            "exampleComment": "This method does not modify any member variables. Mark it const so it can be called on const instances.",
+            "codeExamples": [],
+            "keyTakeaway": "Default to const. Only remove it when mutation is needed.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cpp.modern-features",
+      "title": "Modern C++ & Best Practices",
+      "items": [
+        {
+          "id": "cpp.modern-features.prefer-stl",
+          "text": "Are standard library algorithms used instead of hand-rolled loops?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use std::find, std::transform, std::accumulate, ranges, etc. instead of manual for loops where they express intent more clearly.",
+            "whyItMatters": "STL algorithms are well-tested, often optimized, and communicate intent (find vs a loop with a break).",
+            "howToVerify": "Look for loops that search, transform, or filter collections. Could an algorithm replace them?",
+            "exampleComment": "This loop searches for an element. std::find_if would express the intent more clearly.",
+            "codeExamples": [
+              {
+                "label": "Manual loop",
+                "language": "cpp",
+                "code": "int found = -1;\nfor (int i = 0; i < vec.size(); ++i) {\n    if (vec[i].name == target) { found = i; break; }\n}"
+              },
+              {
+                "label": "STL algorithm",
+                "language": "cpp",
+                "code": "auto it = std::find_if(vec.begin(), vec.end(),\n    [&](const auto& item) { return item.name == target; });"
+              }
+            ],
+            "keyTakeaway": "Prefer algorithms over raw loops. They express what, not how.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.modern-features.auto-usage",
+          "text": "Is auto used judiciously?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "auto should be used when the type is obvious from context (auto x = std::make_unique<Foo>()) but not when it obscures the type.",
+            "whyItMatters": "Overuse of auto can make code harder to read when the type is not obvious. Underuse leads to verbose, repetitive declarations.",
+            "howToVerify": "Check for auto where the type is unclear without hovering in an IDE. Also check for unnecessarily verbose explicit types.",
+            "exampleComment": "auto result = computeValue() makes the type unclear. Use explicit type here since the function name does not imply it.",
+            "codeExamples": [],
+            "keyTakeaway": "Use auto when the type is clear from context. Spell it out when it is not.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.modern-features.string-view",
+          "text": "Is std::string_view used for non-owning string parameters?",
+          "severity": "minor",
+          "tags": ["performance"],
+          "baseContent": {
+            "whatItMeans": "Functions that read but do not own strings should take std::string_view instead of const std::string& to avoid unnecessary copies from string literals.",
+            "whyItMatters": "Passing a string literal to const std::string& creates a temporary std::string allocation. string_view avoids this.",
+            "howToVerify": "Check function parameters that take const std::string& but only read the value.",
+            "exampleComment": "This function only reads the string. Use std::string_view to avoid allocating when called with a literal.",
+            "codeExamples": [],
+            "keyTakeaway": "Use string_view for read-only string parameters. Store std::string when ownership is needed.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.modern-features.optional-variant",
+          "text": "Are std::optional and std::variant used instead of sentinel values?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use std::optional for values that may be absent instead of returning -1, nullptr, or magic values. Use std::variant for tagged unions.",
+            "whyItMatters": "Sentinel values are easy to forget to check. optional and variant make the possibility of absence or alternatives explicit in the type system.",
+            "howToVerify": "Look for functions returning -1, nullptr, or empty strings to indicate absence. These are candidates for std::optional.",
+            "exampleComment": "This returns -1 when not found. Use std::optional<int> to make the absence explicit and force callers to check.",
+            "codeExamples": [],
+            "keyTakeaway": "Use std::optional for maybe-absent values. Use std::variant for type-safe unions.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cpp.concurrency",
+      "title": "Concurrency & Thread Safety",
+      "items": [
+        {
+          "id": "cpp.concurrency.data-races",
+          "text": "Is shared mutable state protected from data races?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Any data accessed from multiple threads must be protected by a mutex, atomic, or other synchronization mechanism.",
+            "whyItMatters": "Data races are undefined behavior in C++. They cause crashes, corrupted data, and security vulnerabilities that are extremely hard to reproduce.",
+            "howToVerify": "Identify shared mutable state. Verify it is protected by a lock or is atomic. Check for unlocked access paths.",
+            "exampleComment": "This counter is incremented from multiple threads without synchronization. Use std::atomic<int> or protect with a mutex.",
+            "codeExamples": [],
+            "keyTakeaway": "All shared mutable state needs synchronization. Prefer std::atomic for simple counters and flags.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.concurrency.lock-scope",
+          "text": "Are locks held for the minimum necessary duration?",
+          "severity": "major",
+          "tags": ["performance"],
+          "baseContent": {
+            "whatItMeans": "Lock scopes should be as small as possible. Do not hold locks during I/O, allocations, or other slow operations.",
+            "whyItMatters": "Holding locks too long causes contention, reducing parallelism and throughput. It can also cause deadlocks.",
+            "howToVerify": "Check lock_guard/unique_lock scopes. Is the lock held during any slow operations that do not need it?",
+            "exampleComment": "This lock is held during the entire HTTP request. Lock only around the shared data access.",
+            "codeExamples": [],
+            "keyTakeaway": "Hold locks as briefly as possible. Copy data out, release the lock, then process.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.concurrency.deadlock-risk",
+          "text": "Are multiple locks acquired in a consistent order?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When acquiring multiple locks, always acquire them in the same global order. Use std::scoped_lock for multiple locks.",
+            "whyItMatters": "Acquiring locks in different orders across threads creates deadlocks that freeze the application.",
+            "howToVerify": "Check for code that acquires multiple locks. Verify the order is consistent or std::scoped_lock is used.",
+            "exampleComment": "Thread A locks mutex1 then mutex2, but this code locks mutex2 then mutex1. Use std::scoped_lock(mutex1, mutex2) to avoid deadlock.",
+            "codeExamples": [],
+            "keyTakeaway": "Use std::scoped_lock for multiple locks. It handles ordering and exception safety.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "cpp.build-testing",
+      "title": "Build & Testing",
+      "items": [
+        {
+          "id": "cpp.build-testing.tests-included",
+          "text": "Are tests included for new or changed behavior?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New features and bug fixes should include tests. Unit tests with Google Test, Catch2, or the project's test framework.",
+            "whyItMatters": "Without tests, regressions go undetected. C++ bugs can be subtle and hard to reproduce without automated verification.",
+            "howToVerify": "Check for new test files or additions to existing tests. Verify edge cases and error paths are covered.",
+            "exampleComment": "This new parser has no tests. Could we add tests covering valid input, malformed input, and empty input?",
+            "codeExamples": [],
+            "keyTakeaway": "Every behavioral change should have a corresponding test.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.build-testing.header-includes",
+          "text": "Are includes minimal and forward declarations used where possible?",
+          "severity": "minor",
+          "tags": ["performance"],
+          "baseContent": {
+            "whatItMeans": "Headers should include only what they need. Use forward declarations in headers and include the full definition in .cpp files.",
+            "whyItMatters": "Unnecessary includes increase compile times and create coupling. A change to an included header forces recompilation of everything that includes it.",
+            "howToVerify": "Check new headers for includes that could be forward declarations. Look for unnecessary transitive includes.",
+            "exampleComment": "This header includes <vector> and <string> but only uses pointers to those types. Forward declare them instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Include what you use, but prefer forward declarations in headers.",
+            "references": []
+          }
+        },
+        {
+          "id": "cpp.build-testing.compiler-warnings",
+          "text": "Does the code compile without warnings?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Code should compile cleanly with -Wall -Wextra. Warnings often indicate real bugs like signed/unsigned comparison or unused variables.",
+            "whyItMatters": "Ignoring warnings normalizes potential bugs. Many warnings (implicit conversions, missing returns) indicate undefined behavior.",
+            "howToVerify": "Check CI output for new warnings. Test locally with -Wall -Wextra -Wpedantic.",
+            "exampleComment": "This comparison between signed and unsigned integers triggers a warning. Use explicit casts or matching types.",
+            "codeExamples": [],
+            "keyTakeaway": "Treat warnings as errors. Fix them, do not suppress them without good reason.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

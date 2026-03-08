@@ -23,7 +23,13 @@ export type StackId =
   | 'csharp-dotnet'
   | 'kotlin-android'
   | 'security'
-  | 'dart-flutter';
+  | 'dart-flutter'
+  | 'php'
+  | 'vue'
+  | 'angular'
+  | 'cpp'
+  | 'shell'
+  | 'sql-migrations';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,
