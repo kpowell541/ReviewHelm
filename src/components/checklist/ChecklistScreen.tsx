@@ -206,6 +206,24 @@ export function ChecklistScreen({ sessionId }: Props) {
     [sessionId, setItemResponse],
   );
 
+  const handleDeepDive = useCallback(
+    (itemId: string) => {
+      router.push(
+        `/deep-dive/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
+      );
+    },
+    [router, sessionId],
+  );
+
+  const handleDraftComment = useCallback(
+    (itemId: string) => {
+      router.push(
+        `/comment-drafter/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
+      );
+    },
+    [router, sessionId],
+  );
+
   const toggleSeverity = useCallback((severity: Severity) => {
     setSeverityFilter((prev) => {
       if (prev.includes(severity)) {
@@ -496,16 +514,8 @@ export function ChecklistScreen({ sessionId }: Props) {
                 onSetVerdict={handleSetVerdict}
                 onSetConfidence={handleSetConfidence}
                 onSetNotes={handleSetNotes}
-                onDeepDive={(itemId) =>
-                  router.push(
-                    `/deep-dive/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
-                  )
-                }
-                onDraftComment={(itemId) =>
-                  router.push(
-                    `/comment-drafter/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
-                  )
-                }
+                onDeepDive={handleDeepDive}
+                onDraftComment={handleDraftComment}
               />
             </View>
           </View>
