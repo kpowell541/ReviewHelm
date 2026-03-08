@@ -253,18 +253,19 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
       }
     }
 
-    // Delete remote PRs that were deleted locally
-    for (const remote of remotePRs) {
-      if (!localPRs[remote.id]) {
-        try {
-          await api.delete(`/tracked-prs/${remote.id}`);
-        } catch {
-          // Ignore delete errors
-        }
+    // Delete remote PRs that were explicitly deleted locally
+    const deletedPRIds = usePRTrackerStore.getState().deletedPRIds ?? [];
+    for (const deletedId of deletedPRIds) {
+      try {
+        await api.delete(`/tracked-prs/${deletedId}`);
+      } catch {
+        // Ignore delete errors
       }
+      delete mergedPRs[deletedId];
     }
 
     usePRTrackerStore.getState().replacePRs(mergedPRs);
+    usePRTrackerStore.getState().clearDeletedPRIds();
   } catch (err: any) {
     errors.push(`Sync PRs: ${err.message}`);
   }

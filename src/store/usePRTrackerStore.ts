@@ -48,6 +48,7 @@ interface AddPRInput {
 
 interface PRTrackerState {
   prs: Record<string, TrackedPR>;
+  deletedPRIds: string[];
   wipLimit: number;
   emergencySlotEnabled: boolean;
   hasHydrated: boolean;
@@ -69,6 +70,7 @@ interface PRTrackerState {
   setWipLimit: (limit: number) => void;
   setEmergencySlotEnabled: (enabled: boolean) => void;
   replacePRs: (prs: Record<string, TrackedPR>) => void;
+  clearDeletedPRIds: () => void;
 
   getActivePRs: () => TrackedPR[];
   getActiveAuthoredPRs: () => TrackedPR[];
@@ -112,6 +114,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
   persist(
     (set, get) => ({
       prs: {},
+      deletedPRIds: [],
       wipLimit: 3,
       emergencySlotEnabled: true,
       hasHydrated: false,
@@ -163,7 +166,10 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       deletePR: (id) => {
         set((state) => {
           const { [id]: _, ...rest } = state.prs;
-          return { prs: rest };
+          return {
+            prs: rest,
+            deletedPRIds: [...state.deletedPRIds, id],
+          };
         });
       },
 
@@ -220,6 +226,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       setWipLimit: (limit) => set({ wipLimit: limit }),
       setEmergencySlotEnabled: (enabled) => set({ emergencySlotEnabled: enabled }),
       replacePRs: (prs) => set({ prs }),
+      clearDeletedPRIds: () => set({ deletedPRIds: [] }),
 
       getActivePRs: () => {
         return Object.values(get().prs).filter(isActive).sort(byUpdatedDesc);
@@ -403,6 +410,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       storage: createJSONStorage(() => persistStorage),
       partialize: (state) => ({
         prs: state.prs,
+        deletedPRIds: state.deletedPRIds,
         wipLimit: state.wipLimit,
         emergencySlotEnabled: state.emergencySlotEnabled,
       }),
