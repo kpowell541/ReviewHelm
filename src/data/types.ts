@@ -37,7 +37,13 @@ export type StackId =
   | 'scala'
   | 'docker-k8s'
   | 'cicd'
-  | 'code-review-meta';
+  | 'code-review-meta'
+  | 'typescript'
+  | 'css-styling'
+  | 'r-lang'
+  | 'nosql'
+  | 'package-bundler'
+  | 'bdd-testing';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,

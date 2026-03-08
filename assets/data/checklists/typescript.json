@@ -1,0 +1,329 @@
+{
+  "meta": {
+    "id": "typescript",
+    "mode": "review",
+    "title": "TypeScript",
+    "shortTitle": "TypeScript",
+    "description": "TypeScript type safety, generics, utility types, and compiler configuration",
+    "icon": "🔷",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "typescript.type-safety",
+      "title": "Type Safety",
+      "items": [
+        {
+          "id": "typescript.type-safety.no-any",
+          "text": "Is 'any' avoided in favor of specific types or 'unknown'?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Using 'any' disables type checking entirely. Use 'unknown' when the type is truly unknown and narrow it before use.",
+            "whyItMatters": "'any' silently propagates through the type system, defeating the purpose of TypeScript. Bugs that types would catch go undetected.",
+            "howToVerify": "Search for ': any', 'as any', and '<any>'. Each should be justified or replaced with a specific type or 'unknown'.",
+            "exampleComment": "This parameter is typed as 'any'. Use 'unknown' and add a type guard, or define the expected shape with an interface.",
+            "codeExamples": [],
+            "keyTakeaway": "Never use 'any' as a convenience. Use 'unknown' + type narrowing when the type is genuinely unknown.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.type-safety.strict-mode",
+          "text": "Is strict mode enabled in tsconfig.json?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "strict: true enables strictNullChecks, noImplicitAny, strictFunctionTypes, and other safety checks.",
+            "whyItMatters": "Without strict mode, TypeScript misses null/undefined errors, implicit any, and type coercion bugs — the most common sources of runtime errors.",
+            "howToVerify": "Check tsconfig.json for \"strict\": true. Verify individual strict flags aren't disabled (noImplicitAny: false, etc.).",
+            "exampleComment": "tsconfig.json has strict: false. Enable strict mode to catch null safety issues and implicit any types.",
+            "codeExamples": [],
+            "keyTakeaway": "Always enable strict mode. It's the baseline for meaningful type safety.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.type-safety.type-assertions",
+          "text": "Are type assertions (as T) used sparingly and correctly?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Type assertions (as T) override the compiler's type inference. They should only be used when you know more than the compiler.",
+            "whyItMatters": "Incorrect type assertions cause runtime errors that TypeScript can't catch. They're a promise to the compiler that you may break.",
+            "howToVerify": "Search for 'as ' type assertions. Verify each one is necessary and correct. Prefer type guards or generics instead.",
+            "exampleComment": "This 'as User' assertion assumes the API returns a User, but there's no validation. Use a type guard or schema validation (zod).",
+            "codeExamples": [],
+            "keyTakeaway": "Prefer type guards over type assertions. If you must assert, validate the data first.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.type-safety.non-null-assertion",
+          "text": "Are non-null assertions (!) avoided where possible?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The ! operator tells TypeScript a value is not null/undefined. If wrong, it causes runtime errors.",
+            "whyItMatters": "Non-null assertions silence the compiler without runtime checks. The value may actually be null, causing crashes.",
+            "howToVerify": "Search for '!' postfix on expressions. Replace with proper null checks, optional chaining (?.), or nullish coalescing (??).",
+            "exampleComment": "user.address!.city could crash if address is undefined. Use optional chaining: user.address?.city.",
+            "codeExamples": [],
+            "keyTakeaway": "Use optional chaining (?.) and nullish coalescing (??) instead of non-null assertions.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.type-safety.return-types",
+          "text": "Do exported functions have explicit return types?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Public API functions should have explicit return type annotations. Internal functions can rely on inference.",
+            "whyItMatters": "Explicit return types catch accidental changes to function contracts, improve documentation, and speed up type checking.",
+            "howToVerify": "Check exported functions for explicit return types. Internal/private functions can use inference.",
+            "exampleComment": "This exported function's return type is inferred as a complex union. Add an explicit return type for clarity.",
+            "codeExamples": [],
+            "keyTakeaway": "Add explicit return types to exported functions. Let TypeScript infer internal function types.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "typescript.generics",
+      "title": "Generics & Utility Types",
+      "items": [
+        {
+          "id": "typescript.generics.appropriate-use",
+          "text": "Are generics used where they add value (not over-engineered)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Generics should be used when a function works with multiple types while preserving type relationships. Don't add generics for single-type functions.",
+            "whyItMatters": "Over-generic code is harder to read and use. Under-generic code duplicates logic or uses 'any'.",
+            "howToVerify": "Check if generic type parameters are actually used to relate inputs to outputs. A generic used only once may not need to be generic.",
+            "exampleComment": "This function has a generic T but only uses it as the return type. It could just return the specific type directly.",
+            "codeExamples": [],
+            "keyTakeaway": "Use generics to preserve type relationships between inputs and outputs. Don't add them preemptively.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.generics.constraints",
+          "text": "Are generic constraints (extends) used to limit acceptable types?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use 'extends' to constrain generics: <T extends HasId> ensures T has an id property. Without constraints, generics accept anything.",
+            "whyItMatters": "Unconstrained generics provide no type safety inside the function. You can't access properties without constraints.",
+            "howToVerify": "Check generic functions that access properties of T. They should have constraints ensuring those properties exist.",
+            "exampleComment": "This function accesses item.id but T has no constraint. Add <T extends { id: string }> to ensure id exists.",
+            "codeExamples": [],
+            "keyTakeaway": "Constrain generics to the minimum shape they require. This enables type-safe property access.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.generics.utility-types",
+          "text": "Are built-in utility types used instead of manual type construction?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "TypeScript provides Partial, Required, Pick, Omit, Record, ReturnType, Parameters, and more. Use them instead of redefining.",
+            "whyItMatters": "Utility types are well-tested, widely understood, and reduce boilerplate. Manual construction is error-prone.",
+            "howToVerify": "Look for manually constructed types that match built-in utilities. Check for Partial<T> patterns written by hand.",
+            "exampleComment": "This type manually makes every field optional. Use Partial<User> instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Know the built-in utility types. They cover most type transformation needs.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.generics.discriminated-unions",
+          "text": "Are discriminated unions used for variant types?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use a shared literal property (discriminant) to distinguish union members. TypeScript narrows types automatically based on the discriminant.",
+            "whyItMatters": "Discriminated unions enable exhaustive checking. The compiler catches missing cases in switch statements.",
+            "howToVerify": "Check union types for a shared discriminant field. Verify switch/if statements on unions are exhaustive.",
+            "exampleComment": "This union has no discriminant. Add a 'type' field to each variant so TypeScript can narrow automatically.",
+            "codeExamples": [],
+            "keyTakeaway": "Add a discriminant field to union types. Use exhaustive switch statements to handle all variants.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "typescript.patterns",
+      "title": "Patterns & Best Practices",
+      "items": [
+        {
+          "id": "typescript.patterns.interface-vs-type",
+          "text": "Are interfaces and type aliases used consistently?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use interfaces for object shapes (extendable). Use type aliases for unions, intersections, and computed types. Be consistent.",
+            "whyItMatters": "Mixing interfaces and types randomly makes the codebase inconsistent. Interfaces support declaration merging, types support unions.",
+            "howToVerify": "Check for consistency. If the project uses interfaces for objects, don't introduce type aliases for the same pattern.",
+            "exampleComment": "The project uses interfaces for data shapes but this new type uses a type alias. Use an interface for consistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Be consistent. Use interfaces for shapes, type aliases for unions and computed types.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.patterns.enums",
+          "text": "Are const enums or string unions preferred over regular enums?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Regular enums generate runtime code. String literal unions or 'as const' objects are often lighter and more type-safe.",
+            "whyItMatters": "Enums have quirks (reverse mappings, numeric default values) that cause subtle bugs. String unions are simpler.",
+            "howToVerify": "Check for regular enums that could be string unions. Verify numeric enums are intentional, not accidental.",
+            "exampleComment": "This enum could be a string union: type Status = 'active' | 'inactive' | 'pending'. Simpler and no runtime overhead.",
+            "codeExamples": [],
+            "keyTakeaway": "Prefer string literal unions for simple value sets. Use 'as const' objects when you need runtime values.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.patterns.type-narrowing",
+          "text": "Are type guards used for safe type narrowing?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use typeof, instanceof, 'in' operator, or custom type guard functions (is keyword) to narrow types safely.",
+            "whyItMatters": "Type narrowing gives you type-safe access to properties. Without it, you need unsafe type assertions.",
+            "howToVerify": "Check for type assertions that could be replaced with type guards. Look for 'as' casts after if/switch statements.",
+            "exampleComment": "This uses 'as Dog' after checking the type. Use a type guard: function isDog(animal: Animal): animal is Dog.",
+            "codeExamples": [],
+            "keyTakeaway": "Use type guards instead of type assertions. The compiler narrows types automatically after guards.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.patterns.readonly",
+          "text": "Is Readonly<T> or readonly used for data that shouldn't be mutated?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Mark properties, arrays, and parameters as readonly when they shouldn't be modified after creation.",
+            "whyItMatters": "Readonly catches accidental mutations at compile time. It communicates intent and prevents bugs in shared data.",
+            "howToVerify": "Check for arrays or objects passed around that are mutated unexpectedly. Consider marking function parameters as readonly.",
+            "exampleComment": "This function modifies the input array. Mark the parameter as readonly to prevent this, or clone the array.",
+            "codeExamples": [],
+            "keyTakeaway": "Use readonly for data that shouldn't change. It prevents accidental mutations.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "typescript.async",
+      "title": "Async & Error Handling",
+      "items": [
+        {
+          "id": "typescript.async.promise-types",
+          "text": "Are Promise return types explicit and error cases typed?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Async functions should have explicit Promise<T> return types. Consider Result types or typed errors for expected failures.",
+            "whyItMatters": "Untyped promise rejections are caught as 'unknown'. Without explicit types, callers don't know what errors to expect.",
+            "howToVerify": "Check async functions for explicit return types. Check catch blocks for proper error typing.",
+            "exampleComment": "This async function can throw three different error types but the return type doesn't indicate this. Consider a Result<T, E> pattern.",
+            "codeExamples": [],
+            "keyTakeaway": "Type your async function returns explicitly. Consider Result types for functions with expected failure modes.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.async.error-types",
+          "text": "Are caught errors typed correctly (not assumed to be Error)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "In TypeScript, caught errors are 'unknown' by default (with useUnknownInCatchVariables). Always narrow before accessing .message.",
+            "whyItMatters": "Not everything thrown is an Error. Strings, numbers, and objects can be thrown. Assuming Error causes runtime crashes.",
+            "howToVerify": "Check catch blocks for direct access to err.message without checking instanceof Error first.",
+            "exampleComment": "This catch block accesses err.message directly. Check instanceof Error first: if (err instanceof Error) { ... }.",
+            "codeExamples": [],
+            "keyTakeaway": "Always narrow caught errors with instanceof before accessing Error properties.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.async.void-promises",
+          "text": "Are floating (unhandled) Promises avoided?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Calling an async function without awaiting or handling the Promise is usually a bug. The error is silently swallowed.",
+            "whyItMatters": "Unhandled Promise rejections crash Node.js processes and cause silent failures in browsers.",
+            "howToVerify": "Check for async function calls without await, .then(), or .catch(). Enable the @typescript-eslint/no-floating-promises rule.",
+            "exampleComment": "saveToDatabase(data) is called without await. If it fails, the error is silently lost. Add await.",
+            "codeExamples": [],
+            "keyTakeaway": "Always await or handle Promises. Use no-floating-promises ESLint rule to catch these automatically.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "typescript.modules",
+      "title": "Modules & Configuration",
+      "items": [
+        {
+          "id": "typescript.modules.barrel-exports",
+          "text": "Are barrel exports (index.ts) not causing circular dependencies or bundle bloat?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Barrel files (index.ts re-exporting everything) can cause circular dependencies and prevent tree-shaking.",
+            "whyItMatters": "Circular dependencies cause undefined imports at runtime. Barrel files importing everything prevent bundlers from tree-shaking unused code.",
+            "howToVerify": "Check for circular import warnings. Verify barrel files aren't importing heavy modules that most consumers don't need.",
+            "exampleComment": "This barrel file re-exports everything including heavy utility functions. Import directly from the source module instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use barrel files sparingly. Import directly from source modules to enable tree-shaking.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.modules.path-aliases",
+          "text": "Are path aliases configured consistently (tsconfig paths)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use tsconfig paths (@/components, @/utils) for clean imports. Ensure they match bundler/runtime configuration.",
+            "whyItMatters": "Mismatched path aliases between tsconfig and bundler cause build failures. Inconsistent usage creates confusing imports.",
+            "howToVerify": "Check that tsconfig paths match the bundler config (webpack resolve.alias, vite resolve.alias, etc.).",
+            "exampleComment": "This import uses a relative path ../../components but the project has a @/components alias. Use the alias for consistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Use path aliases consistently. Ensure tsconfig and bundler configs agree.",
+            "references": []
+          }
+        },
+        {
+          "id": "typescript.modules.declaration-files",
+          "text": "Are .d.ts files only used for third-party type declarations?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Declaration files (.d.ts) should only be used for typing untyped third-party modules. Your own code should use .ts files.",
+            "whyItMatters": ".d.ts files are not type-checked against implementation. Types can drift from reality without any compiler warnings.",
+            "howToVerify": "Check for .d.ts files that declare types for your own code. These should be regular .ts files.",
+            "exampleComment": "This .d.ts file declares types for your own API client. Move these to a regular .ts file so they're validated.",
+            "codeExamples": [],
+            "keyTakeaway": "Use .d.ts only for third-party module declarations. Your own types belong in .ts files.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

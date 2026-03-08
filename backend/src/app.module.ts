@@ -29,6 +29,7 @@ import { CalibrationModule } from './calibration/calibration.module';
 import { ComplianceModule } from './compliance/compliance.module';
 import { AdminCiModule } from './admin/ci/admin-ci.module';
 import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.module';
+import { AdminDashboardModule } from './admin/dashboard/admin-dashboard.module';
 import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
 
 @Module({
@@ -61,6 +62,7 @@ import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
     AdminChecklistsModule,
     AdminCiModule,
     AdminMaintenanceModule,
+    AdminDashboardModule,
   ],
   providers: [
     {

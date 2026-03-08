@@ -1,0 +1,248 @@
+{
+  "meta": {
+    "id": "package-bundler",
+    "mode": "review",
+    "title": "Package Management & Bundlers",
+    "shortTitle": "Packages/Build",
+    "description": "npm/yarn/pnpm package management, webpack/Vite bundler config, and dependency hygiene",
+    "icon": "📦",
+    "totalItems": 25,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "package-bundler.dependencies",
+      "title": "Dependency Management",
+      "items": [
+        {
+          "id": "package-bundler.dependencies.lockfile",
+          "text": "Is the lockfile committed and consistent with package.json?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "package-lock.json, yarn.lock, or pnpm-lock.yaml must be committed. It ensures everyone installs the exact same versions.",
+            "whyItMatters": "Without a lockfile, npm install resolves versions differently on different machines, causing 'works on my machine' bugs.",
+            "howToVerify": "Verify the lockfile exists in the repo. Check it wasn't gitignored. Verify it's updated when package.json changes.",
+            "exampleComment": "The lockfile is gitignored. Commit it so all developers and CI use the same dependency versions.",
+            "codeExamples": [],
+            "keyTakeaway": "Always commit lockfiles. They ensure reproducible installs across all environments.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.dependencies.version-ranges",
+          "text": "Are version ranges appropriate (not too loose, not too strict)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use ^ (minor updates) for most deps. Pin exact versions for critical deps. Avoid * or > ranges.",
+            "whyItMatters": "Too loose (>=) allows breaking changes. Too strict (exact) prevents security patches. ^ is the right balance for most cases.",
+            "howToVerify": "Check for * or >= ranges in package.json. Verify critical dependencies (auth, crypto) use exact versions.",
+            "exampleComment": "express: '>=4' allows major version bumps that could break the app. Use '^4.18.0' instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Use ^ for most dependencies. Pin exact versions for security-critical packages.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.dependencies.unnecessary",
+          "text": "Are new dependencies justified (not duplicating existing functionality)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Before adding a dependency, check if the functionality exists in the language/framework or an already-installed package.",
+            "whyItMatters": "Every dependency adds bundle size, attack surface, and maintenance burden. Left-pad taught us that micro-dependencies are risky.",
+            "howToVerify": "Check if the new dependency's functionality is already available. Evaluate the package's maintenance, size, and security history.",
+            "exampleComment": "is-even has 1 line of code: return n % 2 === 0. Don't add a dependency for this — write it inline.",
+            "codeExamples": [],
+            "keyTakeaway": "Evaluate before adding dependencies. Consider: Is it maintained? How big is it? Can I write this myself?",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.dependencies.dev-vs-prod",
+          "text": "Are devDependencies and dependencies correctly categorized?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Test frameworks, linters, build tools, and type definitions belong in devDependencies. Runtime deps go in dependencies.",
+            "whyItMatters": "devDependencies in dependencies bloats production images. Dependencies in devDependencies causes runtime crashes in production.",
+            "howToVerify": "Check for test frameworks (jest, mocha) in dependencies. Check for runtime packages (express, react) in devDependencies.",
+            "exampleComment": "jest is in dependencies but should be in devDependencies. It bloats the production install by 30MB.",
+            "codeExamples": [],
+            "keyTakeaway": "Put runtime deps in dependencies, build/test tools in devDependencies. This matters for production installs.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.dependencies.audit",
+          "text": "Are known vulnerabilities in dependencies addressed?",
+          "severity": "major",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Run npm audit / yarn audit regularly. Address critical and high vulnerabilities. Use Dependabot or Renovate for automated updates.",
+            "whyItMatters": "Known vulnerabilities in dependencies are the easiest attack vector. Automated scanners find and exploit them.",
+            "howToVerify": "Run npm audit. Check for critical/high vulnerabilities. Verify Dependabot or similar is configured.",
+            "exampleComment": "npm audit shows 3 critical vulnerabilities. Update the affected packages or evaluate if the vulnerability applies to your usage.",
+            "codeExamples": [],
+            "keyTakeaway": "Run dependency audits in CI. Address critical vulnerabilities promptly. Use automated update tools.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "package-bundler.scripts",
+      "title": "Scripts & Configuration",
+      "items": [
+        {
+          "id": "package-bundler.scripts.standard-scripts",
+          "text": "Are npm scripts clear and consistent (start, build, test, lint)?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use standard script names: start, build, test, lint, format. Document custom scripts. Use pre/post hooks sparingly.",
+            "whyItMatters": "Non-standard script names force developers to read package.json before doing anything. Standard names work with npm conventions.",
+            "howToVerify": "Check that npm start, npm test, and npm run build work. Verify custom scripts are documented.",
+            "exampleComment": "The build script is named 'compile'. Rename to 'build' to follow npm conventions.",
+            "codeExamples": [],
+            "keyTakeaway": "Use standard npm script names. Document custom scripts in the README.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.scripts.engines",
+          "text": "Is the Node.js version specified in engines?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Set the engines field in package.json to specify the required Node.js version. Use .nvmrc or .node-version for automatic switching.",
+            "whyItMatters": "Without engine specification, developers use different Node.js versions, causing subtle compatibility issues.",
+            "howToVerify": "Check package.json for engines field. Verify .nvmrc exists and matches the engines specification.",
+            "exampleComment": "No engines field specified. Add \"engines\": { \"node\": \">=20\" } and create a .nvmrc with '20'.",
+            "codeExamples": [],
+            "keyTakeaway": "Specify Node.js version in engines and .nvmrc. Keeps all developers on the same version.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.scripts.env-files",
+          "text": "Are .env files gitignored with a .env.example template?",
+          "severity": "blocker",
+          "tags": ["security"],
+          "baseContent": {
+            "whatItMeans": "Never commit .env files with secrets. Provide .env.example with placeholder values for developer setup.",
+            "whyItMatters": "Committed .env files expose secrets (API keys, database passwords) to anyone with repo access. Secrets persist in git history.",
+            "howToVerify": "Check .gitignore for .env. Verify .env files aren't tracked in git. Check for .env.example with documented variables.",
+            "exampleComment": ".env is committed with real API keys. Add .env to .gitignore, rotate the exposed keys, and provide .env.example.",
+            "codeExamples": [],
+            "keyTakeaway": "Gitignore .env files. Provide .env.example. Rotate any accidentally committed secrets.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "package-bundler.bundler",
+      "title": "Bundler Configuration",
+      "items": [
+        {
+          "id": "package-bundler.bundler.code-splitting",
+          "text": "Is code splitting configured for route-based or component-based lazy loading?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Split the bundle by route or heavy component using dynamic import() or framework-specific lazy loading.",
+            "whyItMatters": "A single large bundle delays initial page load. Users download admin code they never visit. Code splitting loads only what's needed.",
+            "howToVerify": "Check the bundle size. Verify large routes use dynamic imports. Check for vendor chunk separation.",
+            "exampleComment": "The entire admin panel (500KB) is in the main bundle. Use dynamic import() to lazy-load it only when visited.",
+            "codeExamples": [],
+            "keyTakeaway": "Split by route at minimum. Lazy-load heavy components like charts, editors, and admin panels.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.bundler.tree-shaking",
+          "text": "Are imports optimized for tree-shaking (named imports, not entire libraries)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Import specific functions, not entire libraries: import { debounce } from 'lodash-es' not import _ from 'lodash'.",
+            "whyItMatters": "Importing entire libraries includes unused code. import _ from 'lodash' adds 70KB. import { debounce } from 'lodash-es' adds 1KB.",
+            "howToVerify": "Check for default imports of utility libraries (lodash, date-fns, rxjs). Verify named/path imports are used.",
+            "exampleComment": "import * as _ from 'lodash' includes the entire 70KB library. Use import { debounce } from 'lodash-es'.",
+            "codeExamples": [],
+            "keyTakeaway": "Use named imports for tree-shaking. Use ESM versions of libraries (-es suffix).",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.bundler.source-maps",
+          "text": "Are source maps configured correctly for each environment?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use full source maps in development. Use hidden-source-map or no source maps in production (or upload to error tracking).",
+            "whyItMatters": "Source maps in production expose original source code. Missing source maps in development make debugging impossible.",
+            "howToVerify": "Check devtool/sourcemap config. Verify production doesn't serve source maps publicly. Check if they're uploaded to Sentry/similar.",
+            "exampleComment": "Production serves full source maps. Use 'hidden-source-map' and upload them to Sentry for error tracking only.",
+            "codeExamples": [],
+            "keyTakeaway": "Hide source maps in production. Upload them to error tracking services for debugging.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.bundler.bundle-analysis",
+          "text": "Has the bundle been analyzed for size bloat?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Use webpack-bundle-analyzer, source-map-explorer, or similar to visualize bundle contents and find bloat.",
+            "whyItMatters": "Hidden bloat (moment.js locales, unused polyfills, duplicate packages) can double bundle size without obvious cause.",
+            "howToVerify": "Run bundle analysis. Check for unexpectedly large packages, duplicate dependencies, and unused code.",
+            "exampleComment": "moment.js locales add 300KB. Switch to date-fns or dayjs, or configure webpack to exclude unused locales.",
+            "codeExamples": [],
+            "keyTakeaway": "Analyze bundle size before releases. Watch for large dependencies and duplicates.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "package-bundler.monorepo",
+      "title": "Monorepo & Workspaces",
+      "items": [
+        {
+          "id": "package-bundler.monorepo.workspace-deps",
+          "text": "Are workspace dependencies correctly declared?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "In monorepos, internal packages should use workspace: protocol. Shared deps should be hoisted. Version consistency matters.",
+            "whyItMatters": "Wrong workspace configuration causes packages to use different versions of shared deps, creating subtle bugs.",
+            "howToVerify": "Check for workspace: references between packages. Verify shared dependencies have consistent versions across packages.",
+            "exampleComment": "Package A uses react 18.2 and package B uses react 18.1. They'll bundle different React versions. Align in the root.",
+            "codeExamples": [],
+            "keyTakeaway": "Use workspace: for internal deps. Hoist shared dependencies. Keep versions consistent.",
+            "references": []
+          }
+        },
+        {
+          "id": "package-bundler.monorepo.build-order",
+          "text": "Is the build order correct for interdependent packages?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Packages that depend on other workspace packages must build after their dependencies. Use turborepo or nx for orchestration.",
+            "whyItMatters": "Building in the wrong order causes import failures. Package B depends on A's types, but A isn't built yet.",
+            "howToVerify": "Check build scripts for dependency-aware orchestration. Verify turborepo/nx pipeline configuration handles the build graph.",
+            "exampleComment": "The CI script builds all packages in parallel but package-b depends on package-a's types. Add build dependency in turbo.json.",
+            "codeExamples": [],
+            "keyTakeaway": "Use dependency-aware build tools (turborepo, nx). Don't rely on filesystem ordering.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

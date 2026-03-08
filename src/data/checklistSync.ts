@@ -12,7 +12,7 @@ const CHECKLIST_ALLOWLIST_HOSTS = (
   'raw.githubusercontent.com'
 )
   .split(',')
-  .map((host) => host.trim().toLowerCase())
+  .map((host: string) => host.trim().toLowerCase())
   .filter(Boolean);
 
 const MAX_CHECKLIST_PAYLOAD_BYTES = Math.max(

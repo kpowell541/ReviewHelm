@@ -236,6 +236,10 @@ export default function RootLayout() {
           options={{ title: 'Review Readiness' }}
         />
         <Stack.Screen
+          name="admin-dashboard"
+          options={{ title: 'Admin Dashboard' }}
+        />
+        <Stack.Screen
           name="bookmarks"
           options={{ title: 'Bookmarks' }}
         />
