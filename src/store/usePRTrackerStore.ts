@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { persistStorage } from '../storage/secureStorage';
 import { v4 as uuidv4 } from 'uuid';
-import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize, PRDependency, CIPassing } from '../data/types';
+import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize, PRDependency, CIPassing, AcceptanceOutcome, ReviewOutcome } from '../data/types';
 import { PR_ACTIVE_STATUSES, PR_PRIORITY_ORDER } from '../data/types';
 
 interface WipStatus {
@@ -58,6 +58,8 @@ interface PRTrackerState {
   deletePR: (id: string) => void;
   setStatus: (id: string, status: PRStatus) => void;
   markReviewed: (id: string) => void;
+  markAccepted: (id: string, outcome: AcceptanceOutcome) => void;
+  setReviewOutcome: (id: string, outcome: ReviewOutcome) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
 
@@ -171,6 +173,14 @@ export const usePRTrackerStore = create<PRTrackerState>()(
 
       markReviewed: (id) => {
         get().updatePR(id, { lastReviewedAt: new Date().toISOString() });
+      },
+
+      markAccepted: (id, outcome) => {
+        get().updatePR(id, { acceptanceOutcome: outcome, status: 'merged' });
+      },
+
+      setReviewOutcome: (id, outcome) => {
+        get().updatePR(id, { reviewOutcome: outcome });
       },
 
       linkSession: (prId, sessionId) => {

@@ -21,6 +21,8 @@ const ROLES = ['author', 'reviewer'] as const;
 const PRIORITIES = ['routine', 'low', 'medium', 'high', 'critical'] as const;
 const SIZES = ['small', 'medium', 'large'] as const;
 const CI_PASSING = ['yes', 'no', 'unknown'] as const;
+const ACCEPTANCE_OUTCOMES = ['accepted-clean', 'accepted-with-changes'] as const;
+const REVIEW_OUTCOMES = ['requested-changes', 'no-changes-requested'] as const;
 
 export class UpsertTrackedPRDto {
   @IsString()
@@ -82,6 +84,14 @@ export class UpsertTrackedPRDto {
   @IsString()
   @MaxLength(4096)
   notes?: string;
+
+  @IsOptional()
+  @IsIn([...ACCEPTANCE_OUTCOMES])
+  acceptanceOutcome?: string;
+
+  @IsOptional()
+  @IsIn([...REVIEW_OUTCOMES])
+  reviewOutcome?: string;
 
   @IsOptional()
   @IsDateString()

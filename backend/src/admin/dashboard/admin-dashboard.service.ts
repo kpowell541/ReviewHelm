@@ -123,8 +123,65 @@ export class AdminDashboardService {
         active: activeTrackedPrs,
       },
       commentFeedback: feedbackTotals,
+      prAcceptance: await this.buildPRAcceptanceMetrics(),
       checklistStaleness: staleness,
       checklistJob: checklistJobStatus,
+    };
+  }
+
+  private async buildPRAcceptanceMetrics() {
+    const [authorPRs, reviewerPRs] = await Promise.all([
+      this.prisma.trackedPR.findMany({
+        where: {
+          role: 'author',
+          acceptanceOutcome: { not: null },
+        },
+        select: { acceptanceOutcome: true },
+      }),
+      this.prisma.trackedPR.findMany({
+        where: {
+          role: 'reviewer',
+          reviewOutcome: { not: null },
+        },
+        select: { reviewOutcome: true },
+      }),
+    ]);
+
+    const selfTotal = authorPRs.length;
+    const selfAcceptedClean = authorPRs.filter(
+      (pr) => pr.acceptanceOutcome === 'accepted-clean',
+    ).length;
+    const selfAcceptedWithChanges = authorPRs.filter(
+      (pr) => pr.acceptanceOutcome === 'accepted-with-changes',
+    ).length;
+
+    const reviewTotal = reviewerPRs.length;
+    const reviewRequestedChanges = reviewerPRs.filter(
+      (pr) => pr.reviewOutcome === 'requested-changes',
+    ).length;
+    const reviewNoChanges = reviewerPRs.filter(
+      (pr) => pr.reviewOutcome === 'no-changes-requested',
+    ).length;
+
+    return {
+      selfPRs: {
+        total: selfTotal,
+        acceptedClean: selfAcceptedClean,
+        acceptedWithChanges: selfAcceptedWithChanges,
+        cleanAcceptancePct:
+          selfTotal > 0
+            ? Number(((selfAcceptedClean / selfTotal) * 100).toFixed(1))
+            : 0,
+      },
+      reviewedPRs: {
+        total: reviewTotal,
+        requestedChanges: reviewRequestedChanges,
+        noChangesRequested: reviewNoChanges,
+        changesRequestedPct:
+          reviewTotal > 0
+            ? Number(((reviewRequestedChanges / reviewTotal) * 100).toFixed(1))
+            : 0,
+      },
     };
   }
 

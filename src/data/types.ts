@@ -319,6 +319,12 @@ export interface PRDependency {
 
 export type CIPassing = 'yes' | 'no' | 'unknown';
 
+/** Whether the author's PR was accepted with or without changes requested by reviewers */
+export type AcceptanceOutcome = 'accepted-clean' | 'accepted-with-changes';
+
+/** Whether the reviewer requested changes on someone else's PR */
+export type ReviewOutcome = 'requested-changes' | 'no-changes-requested';
+
 export interface TrackedPR {
   id: string;
   title: string;
@@ -335,6 +341,10 @@ export interface TrackedPR {
   ciPassing?: CIPassing;
   linkedSessionId?: string;
   notes?: string;
+  /** For author PRs: whether it was accepted clean or with changes requested */
+  acceptanceOutcome?: AcceptanceOutcome;
+  /** For reviewer PRs: whether changes were requested */
+  reviewOutcome?: ReviewOutcome;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
