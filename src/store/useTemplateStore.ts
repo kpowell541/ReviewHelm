@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { persistStorage } from '../storage/secureStorage';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'expo-crypto';
 import type { SessionTemplate, StackId } from '../data/types';
 
 interface TemplateState {
@@ -21,7 +21,7 @@ export const useTemplateStore = create<TemplateState>()(
       templates: {},
 
       saveTemplate: (name, stackIds, selectedSections) => {
-        const id = uuidv4();
+        const id = randomUUID();
         const template: SessionTemplate = {
           id,
           name,

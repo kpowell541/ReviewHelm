@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'expo-crypto';
 import type {
   Session,
   ChecklistMode,
@@ -48,7 +48,7 @@ export const useSessionStore = create<SessionState>()(
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
       createSession: (mode, stackIds, title, selectedSections, linkedPRId) => {
-        const id = uuidv4();
+        const id = randomUUID();
         const now = new Date().toISOString();
         const defaultTitle =
           title ||

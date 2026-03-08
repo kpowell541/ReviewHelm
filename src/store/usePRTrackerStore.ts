@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { persistStorage } from '../storage/secureStorage';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'expo-crypto';
 import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize, PRDependency, CIPassing, AcceptanceOutcome, ReviewOutcome } from '../data/types';
 import { PR_ACTIVE_STATUSES, PR_PRIORITY_ORDER } from '../data/types';
 
@@ -121,7 +121,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
       addPR: (input) => {
-        const id = uuidv4();
+        const id = randomUUID();
         const now = new Date().toISOString();
         const pr: TrackedPR = {
           id,
