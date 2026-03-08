@@ -9,6 +9,7 @@ import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
+import { StackLogo } from '../../src/components/StackLogo';
 
 export default function StackSelectScreen() {
   const router = useRouter();
@@ -120,13 +121,12 @@ export default function StackSelectScreen() {
           <>
             <Text style={styles.heading}>Saved Templates</Text>
             {templates.map((tmpl) => {
-              const icons = tmpl.stackIds
+              const templateStackInfos = tmpl.stackIds
                 .map((id) => {
-                  try { return getStackInfo(id).icon; }
-                  catch { return ''; }
+                  try { return getStackInfo(id); }
+                  catch { return null; }
                 })
-                .filter(Boolean)
-                .join(' ');
+                .filter(Boolean);
               return (
                 <Pressable
                   key={tmpl.id}
@@ -149,7 +149,11 @@ export default function StackSelectScreen() {
                     { opacity: pressed ? 0.85 : 1 },
                   ]}
                 >
-                  <Text style={styles.templateIcons}>{icons}</Text>
+                  <View style={styles.templateIcons}>
+                    {templateStackInfos.map((info) => (
+                      <StackLogo key={info!.id} stackId={info!.id} fallbackIcon={info!.icon} size={20} />
+                    ))}
+                  </View>
                   <View style={styles.templateInfo}>
                     <Text style={styles.templateName}>{tmpl.name}</Text>
                     <Text style={styles.templateMeta}>
@@ -190,7 +194,7 @@ export default function StackSelectScreen() {
               <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
                 {isSelected && <Text style={styles.checkmark}>✓</Text>}
               </View>
-              <Text style={styles.stackIcon}>{stack.icon}</Text>
+              <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={36} style={{ marginRight: spacing.md }} />
               <View style={styles.stackInfo}>
                 <Text style={styles.stackTitle}>{stack.title}</Text>
                 <Text style={styles.stackDescription}>{stack.description}</Text>
@@ -290,7 +294,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  stackIcon: { fontSize: 32, marginRight: spacing.md },
+  stackIcon: { fontSize: 36, marginRight: spacing.md },
   stackInfo: { flex: 1 },
   stackTitle: {
     fontSize: fontSizes.lg,
@@ -355,7 +359,8 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.primary,
   },
   templateIcons: {
-    fontSize: 20,
+    flexDirection: 'row',
+    gap: 4,
     marginRight: spacing.sm,
   },
   templateInfo: {

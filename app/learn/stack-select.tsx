@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { STACKS } from '../../src/data/checklistRegistry';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
+import { StackLogo } from '../../src/components/StackLogo';
 
 export default function LearnStackSelectScreen() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function LearnStackSelectScreen() {
               router.push(`/learn/${stack.id}`)
             }
           >
-            <Text style={styles.stackIcon}>{stack.icon}</Text>
+            <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={32} style={{ marginRight: spacing.md }} />
             <View style={styles.stackInfo}>
               <Text style={styles.stackTitle}>{stack.title}</Text>
               <Text style={styles.stackDescription}>{stack.description}</Text>

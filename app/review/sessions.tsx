@@ -19,6 +19,7 @@ import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORD
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
+import { StackLogo } from '../../src/components/StackLogo';
 
 export default function ReviewSessionsScreen() {
   const router = useRouter();
@@ -47,7 +48,8 @@ export default function ReviewSessionsScreen() {
   const headerTitle = isMultiStack
     ? stackIds.map((id) => getStackInfo(id).shortTitle).join(' + ')
     : firstStackInfo?.title ?? 'Review';
-  const headerIcon = isMultiStack ? '📚' : firstStackInfo?.icon ?? '🔍';
+  const headerStackId = isMultiStack ? null : stackIds[0] ?? null;
+  const headerFallbackIcon = isMultiStack ? '📚' : firstStackInfo?.icon ?? '🔍';
 
   const rawSessions = useSessionStore((s) => s.sessions);
   const createSession = useSessionStore((s) => s.createSession);
@@ -165,7 +167,7 @@ export default function ReviewSessionsScreen() {
       <DesktopContainer>
       <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
         <View style={styles.header}>
-          <Text style={styles.stackIcon}>{headerIcon}</Text>
+          <StackLogo stackId={headerStackId ?? ''} fallbackIcon={headerFallbackIcon} size={32} style={{ marginRight: spacing.sm }} />
           <Text style={styles.heading}>{headerTitle}</Text>
         </View>
 

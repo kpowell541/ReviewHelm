@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
 import type { TrackedPR, PRSize, CIPassing, PRDependency, StackId } from '../../src/data/types';
+import { StackLogo } from '../../src/components/StackLogo';
 import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS } from '../../src/data/types';
 import { STACKS } from '../../src/data/checklistRegistry';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
@@ -322,7 +323,7 @@ export default function PolishSessionsScreen() {
                       { opacity: pressed ? 0.85 : 1 },
                     ]}
                   >
-                    <Text style={styles.stackIcon}>{stack.icon}</Text>
+                    <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={24} style={{ marginRight: spacing.sm }} />
                     <View style={styles.stackInfo}>
                       <Text style={styles.stackTitle}>{stack.shortTitle}</Text>
                     </View>

@@ -8,6 +8,7 @@ import type { StackId } from '../../src/data/types';
 import { useTemplateStore } from '../../src/store/useTemplateStore';
 import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
+import { StackLogo } from '../../src/components/StackLogo';
 
 export default function SectionSelectScreen() {
   const router = useRouter();
@@ -112,7 +113,7 @@ export default function SectionSelectScreen() {
                 onPress={() => toggleStack(stackId)}
                 style={styles.stackHeader}
               >
-                <Text style={styles.stackIcon}>{stackInfo.icon}</Text>
+                <StackLogo stackId={stackInfo.id} fallbackIcon={stackInfo.icon} size={28} style={{ marginRight: spacing.sm }} />
                 <Text style={styles.stackTitle}>{stackInfo.shortTitle}</Text>
                 <Text
                   style={[
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  stackIcon: { fontSize: 22, marginRight: spacing.sm },
+  stackIcon: { fontSize: 28, marginRight: spacing.sm },
   stackTitle: {
     flex: 1,
     fontSize: fontSizes.lg,
