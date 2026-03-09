@@ -280,6 +280,8 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
             ciPassing: local.ciPassing,
             linkedSessionId: local.linkedSessionId,
             notes: local.notes,
+            reviewOutcome: local.reviewOutcome,
+            acceptanceOutcome: local.acceptanceOutcome,
             resolvedAt: local.resolvedAt,
             lastReviewedAt: local.lastReviewedAt,
             archivedAt: local.archivedAt,
