@@ -538,7 +538,7 @@ export default function SettingsScreen() {
                 onPress={handleApiKeySave}
                 disabled={!apiKeyInput.trim() || savingApiKey}
               >
-                <Text style={styles.primaryButtonText}>Save Encrypted Key</Text>
+                <Text style={styles.primaryButtonText}>Save Key</Text>
               </Pressable>
               {hasApiKey && (
                 <Pressable

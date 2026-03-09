@@ -178,30 +178,41 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       },
 
       markReviewed: (id) => {
-        const pr = get().prs[id];
-        if (pr?.lastReviewedAt && isToday(pr.lastReviewedAt)) {
-          get().updatePR(id, { lastReviewedAt: undefined });
-        } else {
-          get().updatePR(id, { lastReviewedAt: new Date().toISOString() });
-        }
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          const lastReviewedAt = pr.lastReviewedAt && isToday(pr.lastReviewedAt)
+            ? undefined
+            : new Date().toISOString();
+          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt } } };
+        });
       },
 
       markAccepted: (id, outcome) => {
-        const pr = get().prs[id];
-        if (pr?.acceptanceOutcome === outcome) {
-          get().updatePR(id, { acceptanceOutcome: undefined });
-        } else {
-          get().updatePR(id, { acceptanceOutcome: outcome });
-        }
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          const toggling = pr.acceptanceOutcome === outcome;
+          const acceptanceOutcome = toggling ? undefined : outcome;
+          // Move to resolved status when accepted/abandoned, restore when unchecked
+          const status = toggling
+            ? 'needs-review'
+            : outcome === 'accepted-clean'
+              ? 'merged'
+              : 'closed';
+          const now = new Date().toISOString();
+          const resolvedAt = toggling ? undefined : now;
+          return { prs: { ...state.prs, [id]: { ...pr, acceptanceOutcome, status, resolvedAt, updatedAt: now } } };
+        });
       },
 
       setReviewOutcome: (id, outcome) => {
-        const pr = get().prs[id];
-        if (pr?.reviewOutcome === outcome) {
-          get().updatePR(id, { reviewOutcome: undefined });
-        } else {
-          get().updatePR(id, { reviewOutcome: outcome });
-        }
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          const reviewOutcome = pr.reviewOutcome === outcome ? undefined : outcome;
+          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome } } };
+        });
       },
 
       linkSession: (prId, sessionId) => {
