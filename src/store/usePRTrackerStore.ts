@@ -178,30 +178,32 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       },
 
       markReviewed: (id) => {
-        const pr = get().prs[id];
-        if (pr?.lastReviewedAt && isToday(pr.lastReviewedAt)) {
-          get().updatePR(id, { lastReviewedAt: undefined });
-        } else {
-          get().updatePR(id, { lastReviewedAt: new Date().toISOString() });
-        }
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          const lastReviewedAt = pr.lastReviewedAt && isToday(pr.lastReviewedAt)
+            ? undefined
+            : new Date().toISOString();
+          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt } } };
+        });
       },
 
       markAccepted: (id, outcome) => {
-        const pr = get().prs[id];
-        if (pr?.acceptanceOutcome === outcome) {
-          get().updatePR(id, { acceptanceOutcome: undefined });
-        } else {
-          get().updatePR(id, { acceptanceOutcome: outcome });
-        }
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          const acceptanceOutcome = pr.acceptanceOutcome === outcome ? undefined : outcome;
+          return { prs: { ...state.prs, [id]: { ...pr, acceptanceOutcome } } };
+        });
       },
 
       setReviewOutcome: (id, outcome) => {
-        const pr = get().prs[id];
-        if (pr?.reviewOutcome === outcome) {
-          get().updatePR(id, { reviewOutcome: undefined });
-        } else {
-          get().updatePR(id, { reviewOutcome: outcome });
-        }
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          const reviewOutcome = pr.reviewOutcome === outcome ? undefined : outcome;
+          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome } } };
+        });
       },
 
       linkSession: (prId, sessionId) => {
