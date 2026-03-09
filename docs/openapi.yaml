@@ -28,6 +28,7 @@ tags:
   - name: Exports
   - name: Backups
   - name: Admin
+  - name: Tutor Conversations
 security:
   - bearerAuth: []
 
@@ -1309,6 +1310,97 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+
+  /tutor-conversations:
+    get:
+      tags: [Tutor Conversations]
+      summary: List all tutor conversations for the current user
+      responses:
+        '200':
+          description: Array of tutor conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TutorConversation'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      tags: [Tutor Conversations]
+      summary: Bulk upsert tutor conversations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conversations:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/TutorConversation'
+              required: [conversations]
+      responses:
+        '200':
+          description: Upserted conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TutorConversation'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /tutor-conversations/{itemId}:
+    put:
+      tags: [Tutor Conversations]
+      summary: Create or update a single tutor conversation
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                lastAccessed:
+                  type: string
+                  format: date-time
+              required: [messages, lastAccessed]
+      responses:
+        '200':
+          description: Upserted conversation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TutorConversation'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags: [Tutor Conversations]
+      summary: Delete a tutor conversation
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Conversation deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
 components:
   securitySchemes:
@@ -2618,3 +2710,17 @@ components:
           type: integer
         willRotate:
           type: integer
+
+    TutorConversation:
+      type: object
+      required: [itemId, messages, lastAccessed]
+      properties:
+        itemId:
+          type: string
+        messages:
+          type: array
+          items:
+            type: object
+        lastAccessed:
+          type: string
+          format: date-time
