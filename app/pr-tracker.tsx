@@ -1209,7 +1209,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
+    overflow: 'hidden' as const,
   },
   prCardLeft: { marginRight: spacing.sm },
   statusDot: {
@@ -1255,6 +1256,7 @@ const styles = StyleSheet.create({
   prCardRight: {
     marginLeft: spacing.sm,
     gap: spacing.xs,
+    overflow: 'hidden' as const,
   },
   cardSwitchRow: {
     flexDirection: 'row',
@@ -1285,7 +1287,6 @@ const styles = StyleSheet.create({
   },
   switchControl: {
     transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }],
-    marginHorizontal: -4,
   },
   checkboxRow: {
     flexDirection: 'row',
