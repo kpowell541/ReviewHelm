@@ -609,7 +609,7 @@ export default function PRTrackerScreen() {
               </Pressable>
             </View>
           </View>
-          {/* Outcome: Accepted / Abandoned */}
+          {/* Outcome: Accepted / Abandoned checkboxes */}
           <View style={styles.radioGroup}>
             <Text style={styles.radioGroupLabel}>Outcome:</Text>
             <View style={styles.radioOptions}>
@@ -622,10 +622,12 @@ export default function PRTrackerScreen() {
                 }}
               >
                 <View style={[
-                  styles.radioCircle,
-                  pr.acceptanceOutcome === 'accepted-clean' && styles.radioCircleGood,
+                  styles.checkbox,
+                  pr.acceptanceOutcome === 'accepted-clean' && styles.checkboxCheckedGood,
                 ]}>
-                  {pr.acceptanceOutcome === 'accepted-clean' && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                  {pr.acceptanceOutcome === 'accepted-clean' && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
                 </View>
                 <Text style={[
                   styles.radioLabel,
@@ -641,10 +643,12 @@ export default function PRTrackerScreen() {
                 }}
               >
                 <View style={[
-                  styles.radioCircle,
-                  pr.acceptanceOutcome === 'abandoned' && styles.radioCircleMuted,
+                  styles.checkbox,
+                  pr.acceptanceOutcome === 'abandoned' && styles.checkboxCheckedMuted,
                 ]}>
-                  {pr.acceptanceOutcome === 'abandoned' && <View style={[styles.radioDot, styles.radioDotMuted]} />}
+                  {pr.acceptanceOutcome === 'abandoned' && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
                 </View>
                 <Text style={[
                   styles.radioLabel,
@@ -1359,6 +1363,29 @@ const styles = StyleSheet.create({
   },
   radioLabelMuted: {
     color: colors.textMuted,
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  checkboxCheckedGood: {
+    backgroundColor: colors.looksGood + '25',
+    borderColor: colors.looksGood,
+  },
+  checkboxCheckedMuted: {
+    backgroundColor: colors.textMuted + '25',
+    borderColor: colors.textMuted,
+  },
+  checkmark: {
+    fontSize: 10,
+    color: colors.textPrimary,
+    fontWeight: '700' as const,
+    marginTop: -1,
   },
 
   // Empty
