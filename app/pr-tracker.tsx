@@ -8,12 +8,12 @@ import {
   Modal,
   TextInput,
   Switch,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
+import { crossAlert } from '../src/utils/alert';
 import type {
   PRStatus,
   PRRole,
@@ -258,7 +258,7 @@ export default function PRTrackerScreen() {
 
   const handleDelete = useCallback(
     (pr: TrackedPR) => {
-      Alert.alert('Delete PR', `Remove "${pr.title}"?`, [
+      crossAlert('Delete PR', `Remove "${pr.title}"?`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
@@ -289,6 +289,25 @@ export default function PRTrackerScreen() {
       router.push(route as '/review/stack-select');
     },
     [router],
+  );
+
+  const handleCardPress = useCallback(
+    (pr: TrackedPR) => {
+      crossAlert(pr.title, 'What would you like to do?', [
+        {
+          text: 'Start Session',
+          style: 'default',
+          onPress: () => handleStartReview(pr),
+        },
+        {
+          text: 'Edit PR',
+          style: 'default',
+          onPress: () => openEditModal(pr),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    },
+    [openEditModal, handleStartReview],
   );
 
   const cycleStatus = useCallback(
@@ -432,11 +451,11 @@ export default function PRTrackerScreen() {
                   </Text>
                 </View>
                 <Pressable
-                  style={styles.reviewButton}
+                  style={[styles.planReviewBtn, pr.lastReviewedAt && isToday(pr.lastReviewedAt) && styles.planReviewBtnActive]}
                   onPress={() => handleMarkReviewed(pr)}
                   hitSlop={6}
                 >
-                  <Text style={styles.reviewButtonText}>
+                  <Text style={[styles.planReviewBtnText, pr.lastReviewedAt && isToday(pr.lastReviewedAt) && styles.planReviewBtnTextActive]}>
                     {pr.lastReviewedAt && isToday(pr.lastReviewedAt) ? '✓' : '○'}
                   </Text>
                 </Pressable>
@@ -456,12 +475,13 @@ export default function PRTrackerScreen() {
       pr.role === 'reviewer' && pr.prAuthor ? `by @${pr.prAuthor}` : null,
     ].filter(Boolean);
     const subtitle = subtitleParts.length > 0 ? subtitleParts.join(' ') : null;
+    const isReviewedToday = !!(pr.lastReviewedAt && isToday(pr.lastReviewedAt));
 
     return (
       <Pressable
         key={pr.id}
         style={styles.prCard}
-        onPress={() => openEditModal(pr)}
+        onPress={() => handleCardPress(pr)}
         onLongPress={() => handleDelete(pr)}
       >
         <View style={styles.prCardLeft}>
@@ -498,113 +518,117 @@ export default function PRTrackerScreen() {
               </Text>
             )}
           </View>
-          {/* Author: acceptance outcome toggles */}
-          {pr.role === 'author' && PR_ACTIVE_STATUSES.includes(pr.status) && (
-            <View style={styles.outcomeRow}>
-              <Pressable
-                style={[
-                  styles.outcomeBtn,
-                  pr.acceptanceOutcome === 'accepted-clean' && styles.outcomeBtnActiveGood,
-                ]}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  markAccepted(pr.id, 'accepted-clean');
-                }}
-                hitSlop={4}
-              >
-                <Text style={[
-                  styles.outcomeBtnText,
-                  pr.acceptanceOutcome === 'accepted-clean' && styles.outcomeBtnTextActive,
-                ]}>Accepted (no changes)</Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.outcomeBtn,
-                  pr.acceptanceOutcome === 'accepted-with-changes' && styles.outcomeBtnActiveWarn,
-                ]}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  markAccepted(pr.id, 'accepted-with-changes');
-                }}
-                hitSlop={4}
-              >
-                <Text style={[
-                  styles.outcomeBtnText,
-                  pr.acceptanceOutcome === 'accepted-with-changes' && styles.outcomeBtnTextActive,
-                ]}>Changes requested</Text>
-              </Pressable>
-            </View>
-          )}
-          {pr.role === 'author' && pr.acceptanceOutcome && (
-            <Text style={styles.outcomeLabel}>
-              {pr.acceptanceOutcome === 'accepted-clean'
-                ? 'Merged without changes requested'
-                : 'Merged after changes were requested'}
-            </Text>
-          )}
-          {/* Reviewer: review outcome toggles */}
-          {pr.role === 'reviewer' && (
-            <View style={styles.outcomeRow}>
-              <Pressable
-                style={[
-                  styles.outcomeBtn,
-                  pr.reviewOutcome === 'requested-changes' && styles.outcomeBtnActiveWarn,
-                ]}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  setReviewOutcome(pr.id, 'requested-changes');
-                }}
-                hitSlop={4}
-              >
-                <Text style={[
-                  styles.outcomeBtnText,
-                  pr.reviewOutcome === 'requested-changes' && styles.outcomeBtnTextActive,
-                ]}>Requested changes</Text>
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.outcomeBtn,
-                  pr.reviewOutcome === 'no-changes-requested' && styles.outcomeBtnActiveGood,
-                ]}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  setReviewOutcome(pr.id, 'no-changes-requested');
-                }}
-                hitSlop={4}
-              >
-                <Text style={[
-                  styles.outcomeBtnText,
-                  pr.reviewOutcome === 'no-changes-requested' && styles.outcomeBtnTextActive,
-                ]}>No changes needed</Text>
-              </Pressable>
-            </View>
-          )}
-          {pr.role === 'reviewer' && !pr.reviewOutcome && (
-            <Text style={styles.outcomeDisclaimer}>
-              Only request changes that truly need to be made and add value.
-            </Text>
-          )}
         </View>
-        {pr.role === 'reviewer' && (
-          <View style={styles.reviewActions}>
+        {/* Right side: sliding toggles and checkboxes */}
+        <Pressable style={styles.prCardRight} onPress={(e) => e.stopPropagation()}>
+          {/* Changes: Needed <switch> Not Needed */}
+          <View style={styles.cardSwitchRow}>
+            <Text style={styles.cardSwitchLabel}>Changes:</Text>
+            <Text style={[
+              styles.switchEndLabel,
+              pr.reviewOutcome === 'requested-changes' && styles.switchEndLabelWarn,
+            ]}>
+              Needed
+            </Text>
+            <Switch
+              value={pr.reviewOutcome === 'no-changes-requested'}
+              onValueChange={(val) => {
+                void Haptics.selectionAsync();
+                setReviewOutcome(pr.id, val ? 'no-changes-requested' : 'requested-changes');
+              }}
+              trackColor={{ false: colors.warning + '50', true: colors.looksGood + '50' }}
+              thumbColor={
+                pr.reviewOutcome === 'no-changes-requested'
+                  ? colors.looksGood
+                  : pr.reviewOutcome === 'requested-changes'
+                    ? colors.warning
+                    : colors.textMuted
+              }
+              style={styles.switchControl}
+            />
+            <Text style={[
+              styles.switchEndLabel,
+              pr.reviewOutcome === 'no-changes-requested' && styles.switchEndLabelGood,
+            ]}>
+              Not Needed
+            </Text>
+          </View>
+          {/* Reviewed: No <switch> Yes */}
+          <View style={styles.cardSwitchRow}>
+            <Text style={styles.cardSwitchLabel}>Reviewed:</Text>
+            <Text style={[
+              styles.switchEndLabel,
+              !isReviewedToday && styles.switchEndLabelDim,
+            ]}>
+              No
+            </Text>
+            <Switch
+              value={isReviewedToday}
+              onValueChange={() => {
+                void Haptics.selectionAsync();
+                markReviewed(pr.id);
+              }}
+              trackColor={{ false: colors.border, true: colors.looksGood + '50' }}
+              thumbColor={isReviewedToday ? colors.looksGood : colors.textMuted}
+              style={styles.switchControl}
+            />
+            <Text style={[
+              styles.switchEndLabel,
+              isReviewedToday && styles.switchEndLabelGood,
+            ]}>
+              Yes
+            </Text>
+          </View>
+          {/* Accepted / Abandoned checkboxes */}
+          <View style={styles.checkboxRow}>
             <Pressable
-              style={styles.startReviewButton}
-              onPress={() => handleStartReview(pr)}
-              hitSlop={6}
+              style={styles.checkboxItem}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                markAccepted(pr.id, 'accepted-clean');
+              }}
+              hitSlop={4}
             >
-              <Text style={styles.startReviewText}>Review</Text>
+              <View style={[
+                styles.checkbox,
+                pr.acceptanceOutcome === 'accepted-clean' && styles.checkboxCheckedGood,
+              ]}>
+                {pr.acceptanceOutcome === 'accepted-clean' && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+              <Text style={[
+                styles.checkboxLabel,
+                pr.acceptanceOutcome === 'accepted-clean' && styles.checkboxLabelGood,
+              ]}>
+                Accepted
+              </Text>
             </Pressable>
             <Pressable
-              style={styles.reviewButton}
-              onPress={() => handleMarkReviewed(pr)}
-              hitSlop={6}
+              style={styles.checkboxItem}
+              onPress={() => {
+                void Haptics.selectionAsync();
+                markAccepted(pr.id, 'abandoned');
+              }}
+              hitSlop={4}
             >
-              <Text style={styles.reviewButtonText}>
-                {pr.lastReviewedAt && isToday(pr.lastReviewedAt) ? '✓' : '○'}
+              <View style={[
+                styles.checkbox,
+                pr.acceptanceOutcome === 'abandoned' && styles.checkboxCheckedMuted,
+              ]}>
+                {pr.acceptanceOutcome === 'abandoned' && (
+                  <Text style={styles.checkmark}>✓</Text>
+                )}
+              </View>
+              <Text style={[
+                styles.checkboxLabel,
+                pr.acceptanceOutcome === 'abandoned' && styles.checkboxLabelMuted,
+              ]}>
+                Abandoned
               </Text>
             </Pressable>
           </View>
-        )}
+        </Pressable>
       </Pressable>
     );
   };
@@ -612,7 +636,7 @@ export default function PRTrackerScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <DesktopContainer>
-      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+      <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
         {renderWipGauge()}
         {renderTodaysPlan()}
         {renderDailyProgress()}
@@ -1113,6 +1137,28 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
+  planReviewBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: colors.looksGood,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    marginLeft: spacing.sm,
+  },
+  planReviewBtnActive: {
+    backgroundColor: colors.looksGood + '20',
+  },
+  planReviewBtnText: {
+    fontSize: fontSizes.sm,
+    color: colors.looksGood,
+    fontWeight: '700' as const,
+  },
+  planReviewBtnTextActive: {
+    color: colors.looksGood,
+  },
+
   // Filters
   filterRow: { marginBottom: spacing.md },
   filterContent: { gap: spacing.xs },
@@ -1159,7 +1205,7 @@ const styles = StyleSheet.create({
   // PR Card
   prCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
@@ -1205,83 +1251,85 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
 
-  // Outcome toggles
-  outcomeRow: {
-    flexDirection: 'row',
+  // Right-side switch toggles & checkboxes
+  prCardRight: {
+    marginLeft: spacing.sm,
     gap: spacing.xs,
-    marginTop: spacing.sm,
-    flexWrap: 'wrap',
   },
-  outcomeBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: 'transparent',
+  cardSwitchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  outcomeBtnActiveGood: {
-    backgroundColor: colors.looksGood + '20',
-    borderColor: colors.looksGood,
-  },
-  outcomeBtnActiveWarn: {
-    backgroundColor: colors.warning + '20',
-    borderColor: colors.warning,
-  },
-  outcomeBtnText: {
+  cardSwitchLabel: {
     fontSize: fontSizes.xs,
-    fontWeight: '600',
     color: colors.textSecondary,
-  },
-  outcomeBtnTextActive: {
-    color: colors.textPrimary,
-  },
-  outcomeLabel: {
-    fontSize: fontSizes.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  outcomeDisclaimer: {
-    fontSize: fontSizes.xs,
-    color: colors.textMuted,
-    fontStyle: 'italic',
-    marginTop: 2,
-  },
-
-  // Review actions
-  reviewActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginLeft: spacing.sm,
-  },
-  startReviewButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    backgroundColor: colors.reviewMode + '20',
-  },
-  startReviewText: {
-    fontSize: fontSizes.xs,
     fontWeight: '600',
-    color: colors.reviewMode,
+    width: 62,
   },
-
-  // Review button
-  reviewButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: colors.looksGood,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: spacing.sm,
+  switchEndLabel: {
+    fontSize: 10,
+    color: colors.textMuted,
+    fontWeight: '500',
   },
-  reviewButtonText: {
-    fontSize: fontSizes.md,
+  switchEndLabelWarn: {
+    color: colors.warning,
+    fontWeight: '700',
+  },
+  switchEndLabelGood: {
     color: colors.looksGood,
     fontWeight: '700',
+  },
+  switchEndLabelDim: {
+    color: colors.textMuted,
+  },
+  switchControl: {
+    transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }],
+    marginHorizontal: -4,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: 2,
+  },
+  checkboxItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+    borderRadius: 3,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  checkboxCheckedGood: {
+    backgroundColor: colors.looksGood + '25',
+    borderColor: colors.looksGood,
+  },
+  checkboxCheckedMuted: {
+    backgroundColor: colors.textMuted + '25',
+    borderColor: colors.textMuted,
+  },
+  checkmark: {
+    fontSize: 10,
+    color: colors.textPrimary,
+    fontWeight: '700' as const,
+    marginTop: -1,
+  },
+  checkboxLabel: {
+    fontSize: 10,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
+  checkboxLabelGood: {
+    color: colors.looksGood,
+  },
+  checkboxLabelMuted: {
+    color: colors.textMuted,
   },
 
   // Empty

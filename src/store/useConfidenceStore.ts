@@ -82,8 +82,6 @@ export const useConfidenceStore = create<ConfidenceState>()(
           for (const [itemId, response] of Object.entries(
             session.itemResponses
           )) {
-            if (response.verdict === 'na') continue;
-
             const meta = itemSeverities[itemId];
             if (!meta) continue;
 

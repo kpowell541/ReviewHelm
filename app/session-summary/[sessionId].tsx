@@ -16,6 +16,7 @@ import {
   getChecklist,
   getPolishChecklist,
   getMergedChecklist,
+  filterSections,
   withSecurityChecklist,
   withCodeReviewMeta,
 } from '../../src/data/checklistLoader';
@@ -55,7 +56,7 @@ export default function SessionSummaryScreen() {
       const effectiveIds = getEffectiveStackIds(session);
       if (effectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
       const domainChecklist = effectiveIds.length === 1
-        ? getChecklist(effectiveIds[0])
+        ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
         : getMergedChecklist(effectiveIds, session.selectedSections);
       const polishCl = getPolishChecklist();
       return withCodeReviewMeta(withSecurityChecklist({
@@ -68,14 +69,14 @@ export default function SessionSummaryScreen() {
           totalItems: domainChecklist.meta.totalItems + polishCl.meta.totalItems,
         },
         sections: [...domainChecklist.sections, ...polishCl.sections],
-      }));
+      }, effectiveIds));
     }
     const effectiveIds = getEffectiveStackIds(session);
     if (effectiveIds.length === 0) return null;
     const base = effectiveIds.length === 1
-      ? getChecklist(effectiveIds[0])
+      ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
       : getMergedChecklist(effectiveIds, session.selectedSections);
-    return withCodeReviewMeta(withSecurityChecklist(base));
+    return withCodeReviewMeta(withSecurityChecklist(base, effectiveIds));
   }, [session]);
 
   const allItems = useMemo(
@@ -97,20 +98,24 @@ export default function SessionSummaryScreen() {
     [allItems, session],
   );
 
-  const lowConfidenceItems = useMemo(
-    () =>
-      allItems
-        .filter((item) => {
-          const r = session?.itemResponses[item.id];
-          return r && r.confidence <= 2 && r.verdict !== 'na';
-        })
-        .sort((a, b) => {
-          const ca = session!.itemResponses[a.id]?.confidence ?? 5;
-          const cb = session!.itemResponses[b.id]?.confidence ?? 5;
-          return ca - cb;
-        }),
-    [allItems, session],
-  );
+  const lowConfidenceItems = useMemo(() => {
+    if (!session) return [];
+    // Build a set of checklist item IDs for fast lookup
+    const itemMap = new Map(allItems.map((item) => [item.id, item]));
+    // Collect all items from responses with low confidence,
+    // falling back to response data even if the item isn't in the reconstructed checklist
+    const results: Array<{ id: string; text: string; confidence: number }> = [];
+    for (const [itemId, response] of Object.entries(session.itemResponses)) {
+      if (response.confidence > 2 || response.verdict === 'na') continue;
+      const item = itemMap.get(itemId);
+      results.push({
+        id: itemId,
+        text: item?.text ?? itemId,
+        confidence: response.confidence,
+      });
+    }
+    return results.sort((a, b) => a.confidence - b.confidence);
+  }, [allItems, session]);
 
   const handleExportPdf = useCallback(async () => {
     if (!session || !scores) return;
@@ -273,8 +278,7 @@ export default function SessionSummaryScreen() {
             Items where your confidence was low — focus your learning here.
           </Text>
           {lowConfidenceItems.map((item) => {
-            const conf = session.itemResponses[item.id]
-              ?.confidence as ConfidenceLevel;
+            const conf = item.confidence as ConfidenceLevel;
             return (
               <Pressable
                 key={item.id}

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { crossAlert } from '../../src/utils/alert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { STACKS, getStackInfo } from '../../src/data/checklistRegistry';
 import type { StackId } from '../../src/data/types';
@@ -139,7 +140,7 @@ export default function StackSelectScreen() {
                     router.push(`/review/sessions?${params}` as '/review/sessions');
                   }}
                   onLongPress={() => {
-                    Alert.alert('Delete template?', `Remove "${tmpl.name}"?`, [
+                    crossAlert('Delete template?', `Remove "${tmpl.name}"?`, [
                       { text: 'Cancel', style: 'cancel' },
                       { text: 'Delete', style: 'destructive', onPress: () => deleteTemplate(tmpl.id) },
                     ]);
@@ -227,20 +228,21 @@ export default function StackSelectScreen() {
               {selectedStacks.length > 1 ? 's' : ''}
             </Text>
           </Pressable>
-          {selectedStacks.length > 1 && (
-            <Pressable
-              onPress={() =>
-                router.push(
-                  `/review/section-select?stacks=${selectedStacks.join(',')}${repoParam}` as '/review/section-select',
-                )
-              }
-              style={styles.sectionPickerLink}
-            >
-              <Text style={styles.sectionPickerText}>
-                Or pick specific sections...
-              </Text>
-            </Pressable>
-          )}
+          <Pressable
+            onPress={() => {
+              const stackParam = selectedStacks.length === 1
+                ? `stack=${selectedStacks[0]}`
+                : `stacks=${selectedStacks.join(',')}`;
+              router.push(
+                `/review/section-select?${stackParam}${repoParam}` as '/review/section-select',
+              );
+            }}
+            style={styles.sectionPickerLink}
+          >
+            <Text style={styles.sectionPickerText}>
+              Or pick specific sections...
+            </Text>
+          </Pressable>
         </View>
       )}
     </View>

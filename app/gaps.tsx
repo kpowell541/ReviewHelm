@@ -80,7 +80,7 @@ export default function GapsScreen() {
 
   const weakest = useMemo(() => {
     return Object.values(histories)
-      .sort((a, b) => a.learningPriority - b.learningPriority)
+      .sort((a, b) => b.learningPriority - a.learningPriority)
       .slice(0, 50);
   }, [histories]);
 

@@ -6,16 +6,16 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  Alert,
   Modal,
   FlatList,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { crossAlert } from '../../utils/alert';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useConfidenceStore } from '../../store/useConfidenceStore';
 import { usePreferencesStore } from '../../store/usePreferencesStore';
-import { getChecklist, getPolishChecklist, getMergedChecklist, withSecurityChecklist, withCodeReviewMeta } from '../../data/checklistLoader';
+import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withSecurityChecklist, withCodeReviewMeta } from '../../data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../../data/types';
 import type {
   Checklist,
@@ -27,6 +27,7 @@ import type {
 } from '../../data/types';
 import { computeSessionScores } from '../../utils/scoring';
 import { colors, spacing, fontSizes, radius } from '../../theme';
+import { DesktopContainer } from '../DesktopContainer';
 import { ChecklistItemRow } from './ChecklistItemRow';
 
 interface Props {
@@ -118,7 +119,7 @@ export function ChecklistScreen({ sessionId }: Props) {
       if (effectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
       // Merge domain checklists + polish checklist for self-reviews with a stack
       const domainChecklist = effectiveIds.length === 1
-        ? getChecklist(effectiveIds[0])
+        ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
         : getMergedChecklist(effectiveIds, session.selectedSections);
       const polishChecklist = getPolishChecklist();
       const merged: Checklist = {
@@ -132,14 +133,14 @@ export function ChecklistScreen({ sessionId }: Props) {
         },
         sections: [...domainChecklist.sections, ...polishChecklist.sections],
       };
-      return withCodeReviewMeta(withSecurityChecklist(merged));
+      return withCodeReviewMeta(withSecurityChecklist(merged, effectiveIds));
     }
     const effectiveIds = getEffectiveStackIds(session);
     if (effectiveIds.length === 0) return null;
     const base = effectiveIds.length === 1
-      ? getChecklist(effectiveIds[0])
+      ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
       : getMergedChecklist(effectiveIds, session.selectedSections);
-    return withCodeReviewMeta(withSecurityChecklist(base));
+    return withCodeReviewMeta(withSecurityChecklist(base, effectiveIds));
   }, [session]);
 
   const allItems = useMemo(() => (checklist ? getAllChecklistItems(checklist) : []), [checklist]);
@@ -286,10 +287,10 @@ export function ChecklistScreen({ sessionId }: Props) {
   }, [bulkSelected, sessionId, setItemResponse]);
 
   const finalizeCompletion = useCallback(() => {
-    if (!session || !checklist || session.isComplete) {
-      router.replace(`/session-summary/${sessionId}`);
-      return;
-    }
+    if (!checklist) return;
+    // Read the latest session directly from the store to avoid stale closure data
+    const freshSession = useSessionStore.getState().sessions[sessionId];
+    if (!freshSession) return;
 
     const itemSeverities: Record<string, { severity: Severity; sectionId: string }> = {};
     for (const section of checklist.sections) {
@@ -304,7 +305,7 @@ export function ChecklistScreen({ sessionId }: Props) {
     completeSession(sessionId);
     recordSessionResults(
       {
-        ...session,
+        ...freshSession,
         isComplete: true,
         completedAt: new Date().toISOString(),
       },
@@ -316,7 +317,6 @@ export function ChecklistScreen({ sessionId }: Props) {
       : `/session-summary/${sessionId}`;
     router.replace(destination);
   }, [
-    session,
     checklist,
     sessionId,
     completeSession,
@@ -327,29 +327,31 @@ export function ChecklistScreen({ sessionId }: Props) {
 
   const handleComplete = useCallback(() => {
     if (!session || !scores) return;
-    if (session.isComplete) {
-      router.replace(`/session-summary/${sessionId}`);
-      return;
-    }
 
+    const isRecomplete = session.isComplete;
     const lowCoverage = scores.coverage < 70;
-    const warningSuffix = lowCoverage
+    const warningSuffix = lowCoverage && !isRecomplete
       ? `\n\nCoverage is ${scores.coverage}%. You may miss important issues if you finish now.`
       : '';
 
-    Alert.alert(
-      'Complete session?',
-      `This will lock in your scores and save gap tracking.${warningSuffix}`,
+    const title = isRecomplete ? 'Re-complete session?' : 'Complete session?';
+    const message = isRecomplete
+      ? 'This will update your scores and gap tracking with your latest answers.'
+      : `This will lock in your scores and save gap tracking.${warningSuffix}`;
+
+    crossAlert(
+      title,
+      message,
       [
         { text: 'Keep reviewing', style: 'cancel' },
         {
-          text: 'Complete',
+          text: isRecomplete ? 'Re-complete' : 'Complete',
           style: 'default',
           onPress: finalizeCompletion,
         },
       ],
     );
-  }, [session, scores, router, sessionId, finalizeCompletion]);
+  }, [session, scores, finalizeCompletion]);
 
   if (!session || !checklist || !scores) {
     return (
@@ -371,6 +373,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const hasSessionNotes = sessionNotesDraft.trim().length > 0;
 
   return (
+    <DesktopContainer>
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
@@ -470,6 +473,7 @@ export function ChecklistScreen({ sessionId }: Props) {
         ref={sectionListRef}
         sections={sections}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
         stickySectionHeadersEnabled
         renderSectionHeader={({ section: sectionEntry }) => {
           const progress = getSectionProgress(sectionEntry.items);
@@ -531,15 +535,13 @@ export function ChecklistScreen({ sessionId }: Props) {
           <View style={styles.footer}>
             <Pressable
               onPress={handleComplete}
-              disabled={session.isComplete}
               style={({ pressed }) => [
                 styles.completeButton,
-                session.isComplete && styles.completeButtonDisabled,
                 { opacity: pressed ? 0.85 : 1 },
               ]}
             >
               <Text style={styles.completeButtonText}>
-                {session.isComplete ? 'Session Completed' : 'Complete Session'}
+                {session.isComplete ? 'Re-complete Session' : 'Complete Session'}
               </Text>
             </Pressable>
           </View>
@@ -619,6 +621,7 @@ export function ChecklistScreen({ sessionId }: Props) {
         </View>
       )}
     </View>
+    </DesktopContainer>
   );
 }
 

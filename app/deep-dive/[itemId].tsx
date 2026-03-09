@@ -42,6 +42,8 @@ const QUICK_ACTIONS: { role: TutorRole; label: string; icon: string }[] = [
   { role: 'anti-bias-challenger', label: 'Challenge my thinking', icon: '🤔' },
 ];
 
+const EMPTY_MESSAGES: TutorMessage[] = [];
+
 export default function DeepDiveScreen() {
   const { itemId: rawItemId, sessionId } = useLocalSearchParams<{
     itemId: string;
@@ -53,13 +55,13 @@ export default function DeepDiveScreen() {
   const found = useMemo(() => findItemById(itemId), [itemId]);
   const isBookmarked = useBookmarkStore((s) => s.isBookmarked(itemId));
   const toggleBookmark = useBookmarkStore((s) => s.toggleBookmark);
-  const history = useConfidenceStore((s) => s.getItemHistory(itemId));
+  const history = useConfidenceStore((s) => s.histories[itemId]);
   const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
   const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
   const aiModel = usePreferencesStore((s) => s.aiModel);
   const recordUsage = useUsageStore((s) => s.recordUsage);
   const persistedMessages = useTutorStore(
-    (s) => s.conversations[itemId]?.messages ?? [],
+    (s) => s.conversations[itemId]?.messages ?? EMPTY_MESSAGES,
   );
   const setConversationMessages = useTutorStore((s) => s.setMessages);
   const clearConversation = useTutorStore((s) => s.clearConversation);
@@ -265,6 +267,7 @@ export default function DeepDiveScreen() {
         <ScrollView
           style={styles.contentScroll}
           contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
         >
           {hasBaseContent ? (
             <BaseContentView content={item.baseContent} />
@@ -310,6 +313,7 @@ export default function DeepDiveScreen() {
             ref={scrollRef}
             style={styles.chatScroll}
             contentContainerStyle={styles.chatContent}
+            keyboardShouldPersistTaps="handled"
             onContentSizeChange={() =>
               scrollRef.current?.scrollToEnd({ animated: true })
             }

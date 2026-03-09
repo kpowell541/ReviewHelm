@@ -33,7 +33,7 @@ export default function CommentDrafterScreen() {
   const decodedSessionId = sessionId ? decodeURIComponent(sessionId) : undefined;
 
   const found = findItemById(itemId);
-  const history = useConfidenceStore((s) => s.getItemHistory(itemId));
+  const history = useConfidenceStore((s) => s.histories[itemId]);
   const allSessions = useSessionStore((s) => s.sessions);
   const session = useMemo(
     () => (decodedSessionId ? allSessions[decodedSessionId] : undefined),
@@ -217,6 +217,7 @@ export default function CommentDrafterScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.itemCard}>
           <Text style={styles.itemLabel}>Drafting comment for:</Text>
