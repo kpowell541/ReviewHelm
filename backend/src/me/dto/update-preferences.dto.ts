@@ -91,4 +91,14 @@ export class UpdatePreferencesDto {
   @Min(0)
   @Max(60)
   cooldownSeconds?: number;
+
+  @IsOptional()
+  @IsArray()
+  bookmarks?: string[];
+
+  @IsOptional()
+  templates?: Record<string, unknown>;
+
+  @IsOptional()
+  repoConfigs?: Record<string, unknown>;
 }

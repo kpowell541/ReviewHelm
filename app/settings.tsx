@@ -26,6 +26,7 @@ import { useSyncStore } from '../src/store/useSyncStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
 import { syncChecklistsFromGithub } from '../src/data/checklistSync';
+import { runSync } from '../src/sync/syncEngine';
 import { fetchMonthlyCostFromAdminApi } from '../src/ai/costApi';
 import {
   CLAUDE_MODEL_LABELS,
@@ -145,6 +146,7 @@ export default function SettingsScreen() {
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
   const [syncingOfficialCost, setSyncingOfficialCost] = useState(false);
+  const [syncingData, setSyncingData] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [adminApiKeyInput, setAdminApiKeyInput] = useState('');
   const [budgetInput, setBudgetInput] = useState(String(monthlyBudgetUsd));
@@ -168,6 +170,26 @@ export default function SettingsScreen() {
     setApiKeyInput('');
     setSavingApiKey(false);
   }, [clearApiKey]);
+
+  const handleSyncData = useCallback(async () => {
+    setSyncingData(true);
+    try {
+      const result = await runSync();
+      if (result.errors.length > 0) {
+        crossAlert('Sync completed with errors', result.errors.slice(0, 3).join('\n'));
+      } else {
+        crossAlert(
+          'Sync complete',
+          `Pushed ${result.pushed} item${result.pushed !== 1 ? 's' : ''}, pulled ${result.pulled} item${result.pulled !== 1 ? 's' : ''}.`,
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Sync failed.';
+      crossAlert('Sync failed', message);
+    } finally {
+      setSyncingData(false);
+    }
+  }, []);
 
   const handleAdminApiKeySave = useCallback(async () => {
     if (!adminApiKeyInput.trim()) return;
@@ -512,6 +534,22 @@ export default function SettingsScreen() {
   return (
     <DesktopContainer>
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
+      <Text style={styles.sectionTitle}>Sync</Text>
+      <View style={styles.card}>
+        <Text style={styles.hint}>
+          Sync sessions, PRs, gaps, and preferences across all your devices.
+        </Text>
+        <Pressable
+          style={[styles.primaryButton, syncingData && styles.buttonDisabled]}
+          onPress={handleSyncData}
+          disabled={syncingData}
+        >
+          <Text style={styles.primaryButtonText}>
+            {syncingData ? 'Syncing...' : 'Sync data between devices'}
+          </Text>
+        </Pressable>
+      </View>
+
       <Text style={styles.sectionTitle}>AI Tutor</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Claude API Key</Text>
