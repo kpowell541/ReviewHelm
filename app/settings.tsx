@@ -9,9 +9,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Pressable,
-  Alert,
 } from 'react-native';
 import Constants from 'expo-constants';
+import { crossAlert } from '../src/utils/alert';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
@@ -205,7 +205,7 @@ export default function SettingsScreen() {
     try {
       const result = await syncChecklistsFromGithub();
       markSyncSuccess(result.latestVersion);
-      Alert.alert(
+      crossAlert(
         result.updated ? 'Checklist data updated' : 'Already up to date',
         result.updated
           ? `Updated ${result.changedIds.length} checklist files to v${result.latestVersion}.`
@@ -215,7 +215,7 @@ export default function SettingsScreen() {
       const message =
         error instanceof Error ? error.message : 'Failed to sync checklist data.';
       markSyncFailure(message);
-      Alert.alert('Sync failed', message);
+      crossAlert('Sync failed', message);
     } finally {
       setCheckingUpdates(false);
     }
@@ -224,7 +224,7 @@ export default function SettingsScreen() {
   const handleSaveBudget = useCallback(() => {
     const parsed = Number(budgetInput);
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      Alert.alert('Invalid budget', 'Enter a positive USD amount.');
+      crossAlert('Invalid budget', 'Enter a positive USD amount.');
       return;
     }
     setMonthlyBudget(parsed);
@@ -236,7 +236,7 @@ export default function SettingsScreen() {
       .map((value) => Number(value.trim()))
       .filter((value) => Number.isFinite(value)) as number[];
     if (parsed.length === 0) {
-      Alert.alert(
+      crossAlert(
         'Invalid thresholds',
         'Enter comma-separated percentages like 70,85,95.',
       );
@@ -249,7 +249,7 @@ export default function SettingsScreen() {
   const handleSaveAutoDowngradeThreshold = useCallback(() => {
     const parsed = Number(autoDowngradeThresholdInput);
     if (!Number.isFinite(parsed) || parsed < 50 || parsed > 99) {
-      Alert.alert(
+      crossAlert(
         'Invalid threshold',
         'Enter a percentage between 50 and 99.',
       );
@@ -262,7 +262,7 @@ export default function SettingsScreen() {
   const handleSaveCooldown = useCallback(() => {
     const parsed = Number(cooldownInput);
     if (!Number.isFinite(parsed) || parsed < 0 || parsed > 60) {
-      Alert.alert(
+      crossAlert(
         'Invalid cooldown',
         'Enter seconds between 0 and 60.',
       );
@@ -287,7 +287,7 @@ export default function SettingsScreen() {
         endDate: end,
       });
       setExternalMonthlyCost(monthlyCost);
-      Alert.alert(
+      crossAlert(
         'Official cost synced',
         `Current month spend from Admin API: $${monthlyCost.toFixed(2)}.`,
       );
@@ -296,7 +296,7 @@ export default function SettingsScreen() {
         error instanceof Error
           ? error.message
           : 'Unable to sync official cost right now.';
-      Alert.alert(
+      crossAlert(
         'Official cost sync failed',
         `${message}\n\nIf you are on an individual account, Admin Usage/Cost API may be unavailable.`,
       );
@@ -307,7 +307,7 @@ export default function SettingsScreen() {
 
   const handleClearTutorCache = useCallback(() => {
     clearResponseCache();
-    Alert.alert('Tutor cache cleared', 'Cached tutor responses were removed.');
+    crossAlert('Tutor cache cleared', 'Cached tutor responses were removed.');
   }, [clearResponseCache]);
 
   const handleExportBackup = useCallback(async () => {
@@ -355,7 +355,7 @@ export default function SettingsScreen() {
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Backup export failed.';
-      Alert.alert('Export failed', message);
+      crossAlert('Export failed', message);
     } finally {
       setBackupBusy(false);
     }
@@ -479,11 +479,11 @@ export default function SettingsScreen() {
         });
       }
 
-      Alert.alert('Restore complete', 'Backup data has been restored.');
+      crossAlert('Restore complete', 'Backup data has been restored.');
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Backup import failed.';
-      Alert.alert('Import failed', message);
+      crossAlert('Import failed', message);
     } finally {
       setBackupBusy(false);
     }
@@ -967,7 +967,7 @@ export default function SettingsScreen() {
               style={styles.secondaryButton}
               onPress={async () => {
                 await signOut();
-                Alert.alert('Signed out', 'You can continue using the app offline.');
+                crossAlert('Signed out', 'You can continue using the app offline.');
               }}
             >
               <Text style={styles.secondaryButtonText}>Sign Out</Text>

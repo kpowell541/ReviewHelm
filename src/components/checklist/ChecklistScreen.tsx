@@ -6,16 +6,16 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  Alert,
   Modal,
   FlatList,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { crossAlert } from '../../utils/alert';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useConfidenceStore } from '../../store/useConfidenceStore';
 import { usePreferencesStore } from '../../store/usePreferencesStore';
-import { getChecklist, getPolishChecklist, getMergedChecklist, withSecurityChecklist, withCodeReviewMeta } from '../../data/checklistLoader';
+import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withSecurityChecklist, withCodeReviewMeta } from '../../data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../../data/types';
 import type {
   Checklist,
@@ -119,7 +119,7 @@ export function ChecklistScreen({ sessionId }: Props) {
       if (effectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
       // Merge domain checklists + polish checklist for self-reviews with a stack
       const domainChecklist = effectiveIds.length === 1
-        ? getChecklist(effectiveIds[0])
+        ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
         : getMergedChecklist(effectiveIds, session.selectedSections);
       const polishChecklist = getPolishChecklist();
       const merged: Checklist = {
@@ -133,14 +133,14 @@ export function ChecklistScreen({ sessionId }: Props) {
         },
         sections: [...domainChecklist.sections, ...polishChecklist.sections],
       };
-      return withCodeReviewMeta(withSecurityChecklist(merged));
+      return withCodeReviewMeta(withSecurityChecklist(merged, effectiveIds));
     }
     const effectiveIds = getEffectiveStackIds(session);
     if (effectiveIds.length === 0) return null;
     const base = effectiveIds.length === 1
-      ? getChecklist(effectiveIds[0])
+      ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
       : getMergedChecklist(effectiveIds, session.selectedSections);
-    return withCodeReviewMeta(withSecurityChecklist(base));
+    return withCodeReviewMeta(withSecurityChecklist(base, effectiveIds));
   }, [session]);
 
   const allItems = useMemo(() => (checklist ? getAllChecklistItems(checklist) : []), [checklist]);
@@ -287,7 +287,10 @@ export function ChecklistScreen({ sessionId }: Props) {
   }, [bulkSelected, sessionId, setItemResponse]);
 
   const finalizeCompletion = useCallback(() => {
-    if (!session || !checklist) return;
+    if (!checklist) return;
+    // Read the latest session directly from the store to avoid stale closure data
+    const freshSession = useSessionStore.getState().sessions[sessionId];
+    if (!freshSession) return;
 
     const itemSeverities: Record<string, { severity: Severity; sectionId: string }> = {};
     for (const section of checklist.sections) {
@@ -302,7 +305,7 @@ export function ChecklistScreen({ sessionId }: Props) {
     completeSession(sessionId);
     recordSessionResults(
       {
-        ...session,
+        ...freshSession,
         isComplete: true,
         completedAt: new Date().toISOString(),
       },
@@ -314,7 +317,6 @@ export function ChecklistScreen({ sessionId }: Props) {
       : `/session-summary/${sessionId}`;
     router.replace(destination);
   }, [
-    session,
     checklist,
     sessionId,
     completeSession,
@@ -337,7 +339,7 @@ export function ChecklistScreen({ sessionId }: Props) {
       ? 'This will update your scores and gap tracking with your latest answers.'
       : `This will lock in your scores and save gap tracking.${warningSuffix}`;
 
-    Alert.alert(
+    crossAlert(
       title,
       message,
       [

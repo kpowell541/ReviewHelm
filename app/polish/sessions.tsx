@@ -5,11 +5,11 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Alert,
   Modal,
   TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { crossAlert } from '../../src/utils/alert';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
 import type { TrackedPR, PRSize, CIPassing, PRDependency, StackId } from '../../src/data/types';
@@ -113,7 +113,7 @@ export default function PolishSessionsScreen() {
   }, [addForm, addPR]);
 
   const handleDelete = (sessionId: string, title: string) => {
-    Alert.alert('Delete Session', `Delete "${title}"?`, [
+    crossAlert('Delete Session', `Delete "${title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

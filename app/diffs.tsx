@@ -7,9 +7,9 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { api, ApiError } from '../src/api/client';
+import { crossAlert } from '../src/utils/alert';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 
@@ -53,14 +53,14 @@ export default function DiffsScreen() {
       setPasteContent('');
       setPasteLabel('');
       setShowPasteForm(false);
-      Alert.alert(
+      crossAlert(
         'Diff Saved',
         `${result.lineCount} lines uploaded. You can now link this diff to a review session.`,
       );
     } catch (err) {
       const msg =
         err instanceof ApiError ? err.message : 'Failed to upload diff';
-      Alert.alert('Error', msg);
+      crossAlert('Error', msg);
     } finally {
       setIsPasting(false);
     }

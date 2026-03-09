@@ -320,7 +320,7 @@ export interface PRDependency {
 export type CIPassing = 'yes' | 'no' | 'unknown';
 
 /** Whether the author's PR was accepted with or without changes requested by reviewers */
-export type AcceptanceOutcome = 'accepted-clean' | 'accepted-with-changes';
+export type AcceptanceOutcome = 'accepted-clean' | 'accepted-with-changes' | 'abandoned';
 
 /** Whether the reviewer requested changes on someone else's PR */
 export type ReviewOutcome = 'requested-changes' | 'no-changes-requested';

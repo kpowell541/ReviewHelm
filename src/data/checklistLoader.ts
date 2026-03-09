@@ -284,10 +284,79 @@ export function getChecklistMap(): ChecklistMap {
 }
 
 /**
- * Append security checklist sections to any checklist if not already present.
- * Security is auto-included in every review and polish session.
+ * Maps security section IDs to the stack categories they're relevant for.
+ * Stacks not listed get a sensible default set based on their nature.
  */
-export function withSecurityChecklist(checklist: Checklist): Checklist {
+const SECURITY_RELEVANCE: Record<string, StackId[]> = {
+  // Auth sections: relevant for stacks that handle user-facing logic or APIs
+  'security.authentication': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
+    'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
+    'rest-api', 'graphql',
+  ],
+  'security.authorization': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
+    'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
+    'rest-api', 'graphql',
+  ],
+  // Injection: relevant for anything that processes user input or queries
+  'security.injection': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'php', 'vue', 'angular', 'nextjs', 'django', 'spring-boot', 'elixir-phoenix',
+    'scala', 'rust', 'rest-api', 'graphql', 'postgresql', 'sql-migrations',
+    'nosql', 'shell', 'data-formats', 'typescript', 'cpp', 'c-lang', 'lua',
+  ],
+  // Secrets: relevant for almost everything except pure config/styling
+  'security.secrets': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
+    'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
+    'rest-api', 'graphql', 'docker-k8s', 'cicd', 'terraform-hcl',
+    'web-devops-config', 'shell', 'data-formats',
+  ],
+  // Data protection: relevant for stacks that handle user data
+  'security.data-protection': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
+    'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
+    'rest-api', 'graphql', 'postgresql', 'sql-migrations', 'nosql',
+  ],
+  // Input validation: relevant for code that processes input
+  'security.input-validation': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'php', 'vue', 'angular', 'nextjs', 'django', 'spring-boot', 'elixir-phoenix',
+    'scala', 'rust', 'rest-api', 'graphql', 'data-formats', 'typescript',
+    'cpp', 'c-lang',
+  ],
+  // Dependencies: relevant for stacks with package managers
+  'security.dependencies': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
+    'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
+    'cpp', 'package-bundler', 'r-lang',
+  ],
+  // Error handling: relevant for application code
+  'security.error-handling': [
+    'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
+    'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
+    'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
+    'rest-api', 'graphql', 'typescript', 'cpp', 'c-lang', 'lua',
+  ],
+  // Infrastructure: relevant for infra/deployment stacks
+  'security.infrastructure': [
+    'js-ts-react-node', 'nextjs', 'django', 'spring-boot', 'elixir-phoenix',
+    'docker-k8s', 'cicd', 'terraform-hcl', 'web-devops-config', 'rest-api',
+    'graphql',
+  ],
+};
+
+/**
+ * Append security checklist sections to any checklist if not already present.
+ * Only includes security sections relevant to the given stacks.
+ */
+export function withSecurityChecklist(checklist: Checklist, stackIds?: StackId[]): Checklist {
   const securityChecklist = getChecklist('security');
   // Skip if security sections are already included (user explicitly selected security stack)
   const hasSecuritySections = checklist.sections.some((s) =>
@@ -295,7 +364,19 @@ export function withSecurityChecklist(checklist: Checklist): Checklist {
   );
   if (hasSecuritySections) return checklist;
 
-  const securityItems = securityChecklist.sections.reduce(
+  // Filter to relevant security sections based on selected stacks
+  let relevantSections = securityChecklist.sections;
+  if (stackIds && stackIds.length > 0) {
+    relevantSections = securityChecklist.sections.filter((s) => {
+      const relevantStacks = SECURITY_RELEVANCE[s.id];
+      if (!relevantStacks) return true; // unknown section — include by default
+      return stackIds.some((id) => relevantStacks.includes(id));
+    });
+  }
+
+  if (relevantSections.length === 0) return checklist;
+
+  const securityItems = relevantSections.reduce(
     (sum, s) => sum + getSectionItems(s).length,
     0,
   );
@@ -308,7 +389,7 @@ export function withSecurityChecklist(checklist: Checklist): Checklist {
     },
     sections: [
       ...checklist.sections,
-      ...securityChecklist.sections.map((s) => ({
+      ...relevantSections.map((s) => ({
         ...s,
         title: `[Security] ${s.title}`,
       })),
@@ -345,6 +426,29 @@ export function withCodeReviewMeta(checklist: Checklist): Checklist {
         title: `[Review Meta] ${s.title}`,
       })),
     ],
+  };
+}
+
+/**
+ * Filter a checklist to only include the given sections.
+ * Returns the full checklist if selectedSections is undefined or empty.
+ */
+export function filterSections(
+  checklist: Checklist,
+  selectedSections?: string[],
+): Checklist {
+  if (!selectedSections || selectedSections.length === 0) return checklist;
+  const filtered = checklist.sections.filter((s) =>
+    selectedSections.includes(s.id),
+  );
+  const totalItems = filtered.reduce(
+    (sum, s) => sum + getSectionItems(s).length,
+    0,
+  );
+  return {
+    ...checklist,
+    meta: { ...checklist.meta, totalItems },
+    sections: filtered,
   };
 }
 

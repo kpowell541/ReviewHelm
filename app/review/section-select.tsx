@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
+import { crossAlert } from '../../src/utils/alert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getChecklist } from '../../src/data/checklistLoader';
 import { getStackInfo } from '../../src/data/checklistRegistry';
@@ -14,10 +15,14 @@ export default function SectionSelectScreen() {
   const router = useRouter();
   const saveTemplate = useTemplateStore((s) => s.saveTemplate);
   const saveRepoConfig = useRepoConfigStore((s) => s.saveRepoConfig);
-  const { stacks, repo } = useLocalSearchParams<{ stacks: string; repo?: string }>();
+  const { stack, stacks, repo } = useLocalSearchParams<{ stack?: string; stacks?: string; repo?: string }>();
   const stackIds = useMemo(
-    () => (stacks ? (stacks.split(',') as StackId[]) : []),
-    [stacks],
+    () => {
+      if (stacks) return stacks.split(',') as StackId[];
+      if (stack) return [stack as StackId];
+      return [];
+    },
+    [stack, stacks],
   );
 
   const stackSections = useMemo(() => {
@@ -83,10 +88,11 @@ export default function SectionSelectScreen() {
     if (selected.size === 0) return;
     const selectedArray = [...selected];
     const isAllSelected = selectedArray.length === allSectionIds.length;
-    const params = `stacks=${stackIds.join(',')}${
-      isAllSelected ? '' : `&sections=${selectedArray.join(',')}`
-    }${repoParam}`;
-    router.push(`/review/sessions?${params}` as '/review/sessions');
+    const stackParam = stackIds.length === 1
+      ? `stack=${stackIds[0]}`
+      : `stacks=${stackIds.join(',')}`;
+    const sectionParam = isAllSelected ? '' : `&sections=${selectedArray.join(',')}`;
+    router.push(`/review/sessions?${stackParam}${sectionParam}${repoParam}` as '/review/sessions');
   };
 
   const totalSelected = stackSections.reduce((sum, ss) => {
@@ -214,7 +220,7 @@ export default function SectionSelectScreen() {
                   saveTemplate(templateName.trim(), stackIds, [...selected]);
                   if (repo) saveRepoConfig(repo, stackIds, [...selected]);
                   setShowNameModal(false);
-                  Alert.alert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
+                  crossAlert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
                 }
               }}
             />
@@ -231,7 +237,7 @@ export default function SectionSelectScreen() {
                     saveTemplate(templateName.trim(), stackIds, [...selected]);
                     if (repo) saveRepoConfig(repo, stackIds, [...selected]);
                     setShowNameModal(false);
-                    Alert.alert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
+                    crossAlert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
                   }
                 }}
                 style={[

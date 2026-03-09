@@ -4,12 +4,12 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Alert,
   Modal,
   TextInput,
 } from 'react-native';
 import { useState, useMemo, useCallback } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { crossAlert } from '../../src/utils/alert';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
@@ -146,7 +146,7 @@ export default function ReviewSessionsScreen() {
   }, [addForm, addPR]);
 
   const handleDelete = (sessionId: string, title: string) => {
-    Alert.alert('Delete Session', `Delete "${title}"?`, [
+    crossAlert('Delete Session', `Delete "${title}"?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',

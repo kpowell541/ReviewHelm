@@ -167,8 +167,9 @@ async function syncPreferences(): Promise<void> {
 
 async function syncConfidence(): Promise<void> {
   try {
-    const remoteGaps = await api.get<
-      Array<{
+    // Backend returns { active, improving, strong } buckets
+    const response = await api.get<{
+      active: Array<{
         itemId: string;
         stackId: string;
         sectionId: string;
@@ -177,24 +178,63 @@ async function syncConfidence(): Promise<void> {
         averageConfidence: number;
         trend: string;
         learningPriority: number;
-        ratings: any[];
-        repetitionState?: any;
-      }>
-    >('/gaps');
+        ratingsCount: number;
+      }>;
+      improving: Array<{
+        itemId: string;
+        stackId: string;
+        sectionId: string;
+        severity: string;
+        currentConfidence: number;
+        averageConfidence: number;
+        trend: string;
+        learningPriority: number;
+        ratingsCount: number;
+      }>;
+      strong: Array<{
+        itemId: string;
+        stackId: string;
+        sectionId: string;
+        severity: string;
+        currentConfidence: number;
+        averageConfidence: number;
+        trend: string;
+        learningPriority: number;
+        ratingsCount: number;
+      }>;
+    }>('/gaps?limit=100');
+
+    const allRemoteGaps = [
+      ...response.active,
+      ...response.improving,
+      ...response.strong,
+    ];
 
     const localHistories = useConfidenceStore.getState().histories;
     const merged = { ...localHistories };
 
-    for (const remote of remoteGaps) {
+    for (const remote of allRemoteGaps) {
       const local = merged[remote.itemId];
-      if (!local || remote.ratings.length > local.ratings.length) {
-        merged[remote.itemId] = remote as any;
+      // Only add items we don't have locally — never overwrite local data,
+      // since local recordSessionResults has the authoritative confidence values
+      if (!local) {
+        merged[remote.itemId] = {
+          itemId: remote.itemId,
+          stackId: remote.stackId,
+          sectionId: remote.sectionId,
+          severity: remote.severity as any,
+          currentConfidence: remote.currentConfidence as any,
+          averageConfidence: remote.averageConfidence,
+          trend: remote.trend as any,
+          learningPriority: remote.learningPriority,
+          ratings: [],
+        };
       }
     }
 
     useConfidenceStore.getState().replaceHistories(merged);
   } catch {
-    // Gaps endpoint may not return full history — skip on error
+    // Gaps sync is best-effort — skip on error
   }
 }
 

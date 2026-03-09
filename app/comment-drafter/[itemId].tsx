@@ -33,7 +33,7 @@ export default function CommentDrafterScreen() {
   const decodedSessionId = sessionId ? decodeURIComponent(sessionId) : undefined;
 
   const found = findItemById(itemId);
-  const history = useConfidenceStore((s) => s.getItemHistory(itemId));
+  const history = useConfidenceStore((s) => s.histories[itemId]);
   const allSessions = useSessionStore((s) => s.sessions);
   const session = useMemo(
     () => (decodedSessionId ? allSessions[decodedSessionId] : undefined),

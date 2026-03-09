@@ -178,15 +178,30 @@ export const usePRTrackerStore = create<PRTrackerState>()(
       },
 
       markReviewed: (id) => {
-        get().updatePR(id, { lastReviewedAt: new Date().toISOString() });
+        const pr = get().prs[id];
+        if (pr?.lastReviewedAt && isToday(pr.lastReviewedAt)) {
+          get().updatePR(id, { lastReviewedAt: undefined });
+        } else {
+          get().updatePR(id, { lastReviewedAt: new Date().toISOString() });
+        }
       },
 
       markAccepted: (id, outcome) => {
-        get().updatePR(id, { acceptanceOutcome: outcome, status: 'merged' });
+        const pr = get().prs[id];
+        if (pr?.acceptanceOutcome === outcome) {
+          get().updatePR(id, { acceptanceOutcome: undefined });
+        } else {
+          get().updatePR(id, { acceptanceOutcome: outcome });
+        }
       },
 
       setReviewOutcome: (id, outcome) => {
-        get().updatePR(id, { reviewOutcome: outcome });
+        const pr = get().prs[id];
+        if (pr?.reviewOutcome === outcome) {
+          get().updatePR(id, { reviewOutcome: undefined });
+        } else {
+          get().updatePR(id, { reviewOutcome: outcome });
+        }
       },
 
       linkSession: (prId, sessionId) => {

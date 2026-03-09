@@ -7,9 +7,9 @@ import {
   StyleSheet,
   Pressable,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { api, ApiError } from '../src/api/client';
+import { crossAlert } from '../src/utils/alert';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 
@@ -118,14 +118,14 @@ export default function CommentProfilesScreen() {
     } catch (err) {
       const msg =
         err instanceof ApiError ? err.message : 'Failed to save';
-      Alert.alert('Error', msg);
+      crossAlert('Error', msg);
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteProfile = async (id: string) => {
-    Alert.alert('Delete Profile', 'Are you sure?', [
+    crossAlert('Delete Profile', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
@@ -135,7 +135,7 @@ export default function CommentProfilesScreen() {
             await api.delete(`/comment-profiles/${id}`);
             await loadProfiles();
           } catch {
-            Alert.alert('Error', 'Failed to delete profile');
+            crossAlert('Error', 'Failed to delete profile');
           }
         },
       },
@@ -145,9 +145,9 @@ export default function CommentProfilesScreen() {
   const activateProfile = async (id: string) => {
     try {
       await api.post(`/comment-profiles/${id}/activate`);
-      Alert.alert('Activated', 'This profile is now your default.');
+      crossAlert('Activated', 'This profile is now your default.');
     } catch {
-      Alert.alert('Error', 'Failed to activate profile');
+      crossAlert('Error', 'Failed to activate profile');
     }
   };
 

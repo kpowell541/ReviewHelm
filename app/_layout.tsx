@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Alert, AppState, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { crossAlert } from '../src/utils/alert';
+import { AlertProvider } from '../src/components/AlertProvider';
 import type { AppStateStatus } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useFonts, Quicksand_400Regular, Quicksand_500Medium, Quicksand_600SemiBold, Quicksand_700Bold } from '@expo-google-fonts/quicksand';
@@ -112,7 +114,7 @@ export default function RootLayout() {
     if (lastAlertThreshold && budget.thresholdReached <= lastAlertThreshold) return;
 
     acknowledgeAlertThreshold(budget.thresholdReached);
-    Alert.alert(
+    crossAlert(
       'AI spend alert',
       `You have used ${budget.percentUsed.toFixed(1)}% of your monthly budget ($${budget.monthlyCostUsd.toFixed(
         2,
@@ -150,6 +152,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
     <ErrorBoundary>
     <ThemeProvider>
+    <AlertProvider>
       <StatusBar style="auto" />
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <Stack
@@ -322,6 +325,7 @@ export default function RootLayout() {
         />
       </Stack>
       </SafeAreaView>
+    </AlertProvider>
     </ThemeProvider>
     </ErrorBoundary>
     </SafeAreaProvider>

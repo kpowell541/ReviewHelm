@@ -136,7 +136,6 @@ export const useSessionStore = create<SessionState>()(
         set((state) => {
           const session = state.sessions[sessionId];
           if (!session) return state;
-          if (session.completedAt || session.isComplete) return state;
           return {
             sessions: {
               ...state.sessions,

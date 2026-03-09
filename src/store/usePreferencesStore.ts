@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
-import { persistStorage } from '../storage/secureStorage';
+import { persistStorage, secureStoreAsyncStorage } from '../storage/secureStorage';
 import { randomUUID } from 'expo-crypto';
 import type { Severity, ClaudeModel } from '../data/types';
 
@@ -14,26 +13,26 @@ function tokenSlotKey(token: string): string {
 }
 
 async function clearToken(indexKey: string): Promise<void> {
-  const token = await SecureStore.getItemAsync(indexKey);
+  const token = await secureStoreAsyncStorage.getItem(indexKey);
   if (!token) return;
-  await SecureStore.deleteItemAsync(tokenSlotKey(token));
-  await SecureStore.deleteItemAsync(indexKey);
+  await secureStoreAsyncStorage.removeItem(tokenSlotKey(token));
+  await secureStoreAsyncStorage.removeItem(indexKey);
 }
 
 async function saveTokenizedKey(indexKey: string, value: string): Promise<string> {
   await clearToken(indexKey);
   const token = `atk_${randomUUID().replace(/-/g, '')}`;
-  await SecureStore.setItemAsync(tokenSlotKey(token), value);
-  await SecureStore.setItemAsync(indexKey, token);
+  await secureStoreAsyncStorage.setItem(tokenSlotKey(token), value);
+  await secureStoreAsyncStorage.setItem(indexKey, token);
   return token;
 }
 
 async function resolveTokenizedKey(indexKey: string): Promise<string> {
-  const token = await SecureStore.getItemAsync(indexKey);
+  const token = await secureStoreAsyncStorage.getItem(indexKey);
   if (!token) {
     throw new Error('No key configured.');
   }
-  const value = await SecureStore.getItemAsync(tokenSlotKey(token));
+  const value = await secureStoreAsyncStorage.getItem(tokenSlotKey(token));
   if (!value) {
     throw new Error('Stored key is missing. Re-enter it in Settings.');
   }
@@ -43,11 +42,11 @@ async function resolveTokenizedKey(indexKey: string): Promise<string> {
 async function loadTokenState(
   indexKey: string,
 ): Promise<{ token: string | null; has: boolean }> {
-  const token = await SecureStore.getItemAsync(indexKey);
+  const token = await secureStoreAsyncStorage.getItem(indexKey);
   if (!token) return { token: null, has: false };
-  const value = await SecureStore.getItemAsync(tokenSlotKey(token));
+  const value = await secureStoreAsyncStorage.getItem(tokenSlotKey(token));
   if (!value) {
-    await SecureStore.deleteItemAsync(indexKey);
+    await secureStoreAsyncStorage.removeItem(indexKey);
     return { token: null, has: false };
   }
   return { token, has: true };
