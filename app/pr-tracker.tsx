@@ -519,116 +519,141 @@ export default function PRTrackerScreen() {
             )}
           </View>
         </View>
-        {/* Right side: sliding toggles and checkboxes */}
-        <Pressable style={styles.prCardRight} onPress={(e) => e.stopPropagation()}>
-          {/* Changes: Needed <switch> Not Needed */}
-          <View style={styles.cardSwitchRow}>
-            <Text style={styles.cardSwitchLabel}>Changes:</Text>
-            <Text style={[
-              styles.switchEndLabel,
-              pr.reviewOutcome === 'requested-changes' && styles.switchEndLabelWarn,
-            ]}>
-              Needed
-            </Text>
-            <Switch
-              value={pr.reviewOutcome === 'no-changes-requested'}
-              onValueChange={(val) => {
-                void Haptics.selectionAsync();
-                setReviewOutcome(pr.id, val ? 'no-changes-requested' : 'requested-changes');
-              }}
-              trackColor={{ false: colors.warning + '50', true: colors.looksGood + '50' }}
-              thumbColor={
-                pr.reviewOutcome === 'no-changes-requested'
-                  ? colors.looksGood
-                  : pr.reviewOutcome === 'requested-changes'
-                    ? colors.warning
-                    : colors.textMuted
-              }
-              style={styles.switchControl}
-            />
-            <Text style={[
-              styles.switchEndLabel,
-              pr.reviewOutcome === 'no-changes-requested' && styles.switchEndLabelGood,
-            ]}>
-              Not Needed
-            </Text>
+        {/* Right side: radio buttons */}
+        <View style={styles.prCardRight} pointerEvents="box-none">
+          {/* Changes: Needed / Not Needed */}
+          <View style={styles.radioGroup}>
+            <Text style={styles.radioGroupLabel}>Changes:</Text>
+            <View style={styles.radioOptions}>
+              <Pressable
+                style={styles.radioItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void Haptics.selectionAsync();
+                  setReviewOutcome(pr.id, 'requested-changes');
+                }}
+              >
+                <View style={[
+                  styles.radioCircle,
+                  pr.reviewOutcome === 'requested-changes' && styles.radioCircleWarn,
+                ]}>
+                  {pr.reviewOutcome === 'requested-changes' && <View style={[styles.radioDot, styles.radioDotWarn]} />}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  pr.reviewOutcome === 'requested-changes' && styles.radioLabelWarn,
+                ]}>Needed</Text>
+              </Pressable>
+              <Pressable
+                style={styles.radioItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void Haptics.selectionAsync();
+                  setReviewOutcome(pr.id, 'no-changes-requested');
+                }}
+              >
+                <View style={[
+                  styles.radioCircle,
+                  pr.reviewOutcome === 'no-changes-requested' && styles.radioCircleGood,
+                ]}>
+                  {pr.reviewOutcome === 'no-changes-requested' && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  pr.reviewOutcome === 'no-changes-requested' && styles.radioLabelGood,
+                ]}>Not Needed</Text>
+              </Pressable>
+            </View>
           </View>
-          {/* Reviewed: No <switch> Yes */}
-          <View style={styles.cardSwitchRow}>
-            <Text style={styles.cardSwitchLabel}>Reviewed:</Text>
-            <Text style={[
-              styles.switchEndLabel,
-              !isReviewedToday && styles.switchEndLabelDim,
-            ]}>
-              No
-            </Text>
-            <Switch
-              value={isReviewedToday}
-              onValueChange={() => {
-                void Haptics.selectionAsync();
-                markReviewed(pr.id);
-              }}
-              trackColor={{ false: colors.border, true: colors.looksGood + '50' }}
-              thumbColor={isReviewedToday ? colors.looksGood : colors.textMuted}
-              style={styles.switchControl}
-            />
-            <Text style={[
-              styles.switchEndLabel,
-              isReviewedToday && styles.switchEndLabelGood,
-            ]}>
-              Yes
-            </Text>
+          {/* Reviewed: No / Yes */}
+          <View style={styles.radioGroup}>
+            <Text style={styles.radioGroupLabel}>Reviewed:</Text>
+            <View style={styles.radioOptions}>
+              <Pressable
+                style={styles.radioItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void Haptics.selectionAsync();
+                  if (isReviewedToday) markReviewed(pr.id);
+                }}
+              >
+                <View style={[
+                  styles.radioCircle,
+                  !isReviewedToday && styles.radioCircleDim,
+                ]}>
+                  {!isReviewedToday && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  !isReviewedToday && styles.radioLabelDim,
+                ]}>No</Text>
+              </Pressable>
+              <Pressable
+                style={styles.radioItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void Haptics.selectionAsync();
+                  if (!isReviewedToday) markReviewed(pr.id);
+                }}
+              >
+                <View style={[
+                  styles.radioCircle,
+                  isReviewedToday && styles.radioCircleGood,
+                ]}>
+                  {isReviewedToday && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  isReviewedToday && styles.radioLabelGood,
+                ]}>Yes</Text>
+              </Pressable>
+            </View>
           </View>
-          {/* Accepted / Abandoned checkboxes */}
-          <View style={styles.checkboxRow}>
-            <Pressable
-              style={styles.checkboxItem}
-              onPress={() => {
-                void Haptics.selectionAsync();
-                markAccepted(pr.id, 'accepted-clean');
-              }}
-              hitSlop={4}
-            >
-              <View style={[
-                styles.checkbox,
-                pr.acceptanceOutcome === 'accepted-clean' && styles.checkboxCheckedGood,
-              ]}>
-                {pr.acceptanceOutcome === 'accepted-clean' && (
-                  <Text style={styles.checkmark}>✓</Text>
-                )}
-              </View>
-              <Text style={[
-                styles.checkboxLabel,
-                pr.acceptanceOutcome === 'accepted-clean' && styles.checkboxLabelGood,
-              ]}>
-                Accepted
-              </Text>
-            </Pressable>
-            <Pressable
-              style={styles.checkboxItem}
-              onPress={() => {
-                void Haptics.selectionAsync();
-                markAccepted(pr.id, 'abandoned');
-              }}
-              hitSlop={4}
-            >
-              <View style={[
-                styles.checkbox,
-                pr.acceptanceOutcome === 'abandoned' && styles.checkboxCheckedMuted,
-              ]}>
-                {pr.acceptanceOutcome === 'abandoned' && (
-                  <Text style={styles.checkmark}>✓</Text>
-                )}
-              </View>
-              <Text style={[
-                styles.checkboxLabel,
-                pr.acceptanceOutcome === 'abandoned' && styles.checkboxLabelMuted,
-              ]}>
-                Abandoned
-              </Text>
-            </Pressable>
+          {/* Outcome: Accepted / Abandoned */}
+          <View style={styles.radioGroup}>
+            <Text style={styles.radioGroupLabel}>Outcome:</Text>
+            <View style={styles.radioOptions}>
+              <Pressable
+                style={styles.radioItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void Haptics.selectionAsync();
+                  markAccepted(pr.id, 'accepted-clean');
+                }}
+              >
+                <View style={[
+                  styles.radioCircle,
+                  pr.acceptanceOutcome === 'accepted-clean' && styles.radioCircleGood,
+                ]}>
+                  {pr.acceptanceOutcome === 'accepted-clean' && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  pr.acceptanceOutcome === 'accepted-clean' && styles.radioLabelGood,
+                ]}>Accepted</Text>
+              </Pressable>
+              <Pressable
+                style={styles.radioItem}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  void Haptics.selectionAsync();
+                  markAccepted(pr.id, 'abandoned');
+                }}
+              >
+                <View style={[
+                  styles.radioCircle,
+                  pr.acceptanceOutcome === 'abandoned' && styles.radioCircleMuted,
+                ]}>
+                  {pr.acceptanceOutcome === 'abandoned' && <View style={[styles.radioDot, styles.radioDotMuted]} />}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  pr.acceptanceOutcome === 'abandoned' && styles.radioLabelMuted,
+                ]}>Abandoned</Text>
+              </Pressable>
+            </View>
           </View>
-        </Pressable>
+        </View>
       </Pressable>
     );
   };
@@ -1252,84 +1277,87 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
 
-  // Right-side switch toggles & checkboxes
+  // Right-side radio buttons
   prCardRight: {
     marginLeft: spacing.sm,
-    gap: spacing.xs,
-    overflow: 'hidden' as const,
+    gap: 6,
   },
-  cardSwitchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  radioGroup: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
   },
-  cardSwitchLabel: {
+  radioGroupLabel: {
     fontSize: fontSizes.xs,
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     width: 62,
   },
-  switchEndLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-  switchEndLabelWarn: {
-    color: colors.warning,
-    fontWeight: '700',
-  },
-  switchEndLabelGood: {
-    color: colors.looksGood,
-    fontWeight: '700',
-  },
-  switchEndLabelDim: {
-    color: colors.textMuted,
-  },
-  switchControl: {
-    transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }],
-  },
-  checkboxRow: {
-    flexDirection: 'row',
+  radioOptions: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: spacing.sm,
-    marginTop: 2,
   },
-  checkboxItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  radioItem: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: 4,
   },
-  checkbox: {
+  radioCircle: {
     width: 16,
     height: 16,
-    borderRadius: 3,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: colors.border,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
   },
-  checkboxCheckedGood: {
-    backgroundColor: colors.looksGood + '25',
+  radioCircleGood: {
     borderColor: colors.looksGood,
   },
-  checkboxCheckedMuted: {
-    backgroundColor: colors.textMuted + '25',
+  radioCircleWarn: {
+    borderColor: colors.warning,
+  },
+  radioCircleDim: {
     borderColor: colors.textMuted,
   },
-  checkmark: {
-    fontSize: 10,
-    color: colors.textPrimary,
-    fontWeight: '700' as const,
-    marginTop: -1,
+  radioCircleMuted: {
+    borderColor: colors.textMuted,
   },
-  checkboxLabel: {
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  radioDotGood: {
+    backgroundColor: colors.looksGood,
+  },
+  radioDotWarn: {
+    backgroundColor: colors.warning,
+  },
+  radioDotDim: {
+    backgroundColor: colors.textMuted,
+  },
+  radioDotMuted: {
+    backgroundColor: colors.textMuted,
+  },
+  radioLabel: {
     fontSize: 10,
     color: colors.textMuted,
-    fontWeight: '500',
+    fontWeight: '500' as const,
   },
-  checkboxLabelGood: {
+  radioLabelGood: {
     color: colors.looksGood,
+    fontWeight: '600' as const,
   },
-  checkboxLabelMuted: {
+  radioLabelWarn: {
+    color: colors.warning,
+    fontWeight: '600' as const,
+  },
+  radioLabelDim: {
+    color: colors.textMuted,
+  },
+  radioLabelMuted: {
     color: colors.textMuted,
   },
 
