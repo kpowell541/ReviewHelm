@@ -79,6 +79,15 @@ export class MeService {
     if (input.cooldownSeconds !== undefined) {
       updateData.cooldownSeconds = input.cooldownSeconds;
     }
+    if (input.bookmarks !== undefined) {
+      updateData.bookmarks = input.bookmarks as Prisma.JsonArray;
+    }
+    if (input.templates !== undefined) {
+      updateData.templates = input.templates as Prisma.JsonObject;
+    }
+    if (input.repoConfigs !== undefined) {
+      updateData.repoConfigs = input.repoConfigs as Prisma.JsonObject;
+    }
 
     const baseline = await this.prisma.preference.upsert({
       where: { userId: user.id },
@@ -220,6 +229,9 @@ export class MeService {
       autoDowngradeThresholdPct: preference.autoDowngradeThresholdPct,
       cooldownSeconds: preference.cooldownSeconds,
       lastAlertThreshold: preference.lastAlertThreshold,
+      bookmarks: preference.bookmarks,
+      templates: preference.templates,
+      repoConfigs: preference.repoConfigs,
     };
   }
 }

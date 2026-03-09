@@ -5,7 +5,11 @@ import { useConfidenceStore } from '../store/useConfidenceStore';
 import { usePreferencesStore } from '../store/usePreferencesStore';
 import { usePRTrackerStore } from '../store/usePRTrackerStore';
 import { useSyncStore } from '../store/useSyncStore';
-import type { Session, TrackedPR } from '../data/types';
+import { useTutorStore } from '../store/useTutorStore';
+import { useBookmarkStore } from '../store/useBookmarkStore';
+import { useTemplateStore } from '../store/useTemplateStore';
+import { useRepoConfigStore } from '../store/useRepoConfigStore';
+import type { Session, TrackedPR, TutorConversation } from '../data/types';
 
 /**
  * Local-first sync engine.
@@ -315,6 +319,115 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
   return { pushed, pulled, errors };
 }
 
+async function syncTutorConversations(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
+  const errors: string[] = [];
+  let pushed = 0;
+  let pulled = 0;
+
+  try {
+    // Pull remote conversations
+    const remote = await api.get<Array<{
+      itemId: string;
+      messages: unknown[];
+      lastAccessed: string;
+      updatedAt: string;
+    }>>('/tutor-conversations');
+
+    const localConversations = useTutorStore.getState().conversations;
+    const merged = { ...localConversations };
+
+    // Merge remote into local (last-write-wins)
+    for (const conv of remote) {
+      const local = merged[conv.itemId];
+      if (!local || new Date(conv.lastAccessed) > new Date(local.lastAccessed)) {
+        merged[conv.itemId] = {
+          itemId: conv.itemId,
+          messages: conv.messages as TutorConversation['messages'],
+          lastAccessed: conv.lastAccessed,
+        };
+        pulled++;
+      }
+    }
+
+    // Push local conversations that are newer or don't exist remotely
+    const remoteByItemId = new Map(remote.map((c) => [c.itemId, c]));
+    const toPush: Array<{ itemId: string; messages: unknown[]; lastAccessed: string }> = [];
+
+    for (const local of Object.values(localConversations)) {
+      const r = remoteByItemId.get(local.itemId);
+      if (!r || new Date(local.lastAccessed) > new Date(r.lastAccessed)) {
+        toPush.push({
+          itemId: local.itemId,
+          messages: local.messages,
+          lastAccessed: local.lastAccessed,
+        });
+      }
+    }
+
+    if (toPush.length > 0) {
+      try {
+        await api.put('/tutor-conversations', { conversations: toPush });
+        pushed += toPush.length;
+      } catch (err: any) {
+        errors.push(`Push conversations: ${err.message}`);
+      }
+    }
+
+    useTutorStore.getState().replaceConversations(merged);
+  } catch (err: any) {
+    errors.push(`Sync conversations: ${err.message}`);
+  }
+
+  return { pushed, pulled, errors };
+}
+
+async function syncBookmarksTemplatesRepoConfigs(): Promise<void> {
+  try {
+    const remote = await api.get<{
+      bookmarks: string[];
+      templates: Record<string, unknown>;
+      repoConfigs: Record<string, unknown>;
+    }>('/me/preferences');
+
+    // Bookmarks: merge (union of local + remote)
+    const localBookmarks = useBookmarkStore.getState().bookmarkedIds;
+    const remoteBookmarks = Array.isArray(remote.bookmarks) ? remote.bookmarks : [];
+    const mergedBookmarks = [...new Set([...localBookmarks, ...remoteBookmarks])];
+    useBookmarkStore.setState({ bookmarkedIds: mergedBookmarks });
+
+    // Templates: last-write-wins per template
+    const localTemplates = useTemplateStore.getState().templates;
+    const remoteTemplates = (remote.templates && typeof remote.templates === 'object')
+      ? remote.templates as Record<string, any>
+      : {};
+    const mergedTemplates = { ...remoteTemplates, ...localTemplates };
+    useTemplateStore.setState({ templates: mergedTemplates });
+
+    // Repo configs: last-write-wins per repo
+    const localConfigs = useRepoConfigStore.getState().configs;
+    const remoteConfigs = (remote.repoConfigs && typeof remote.repoConfigs === 'object')
+      ? remote.repoConfigs as Record<string, any>
+      : {};
+    const mergedConfigs = { ...remoteConfigs };
+    for (const [repo, local] of Object.entries(localConfigs)) {
+      const r = mergedConfigs[repo];
+      if (!r || new Date(local.updatedAt) > new Date(r.updatedAt ?? 0)) {
+        mergedConfigs[repo] = local;
+      }
+    }
+    useRepoConfigStore.getState().replaceConfigs(mergedConfigs);
+
+    // Push merged data back
+    await api.patch('/me/preferences', {
+      bookmarks: mergedBookmarks,
+      templates: mergedTemplates,
+      repoConfigs: mergedConfigs,
+    }).catch(() => {});
+  } catch {
+    // Best-effort
+  }
+}
+
 export async function runSync(): Promise<SyncResult> {
   const syncStore = useSyncStore.getState();
 
@@ -348,9 +461,16 @@ export async function runSync(): Promise<SyncResult> {
     totalPulled += prResult.pulled;
     allErrors.push(...prResult.errors);
 
-    // Sync preferences and confidence
+    // Sync tutor conversations
+    const tutorResult = await syncTutorConversations();
+    totalPushed += tutorResult.pushed;
+    totalPulled += tutorResult.pulled;
+    allErrors.push(...tutorResult.errors);
+
+    // Sync preferences, confidence, bookmarks, templates, repo configs
     await syncPreferences();
     await syncConfidence();
+    await syncBookmarksTemplatesRepoConfigs();
 
     if (allErrors.length > 0) {
       syncStore.markSyncFailure(allErrors.slice(0, 3).join(' | '));

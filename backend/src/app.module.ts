@@ -31,6 +31,7 @@ import { AdminCiModule } from './admin/ci/admin-ci.module';
 import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.module';
 import { AdminDashboardModule } from './admin/dashboard/admin-dashboard.module';
 import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
+import { TutorConversationsModule } from './tutor-conversations/tutor-conversations.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
     CalibrationModule,
     ComplianceModule,
     TrackedPRsModule,
+    TutorConversationsModule,
     BackupsModule,
     ExportsModule,
     AdminSecurityModule,
