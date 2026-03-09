@@ -192,8 +192,17 @@ export const usePRTrackerStore = create<PRTrackerState>()(
         set((state) => {
           const pr = state.prs[id];
           if (!pr) return state;
-          const acceptanceOutcome = pr.acceptanceOutcome === outcome ? undefined : outcome;
-          return { prs: { ...state.prs, [id]: { ...pr, acceptanceOutcome } } };
+          const toggling = pr.acceptanceOutcome === outcome;
+          const acceptanceOutcome = toggling ? undefined : outcome;
+          // Move to resolved status when accepted/abandoned, restore when unchecked
+          const status = toggling
+            ? 'needs-review'
+            : outcome === 'accepted-clean'
+              ? 'merged'
+              : 'closed';
+          const now = new Date().toISOString();
+          const resolvedAt = toggling ? undefined : now;
+          return { prs: { ...state.prs, [id]: { ...pr, acceptanceOutcome, status, resolvedAt, updatedAt: now } } };
         });
       },
 
