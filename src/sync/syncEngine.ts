@@ -10,6 +10,7 @@ import { useUsageStore } from '../store/useUsageStore';
 import { useBookmarkStore } from '../store/useBookmarkStore';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { useRepoConfigStore } from '../store/useRepoConfigStore';
+import { useTierStore } from '../store/useTierStore';
 import type { Session, TrackedPR, TutorConversation } from '../data/types';
 
 /**
@@ -547,6 +548,13 @@ export async function runSync(): Promise<SyncResult> {
     totalPushed += miscResult.pushed;
     totalPulled += miscResult.pulled;
     allErrors.push(...miscResult.errors);
+
+    // Sync subscription tier & credit balance (pull-only)
+    try {
+      await useTierStore.getState().syncTier();
+    } catch {
+      // Non-critical — tier info stays cached
+    }
 
     const detailParts: string[] = [];
     if (pushResult.pushed || pullResult.pulled) detailParts.push(`Sessions: ${pushResult.pushed}↑ ${pullResult.pulled}↓`);

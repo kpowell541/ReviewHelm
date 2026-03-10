@@ -12,6 +12,7 @@ import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { AddPRModal } from '../src/components/AddPRModal';
+import { useFeatureGate } from '../src/hooks/useFeatureGate';
 
 const ADMIN_DASHBOARD_EMAILS = (
   process.env.EXPO_PUBLIC_ADMIN_DASHBOARD_EMAILS ??
@@ -29,29 +30,32 @@ interface ModeCardProps {
   onPress: () => void;
   badge?: string;
   isDesktop?: boolean;
+  locked?: boolean;
 }
 
-function ModeCard({ title, subtitle, icon, color, onPress, badge, isDesktop }: ModeCardProps) {
+function ModeCard({ title, subtitle, icon, color, onPress, badge, isDesktop, locked }: ModeCardProps) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.modeCard,
         isDesktop && styles.modeCardDesktop,
-        { borderLeftColor: color, opacity: pressed ? 0.85 : 1 },
+        { borderLeftColor: locked ? colors.textMuted : color, opacity: pressed ? 0.85 : 1 },
       ]}
     >
       <View style={styles.modeCardContent}>
-        <Text style={styles.modeIcon}>{icon}</Text>
+        <Text style={[styles.modeIcon, locked && { opacity: 0.4 }]}>{icon}</Text>
         <View style={styles.modeCardText}>
-          <Text style={styles.modeTitle}>{title}</Text>
-          <Text style={styles.modeSubtitle}>{subtitle}</Text>
+          <Text style={[styles.modeTitle, locked && { color: colors.textMuted }]}>{title}</Text>
+          <Text style={styles.modeSubtitle}>{locked ? 'Upgrade to unlock' : subtitle}</Text>
         </View>
-        {badge && (
+        {locked ? (
+          <Text style={styles.lockIcon}>🔒</Text>
+        ) : badge ? (
           <View style={[styles.badge, { backgroundColor: color + '30' }]}>
             <Text style={[styles.badgeText, { color }]}>{badge}</Text>
           </View>
-        )}
+        ) : null}
       </View>
     </Pressable>
   );
@@ -107,6 +111,8 @@ export default function HomeScreen() {
   const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
 
   const [showAddPR, setShowAddPR] = useState(false);
+  const learnGate = useFeatureGate('pro');
+  const gapsGate = useFeatureGate('pro');
 
   const recentSessions = useMemo(() => {
     return Object.values(sessions)
@@ -178,9 +184,10 @@ export default function HomeScreen() {
             subtitle="Study your weak areas with AI tutor"
             icon="📚"
             color={colors.learnMode}
-            onPress={() => router.push('/learn/stack-select')}
-            badge={gapCount > 0 ? `${gapCount} gaps` : undefined}
+            onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
+            badge={learnGate.allowed && gapCount > 0 ? `${gapCount} gaps` : undefined}
             isDesktop={isDesktop}
+            locked={!learnGate.allowed}
           />
 
           <ModeCard
@@ -188,10 +195,11 @@ export default function HomeScreen() {
             subtitle="Track and close your knowledge gaps"
             icon="📊"
             color={colors.gapsMode}
-            onPress={() => router.push('/gaps')}
+            onPress={() => gapsGate.guardedNavigate('/gaps')}
             isDesktop={isDesktop}
+            locked={!gapsGate.allowed}
             badge={
-              gapCount > 0 || dueCount > 0
+              gapsGate.allowed && (gapCount > 0 || dueCount > 0)
                 ? [
                     gapCount > 0 ? `${gapCount} gaps` : '',
                     dueCount > 0 ? `${dueCount} due` : '',
@@ -407,6 +415,10 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: fontSizes.xs,
     fontWeight: '600',
+  },
+  lockIcon: {
+    fontSize: 18,
+    opacity: 0.5,
   },
   quickLinks: {
     flexDirection: 'row',

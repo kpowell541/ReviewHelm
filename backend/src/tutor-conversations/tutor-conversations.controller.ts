@@ -10,8 +10,10 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { RequiresTier } from '../common/subscription/requires-tier.decorator';
 import { TutorConversationsService } from './tutor-conversations.service';
 
+@RequiresTier('premium')
 @Controller('tutor-conversations')
 export class TutorConversationsController {
   constructor(

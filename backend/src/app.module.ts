@@ -11,6 +11,7 @@ import { RateLimitGuard } from './common/redis/rate-limit.guard';
 import { MeModule } from './me/me.module';
 import { BudgetModule } from './common/budget/budget.module';
 import { BudgetGuard } from './common/budget/budget.guard';
+import { TierGuard } from './common/subscription/tier.guard';
 import { UsageModule } from './usage/usage.module';
 import { AdminSecurityModule } from './admin/security/admin-security.module';
 import { AuditModule } from './common/audit/audit.module';
@@ -30,8 +31,10 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { AdminCiModule } from './admin/ci/admin-ci.module';
 import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.module';
 import { AdminDashboardModule } from './admin/dashboard/admin-dashboard.module';
+import { AdminCreditsModule } from './admin/credits/admin-credits.module';
 import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
 import { TutorConversationsModule } from './tutor-conversations/tutor-conversations.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   imports: [
@@ -58,6 +61,7 @@ import { TutorConversationsModule } from './tutor-conversations/tutor-conversati
     ComplianceModule,
     TrackedPRsModule,
     TutorConversationsModule,
+    SubscriptionModule,
     BackupsModule,
     ExportsModule,
     AdminSecurityModule,
@@ -65,6 +69,7 @@ import { TutorConversationsModule } from './tutor-conversations/tutor-conversati
     AdminCiModule,
     AdminMaintenanceModule,
     AdminDashboardModule,
+    AdminCreditsModule,
   ],
   providers: [
     {
@@ -74,6 +79,10 @@ import { TutorConversationsModule } from './tutor-conversations/tutor-conversati
     {
       provide: APP_GUARD,
       useClass: AdminGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TierGuard,
     },
     {
       provide: APP_GUARD,

@@ -1,10 +1,12 @@
 import { Body, Controller, Get, Put, Query } from '@nestjs/common';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { RequiresTier } from '../common/subscription/requires-tier.decorator';
 import { GapsQueryDto } from './dto/gaps-query.dto';
 import { PutConfidenceDto } from './dto/put-confidence.dto';
 import { GapsService, type GapBuckets } from './gaps.service';
 
+@RequiresTier('pro')
 @Controller('gaps')
 export class GapsController {
   constructor(private readonly gapsService: GapsService) {}

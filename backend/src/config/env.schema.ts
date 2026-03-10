@@ -49,6 +49,7 @@ const EnvSchema = z.object({
 
   PLATFORM_ANTHROPIC_KEY: z.string().optional().default(''),
   ADMIN_USER_IDS: z.string().optional().default(''),
+  SPONSORED_EMAILS: z.string().optional().default(''),
   ADMIN_DASHBOARD_ALLOWED_EMAILS: z
     .string()
     .optional()

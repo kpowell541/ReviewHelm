@@ -25,6 +25,7 @@ import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
+import { useTierStore } from '../src/store/useTierStore';
 import { syncChecklistsFromGithub } from '../src/data/checklistSync';
 import { runSync } from '../src/sync/syncEngine';
 import { fetchMonthlyCostFromAdminApi } from '../src/ai/costApi';
@@ -136,6 +137,13 @@ export default function SettingsScreen() {
   const replacePRs = usePRTrackerStore((s) => s.replacePRs);
   const repoConfigs = useRepoConfigStore((s) => s.configs);
   const replaceRepoConfigs = useRepoConfigStore((s) => s.replaceConfigs);
+  const tier = useTierStore((s) => s.tier);
+  const effectiveTier = useTierStore((s) => s.effectiveTier);
+  const isAdmin = useTierStore((s) => s.isAdmin);
+  const isSponsored = useTierStore((s) => s.isSponsored);
+  const creditBalanceUsd = useTierStore((s) => s.creditBalanceUsd);
+  const unlimited = useTierStore((s) => s.unlimited);
+  const syncTier = useTierStore((s) => s.syncTier);
   const markSyncStart = useSyncStore((s) => s.markSyncStart);
   const markSyncSuccess = useSyncStore((s) => s.markSyncSuccess);
   const markSyncFailure = useSyncStore((s) => s.markSyncFailure);
@@ -548,6 +556,47 @@ export default function SettingsScreen() {
           <Text style={styles.primaryButtonText}>
             {syncingData ? 'Syncing...' : 'Sync data between devices'}
           </Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.sectionTitle}>Subscription</Text>
+      <View style={styles.card}>
+        <View style={styles.tierRow}>
+          <View style={styles.tierBadge}>
+            <Text style={styles.tierBadgeText}>
+              {effectiveTier.charAt(0).toUpperCase() + effectiveTier.slice(1)}
+            </Text>
+          </View>
+          {isAdmin && <Text style={styles.tierTag}>Admin</Text>}
+          {isSponsored && <Text style={styles.tierTag}>Sponsored</Text>}
+        </View>
+        {tier !== effectiveTier && (
+          <Text style={styles.subtle}>Base tier: {tier}</Text>
+        )}
+
+        <View style={styles.creditRow}>
+          <Text style={styles.label}>AI Credits</Text>
+          <Text style={styles.creditBalance}>
+            {unlimited ? 'Unlimited' : `$${creditBalanceUsd.toFixed(2)}`}
+          </Text>
+        </View>
+        {!unlimited && (
+          <Text style={styles.hint}>
+            Credits expire at the end of each billing month.
+          </Text>
+        )}
+
+        <Pressable
+          style={[styles.secondaryButton, { marginTop: spacing.md }]}
+          onPress={() => router.push('/plans')}
+        >
+          <Text style={styles.secondaryButtonText}>View Plans & Pricing</Text>
+        </Pressable>
+        <Pressable
+          style={styles.secondaryButton}
+          onPress={() => { void syncTier(); }}
+        >
+          <Text style={styles.secondaryButtonText}>Refresh subscription status</Text>
         </Pressable>
       </View>
 
@@ -1259,6 +1308,43 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  tierRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  tierBadge: {
+    backgroundColor: `${colors.primary}20`,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  tierBadgeText: {
+    fontSize: fontSizes.md,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  tierTag: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    backgroundColor: colors.bg,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+  },
+  creditRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  creditBalance: {
+    fontSize: fontSizes.lg,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
   connectedLink: {
     flexDirection: 'row',

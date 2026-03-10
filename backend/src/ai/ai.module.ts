@@ -7,6 +7,7 @@ import { DiffsModule } from '../diffs/diffs.module';
 import { RedisModule } from '../common/redis/redis.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsageModule } from '../usage/usage.module';
+import { SubscriptionModule } from '../subscription/subscription.module';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 
@@ -20,6 +21,7 @@ import { AiService } from './ai.service';
     CommentProfilesModule,
     CalibrationModule,
     BudgetModule,
+    SubscriptionModule,
   ],
   controllers: [AiController],
   providers: [AiService],

@@ -17,6 +17,7 @@ import { useSyncStore } from '../src/store/useSyncStore';
 import { useAuthStore } from '../src/store/useAuthStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
+import { useTierStore } from '../src/store/useTierStore';
 import { initializeChecklistCache } from '../src/data/checklistLoader';
 import { runSync } from '../src/sync/syncEngine';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -42,6 +43,8 @@ export default function RootLayout() {
   const prTrackerHydrated = usePRTrackerStore((s) => s.hasHydrated);
   const archiveOldPRs = usePRTrackerStore((s) => s.archiveOldPRs);
   const repoConfigHydrated = useRepoConfigStore((s) => s.hasHydrated);
+  const tierHydrated = useTierStore((s) => s.hasHydrated);
+  const syncTier = useTierStore((s) => s.syncTier);
   const initAuth = useAuthStore((s) => s.initialize);
   const authUser = useAuthStore((s) => s.user);
   const authIsLoading = useAuthStore((s) => s.isLoading);
@@ -87,7 +90,10 @@ export default function RootLayout() {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
         // Trigger a sync when returning to foreground
-        if (authUser) void runSync();
+        if (authUser) {
+          void runSync();
+          void syncTier();
+        }
       }
       appStateRef.current = nextState;
     });
@@ -103,6 +109,7 @@ export default function RootLayout() {
     syncHydrated &&
     prTrackerHydrated &&
     repoConfigHydrated &&
+    tierHydrated &&
     isApiKeyLoaded &&
     cacheReady &&
     fontsLoaded;
@@ -148,7 +155,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (!storesReady || !authUser) return;
     void runSync();
-  }, [storesReady, authUser]);
+    void syncTier();
+  }, [storesReady, authUser, syncTier]);
 
   if (!storesReady || authIsLoading) {
     return (
@@ -331,6 +339,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="settings"
           options={{ title: 'Settings' }}
+        />
+        <Stack.Screen
+          name="plans"
+          options={{ title: 'Plans & Pricing' }}
         />
         <Stack.Screen
           name="disclaimer"

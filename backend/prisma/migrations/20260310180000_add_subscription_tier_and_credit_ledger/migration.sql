@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "SubscriptionTier" AS ENUM ('free', 'pro', 'premium');
+CREATE TYPE "SubscriptionTier" AS ENUM ('free', 'pro', 'premium', 'sponsored');
 
 -- CreateEnum
 CREATE TYPE "CreditEntryType" AS ENUM ('subscription_grant', 'topup', 'ai_usage', 'expiry', 'refund', 'admin_adjustment');
