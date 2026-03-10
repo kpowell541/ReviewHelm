@@ -15,6 +15,8 @@ import { useAuthStore } from '../../src/store/useAuthStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 
+const STAGING_GATE = process.env.EXPO_PUBLIC_STAGING_ACCESS_GATE === 'true';
+
 export default function SignupScreen() {
   const router = useRouter();
   const signUp = useAuthStore((s) => s.signUp);
@@ -41,6 +43,27 @@ export default function SignupScreen() {
       // Error is captured in store
     }
   };
+
+  if (STAGING_GATE) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <DesktopContainer>
+          <View style={styles.content}>
+            <Text style={styles.title}>Registration Unavailable</Text>
+            <Text style={styles.subtitle}>
+              ReviewHelm is currently in private staging. New account registration is not available at this time.
+            </Text>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => router.replace('/auth/login')}
+            >
+              <Text style={styles.primaryButtonText}>Back to Sign In</Text>
+            </Pressable>
+          </View>
+        </DesktopContainer>
+      </SafeAreaView>
+    );
+  }
 
   if (success) {
     return (

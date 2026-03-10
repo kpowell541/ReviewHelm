@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { validateEnv } from './config/env.schema';
 import { JwtAuthGuard } from './common/auth/jwt-auth.guard';
 import { AdminGuard } from './common/auth/admin.guard';
+import { StagingAccessGuard } from './common/auth/staging-access.guard';
 import { RedisModule } from './common/redis/redis.module';
 import { RateLimitGuard } from './common/redis/rate-limit.guard';
 import { MeModule } from './me/me.module';
@@ -75,6 +76,10 @@ import { SubscriptionModule } from './subscription/subscription.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: StagingAccessGuard,
     },
     {
       provide: APP_GUARD,
