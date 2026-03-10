@@ -30,6 +30,7 @@ tags:
   - name: Admin
   - name: Tutor Conversations
   - name: Subscription
+  - name: Region
 security:
   - bearerAuth: []
 
@@ -87,6 +88,39 @@ paths:
                     type: string
                     format: date-time
                 required: [ok, service, checks, time]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /region/status:
+    get:
+      tags: [Region]
+      summary: Check region access status
+      responses:
+        '200':
+          description: Region access information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  allowed:
+                    type: boolean
+                  mode:
+                    type: string
+                    enum: [global, us_only]
+                  country:
+                    type: string
+                    nullable: true
+                  allowedCountries:
+                    type: array
+                    items:
+                      type: string
+                  reason:
+                    type: string
+                    nullable: true
+                required: [ok, allowed, mode, country, allowedCountries]
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -1698,7 +1732,7 @@ paths:
               properties:
                 amountUsd:
                   type: number
-                  enum: [1, 5, 10]
+                  enum: [1, 5, 10, 20]
                 successUrl:
                   type: string
                 cancelUrl:
@@ -1734,11 +1768,14 @@ paths:
               properties:
                 plan:
                   type: string
-                  enum: [pro, premium]
+                  enum: [starter, pro, premium]
                 successUrl:
                   type: string
                 cancelUrl:
                   type: string
+                trial:
+                  type: boolean
+                  description: Request a 2-week free trial (Pro and Premium only)
               required: [plan, successUrl, cancelUrl]
       responses:
         '200':

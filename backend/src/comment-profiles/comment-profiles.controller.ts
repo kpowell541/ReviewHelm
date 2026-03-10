@@ -11,10 +11,12 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { RequiresTier } from '../common/subscription/requires-tier.decorator';
 import { CommentProfilesService } from './comment-profiles.service';
 import { CreateCommentProfileDto } from './dto/create-comment-profile.dto';
 import { UpdateCommentProfileDto } from './dto/update-comment-profile.dto';
 
+@RequiresTier('starter')
 @Controller('comment-profiles')
 export class CommentProfilesController {
   constructor(private readonly profilesService: CommentProfilesService) {}

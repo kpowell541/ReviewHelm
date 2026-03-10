@@ -582,11 +582,35 @@ export default function SettingsScreen() {
             {unlimited ? 'Unlimited' : `$${creditBalanceUsd.toFixed(2)}`}
           </Text>
         </View>
-        {!unlimited && (
-          <Text style={styles.hint}>
-            Credits expire at the end of each billing month.
-          </Text>
-        )}
+        {!unlimited && (() => {
+          const bcs = useTierStore.getState().billingCycleStart;
+          const expiryDate = bcs
+            ? new Date(new Date(bcs).getTime() + 30 * 24 * 60 * 60 * 1000)
+            : null;
+          const now = new Date();
+          const daysLeft = expiryDate
+            ? Math.max(0, Math.ceil((expiryDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)))
+            : null;
+          const isExpiringSoon = daysLeft !== null && daysLeft <= 7;
+          return (
+            <>
+              <Text style={styles.hint}>
+                {expiryDate
+                  ? `Credits expire ${expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}${daysLeft !== null ? ` (${daysLeft}d left)` : ''}`
+                  : 'Credits expire at the end of each billing month.'}
+              </Text>
+              {isExpiringSoon && creditBalanceUsd > 0 && (
+                <View style={styles.expiryWarning}>
+                  <Text style={styles.expiryWarningText}>
+                    {daysLeft === 0
+                      ? '⚠️ Your credits expire today!'
+                      : `⚠️ Your credits expire in ${daysLeft} day${daysLeft === 1 ? '' : 's'}`}
+                  </Text>
+                </View>
+              )}
+            </>
+          );
+        })()}
 
         <Pressable
           style={[styles.secondaryButton, { marginTop: spacing.md }]}
@@ -1366,6 +1390,17 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     fontWeight: '700',
     color: colors.textPrimary,
+  },
+  expiryWarning: {
+    backgroundColor: '#f59e0b20',
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  expiryWarningText: {
+    fontSize: fontSizes.sm,
+    color: '#f59e0b',
+    fontFamily: 'Quicksand_500Medium',
   },
   connectedLink: {
     flexDirection: 'row',

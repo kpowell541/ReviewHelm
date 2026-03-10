@@ -364,6 +364,10 @@ export default function RootLayout() {
           name="refund-policy"
           options={{ title: 'Refund Policy' }}
         />
+        <Stack.Screen
+          name="region-unavailable"
+          options={{ title: 'Region Unavailable' }}
+        />
       </Stack>
       </SafeAreaView>
     </AlertProvider>

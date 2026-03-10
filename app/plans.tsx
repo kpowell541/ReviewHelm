@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
@@ -6,30 +6,36 @@ import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useTierStore } from '../src/store/useTierStore';
 import { useResponsive } from '../src/hooks/useResponsive';
 import { crossAlert } from '../src/utils/alert';
+import { api } from '../src/api/client';
 
 interface PlanFeature {
   label: string;
   free: boolean | string;
+  starter: boolean | string;
   pro: boolean | string;
   premium: boolean | string;
 }
 
 const FEATURES: PlanFeature[] = [
-  { label: 'PR review checklists', free: true, pro: true, premium: true },
-  { label: 'Polish My PR mode', free: true, pro: true, premium: true },
-  { label: 'Session history & sync', free: true, pro: true, premium: true },
-  { label: 'PR tracker', free: true, pro: true, premium: true },
-  { label: 'Search & bookmarks', free: true, pro: true, premium: true },
-  { label: 'Learn mode', free: false, pro: true, premium: true },
-  { label: 'Knowledge gaps', free: false, pro: true, premium: true },
-  { label: 'Spaced repetition', free: false, pro: true, premium: true },
-  { label: 'AI tutor', free: false, pro: false, premium: true },
-  { label: 'Comment drafter', free: false, pro: false, premium: true },
-  { label: 'Deep dive (AI)', free: false, pro: false, premium: true },
-  { label: 'AI credits', free: '-', pro: '-', premium: 'Included' },
-  { label: 'Tutor conversations sync', free: false, pro: false, premium: true },
-  { label: 'Comment style profiles', free: true, pro: true, premium: true },
-  { label: 'Diff artifacts', free: true, pro: true, premium: true },
+  { label: 'PR review checklists', free: true, starter: true, pro: true, premium: true },
+  { label: 'Search & bookmarks', free: true, starter: true, pro: true, premium: true },
+  { label: 'Active sessions', free: '5 max', starter: 'Unlimited', pro: 'Unlimited', premium: 'Unlimited' },
+  { label: 'Polish My PR mode', free: false, starter: true, pro: true, premium: true },
+  { label: 'PR tracker', free: false, starter: true, pro: true, premium: true },
+  { label: 'Readiness dashboard', free: false, starter: true, pro: true, premium: true },
+  { label: 'Trends & past reviews', free: false, starter: true, pro: true, premium: true },
+  { label: 'Comment profiles', free: false, starter: true, pro: true, premium: true },
+  { label: 'Diff artifacts', free: false, starter: true, pro: true, premium: true },
+  { label: 'Calibration & risk', free: false, starter: true, pro: true, premium: true },
+  { label: 'Learn mode', free: false, starter: false, pro: true, premium: true },
+  { label: 'Knowledge gaps', free: false, starter: false, pro: true, premium: true },
+  { label: 'Spaced repetition', free: false, starter: false, pro: true, premium: true },
+  { label: 'AI tutor (Premium only)', free: false, starter: false, pro: false, premium: true },
+  { label: 'Comment drafter (AI)', free: false, starter: false, pro: false, premium: true },
+  { label: 'Deep dive (AI)', free: false, starter: false, pro: false, premium: true },
+  { label: 'AI credits ($7.50/mo)', free: '-', starter: '-', pro: '-', premium: 'Included' },
+  { label: 'Tutor conversations sync', free: false, starter: false, pro: false, premium: true },
+  { label: '2-week free trial', free: '-', starter: '-', pro: 'Available', premium: 'Available' },
 ];
 
 const MODEL_COSTS = [
@@ -59,16 +65,47 @@ function openCheckoutUrl(url: string) {
 
 export default function PlansScreen() {
   const effectiveTier = useTierStore((s) => s.effectiveTier);
+  const billingCycleStart = useTierStore((s) => s.billingCycleStart);
+  const creditBalanceUsd = useTierStore((s) => s.creditBalanceUsd);
+  const unlimited = useTierStore((s) => s.unlimited);
   const startCheckout = useTierStore((s) => s.startCheckout);
   const startTopUp = useTierStore((s) => s.startTopUp);
   const openPortal = useTierStore((s) => s.openPortal);
   const { isDesktop } = useResponsive();
   const [loading, setLoading] = useState<string | null>(null);
+  const [isRegionAllowed, setIsRegionAllowed] = useState(true);
 
-  const handleSubscribe = async (plan: 'pro' | 'premium') => {
-    setLoading(plan);
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get<{ allowed: boolean }>('/region/status', { public: true })
+      .then((status) => {
+        if (!mounted) return;
+        setIsRegionAllowed(status.allowed);
+      })
+      .catch(() => {
+        // Keep default true when region checks are unavailable.
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const creditExpiryDate = useMemo(() => {
+    if (!billingCycleStart) return null;
+    const d = new Date(billingCycleStart);
+    d.setMonth(d.getMonth() + 1);
+    return d;
+  }, [billingCycleStart]);
+
+  const handleSubscribe = async (plan: 'starter' | 'pro' | 'premium', trial?: boolean) => {
+    if (!isRegionAllowed) {
+      crossAlert('Unavailable', 'Purchases are currently available only in the United States.');
+      return;
+    }
+    setLoading(trial ? `trial-${plan}` : plan);
     try {
-      const url = await startCheckout(plan);
+      const url = await startCheckout(plan, { trial });
       openCheckoutUrl(url);
     } catch (err: any) {
       const msg = err?.message || 'Unable to start checkout';
@@ -78,7 +115,11 @@ export default function PlansScreen() {
     }
   };
 
-  const handleTopUp = async (amount: 1 | 5 | 10) => {
+  const handleTopUp = async (amount: 1 | 5 | 10 | 20) => {
+    if (!isRegionAllowed) {
+      crossAlert('Unavailable', 'Purchases are currently available only in the United States.');
+      return;
+    }
     setLoading(`topup-${amount}`);
     try {
       const url = await startTopUp(amount);
@@ -92,6 +133,10 @@ export default function PlansScreen() {
   };
 
   const handleManage = async () => {
+    if (!isRegionAllowed) {
+      crossAlert('Unavailable', 'Purchases are currently available only in the United States.');
+      return;
+    }
     setLoading('portal');
     try {
       const url = await openPortal();
@@ -104,51 +149,79 @@ export default function PlansScreen() {
     }
   };
 
-  const isPaid = effectiveTier === 'pro' || effectiveTier === 'premium';
+  const isPaid = effectiveTier !== 'free';
 
   return (
     <SafeAreaView style={styles.container}>
       <DesktopContainer>
         <ScrollView contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}>
           <Text style={styles.heading}>Plans & Pricing</Text>
+          {!isRegionAllowed && (
+            <Text style={styles.regionNotice}>
+              Purchases are currently available only in the United States.
+            </Text>
+          )}
 
           <View style={styles.plansRow}>
             <PlanCard
               name="Free"
               price="$0"
               period=""
-              features={['PR checklists', 'Polish mode', 'Session sync', 'PR tracker']}
+              features={['PR checklists', 'Search & bookmarks', '5 active sessions']}
               isCurrent={effectiveTier === 'free'}
             />
             <PlanCard
-              name="Pro"
-              price="$5"
+              name="Starter"
+              price="$3"
               period="/mo"
-              features={['Everything in Free', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
+              features={['Everything in Free', 'Unlimited sessions', 'Polish mode', 'PR tracker & analytics']}
+              isCurrent={effectiveTier === 'starter'}
+              actionLabel={effectiveTier === 'free' ? 'Upgrade to Starter' : undefined}
+              onAction={() => handleSubscribe('starter')}
+              loading={loading === 'starter'}
+              disabled={!isRegionAllowed}
+            />
+            <PlanCard
+              name="Pro"
+              price="$7"
+              period="/mo"
+              features={['Everything in Starter', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
               isCurrent={effectiveTier === 'pro'}
-              actionLabel={effectiveTier === 'free' ? 'Upgrade to Pro' : undefined}
+              trialBadge
+              actionLabel={
+                effectiveTier === 'free' || effectiveTier === 'starter'
+                  ? 'Upgrade to Pro'
+                  : undefined
+              }
               onAction={() => handleSubscribe('pro')}
               loading={loading === 'pro'}
+              disabled={!isRegionAllowed}
             />
             <PlanCard
               name="Premium"
               price="$15"
               period="/mo"
-              features={['Everything in Pro', 'AI tutor & drafter', 'AI credits included', 'Tutor sync']}
+              features={['Everything in Pro', 'AI tutor & drafter', '$7.50/mo AI credits included', 'Tutor sync']}
               isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
               highlighted
+              trialBadge
               actionLabel={
-                effectiveTier === 'free' || effectiveTier === 'pro'
+                effectiveTier === 'free' || effectiveTier === 'starter' || effectiveTier === 'pro'
                   ? 'Upgrade to Premium'
                   : undefined
               }
               onAction={() => handleSubscribe('premium')}
               loading={loading === 'premium'}
+              disabled={!isRegionAllowed}
             />
           </View>
 
           {isPaid && (
-            <Pressable style={styles.manageButton} onPress={handleManage} disabled={loading === 'portal'}>
+            <Pressable
+              style={styles.manageButton}
+              onPress={handleManage}
+              disabled={loading === 'portal' || !isRegionAllowed}
+            >
               {loading === 'portal' ? (
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
@@ -162,6 +235,7 @@ export default function PlansScreen() {
             <View style={styles.comparisonHeader}>
               <Text style={[styles.comparisonHeaderCell, styles.featureNameCell]}>Feature</Text>
               <Text style={styles.comparisonHeaderCell}>Free</Text>
+              <Text style={styles.comparisonHeaderCell}>Starter</Text>
               <Text style={styles.comparisonHeaderCell}>Pro</Text>
               <Text style={styles.comparisonHeaderCell}>Premium</Text>
             </View>
@@ -171,6 +245,7 @@ export default function PlansScreen() {
                   {f.label}
                 </Text>
                 <View style={styles.comparisonCell}><CheckMark value={f.free} /></View>
+                <View style={styles.comparisonCell}><CheckMark value={f.starter} /></View>
                 <View style={styles.comparisonCell}><CheckMark value={f.pro} /></View>
                 <View style={styles.comparisonCell}><CheckMark value={f.premium} /></View>
               </View>
@@ -179,7 +254,7 @@ export default function PlansScreen() {
 
           <Text style={styles.sectionTitle}>AI Model Costs</Text>
           <Text style={styles.costHint}>
-            Per million tokens. Credits are deducted based on actual usage.
+            Per million tokens. Credits are deducted based on actual usage. Only Premium subscribers can use AI features.
           </Text>
           <View style={styles.comparisonCard}>
             <View style={styles.comparisonHeader}>
@@ -202,12 +277,12 @@ export default function PlansScreen() {
 
           <Text style={styles.sectionTitle}>Credit Top-ups</Text>
           <View style={styles.topUpRow}>
-            {([1, 5, 10] as const).map((amount) => (
+            {([1, 5, 10, 20] as const).map((amount) => (
               <Pressable
                 key={amount}
                 style={styles.topUpCard}
                 onPress={() => handleTopUp(amount)}
-                disabled={effectiveTier !== 'premium' && effectiveTier !== 'admin'}
+                disabled={!isRegionAllowed || (effectiveTier !== 'premium' && effectiveTier !== 'admin')}
               >
                 <Text style={styles.topUpAmount}>${amount}</Text>
                 <Text style={styles.topUpLabel}>one-time</Text>
@@ -217,12 +292,28 @@ export default function PlansScreen() {
               </Pressable>
             ))}
           </View>
-          <Text style={styles.costHint}>
-            Credits expire at the end of each billing month. Unused credits do not roll over.
-            {effectiveTier !== 'premium' && effectiveTier !== 'admin'
-              ? ' Top-ups are available for Premium subscribers.'
-              : ''}
-          </Text>
+
+          <View style={styles.expiryNotice}>
+            <Text style={styles.expiryNoticeTitle}>Credit Expiry Policy</Text>
+            <Text style={styles.costHint}>
+              Credits expire at the end of each billing month and do not roll over. You will be notified 7 days and 1 day before your credits expire.
+              {creditExpiryDate && !unlimited && creditBalanceUsd > 0
+                ? ` Your current credits ($${creditBalanceUsd.toFixed(2)}) expire on ${creditExpiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`
+                : ''}
+            </Text>
+            {effectiveTier !== 'premium' && effectiveTier !== 'admin' && (
+              <Text style={styles.costHint}>
+                Top-ups are available for Premium subscribers only.
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.expiryNotice}>
+            <Text style={styles.expiryNoticeTitle}>Cancellation & Refunds</Text>
+            <Text style={styles.costHint}>
+              You may cancel at any time. Stripe will issue a prorated refund for the unused portion of your billing period. AI credits are also prorated — you will not receive a full refund for unused credits.
+            </Text>
+          </View>
         </ScrollView>
       </DesktopContainer>
     </SafeAreaView>
@@ -236,9 +327,11 @@ function PlanCard({
   features,
   isCurrent,
   highlighted,
+  trialBadge,
   actionLabel,
   onAction,
   loading: isLoading,
+  disabled,
 }: {
   name: string;
   price: string;
@@ -246,9 +339,11 @@ function PlanCard({
   features: string[];
   isCurrent: boolean;
   highlighted?: boolean;
+  trialBadge?: boolean;
   actionLabel?: string;
   onAction?: () => void;
   loading?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <View
@@ -261,6 +356,11 @@ function PlanCard({
       {isCurrent && (
         <View style={styles.currentBadge}>
           <Text style={styles.currentBadgeText}>Current</Text>
+        </View>
+      )}
+      {trialBadge && !isCurrent && (
+        <View style={styles.trialBadge}>
+          <Text style={styles.trialBadgeText}>2-week free trial</Text>
         </View>
       )}
       <Text style={styles.planName}>{name}</Text>
@@ -279,9 +379,13 @@ function PlanCard({
       </View>
       {actionLabel && onAction && (
         <Pressable
-          style={[styles.upgradeButton, highlighted && styles.upgradeButtonHighlighted]}
+          style={[
+            styles.upgradeButton,
+            highlighted && styles.upgradeButtonHighlighted,
+            disabled && styles.buttonDisabled,
+          ]}
           onPress={onAction}
-          disabled={isLoading}
+          disabled={isLoading || disabled}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" size="small" />
@@ -304,6 +408,13 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.xl,
     textAlign: 'center',
+  },
+  regionNotice: {
+    fontSize: fontSizes.sm,
+    color: colors.error,
+    fontFamily: 'Quicksand_600SemiBold',
+    textAlign: 'center',
+    marginBottom: spacing.md,
   },
   sectionTitle: {
     fontSize: fontSizes.md,
@@ -344,6 +455,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     fontFamily: 'Quicksand_600SemiBold',
     color: colors.success,
+  },
+  trialBadge: {
+    backgroundColor: `${colors.primary}20`,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    marginBottom: spacing.sm,
+  },
+  trialBadgeText: {
+    fontSize: fontSizes.xs,
+    fontFamily: 'Quicksand_600SemiBold',
+    color: colors.primary,
   },
   planName: {
     fontSize: fontSizes.lg,
@@ -456,6 +580,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textMuted,
     marginBottom: spacing.md,
+    lineHeight: 20,
   },
   costNote: {
     fontSize: fontSizes.xs,
@@ -484,5 +609,22 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  expiryNotice: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginTop: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  expiryNoticeTitle: {
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_600SemiBold',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
 });

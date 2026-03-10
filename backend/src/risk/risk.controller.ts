@@ -1,9 +1,11 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { RequiresTier } from '../common/subscription/requires-tier.decorator';
 import { RiskHeatmapQueryDto } from './dto/risk-heatmap-query.dto';
 import { RiskService } from './risk.service';
 
+@RequiresTier('starter')
 @Controller('risk')
 export class RiskController {
   constructor(private readonly riskService: RiskService) {}

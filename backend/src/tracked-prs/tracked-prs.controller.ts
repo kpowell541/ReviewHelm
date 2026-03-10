@@ -10,9 +10,11 @@ import {
 } from '@nestjs/common';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { RequiresTier } from '../common/subscription/requires-tier.decorator';
 import { UpsertTrackedPRDto } from './dto/upsert-tracked-pr.dto';
 import { TrackedPRsService } from './tracked-prs.service';
 
+@RequiresTier('starter')
 @Controller('tracked-prs')
 export class TrackedPRsController {
   constructor(private readonly trackedPRsService: TrackedPRsService) {}

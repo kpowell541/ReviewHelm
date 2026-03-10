@@ -7,11 +7,11 @@ const SECTIONS = [
   },
   {
     title: 'Prorated Refund Calculation',
-    body: 'Your refund is calculated based on the percentage of time remaining in your current billing period.\n\nFor Pro subscriptions ($5/month): you receive back the prorated percentage of $5 based on the time remaining.\n\nFor Premium subscriptions ($15/month): you receive back the prorated percentage of the $5 base fee, plus the full value of any remaining unused AI credits.\n\nExample: if you cancel a Pro subscription with 25% of your billing period remaining, you receive 25% of $5 = $1.25 back.',
+    body: 'Your refund is calculated based on the percentage of time remaining in your current billing period. All purchased items — including subscription fees and AI credits — are prorated based on time remaining, not refunded in full.\n\nFor Starter subscriptions ($3/month): you receive back the prorated percentage of $3.\n\nFor Pro subscriptions ($7/month): you receive back the prorated percentage of $7.\n\nFor Premium subscriptions ($15/month): you receive back the prorated percentage of the total $15, which includes the $5 base fee and $7.50 in AI credits. Remaining unused credits are prorated based on time remaining in the billing period.\n\nExample: if you cancel a Pro subscription with 25% of your billing period remaining, you receive 25% of $7 = $1.75 back.',
   },
   {
     title: 'AI Credit Top-Ups',
-    body: 'AI credit top-up purchases ($1, $5, or $10) are non-refundable once purchased. However, if you cancel your Premium subscription, the full value of your remaining unused AI credits (including top-ups) will be included in your cancellation refund.',
+    body: 'AI credit top-up purchases ($1, $5, $10, or $20) are non-refundable once purchased. However, if you cancel your Premium subscription, remaining unused AI credits (including top-ups) will be prorated based on the time remaining in your billing period.',
   },
   {
     title: 'Refund Timeline',
@@ -19,7 +19,7 @@ const SECTIONS = [
   },
   {
     title: 'Free Trial',
-    body: 'If you cancel during your free trial period, you will not be charged. Pro trials include no credits. Premium trials include $1 in AI credits — any unused trial credits are forfeited upon cancellation.',
+    body: 'If you cancel during your free trial period, you will not be charged. Pro trials do not include AI credits. Premium trials include $2 in AI credits — any unused trial credits are forfeited upon cancellation.',
   },
   {
     title: 'Contact',
