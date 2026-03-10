@@ -73,6 +73,15 @@ export async function apiRequest<T>(
     } catch {
       // Use default error message
     }
+
+    if (
+      errorCode === 'REGION_NOT_SUPPORTED' &&
+      typeof window !== 'undefined' &&
+      window.location.pathname !== '/region-unavailable'
+    ) {
+      window.location.replace('/region-unavailable');
+    }
+
     throw new ApiError(errorMessage, response.status, errorCode);
   }
 

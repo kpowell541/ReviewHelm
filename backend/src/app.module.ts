@@ -36,6 +36,7 @@ import { AdminCreditsModule } from './admin/credits/admin-credits.module';
 import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
 import { TutorConversationsModule } from './tutor-conversations/tutor-conversations.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { RegionModule } from './region/region.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     TrackedPRsModule,
     TutorConversationsModule,
     SubscriptionModule,
+    RegionModule,
     BackupsModule,
     ExportsModule,
     AdminSecurityModule,

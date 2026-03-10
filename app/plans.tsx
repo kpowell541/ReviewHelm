@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
@@ -6,6 +6,7 @@ import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useTierStore } from '../src/store/useTierStore';
 import { useResponsive } from '../src/hooks/useResponsive';
 import { crossAlert } from '../src/utils/alert';
+import { api } from '../src/api/client';
 
 interface PlanFeature {
   label: string;
@@ -72,6 +73,23 @@ export default function PlansScreen() {
   const openPortal = useTierStore((s) => s.openPortal);
   const { isDesktop } = useResponsive();
   const [loading, setLoading] = useState<string | null>(null);
+  const [isRegionAllowed, setIsRegionAllowed] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    api
+      .get<{ allowed: boolean }>('/region/status', { public: true })
+      .then((status) => {
+        if (!mounted) return;
+        setIsRegionAllowed(status.allowed);
+      })
+      .catch(() => {
+        // Keep default true when region checks are unavailable.
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const creditExpiryDate = useMemo(() => {
     if (!billingCycleStart) return null;
@@ -81,6 +99,10 @@ export default function PlansScreen() {
   }, [billingCycleStart]);
 
   const handleSubscribe = async (plan: 'starter' | 'pro' | 'premium', trial?: boolean) => {
+    if (!isRegionAllowed) {
+      crossAlert('Unavailable', 'Purchases are currently available only in the United States.');
+      return;
+    }
     setLoading(trial ? `trial-${plan}` : plan);
     try {
       const url = await startCheckout(plan, { trial });
@@ -94,6 +116,10 @@ export default function PlansScreen() {
   };
 
   const handleTopUp = async (amount: 1 | 5 | 10 | 20) => {
+    if (!isRegionAllowed) {
+      crossAlert('Unavailable', 'Purchases are currently available only in the United States.');
+      return;
+    }
     setLoading(`topup-${amount}`);
     try {
       const url = await startTopUp(amount);
@@ -107,6 +133,10 @@ export default function PlansScreen() {
   };
 
   const handleManage = async () => {
+    if (!isRegionAllowed) {
+      crossAlert('Unavailable', 'Purchases are currently available only in the United States.');
+      return;
+    }
     setLoading('portal');
     try {
       const url = await openPortal();
@@ -126,6 +156,11 @@ export default function PlansScreen() {
       <DesktopContainer>
         <ScrollView contentContainerStyle={[styles.scroll, isDesktop && styles.scrollDesktop]}>
           <Text style={styles.heading}>Plans & Pricing</Text>
+          {!isRegionAllowed && (
+            <Text style={styles.regionNotice}>
+              Purchases are currently available only in the United States.
+            </Text>
+          )}
 
           <View style={styles.plansRow}>
             <PlanCard
@@ -144,6 +179,7 @@ export default function PlansScreen() {
               actionLabel={effectiveTier === 'free' ? 'Upgrade to Starter' : undefined}
               onAction={() => handleSubscribe('starter')}
               loading={loading === 'starter'}
+              disabled={!isRegionAllowed}
             />
             <PlanCard
               name="Pro"
@@ -159,6 +195,7 @@ export default function PlansScreen() {
               }
               onAction={() => handleSubscribe('pro')}
               loading={loading === 'pro'}
+              disabled={!isRegionAllowed}
             />
             <PlanCard
               name="Premium"
@@ -175,11 +212,16 @@ export default function PlansScreen() {
               }
               onAction={() => handleSubscribe('premium')}
               loading={loading === 'premium'}
+              disabled={!isRegionAllowed}
             />
           </View>
 
           {isPaid && (
-            <Pressable style={styles.manageButton} onPress={handleManage} disabled={loading === 'portal'}>
+            <Pressable
+              style={styles.manageButton}
+              onPress={handleManage}
+              disabled={loading === 'portal' || !isRegionAllowed}
+            >
               {loading === 'portal' ? (
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
@@ -240,7 +282,7 @@ export default function PlansScreen() {
                 key={amount}
                 style={styles.topUpCard}
                 onPress={() => handleTopUp(amount)}
-                disabled={effectiveTier !== 'premium' && effectiveTier !== 'admin'}
+                disabled={!isRegionAllowed || (effectiveTier !== 'premium' && effectiveTier !== 'admin')}
               >
                 <Text style={styles.topUpAmount}>${amount}</Text>
                 <Text style={styles.topUpLabel}>one-time</Text>
@@ -289,6 +331,7 @@ function PlanCard({
   actionLabel,
   onAction,
   loading: isLoading,
+  disabled,
 }: {
   name: string;
   price: string;
@@ -300,6 +343,7 @@ function PlanCard({
   actionLabel?: string;
   onAction?: () => void;
   loading?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <View
@@ -335,9 +379,13 @@ function PlanCard({
       </View>
       {actionLabel && onAction && (
         <Pressable
-          style={[styles.upgradeButton, highlighted && styles.upgradeButtonHighlighted]}
+          style={[
+            styles.upgradeButton,
+            highlighted && styles.upgradeButtonHighlighted,
+            disabled && styles.buttonDisabled,
+          ]}
           onPress={onAction}
-          disabled={isLoading}
+          disabled={isLoading || disabled}
         >
           {isLoading ? (
             <ActivityIndicator color="#fff" size="small" />
@@ -360,6 +408,13 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.xl,
     textAlign: 'center',
+  },
+  regionNotice: {
+    fontSize: fontSizes.sm,
+    color: colors.error,
+    fontFamily: 'Quicksand_600SemiBold',
+    textAlign: 'center',
+    marginBottom: spacing.md,
   },
   sectionTitle: {
     fontSize: fontSizes.md,
@@ -554,6 +609,9 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     marginTop: 2,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   expiryNotice: {
     backgroundColor: colors.bgCard,

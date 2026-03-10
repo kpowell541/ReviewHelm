@@ -54,6 +54,13 @@ const EnvSchema = z.object({
     (value) => `${value ?? 'false'}`.toLowerCase() === 'true',
     z.boolean(),
   ),
+  US_ONLY_MODE: z.preprocess(
+    (value) => `${value ?? 'false'}`.toLowerCase() === 'true',
+    z.boolean(),
+  ),
+  US_ALLOWED_COUNTRIES: z.string().optional().default('US'),
+  US_GEO_HEADER: z.string().optional().default('cf-ipcountry'),
+  US_ONLY_BYPASS_IPS: z.string().optional().default(''),
 
   PLATFORM_ANTHROPIC_KEY: z.string().optional().default(''),
   ADMIN_USER_IDS: z.string().optional().default(''),

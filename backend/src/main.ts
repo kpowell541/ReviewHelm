@@ -43,6 +43,13 @@ function isIpAllowed(ip: string, allowlist: string[]): boolean {
   return allowlist.length > 0 && allowlist.includes(ip);
 }
 
+function normalizePath(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed) return '/';
+  if (trimmed === '/') return '/';
+  return trimmed.replace(/\/+$/g, '') || '/';
+}
+
 function installProcessSignalLogging(): void {
   process.on('uncaughtException', (error: Error) => {
     console.error(
@@ -143,6 +150,73 @@ async function bootstrap() {
   );
   app.use(express.json({ limit: bodyLimit }));
   app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
+  const usOnlyMode = config.get('US_ONLY_MODE');
+  const usAllowedCountries = parseCsvList(config.get('US_ALLOWED_COUNTRIES'));
+  const usGeoHeader = String(config.get('US_GEO_HEADER') ?? 'cf-ipcountry').trim();
+  const usOnlyBypassIps = parseCsvList(config.get('US_ONLY_BYPASS_IPS'));
+  const regionStatusPath = `/${apiPrefix}/region/status`;
+  const usOnlyBypassPaths = new Set([
+    '/',
+    `/${apiPrefix}/health`,
+    `/${apiPrefix}/health/ready`,
+    stripeWebhookPath,
+    regionStatusPath,
+  ]);
+
+  if (usOnlyMode) {
+    app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      const requestPath = normalizePath(req.path);
+      if (usOnlyBypassPaths.has(requestPath)) {
+        next();
+        return;
+      }
+
+      const forwarded = req.headers['x-forwarded-for'];
+      const incomingIp = Array.isArray(forwarded)
+        ? forwarded[0]
+        : typeof forwarded === 'string'
+          ? forwarded
+          : req.ip;
+      const requestIp = normalizeIpAddress(incomingIp);
+      if (requestIp && isIpAllowed(requestIp, usOnlyBypassIps)) {
+        next();
+        return;
+      }
+
+      const rawCountry = req.header(usGeoHeader);
+      const country = typeof rawCountry === 'string' ? rawCountry.trim().toLowerCase() : '';
+
+      if (!country) {
+        if (!isProduction) {
+          next();
+          return;
+        }
+        res.status(403).json({
+          statusCode: 403,
+          error: 'forbidden',
+          code: 'REGION_COUNTRY_UNAVAILABLE',
+          message:
+            'ReviewHelm is currently available only in the United States. Country detection is unavailable for this request.',
+        });
+        return;
+      }
+
+      if (!usAllowedCountries.includes(country)) {
+        res.status(403).json({
+          statusCode: 403,
+          error: 'forbidden',
+          code: 'REGION_NOT_SUPPORTED',
+          message: 'ReviewHelm is currently available only in the United States.',
+          country: country.toUpperCase(),
+          allowedCountries: usAllowedCountries.map((entry) => entry.toUpperCase()),
+        });
+        return;
+      }
+
+      next();
+    });
+  }
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
