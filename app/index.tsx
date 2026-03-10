@@ -153,10 +153,11 @@ export default function HomeScreen() {
       .filter((h) => h.currentConfidence <= 2)
       .length;
     const due = items.filter((h) => {
+      if (h.currentConfidence >= 4) return false;
       if (!h.repetitionState?.nextReviewDate) return false;
       return new Date(h.repetitionState.nextReviewDate).getTime() <= Date.now();
     }).length;
-    return { gapCount: Math.min(weakCount, 5), dueCount: due };
+    return { gapCount: Math.min(weakCount, 5), dueCount: Math.min(due, 5) };
   }, [histories]);
 
   const activePRCount = useMemo(() => {
