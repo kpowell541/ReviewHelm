@@ -55,13 +55,32 @@ enum FeedbackOutcome {
   rejected
 }
 
+enum SubscriptionTier {
+  free
+  pro
+  premium
+}
+
+enum CreditEntryType {
+  subscription_grant
+  topup
+  ai_usage
+  expiry
+  refund
+  admin_adjustment
+}
+
 model User {
-  id             String       @id @default(uuid())
-  supabaseUserId String       @unique
-  email          String?
-  displayName    String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id               String           @id @default(uuid())
+  supabaseUserId   String           @unique
+  email            String?
+  displayName      String?
+  tier             SubscriptionTier @default(free)
+  creditBalanceUsd Decimal          @default(0) @db.Decimal(10, 4)
+  billingCycleStart DateTime?
+  trialEndsAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   preference     Preference?
   providerKeys   ProviderKey[]
@@ -74,6 +93,7 @@ model User {
   commentStyleProfiles CommentStyleProfile[]
   commentFeedback CommentFeedback[]
   tutorConversations TutorConversation[]
+  creditLedger   CreditLedgerEntry[]
 }
 
 model Preference {
@@ -309,4 +329,20 @@ model ChecklistVersion {
 
   @@unique([checklistId, version])
   @@index([checklistId])
+}
+
+model CreditLedgerEntry {
+  id          String          @id @default(uuid())
+  userId      String
+  type        CreditEntryType
+  amountUsd   Decimal         @db.Decimal(10, 4)
+  balanceAfter Decimal        @db.Decimal(10, 4)
+  description String?
+  metadata    Json            @default("{}")
+  createdAt   DateTime        @default(now())
+
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, type, createdAt])
 }
