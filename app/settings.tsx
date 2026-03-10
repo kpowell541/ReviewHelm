@@ -179,13 +179,12 @@ export default function SettingsScreen() {
     setSyncingData(true);
     try {
       const result = await runSync();
+      const summary = `Pushed ${result.pushed} item${result.pushed !== 1 ? 's' : ''}, pulled ${result.pulled} item${result.pulled !== 1 ? 's' : ''}.`;
+      const detail = result.details ? `\n${result.details}` : '';
       if (result.errors.length > 0) {
-        crossAlert('Sync completed with errors', result.errors.slice(0, 3).join('\n'));
+        crossAlert('Sync completed with errors', `${summary}${detail}\n\n${result.errors.slice(0, 3).join('\n')}`);
       } else {
-        crossAlert(
-          'Sync complete',
-          `Pushed ${result.pushed} item${result.pushed !== 1 ? 's' : ''}, pulled ${result.pulled} item${result.pulled !== 1 ? 's' : ''}.`,
-        );
+        crossAlert('Sync complete', `${summary}${detail}`);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Sync failed.';

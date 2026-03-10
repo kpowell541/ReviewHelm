@@ -21,6 +21,7 @@ interface SyncResult {
   pushed: number;
   pulled: number;
   errors: string[];
+  details?: string;
 }
 
 interface SessionListResponse {
@@ -478,6 +479,7 @@ export async function runSync(): Promise<SyncResult> {
   const allErrors: string[] = [];
   let totalPushed = 0;
   let totalPulled = 0;
+  let details = '';
 
   try {
     // Push local changes first
@@ -517,6 +519,15 @@ export async function runSync(): Promise<SyncResult> {
     totalPulled += miscResult.pulled;
     allErrors.push(...miscResult.errors);
 
+    const detailParts: string[] = [];
+    if (pushResult.pushed || pullResult.pulled) detailParts.push(`Sessions: ${pushResult.pushed}↑ ${pullResult.pulled}↓`);
+    if (prResult.pushed || prResult.pulled) detailParts.push(`PRs: ${prResult.pushed}↑ ${prResult.pulled}↓`);
+    if (tutorResult.pushed || tutorResult.pulled) detailParts.push(`Tutor: ${tutorResult.pushed}↑ ${tutorResult.pulled}↓`);
+    if (confResult.pulled) detailParts.push(`Gaps: ${confResult.pulled}↓`);
+    if (prefResult.pushed || prefResult.pulled) detailParts.push(`Prefs: ${prefResult.pushed}↑ ${prefResult.pulled}↓`);
+    if (miscResult.pushed || miscResult.pulled) detailParts.push(`Misc: ${miscResult.pushed}↑ ${miscResult.pulled}↓`);
+    details = detailParts.join(', ');
+
     if (allErrors.length > 0) {
       syncStore.markSyncFailure(allErrors.slice(0, 3).join(' | '));
     } else {
@@ -528,5 +539,5 @@ export async function runSync(): Promise<SyncResult> {
     syncStore.markSyncFailure(err.message);
   }
 
-  return { pushed: totalPushed, pulled: totalPulled, errors: allErrors };
+  return { pushed: totalPushed, pulled: totalPulled, errors: allErrors, details };
 }
