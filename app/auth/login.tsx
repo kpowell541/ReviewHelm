@@ -12,8 +12,11 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/store/useAuthStore';
+import { api, ApiError } from '../../src/api/client';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
+
+const STAGING_GATE = process.env.EXPO_PUBLIC_STAGING_ACCESS_GATE === 'true';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -24,9 +27,26 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const [stagingBlocked, setStagingBlocked] = useState(false);
+
   const handleSignIn = async () => {
     try {
       await signIn(email.trim(), password);
+
+      // If staging gate is enabled, verify backend access before proceeding
+      if (STAGING_GATE) {
+        try {
+          await api.get('/subscription/tier');
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 403) {
+            // Not an authorized staging user — sign out and show message
+            await useAuthStore.getState().signOut();
+            setStagingBlocked(true);
+            return;
+          }
+        }
+      }
+
       router.replace('/');
     } catch {
       // Error is captured in store
@@ -48,7 +68,16 @@ export default function LoginScreen() {
               Sign in to sync your data across devices
             </Text>
 
-            {error && (
+            {stagingBlocked && (
+              <View style={styles.stagingBox}>
+                <Text style={styles.stagingTitle}>Access Restricted</Text>
+                <Text style={styles.stagingText}>
+                  ReviewHelm is currently in private staging. Only invited accounts have access. If you believe this is an error, please contact the team.
+                </Text>
+              </View>
+            )}
+
+            {error && !stagingBlocked && (
               <View style={styles.errorBox}>
                 <Text style={styles.errorText}>{error}</Text>
               </View>
@@ -102,14 +131,16 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
-            <Pressable
-              style={styles.secondaryButton}
-              onPress={() => router.push('/auth/signup')}
-            >
-              <Text style={styles.secondaryButtonText}>
-                Don't have an account? Sign Up
-              </Text>
-            </Pressable>
+            {!STAGING_GATE && (
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() => router.push('/auth/signup')}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  Don't have an account? Sign Up
+                </Text>
+              </Pressable>
+            )}
 
           </View>
         </KeyboardAvoidingView>
@@ -138,6 +169,27 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing['3xl'],
+  },
+  stagingBox: {
+    backgroundColor: `${colors.primary}15`,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  stagingTitle: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.lg,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  stagingText: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   errorBox: {
     backgroundColor: `${colors.error}20`,

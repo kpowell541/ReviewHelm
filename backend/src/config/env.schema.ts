@@ -50,6 +50,11 @@ const EnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional().default(''),
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
 
+  STAGING_ACCESS_GATE: z.preprocess(
+    (value) => `${value ?? 'false'}`.toLowerCase() === 'true',
+    z.boolean(),
+  ),
+
   PLATFORM_ANTHROPIC_KEY: z.string().optional().default(''),
   ADMIN_USER_IDS: z.string().optional().default(''),
   SPONSORED_EMAILS: z.string().optional().default(''),
