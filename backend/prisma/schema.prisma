@@ -76,12 +76,14 @@ model User {
   supabaseUserId   String           @unique
   email            String?
   displayName      String?
-  tier             SubscriptionTier @default(free)
-  creditBalanceUsd Decimal          @default(0) @db.Decimal(10, 4)
-  billingCycleStart DateTime?
-  trialEndsAt      DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  tier                 SubscriptionTier @default(free)
+  creditBalanceUsd     Decimal          @default(0) @db.Decimal(10, 4)
+  billingCycleStart    DateTime?
+  trialEndsAt          DateTime?
+  stripeCustomerId     String?          @unique
+  stripeSubscriptionId String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   preference     Preference?
   providerKeys   ProviderKey[]

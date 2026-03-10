@@ -1,9 +1,11 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useTierStore } from '../src/store/useTierStore';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { crossAlert } from '../src/utils/alert';
 
 interface PlanFeature {
   label: string;
@@ -47,9 +49,62 @@ function CheckMark({ value }: { value: boolean | string }) {
   );
 }
 
+function openCheckoutUrl(url: string) {
+  if (Platform.OS === 'web') {
+    window.open(url, '_blank');
+  } else {
+    void Linking.openURL(url);
+  }
+}
+
 export default function PlansScreen() {
   const effectiveTier = useTierStore((s) => s.effectiveTier);
+  const startCheckout = useTierStore((s) => s.startCheckout);
+  const startTopUp = useTierStore((s) => s.startTopUp);
+  const openPortal = useTierStore((s) => s.openPortal);
   const { isDesktop } = useResponsive();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleSubscribe = async (plan: 'pro' | 'premium') => {
+    setLoading(plan);
+    try {
+      const url = await startCheckout(plan);
+      openCheckoutUrl(url);
+    } catch (err: any) {
+      const msg = err?.message || 'Unable to start checkout';
+      crossAlert('Checkout Error', msg);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleTopUp = async (amount: 1 | 5 | 10) => {
+    setLoading(`topup-${amount}`);
+    try {
+      const url = await startTopUp(amount);
+      openCheckoutUrl(url);
+    } catch (err: any) {
+      const msg = err?.message || 'Unable to start top-up';
+      crossAlert('Top-up Error', msg);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const handleManage = async () => {
+    setLoading('portal');
+    try {
+      const url = await openPortal();
+      openCheckoutUrl(url);
+    } catch (err: any) {
+      const msg = err?.message || 'Unable to open billing portal';
+      crossAlert('Portal Error', msg);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const isPaid = effectiveTier === 'pro' || effectiveTier === 'premium';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -71,6 +126,9 @@ export default function PlansScreen() {
               period="/mo"
               features={['Everything in Free', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
               isCurrent={effectiveTier === 'pro'}
+              actionLabel={effectiveTier === 'free' ? 'Upgrade to Pro' : undefined}
+              onAction={() => handleSubscribe('pro')}
+              loading={loading === 'pro'}
             />
             <PlanCard
               name="Premium"
@@ -79,8 +137,25 @@ export default function PlansScreen() {
               features={['Everything in Pro', 'AI tutor & drafter', 'AI credits included', 'Tutor sync']}
               isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
               highlighted
+              actionLabel={
+                effectiveTier === 'free' || effectiveTier === 'pro'
+                  ? 'Upgrade to Premium'
+                  : undefined
+              }
+              onAction={() => handleSubscribe('premium')}
+              loading={loading === 'premium'}
             />
           </View>
+
+          {isPaid && (
+            <Pressable style={styles.manageButton} onPress={handleManage} disabled={loading === 'portal'}>
+              {loading === 'portal' ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <Text style={styles.manageButtonText}>Manage Subscription</Text>
+              )}
+            </Pressable>
+          )}
 
           <Text style={styles.sectionTitle}>Feature Comparison</Text>
           <View style={styles.comparisonCard}>
@@ -127,15 +202,26 @@ export default function PlansScreen() {
 
           <Text style={styles.sectionTitle}>Credit Top-ups</Text>
           <View style={styles.topUpRow}>
-            {[1, 5, 10].map((amount) => (
-              <View key={amount} style={styles.topUpCard}>
+            {([1, 5, 10] as const).map((amount) => (
+              <Pressable
+                key={amount}
+                style={styles.topUpCard}
+                onPress={() => handleTopUp(amount)}
+                disabled={effectiveTier !== 'premium' && effectiveTier !== 'admin'}
+              >
                 <Text style={styles.topUpAmount}>${amount}</Text>
                 <Text style={styles.topUpLabel}>one-time</Text>
-              </View>
+                {loading === `topup-${amount}` && (
+                  <ActivityIndicator color={colors.primary} size="small" style={{ marginTop: spacing.xs }} />
+                )}
+              </Pressable>
             ))}
           </View>
           <Text style={styles.costHint}>
             Credits expire at the end of each billing month. Unused credits do not roll over.
+            {effectiveTier !== 'premium' && effectiveTier !== 'admin'
+              ? ' Top-ups are available for Premium subscribers.'
+              : ''}
           </Text>
         </ScrollView>
       </DesktopContainer>
@@ -150,6 +236,9 @@ function PlanCard({
   features,
   isCurrent,
   highlighted,
+  actionLabel,
+  onAction,
+  loading: isLoading,
 }: {
   name: string;
   price: string;
@@ -157,6 +246,9 @@ function PlanCard({
   features: string[];
   isCurrent: boolean;
   highlighted?: boolean;
+  actionLabel?: string;
+  onAction?: () => void;
+  loading?: boolean;
 }) {
   return (
     <View
@@ -185,6 +277,19 @@ function PlanCard({
           </Text>
         ))}
       </View>
+      {actionLabel && onAction && (
+        <Pressable
+          style={[styles.upgradeButton, highlighted && styles.upgradeButtonHighlighted]}
+          onPress={onAction}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.upgradeButtonText}>{actionLabel}</Text>
+          )}
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -272,6 +377,31 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontFamily: 'Quicksand_400Regular',
     paddingLeft: spacing.sm,
+  },
+  upgradeButton: {
+    backgroundColor: colors.border,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  upgradeButtonHighlighted: {
+    backgroundColor: colors.primary,
+  },
+  upgradeButtonText: {
+    color: '#fff',
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_600SemiBold',
+  },
+  manageButton: {
+    alignItems: 'center',
+    padding: spacing.md,
+    marginTop: spacing.md,
+  },
+  manageButtonText: {
+    color: colors.primary,
+    fontSize: fontSizes.md,
+    fontFamily: 'Quicksand_600SemiBold',
   },
   comparisonCard: {
     backgroundColor: colors.bgCard,

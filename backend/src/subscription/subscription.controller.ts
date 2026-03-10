@@ -11,6 +11,7 @@ import {
 import type { AuthenticatedUser } from '../common/auth/types';
 import { TierService } from './tier.service';
 import { CreditService } from './credit.service';
+import { StripeService } from './stripe.service';
 
 interface AuthRequest {
   user: AuthenticatedUser;
@@ -21,6 +22,7 @@ export class SubscriptionController {
   constructor(
     private readonly tierService: TierService,
     private readonly creditService: CreditService,
+    private readonly stripeService: StripeService,
   ) {}
 
   @Get('tier')
@@ -45,7 +47,7 @@ export class SubscriptionController {
   @Post('credits/topup')
   async topUp(
     @Req() req: AuthRequest,
-    @Body() body: { amountUsd: number },
+    @Body() body: { amountUsd: number; successUrl: string; cancelUrl: string },
   ) {
     const allowed = [1, 5, 10];
     if (!allowed.includes(body.amountUsd)) {
@@ -63,11 +65,60 @@ export class SubscriptionController {
       );
     }
 
-    // TODO: integrate Stripe payment before adding credits
-    // For now, this endpoint validates the request but doesn't charge
-    throw new HttpException(
-      'Payment integration not yet available',
-      HttpStatus.NOT_IMPLEMENTED,
+    if (!this.stripeService.isConfigured()) {
+      throw new HttpException(
+        'Payment integration not yet available',
+        HttpStatus.NOT_IMPLEMENTED,
+      );
+    }
+
+    return this.stripeService.createTopUpCheckout(
+      req.user,
+      body.amountUsd as 1 | 5 | 10,
+      body.successUrl,
+      body.cancelUrl,
     );
+  }
+
+  @Post('subscribe')
+  async subscribe(
+    @Req() req: AuthRequest,
+    @Body() body: { plan: 'pro' | 'premium'; successUrl: string; cancelUrl: string },
+  ) {
+    if (!['pro', 'premium'].includes(body.plan)) {
+      throw new HttpException(
+        'Plan must be "pro" or "premium"',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (!this.stripeService.isConfigured()) {
+      throw new HttpException(
+        'Payment integration not yet available',
+        HttpStatus.NOT_IMPLEMENTED,
+      );
+    }
+
+    return this.stripeService.createSubscriptionCheckout(
+      req.user,
+      body.plan,
+      body.successUrl,
+      body.cancelUrl,
+    );
+  }
+
+  @Post('portal')
+  async portal(
+    @Req() req: AuthRequest,
+    @Body() body: { returnUrl: string },
+  ) {
+    if (!this.stripeService.isConfigured()) {
+      throw new HttpException(
+        'Payment integration not yet available',
+        HttpStatus.NOT_IMPLEMENTED,
+      );
+    }
+
+    return this.stripeService.createPortalSession(req.user, body.returnUrl);
   }
 }

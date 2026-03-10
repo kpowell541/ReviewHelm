@@ -1688,7 +1688,7 @@ paths:
   /subscription/credits/topup:
     post:
       tags: [Subscription]
-      summary: Purchase additional AI credits
+      summary: Purchase additional AI credits via Stripe Checkout
       requestBody:
         required: true
         content:
@@ -1699,21 +1699,118 @@ paths:
                 amountUsd:
                   type: number
                   enum: [1, 5, 10]
-              required: [amountUsd]
+                successUrl:
+                  type: string
+                cancelUrl:
+                  type: string
+              required: [amountUsd, successUrl, cancelUrl]
       responses:
         '200':
-          description: Credits added
+          description: Stripe Checkout session URL
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  balanceUsd:
-                    type: number
+                  url:
+                    type: string
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           description: Not a Premium subscriber
+        '501':
+          description: Stripe not configured
+
+  /subscription/subscribe:
+    post:
+      tags: [Subscription]
+      summary: Start a subscription checkout via Stripe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                plan:
+                  type: string
+                  enum: [pro, premium]
+                successUrl:
+                  type: string
+                cancelUrl:
+                  type: string
+              required: [plan, successUrl, cancelUrl]
+      responses:
+        '200':
+          description: Stripe Checkout session URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '501':
+          description: Stripe not configured
+
+  /subscription/portal:
+    post:
+      tags: [Subscription]
+      summary: Open Stripe billing portal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                returnUrl:
+                  type: string
+              required: [returnUrl]
+      responses:
+        '200':
+          description: Stripe billing portal URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '501':
+          description: Stripe not configured
+
+  /stripe/webhook:
+    post:
+      tags: [Subscription]
+      summary: Stripe webhook endpoint
+      description: |
+        Authenticated via Stripe webhook signature (stripe-signature header),
+        not Bearer JWT. Marked with bearerAuth for policy compliance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+        '400':
+          description: Invalid signature or payload
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
 components:
   securitySchemes:
