@@ -156,6 +156,7 @@ export default function SettingsScreen() {
   const [backupBusy, setBackupBusy] = useState(false);
   const [syncingOfficialCost, setSyncingOfficialCost] = useState(false);
   const [syncingData, setSyncingData] = useState(false);
+  const [refreshingTier, setRefreshingTier] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [adminApiKeyInput, setAdminApiKeyInput] = useState('');
   const [budgetInput, setBudgetInput] = useState(String(monthlyBudgetUsd));
@@ -638,10 +639,23 @@ export default function SettingsScreen() {
           </Pressable>
         )}
         <Pressable
-          style={styles.secondaryButton}
-          onPress={() => { void syncTier(); }}
+          style={[styles.secondaryButton, refreshingTier && styles.buttonDisabled]}
+          disabled={refreshingTier}
+          onPress={async () => {
+            setRefreshingTier(true);
+            try {
+              await syncTier();
+              crossAlert('Synced', 'Subscription status refreshed.');
+            } catch {
+              crossAlert('Error', 'Failed to refresh subscription status.');
+            } finally {
+              setRefreshingTier(false);
+            }
+          }}
         >
-          <Text style={styles.secondaryButtonText}>Refresh subscription status</Text>
+          <Text style={styles.secondaryButtonText}>
+            {refreshingTier ? 'Refreshing...' : 'Refresh subscription status'}
+          </Text>
         </Pressable>
       </View>
 
@@ -1321,7 +1335,9 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    minHeight: 44,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   primaryButtonText: {
@@ -1334,7 +1350,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.sm,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    minHeight: 44,
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.bg,
   },
