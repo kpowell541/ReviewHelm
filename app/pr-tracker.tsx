@@ -519,14 +519,15 @@ export default function PRTrackerScreen() {
             )}
           </View>
         </View>
-        {/* Right side: radio buttons */}
-        <View style={styles.prCardRight} pointerEvents="box-none">
+        {/* Right side: radio buttons — wrapped in Pressable to catch stray taps */}
+        <Pressable style={styles.prCardRight} onPress={(e) => e.stopPropagation()}>
           {/* Changes: Needed / Not Needed */}
           <View style={styles.radioGroup}>
             <Text style={styles.radioGroupLabel}>Changes:</Text>
             <View style={styles.radioOptions}>
               <Pressable
                 style={styles.radioItem}
+                hitSlop={12}
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
@@ -546,6 +547,7 @@ export default function PRTrackerScreen() {
               </Pressable>
               <Pressable
                 style={styles.radioItem}
+                hitSlop={12}
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
@@ -571,6 +573,7 @@ export default function PRTrackerScreen() {
             <View style={styles.radioOptions}>
               <Pressable
                 style={styles.radioItem}
+                hitSlop={12}
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
@@ -590,6 +593,7 @@ export default function PRTrackerScreen() {
               </Pressable>
               <Pressable
                 style={styles.radioItem}
+                hitSlop={12}
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
@@ -615,6 +619,7 @@ export default function PRTrackerScreen() {
             <View style={styles.radioOptions}>
               <Pressable
                 style={styles.radioItem}
+                hitSlop={12}
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
@@ -636,6 +641,7 @@ export default function PRTrackerScreen() {
               </Pressable>
               <Pressable
                 style={styles.radioItem}
+                hitSlop={12}
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
@@ -657,7 +663,7 @@ export default function PRTrackerScreen() {
               </Pressable>
             </View>
           </View>
-        </View>
+        </Pressable>
       </Pressable>
     );
   };
@@ -1305,12 +1311,14 @@ const styles = StyleSheet.create({
   radioItem: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 4,
+    gap: 5,
+    paddingVertical: 4,
+    minHeight: 32,
   },
   radioCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: colors.border,
     alignItems: 'center' as const,
@@ -1329,9 +1337,9 @@ const styles = StyleSheet.create({
     borderColor: colors.textMuted,
   },
   radioDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   radioDotGood: {
     backgroundColor: colors.looksGood,
@@ -1346,7 +1354,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.textMuted,
   },
   radioLabel: {
-    fontSize: 10,
+    fontSize: 11,
     color: colors.textMuted,
     fontWeight: '500' as const,
   },
@@ -1365,9 +1373,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   checkbox: {
-    width: 16,
-    height: 16,
-    borderRadius: 3,
+    width: 20,
+    height: 20,
+    borderRadius: 4,
     borderWidth: 1.5,
     borderColor: colors.border,
     alignItems: 'center' as const,
@@ -1382,7 +1390,7 @@ const styles = StyleSheet.create({
     borderColor: colors.textMuted,
   },
   checkmark: {
-    fontSize: 10,
+    fontSize: 12,
     color: colors.textPrimary,
     fontWeight: '700' as const,
     marginTop: -1,

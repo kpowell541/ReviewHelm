@@ -52,8 +52,18 @@ export const useSyncStore = create<SyncStoreState>()(
     {
       name: 'sync-storage',
       storage: createJSONStorage(() => persistStorage),
+      partialize: (state) => ({
+        lastChecked: state.lastChecked,
+        lastSyncedVersion: state.lastSyncedVersion,
+        lastError: state.lastError,
+      }),
       onRehydrateStorage: () => (state) => {
-        state?.setHasHydrated(true);
+        if (state) {
+          // Always reset syncing on app start — a persisted true means
+          // a previous sync crashed mid-flight
+          state.syncing = false;
+          state.setHasHydrated(true);
+        }
       },
     },
   ),
