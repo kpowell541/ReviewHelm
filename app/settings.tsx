@@ -591,7 +591,7 @@ export default function SettingsScreen() {
           </>
         )}
         <Text style={styles.hint}>
-          Stored tokenized and encrypted in SecureStore. Token: {maskToken(apiKeyToken)}
+          Stored securely on this device only. You must enter it on each device separately.
         </Text>
         <Text style={styles.subtle}>
           Status: {hasApiKey ? 'Key is configured' : 'No key saved'}
