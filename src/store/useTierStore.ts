@@ -69,8 +69,8 @@ export const useTierStore = create<TierState>()(
             trialEndsAt: info.trialEndsAt,
             billingCycleStart: info.billingCycleStart,
           });
-        } catch {
-          // Offline or not authenticated — keep cached values
+        } catch (err) {
+          console.warn('[TierStore] fetchTierInfo failed:', err);
         }
       },
 
@@ -84,8 +84,8 @@ export const useTierStore = create<TierState>()(
             creditBalanceUsd: credits.balanceUsd,
             unlimited: credits.unlimited,
           });
-        } catch {
-          // Offline or not authenticated — keep cached values
+        } catch (err) {
+          console.warn('[TierStore] fetchCreditBalance failed:', err);
         }
       },
 
