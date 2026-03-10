@@ -84,17 +84,8 @@ export default function GapsScreen() {
       .slice(0, 50);
   }, [histories]);
 
-  const dueItems = useMemo(() => {
-    const now = Date.now();
-    return Object.values(histories)
-      .filter((h) => {
-        if (h.currentConfidence >= 4) return false;
-        if (!h.repetitionState?.nextReviewDate) return false;
-        return new Date(h.repetitionState.nextReviewDate).getTime() <= now;
-      })
-      .sort((a, b) => b.learningPriority - a.learningPriority)
-      .slice(0, 5);
-  }, [histories]);
+  const getDueItems = useConfidenceStore((s) => s.getDueItems);
+  const dueItems = useMemo(() => getDueItems(), [getDueItems, histories]);
 
   const activeGaps = useMemo(
     () => weakest.filter((w) => w.currentConfidence <= 2),

@@ -147,17 +147,14 @@ export default function HomeScreen() {
       .slice(0, 3);
   }, [sessions]);
 
+  const getDueItems = useConfidenceStore((s) => s.getDueItems);
   const { gapCount, dueCount } = useMemo(() => {
     const items = Object.values(histories);
     const weakCount = items
       .filter((h) => h.currentConfidence <= 2)
       .length;
-    const due = items.filter((h) => {
-      if (!h.repetitionState?.nextReviewDate) return false;
-      return new Date(h.repetitionState.nextReviewDate).getTime() <= Date.now();
-    }).length;
-    return { gapCount: Math.min(weakCount, 5), dueCount: due };
-  }, [histories]);
+    return { gapCount: Math.min(weakCount, 5), dueCount: getDueItems().length };
+  }, [histories, getDueItems]);
 
   const activePRCount = useMemo(() => {
     return Object.values(prs).filter(
