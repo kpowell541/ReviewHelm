@@ -131,6 +131,19 @@ export default function RootLayout() {
     acknowledgeAlertThreshold,
   ]);
 
+  // Redirect to login when user is signed out (e.g. expired refresh token)
+  const wasAuthenticatedRef = useRef(false);
+  useEffect(() => {
+    if (!storesReady || authIsLoading) return;
+    if (authUser) {
+      wasAuthenticatedRef.current = true;
+    } else if (wasAuthenticatedRef.current) {
+      // User was signed in but session was cleared — redirect to login
+      wasAuthenticatedRef.current = false;
+      router.replace('/auth/login');
+    }
+  }, [storesReady, authIsLoading, authUser, router]);
+
   // Background sync when authenticated
   useEffect(() => {
     if (!storesReady || !authUser) return;
