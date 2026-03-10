@@ -14,10 +14,7 @@ import { crossAlert } from '../src/utils/alert';
 import { isToday } from '../src/utils/dateUtils';
 import type {
   PRStatus,
-  PRPriority,
   TrackedPR,
-  AcceptanceOutcome,
-  ReviewOutcome,
 } from '../src/data/types';
 import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';

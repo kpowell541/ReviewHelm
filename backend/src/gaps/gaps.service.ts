@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { parseSessionItemResponses } from '../common/sessions/parse-item-responses';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import { getChecklistBySession, getChecklistItemIndex, type Severity } from '../checklists/bundled-checklists';
 import { PrismaService } from '../prisma/prisma.service';
-import type { SessionItemResponse } from '../sessions/sessions.types';
 
 type Trend = 'improving' | 'stable' | 'declining' | 'new';
 
@@ -36,7 +37,7 @@ export class GapsService {
     authUser: AuthenticatedUser,
     query: { stackId?: string; limit?: number },
   ): Promise<GapBuckets> {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const limit = Math.min(100, Math.max(1, query.limit ?? 20));
     const stackFilter = query.stackId && query.stackId !== 'all' ? query.stackId : null;
     const sessions = await this.prisma.session.findMany({
@@ -73,7 +74,7 @@ export class GapsService {
       );
       if (!checklist) continue;
       const itemIndex = getChecklistItemIndex(checklist);
-      const responses = this.parseItemResponses(session.itemResponses);
+      const responses = parseSessionItemResponses(session.itemResponses);
       const at = session.completedAt ?? session.updatedAt;
       for (const [itemId, response] of Object.entries(responses)) {
         if (response.verdict === 'na') continue;
@@ -146,34 +147,6 @@ export class GapsService {
     return { items: merged };
   }
 
-  private parseItemResponses(value: unknown): Record<string, SessionItemResponse> {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return {};
-    }
-    const raw = value as Record<string, unknown>;
-    const out: Record<string, SessionItemResponse> = {};
-    for (const [itemId, payload] of Object.entries(raw)) {
-      if (!payload || typeof payload !== 'object') continue;
-      const row = payload as Record<string, unknown>;
-      const verdict = row.verdict;
-      const confidence = Number(row.confidence ?? 0);
-      if (
-        (verdict !== 'looks-good' &&
-          verdict !== 'needs-attention' &&
-          verdict !== 'na' &&
-          verdict !== 'skipped') ||
-        ![1, 2, 3, 4, 5].includes(confidence)
-      ) {
-        continue;
-      }
-      out[itemId] = {
-        verdict,
-        confidence: confidence as 1 | 2 | 3 | 4 | 5,
-      };
-    }
-    return out;
-  }
-
   private computeTrend(values: number[]): Trend {
     if (values.length < 2) return 'new';
     const recent = values.slice(-3);
@@ -203,18 +176,5 @@ export class GapsService {
       : 0;
     const recencyFactor = daysSince <= 7 ? 1 : daysSince <= 30 ? 0.7 : 0.4;
     return (6 - confidence) * severityWeight[severity] * recencyFactor;
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

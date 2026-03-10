@@ -1,7 +1,4 @@
-import { ScrollView, Text, View, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, fontSizes, radius } from '../src/theme';
-import { DesktopContainer } from '../src/components/DesktopContainer';
+import { LegalDocumentScreen } from '../src/components/LegalDocumentScreen';
 
 const SECTIONS = [
   {
@@ -32,70 +29,11 @@ const SECTIONS = [
 
 export default function TermsScreen() {
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <DesktopContainer>
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.heading}>Terms of Use</Text>
-          <Text style={styles.intro}>
-            These terms govern your use of the ReviewHelm application.
-          </Text>
-
-          {SECTIONS.map((section) => (
-            <View key={section.title} style={styles.card}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
-              <Text style={styles.sectionBody}>{section.body}</Text>
-            </View>
-          ))}
-
-          <Text style={styles.lastUpdated}>Last updated: March 2026</Text>
-        </ScrollView>
-      </DesktopContainer>
-    </SafeAreaView>
+    <LegalDocumentScreen
+      title="Terms of Use"
+      intro="These terms govern your use of the ReviewHelm application."
+      sections={SECTIONS}
+      lastUpdated="March 2026"
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing['4xl'],
-  },
-  heading: {
-    fontSize: fontSizes['2xl'],
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  intro: {
-    fontSize: fontSizes.md,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  sectionTitle: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  sectionBody: {
-    fontSize: fontSizes.sm,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  lastUpdated: {
-    fontSize: fontSizes.xs,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.lg,
-  },
-});

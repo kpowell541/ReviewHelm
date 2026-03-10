@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Prisma, type Preference } from '@prisma/client';
 import type { AppEnv } from '../config/env.schema';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -32,7 +33,7 @@ export class BackupsService {
   }
 
   async exportBackup(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const [preference, sessions, usageDays, usageSessions] = await Promise.all([
       this.prisma.preference.findUnique({ where: { userId: user.id } }),
       this.prisma.session.findMany({
@@ -93,7 +94,7 @@ export class BackupsService {
     signature?: string,
     signatureTimestamp?: number,
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const raw = await this.fetchSourcePayload(sourceUrl, signature, signatureTimestamp);
     let parsed: unknown;
     try {
@@ -240,7 +241,7 @@ export class BackupsService {
   }
 
   async exportSessionPdf(authUser: AuthenticatedUser, sessionId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const session = await this.prisma.session.findFirst({
       where: { id: sessionId, userId: user.id },
       select: {
@@ -528,18 +529,5 @@ ${380 + stream.length}
       2,
       '0',
     )}-${String(date.getUTCDate()).padStart(2, '0')}`;
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

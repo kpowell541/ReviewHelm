@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, Text, View, StyleSheet } from 'react-native';
+import { Modal, Pressable, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSizes, radius } from '../theme';
 import { useResponsive } from '../hooks/useResponsive';
 

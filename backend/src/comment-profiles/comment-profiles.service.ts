@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateCommentProfileDto } from './dto/create-comment-profile.dto';
@@ -12,7 +13,7 @@ export class CommentProfilesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listProfiles(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const [profiles, preference] = await Promise.all([
       this.prisma.commentStyleProfile.findMany({
         where: { userId: user.id },
@@ -41,7 +42,7 @@ export class CommentProfilesService {
   }
 
   async createProfile(authUser: AuthenticatedUser, input: CreateCommentProfileDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const created = await this.prisma.commentStyleProfile.create({
       data: {
         userId: user.id,
@@ -71,7 +72,7 @@ export class CommentProfilesService {
     profileId: string,
     input: UpdateCommentProfileDto,
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const existing = await this.prisma.commentStyleProfile.findFirst({
       where: { id: profileId, userId: user.id },
       select: { id: true },
@@ -108,7 +109,7 @@ export class CommentProfilesService {
   }
 
   async deleteProfile(authUser: AuthenticatedUser, profileId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const existing = await this.prisma.commentStyleProfile.findFirst({
       where: { id: profileId, userId: user.id },
       select: { id: true },
@@ -126,7 +127,7 @@ export class CommentProfilesService {
   }
 
   async activateProfile(authUser: AuthenticatedUser, profileId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const existing = await this.prisma.commentStyleProfile.findFirst({
       where: { id: profileId, userId: user.id },
       select: { id: true },
@@ -153,7 +154,7 @@ export class CommentProfilesService {
     authUser: AuthenticatedUser,
     profileId?: string | null,
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     let id = profileId ?? null;
     if (!id) {
       const preference = await this.prisma.preference.findUnique({
@@ -169,18 +170,5 @@ export class CommentProfilesService {
       where: { id, userId: user.id },
     });
     return profile;
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

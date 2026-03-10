@@ -234,7 +234,6 @@ export async function sendTutorMessage(options: AiRequestOptions): Promise<AiRes
     confidence,
     messages,
     allowResponseCache = true,
-    feature,
   } = options;
 
   if (!itemId) {

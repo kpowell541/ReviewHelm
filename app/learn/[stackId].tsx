@@ -17,7 +17,6 @@ import { sendTutorMessage, AiClientError } from '../../src/ai';
 import type {
   TutorMessage,
   ConfidenceLevel,
-  ItemConfidenceHistory,
 } from '../../src/data/types';
 import {
   CONFIDENCE_LABELS,
@@ -60,90 +59,39 @@ export default function LearnSessionScreen() {
     [currentGap],
   );
 
-  const startLesson = useCallback(async () => {
-    if (!found || !currentGap) return;
-    setStarted(true);
-    setMessages([]);
-    setError(null);
-    setIsLoading(true);
-
-    const userMsg: TutorMessage = {
-      role: 'user',
-      content: `Teach me about this concept that I'm weak on: "${found.item.text}". Start from the basics and build up.`,
-      timestamp: new Date().toISOString(),
-    };
-    setMessages([userMsg]);
-
-    try {
-      const apiKey = await resolveApiKey();
-      const response = await sendTutorMessage({
-          apiKey,
-          model: aiModel,
-          feature: 'learn',
-          itemId: found.item.id,
-          role: 'concept-explainer',
-          itemText: found.item.text,
-          stackLabel: found.stackTitle,
-          confidence: currentGap.currentConfidence as ConfidenceLevel,
-        messages: [userMsg],
-      });
-      if (!response.cached) {
-        recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
-          feature: 'learn',
-        });
-      }
-      setWasAutoDowngraded(response.autoDowngraded);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: response.content,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    } catch (err) {
-      setError(
-        err instanceof AiClientError ? err.message : 'Something went wrong.',
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [found, currentGap, aiModel, recordUsage, resolveApiKey]);
-
-  const requestExercise = useCallback(async () => {
+  const runTutorRequest = useCallback(async (
+    userMsg: TutorMessage,
+    role: 'concept-explainer' | 'exercise-generator',
+    replaceHistory: boolean,
+  ) => {
     if (!found || !currentGap) return;
     setError(null);
     setIsLoading(true);
 
-    const exerciseMsg: TutorMessage = {
-      role: 'user',
-      content: 'Give me a practice exercise to test my understanding of this concept.',
-      timestamp: new Date().toISOString(),
-    };
-    const updatedMessages = [...messages, exerciseMsg];
+    const updatedMessages = replaceHistory ? [userMsg] : [...messages, userMsg];
     setMessages(updatedMessages);
 
     try {
       const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
-          apiKey,
-          model: aiModel,
-          feature: 'learn',
-          itemId: found.item.id,
-          role: 'exercise-generator',
-          itemText: found.item.text,
-          stackLabel: found.stackTitle,
+        apiKey,
+        model: aiModel,
+        feature: 'learn',
+        itemId: found.item.id,
+        role,
+        itemText: found.item.text,
+        stackLabel: found.stackTitle,
         confidence: currentGap.currentConfidence as ConfidenceLevel,
         messages: updatedMessages,
       });
+
       if (!response.cached) {
         recordUsage(response.resolvedModel, response.inputTokens, response.outputTokens, {
           feature: 'learn',
         });
       }
-      setWasAutoDowngraded(response.autoDowngraded);
 
+      setWasAutoDowngraded(response.autoDowngraded);
       setMessages((prev) => [
         ...prev,
         {
@@ -160,6 +108,30 @@ export default function LearnSessionScreen() {
       setIsLoading(false);
     }
   }, [found, currentGap, messages, aiModel, recordUsage, resolveApiKey]);
+
+  const startLesson = useCallback(async () => {
+    if (!found) return;
+    setStarted(true);
+    setMessages([]);
+
+    const userMsg: TutorMessage = {
+      role: 'user',
+      content: `Teach me about this concept that I'm weak on: "${found.item.text}". Start from the basics and build up.`,
+      timestamp: new Date().toISOString(),
+    };
+
+    await runTutorRequest(userMsg, 'concept-explainer', true);
+  }, [found, runTutorRequest]);
+
+  const requestExercise = useCallback(async () => {
+    if (!found) return;
+    const exerciseMsg: TutorMessage = {
+      role: 'user',
+      content: 'Give me a practice exercise to test my understanding of this concept.',
+      timestamp: new Date().toISOString(),
+    };
+    await runTutorRequest(exerciseMsg, 'exercise-generator', false);
+  }, [found, runTutorRequest]);
 
   const nextItem = useCallback(() => {
     if (currentIndex < gaps.length - 1) {

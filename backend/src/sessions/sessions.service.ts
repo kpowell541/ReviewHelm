@@ -7,6 +7,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { ChecklistMode, Prisma } from '@prisma/client';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { parseSessionItemResponses } from '../common/sessions/parse-item-responses';
+import { estimateCostUsd, safeNumber } from '../common/usage/cost-estimation';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AppEnv } from '../config/env.schema';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -31,7 +34,7 @@ export class SessionsService {
   ) {}
 
   async createSession(authUser: AuthenticatedUser, input: CreateSessionDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
 
     // Resolve stackIds from either field
     const stackIds = input.stackIds?.length
@@ -70,7 +73,7 @@ export class SessionsService {
   }
 
   async listSessions(authUser: AuthenticatedUser, query: ListSessionsQueryDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const limit = Math.min(100, Math.max(1, query.limit ?? 20));
     const cursor = this.decodeCursor(query.cursor);
 
@@ -113,13 +116,13 @@ export class SessionsService {
   }
 
   async getSessionById(authUser: AuthenticatedUser, sessionId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const session = await this.getSessionForUserOrThrow(user.id, sessionId);
     return this.toSessionResponse(session);
   }
 
   async updateSession(authUser: AuthenticatedUser, sessionId: string, input: UpdateSessionDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     await this.getSessionForUserOrThrow(user.id, sessionId);
     const updated = await this.prisma.session.update({
       where: { id: sessionId },
@@ -131,7 +134,7 @@ export class SessionsService {
   }
 
   async deleteSession(authUser: AuthenticatedUser, sessionId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     await this.getSessionForUserOrThrow(user.id, sessionId);
     await this.prisma.session.delete({
       where: { id: sessionId },
@@ -144,9 +147,9 @@ export class SessionsService {
     itemId: string,
     input: PatchItemResponseDto,
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const session = await this.getSessionForUserOrThrow(user.id, sessionId);
-    const current = this.parseItemResponses(session.itemResponses);
+    const current = parseSessionItemResponses(session.itemResponses);
     const existing = current[itemId] ?? {
       verdict: 'skipped',
       confidence: 3,
@@ -168,7 +171,7 @@ export class SessionsService {
   }
 
   async patchSessionNotes(authUser: AuthenticatedUser, sessionId: string, sessionNotes: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     await this.getSessionForUserOrThrow(user.id, sessionId);
     const updated = await this.prisma.session.update({
       where: { id: sessionId },
@@ -189,7 +192,7 @@ export class SessionsService {
   }
 
   async completeSession(authUser: AuthenticatedUser, sessionId: string, input: CompleteSessionDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const existing = await this.getSessionForUserOrThrow(user.id, sessionId);
     if (existing.isComplete && existing.completedAt) {
       return {
@@ -222,11 +225,11 @@ export class SessionsService {
   }
 
   async getSessionSummary(authUser: AuthenticatedUser, sessionId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const session = await this.getSessionForUserOrThrow(user.id, sessionId);
     const checklist = getChecklistBySession(session.mode as 'review' | 'polish', session.stackId);
     const itemIndex = checklist ? getChecklistItemIndex(checklist) : {};
-    const itemResponses = this.parseItemResponses(session.itemResponses);
+    const itemResponses = parseSessionItemResponses(session.itemResponses);
 
     const issuesBySeverity: Record<Severity, number> = {
       blocker: 0,
@@ -296,7 +299,7 @@ export class SessionsService {
         calls: usage?.calls ?? 0,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
-        costUsd: this.estimateCostUsd(usage?.byModel ?? {}),
+        costUsd: estimateCostUsd(usage?.byModel ?? {}, this.config),
         byFeature: this.buildFeatureUsage(usage?.byFeature ?? {}),
       },
     };
@@ -312,10 +315,10 @@ export class SessionsService {
       const byModel = (row.byModel ?? {}) as Prisma.JsonValue;
       return {
         feature,
-        calls: this.safeNumber(row.calls),
-        inputTokens: this.safeNumber(row.inputTokens),
-        outputTokens: this.safeNumber(row.outputTokens),
-        costUsd: this.estimateCostUsd(byModel),
+        calls: safeNumber(row.calls),
+        inputTokens: safeNumber(row.inputTokens),
+        outputTokens: safeNumber(row.outputTokens),
+        costUsd: estimateCostUsd(byModel, this.config),
       };
     });
   }
@@ -325,7 +328,7 @@ export class SessionsService {
     if (!checklist) {
       return 100;
     }
-    const responses = this.parseItemResponses(session.itemResponses);
+    const responses = parseSessionItemResponses(session.itemResponses);
     let answered = 0;
     let notApplicable = 0;
     for (const response of Object.values(responses)) {
@@ -341,77 +344,6 @@ export class SessionsService {
     }
     return Math.round((answered / applicable) * 100);
   }
-
-  private estimateCostUsd(byModel: Prisma.JsonValue): number {
-    if (!byModel || typeof byModel !== 'object' || Array.isArray(byModel)) {
-      return 0;
-    }
-    const modelObj = byModel as Record<string, unknown>;
-    const calc = (inputTokens: number, outputTokens: number, inPrice: number, outPrice: number) =>
-      (inputTokens / 1_000_000) * inPrice + (outputTokens / 1_000_000) * outPrice;
-    const priceByModel: Record<string, { input: number; output: number }> = {
-      haiku: {
-        input: this.config.get('HAIKU_INPUT_COST_PER_MILLION_USD'),
-        output: this.config.get('HAIKU_OUTPUT_COST_PER_MILLION_USD'),
-      },
-      sonnet: {
-        input: this.config.get('SONNET_INPUT_COST_PER_MILLION_USD'),
-        output: this.config.get('SONNET_OUTPUT_COST_PER_MILLION_USD'),
-      },
-      opus: {
-        input: this.config.get('OPUS_INPUT_COST_PER_MILLION_USD'),
-        output: this.config.get('OPUS_OUTPUT_COST_PER_MILLION_USD'),
-      },
-    };
-
-    let total = 0;
-    for (const [model, payload] of Object.entries(modelObj)) {
-      if (!payload || typeof payload !== 'object') continue;
-      const row = payload as Record<string, unknown>;
-      const inputTokens = this.safeNumber(row.inputTokens);
-      const outputTokens = this.safeNumber(row.outputTokens);
-      const prices = priceByModel[model] ?? priceByModel.sonnet;
-      total += calc(inputTokens, outputTokens, prices.input, prices.output);
-    }
-    return Number(total.toFixed(6));
-  }
-
-  private safeNumber(value: unknown): number {
-    const parsed = Number(value ?? 0);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  private parseItemResponses(value: Prisma.JsonValue): Record<string, SessionItemResponse> {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return {};
-    }
-    const raw = value as Record<string, unknown>;
-    const out: Record<string, SessionItemResponse> = {};
-    for (const [itemId, payload] of Object.entries(raw)) {
-      if (!payload || typeof payload !== 'object') continue;
-      const row = payload as Record<string, unknown>;
-      const verdict = row.verdict;
-      const confidence = row.confidence;
-      if (
-        (verdict !== 'looks-good' &&
-          verdict !== 'needs-attention' &&
-          verdict !== 'na' &&
-          verdict !== 'skipped') ||
-        ![1, 2, 3, 4, 5].includes(Number(confidence))
-      ) {
-        continue;
-      }
-      out[itemId] = {
-        verdict,
-        confidence: Number(confidence) as 1 | 2 | 3 | 4 | 5,
-        notes: typeof row.notes === 'string' ? row.notes : undefined,
-        draftedComment:
-          typeof row.draftedComment === 'string' ? row.draftedComment : undefined,
-      };
-    }
-    return out;
-  }
-
   private toSessionResponse(session: SessionRecord) {
     return {
       id: session.id,
@@ -420,7 +352,7 @@ export class SessionsService {
       stackIds: session.stackIds,
       selectedSections: session.selectedSections,
       title: session.title,
-      itemResponses: this.parseItemResponses(session.itemResponses),
+      itemResponses: parseSessionItemResponses(session.itemResponses),
       sessionNotes: session.sessionNotes,
       createdAt: session.createdAt.toISOString(),
       updatedAt: session.updatedAt.toISOString(),
@@ -463,18 +395,5 @@ export class SessionsService {
       throw new NotFoundException('Session not found');
     }
     return session;
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

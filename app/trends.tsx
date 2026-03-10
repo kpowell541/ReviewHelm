@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSessionStore } from '../src/store/useSessionStore';
-import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { getChecklist, getMergedChecklist } from '../src/data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../src/data/types';
 import { computeSessionScores } from '../src/utils/scoring';
@@ -18,7 +17,6 @@ import type {
   ChecklistItem,
   ChecklistSection,
   ItemResponse,
-  SessionScores,
   StackId,
 } from '../src/data/types';
 

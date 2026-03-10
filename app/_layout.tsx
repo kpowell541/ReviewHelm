@@ -7,7 +7,7 @@ import { AlertProvider } from '../src/components/AlertProvider';
 import type { AppStateStatus } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useFonts, Quicksand_400Regular, Quicksand_500Medium, Quicksand_600SemiBold, Quicksand_700Bold } from '@expo-google-fonts/quicksand';
-import { colors, spacing, fontSizes, ThemeProvider, useThemeColors } from '../src/theme';
+import { colors, spacing, fontSizes, ThemeProvider } from '../src/theme';
 import { usePreferencesStore } from '../src/store/usePreferencesStore';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';

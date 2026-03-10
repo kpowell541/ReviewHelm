@@ -66,7 +66,6 @@ export default function SettingsScreen() {
   const { isDesktop } = useResponsive();
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
-  const apiKeyToken = usePreferencesStore((s) => s.apiKeyToken);
   const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
   const adminApiKeyToken = usePreferencesStore((s) => s.adminApiKeyToken);
   const hasAdminApiKey = usePreferencesStore((s) => s.hasAdminApiKey);

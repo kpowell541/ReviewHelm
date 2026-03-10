@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, type ClaudeModel, type Preference } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedUser } from '../auth/types';
+import { upsertUserFromAuth } from '../users/upsert-user-from-auth';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AppEnv } from '../../config/env.schema';
 
@@ -104,11 +105,7 @@ export class BudgetService {
   }
 
   private async ensureUserWithPreference(authUser: AuthenticatedUser) {
-    const user = await this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: { email: authUser.email },
-      create: { supabaseUserId: authUser.supabaseUserId, email: authUser.email },
-    });
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const preference = await this.prisma.preference.upsert({
       where: { userId: user.id },
       create: { userId: user.id },
