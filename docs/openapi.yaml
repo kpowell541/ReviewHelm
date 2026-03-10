@@ -1356,6 +1356,153 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
 
+  /admin/credits/users:
+    get:
+      tags: [Admin]
+      summary: List all users with tier and credit info
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: User list with subscription details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    email:
+                      type: string
+                    tier:
+                      type: string
+                    creditBalanceUsd:
+                      type: number
+                    isAdmin:
+                      type: boolean
+                    isSponsored:
+                      type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/credits/users/{userId}/ledger:
+    get:
+      tags: [Admin]
+      summary: Get credit ledger for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Credit ledger entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/credits/users/{userId}/adjust:
+    post:
+      tags: [Admin]
+      summary: Adjust credits for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amountUsd:
+                  type: number
+                description:
+                  type: string
+              required: [amountUsd]
+      responses:
+        '201':
+          description: Credits adjusted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balanceUsd:
+                    type: number
+                  unlimited:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /admin/credits/users/{userId}/tier:
+    post:
+      tags: [Admin]
+      summary: Set subscription tier for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tier:
+                  type: string
+                  enum: [free, pro, premium, sponsored]
+              required: [tier]
+      responses:
+        '201':
+          description: Tier updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  email:
+                    type: string
+                  tier:
+                    type: string
+                  creditBalanceUsd:
+                    type: number
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
   /tutor-conversations:
     get:
       tags: [Tutor Conversations]

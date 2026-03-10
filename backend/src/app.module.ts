@@ -31,6 +31,7 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { AdminCiModule } from './admin/ci/admin-ci.module';
 import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.module';
 import { AdminDashboardModule } from './admin/dashboard/admin-dashboard.module';
+import { AdminCreditsModule } from './admin/credits/admin-credits.module';
 import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
 import { TutorConversationsModule } from './tutor-conversations/tutor-conversations.module';
 import { SubscriptionModule } from './subscription/subscription.module';
@@ -68,6 +69,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     AdminCiModule,
     AdminMaintenanceModule,
     AdminDashboardModule,
+    AdminCreditsModule,
   ],
   providers: [
     {
