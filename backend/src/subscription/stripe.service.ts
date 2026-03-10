@@ -235,7 +235,7 @@ export class StripeService {
     if (tier === 'premium') {
       await this.creditService.addCredits(
         userId,
-        5,
+        10,
         'subscription_grant',
         'Premium subscription credit grant',
         { stripeSubscriptionId: subscription.id },
