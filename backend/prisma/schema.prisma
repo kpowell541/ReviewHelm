@@ -98,6 +98,7 @@ model Preference {
   bookmarks                Json        @default("[]")
   templates                Json        @default("{}")
   repoConfigs              Json        @default("{}")
+  confidenceHistories      Json        @default("{}")
 
   createdAt                DateTime    @default(now())
   updatedAt                DateTime    @updatedAt
