@@ -2,6 +2,8 @@ import { BadGatewayException, BadRequestException, Injectable, NotFoundException
 import { Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
+import { estimateCostUsd, safeNumber } from '../common/usage/cost-estimation';
 import { BudgetService } from '../common/budget/budget.service';
 import type { AppEnv } from '../config/env.schema';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,11 +12,6 @@ import { OfficialCostQueryDto } from './dto/official-cost.dto';
 
 const ANTHROPIC_COST_API_URL = 'https://api.anthropic.com/v1/organizations/cost_report';
 const ANTHROPIC_API_VERSION = '2023-06-01';
-
-interface ModelUsage {
-  inputTokens: number;
-  outputTokens: number;
-}
 
 @Injectable()
 export class UsageService {
@@ -130,7 +127,7 @@ export class UsageService {
   }
 
   async getUsageSummary(authUser: AuthenticatedUser, month?: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const monthKey = month || this.getCurrentMonthKey();
     const rows = await this.prisma.usageDay.findMany({
       where: {
@@ -150,7 +147,7 @@ export class UsageService {
     const inputTokens = rows.reduce((sum, row) => sum + row.inputTokens, 0);
     const outputTokens = rows.reduce((sum, row) => sum + row.outputTokens, 0);
     const estimatedCostUsd = Number(
-      rows.reduce((sum, row) => sum + this.estimateCostUsd(row.byModel), 0).toFixed(6),
+      rows.reduce((sum, row) => sum + estimateCostUsd(row.byModel, this.config), 0).toFixed(6),
     );
     const todayKey = this.getCurrentDateKey();
     const todayCalls = rows.find((row) => row.dateKey === todayKey)?.calls ?? 0;
@@ -167,7 +164,7 @@ export class UsageService {
   }
 
   async getUsageByFeature(authUser: AuthenticatedUser, month?: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const monthKey = month || this.getCurrentMonthKey();
     const rows = await this.prisma.usageDay.findMany({
       where: {
@@ -198,15 +195,15 @@ export class UsageService {
           outputTokens: 0,
           costUsd: 0,
         };
-        const calls = this.safeNumber(entry.calls);
-        const inputTokens = this.safeNumber(entry.inputTokens);
-        const outputTokens = this.safeNumber(entry.outputTokens);
+        const calls = safeNumber(entry.calls);
+        const inputTokens = safeNumber(entry.inputTokens);
+        const outputTokens = safeNumber(entry.outputTokens);
         const byModel = (entry.byModel ?? {}) as Prisma.JsonValue;
         aggregate[feature] = {
           calls: existing.calls + calls,
           inputTokens: existing.inputTokens + inputTokens,
           outputTokens: existing.outputTokens + outputTokens,
-          costUsd: Number((existing.costUsd + this.estimateCostUsd(byModel)).toFixed(6)),
+          costUsd: Number((existing.costUsd + estimateCostUsd(byModel, this.config)).toFixed(6)),
         };
       }
     }
@@ -225,7 +222,7 @@ export class UsageService {
   }
 
   async getSessionUsage(authUser: AuthenticatedUser, sessionId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const session = await this.prisma.session.findFirst({
       where: {
         id: sessionId,
@@ -263,7 +260,7 @@ export class UsageService {
       calls: usage.calls,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
-      costUsd: this.estimateCostUsd(usage.byModel),
+      costUsd: estimateCostUsd(usage.byModel, this.config),
       byFeature: this.getByFeatureArray(usage.byFeature),
     };
   }
@@ -276,7 +273,7 @@ export class UsageService {
     outputTokens: number;
     sessionId?: string | null;
   }) {
-    const user = await this.ensureUser(args.authUser);
+    const user = await upsertUserFromAuth(this.prisma, args.authUser);
     const dateKey = this.getCurrentDateKey();
     const byModelDelta = {
       [args.model]: {
@@ -395,17 +392,17 @@ export class UsageService {
       out[key] = this.mergeUsageJson(existing as Prisma.JsonValue, value as Record<string, unknown>);
       const merged = out[key] as Record<string, unknown>;
       if ('calls' in merged) {
-        merged.calls = this.safeNumber((existing as Record<string, unknown>).calls) + this.safeNumber((value as Record<string, unknown>).calls);
+        merged.calls = safeNumber((existing as Record<string, unknown>).calls) + safeNumber((value as Record<string, unknown>).calls);
       }
       if ('inputTokens' in merged) {
         merged.inputTokens =
-          this.safeNumber((existing as Record<string, unknown>).inputTokens) +
-          this.safeNumber((value as Record<string, unknown>).inputTokens);
+          safeNumber((existing as Record<string, unknown>).inputTokens) +
+          safeNumber((value as Record<string, unknown>).inputTokens);
       }
       if ('outputTokens' in merged) {
         merged.outputTokens =
-          this.safeNumber((existing as Record<string, unknown>).outputTokens) +
-          this.safeNumber((value as Record<string, unknown>).outputTokens);
+          safeNumber((existing as Record<string, unknown>).outputTokens) +
+          safeNumber((value as Record<string, unknown>).outputTokens);
       }
     }
     return out;
@@ -419,53 +416,13 @@ export class UsageService {
       const row = payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
       return {
         feature,
-        calls: this.safeNumber(row.calls),
-        inputTokens: this.safeNumber(row.inputTokens),
-        outputTokens: this.safeNumber(row.outputTokens),
-        costUsd: this.estimateCostUsd((row.byModel ?? {}) as Prisma.JsonValue),
+        calls: safeNumber(row.calls),
+        inputTokens: safeNumber(row.inputTokens),
+        outputTokens: safeNumber(row.outputTokens),
+        costUsd: estimateCostUsd((row.byModel ?? {}) as Prisma.JsonValue, this.config),
       };
     });
   }
-
-  private estimateCostUsd(byModel: Prisma.JsonValue): number {
-    if (!byModel || typeof byModel !== 'object' || Array.isArray(byModel)) {
-      return 0;
-    }
-    const modelObj = byModel as Record<string, unknown>;
-    const calc = (inputTokens: number, outputTokens: number, inPrice: number, outPrice: number) =>
-      (inputTokens / 1_000_000) * inPrice + (outputTokens / 1_000_000) * outPrice;
-    const priceByModel: Record<string, { input: number; output: number }> = {
-      haiku: {
-        input: this.config.get('HAIKU_INPUT_COST_PER_MILLION_USD'),
-        output: this.config.get('HAIKU_OUTPUT_COST_PER_MILLION_USD'),
-      },
-      sonnet: {
-        input: this.config.get('SONNET_INPUT_COST_PER_MILLION_USD'),
-        output: this.config.get('SONNET_OUTPUT_COST_PER_MILLION_USD'),
-      },
-      opus: {
-        input: this.config.get('OPUS_INPUT_COST_PER_MILLION_USD'),
-        output: this.config.get('OPUS_OUTPUT_COST_PER_MILLION_USD'),
-      },
-    };
-
-    let total = 0;
-    for (const [model, payload] of Object.entries(modelObj)) {
-      if (!payload || typeof payload !== 'object') continue;
-      const row = payload as Record<string, unknown>;
-      const inputTokens = this.safeNumber(row.inputTokens);
-      const outputTokens = this.safeNumber(row.outputTokens);
-      const prices = priceByModel[model] ?? priceByModel.sonnet;
-      total += calc(inputTokens, outputTokens, prices.input, prices.output);
-    }
-    return Number(total.toFixed(6));
-  }
-
-  private safeNumber(value: unknown): number {
-    const parsed = Number(value ?? 0);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
   private getCurrentMonthKey(date: Date = new Date()): string {
     return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
   }
@@ -475,19 +432,6 @@ export class UsageService {
       2,
       '0',
     )}-${String(date.getUTCDate()).padStart(2, '0')}`;
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 
   private toBudgetConfigResponse(

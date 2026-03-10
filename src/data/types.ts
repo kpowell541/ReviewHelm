@@ -1,3 +1,5 @@
+import { colors } from '../theme';
+
 // ============================================
 // Severity & Mode Types
 // ============================================
@@ -385,6 +387,42 @@ export const PR_PRIORITY_LABELS: Record<PRPriority, string> = {
   medium: 'Medium',
   low: 'Low',
   routine: 'Routine',
+};
+
+// ============================================
+// Color Mappings
+// ============================================
+
+export const SEVERITY_COLORS: Record<Severity, string> = {
+  blocker: colors.blocker,
+  major: colors.major,
+  minor: colors.minor,
+  nit: colors.nit,
+};
+
+export const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
+  1: colors.confidence1,
+  2: colors.confidence2,
+  3: colors.confidence3,
+  4: colors.confidence4,
+  5: colors.confidence5,
+};
+
+export const STATUS_COLORS: Record<PRStatus, string> = {
+  'needs-review': colors.warning,
+  'in-review': colors.reviewMode,
+  'changes-requested': colors.needsAttention,
+  approved: colors.looksGood,
+  merged: colors.looksGood,
+  closed: colors.textMuted,
+};
+
+export const PRIORITY_COLORS: Record<PRPriority, string> = {
+  critical: colors.error,
+  high: colors.needsAttention,
+  medium: colors.warning,
+  low: colors.textSecondary,
+  routine: colors.textMuted,
 };
 
 // ============================================

@@ -1,4 +1,4 @@
-import type { ChecklistItem, ChecklistSection } from './types';
+import type { ChecklistItem } from './types';
 import { getSectionItems } from './types';
 import { getAllChecklists } from './checklistLoader';
 

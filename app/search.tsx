@@ -5,20 +5,15 @@ import {
   TextInput,
   ScrollView,
   StyleSheet,
-  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getAllReviewChecklists } from '../src/data/checklistLoader';
 import { getSectionItems } from '../src/data/types';
-import type { ChecklistItem, Severity } from '../src/data/types';
+import type { ChecklistItem } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
-
-const SEVERITY_COLORS: Record<Severity, string> = {
-  blocker: colors.blocker,
-  major: colors.major,
-  minor: colors.minor,
-  nit: colors.nit,
-};
+import { EmptyState } from '../src/components/EmptyState';
+import { ChecklistItemCard } from '../src/components/ChecklistItemCard';
+import { groupByField } from '../src/utils/groupBy';
 
 interface SearchResult {
   item: ChecklistItem;
@@ -62,14 +57,7 @@ export default function SearchScreen() {
   }, [query, allItems]);
 
   // Group results by stack
-  const grouped = useMemo(() => {
-    const groups: Record<string, SearchResult[]> = {};
-    for (const r of filtered) {
-      if (!groups[r.stackTitle]) groups[r.stackTitle] = [];
-      groups[r.stackTitle].push(r);
-    }
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [filtered]);
+  const grouped = useMemo(() => groupByField(filtered, (r) => r.stackTitle), [filtered]);
 
   return (
     <ScrollView
@@ -106,41 +94,19 @@ export default function SearchScreen() {
             {stackTitle} ({results.length})
           </Text>
           {results.map((r) => (
-            <Pressable
+            <ChecklistItemCard
               key={r.item.id}
-              style={({ pressed }) => [
-                styles.card,
-                { opacity: pressed ? 0.85 : 1 },
-              ]}
-              onPress={() =>
-                router.push(
-                  `/deep-dive/${encodeURIComponent(r.item.id)}`,
-                )
-              }
-            >
-              <View
-                style={[
-                  styles.severityDot,
-                  { backgroundColor: SEVERITY_COLORS[r.item.severity] },
-                ]}
-              />
-              <View style={styles.cardText}>
-                <Text style={styles.itemText} numberOfLines={2}>
-                  {r.item.text}
-                </Text>
-                <Text style={styles.meta}>
-                  {r.sectionTitle} · {r.item.severity}
-                </Text>
-              </View>
-            </Pressable>
+              text={r.item.text}
+              sectionTitle={r.sectionTitle}
+              severity={r.item.severity}
+              onPress={() => router.push(`/deep-dive/${encodeURIComponent(r.item.id)}`)}
+            />
           ))}
         </View>
       ))}
 
       {query.trim().length >= 2 && filtered.length === 0 && (
-        <Text style={styles.empty}>
-          No items match "{query}". Try different keywords.
-        </Text>
+        <EmptyState message={`No items match "${query}". Try different keywords.`} />
       )}
     </ScrollView>
   );
@@ -183,35 +149,5 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  severityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.sm,
-  },
-  cardText: { flex: 1 },
-  itemText: {
-    fontSize: fontSizes.md,
-    color: colors.textPrimary,
-  },
-  meta: {
-    fontSize: fontSizes.xs,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
   },
 });

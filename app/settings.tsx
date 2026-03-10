@@ -66,7 +66,6 @@ export default function SettingsScreen() {
   const { isDesktop } = useResponsive();
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
-  const apiKeyToken = usePreferencesStore((s) => s.apiKeyToken);
   const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
   const adminApiKeyToken = usePreferencesStore((s) => s.adminApiKeyToken);
   const hasAdminApiKey = usePreferencesStore((s) => s.hasAdminApiKey);
@@ -159,9 +158,14 @@ export default function SettingsScreen() {
   const handleApiKeySave = useCallback(async () => {
     if (!apiKeyInput.trim()) return;
     setSavingApiKey(true);
-    await setApiKey(apiKeyInput);
-    setApiKeyInput('');
-    setSavingApiKey(false);
+    try {
+      await setApiKey(apiKeyInput);
+      setApiKeyInput('');
+    } catch (err) {
+      crossAlert('Failed to save key', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSavingApiKey(false);
+    }
   }, [apiKeyInput, setApiKey]);
 
   const handleApiKeyClear = useCallback(async () => {
@@ -175,13 +179,12 @@ export default function SettingsScreen() {
     setSyncingData(true);
     try {
       const result = await runSync();
+      const summary = `Pushed ${result.pushed} item${result.pushed !== 1 ? 's' : ''}, pulled ${result.pulled} item${result.pulled !== 1 ? 's' : ''}.`;
+      const detail = result.details ? `\n${result.details}` : '';
       if (result.errors.length > 0) {
-        crossAlert('Sync completed with errors', result.errors.slice(0, 3).join('\n'));
+        crossAlert('Sync completed with errors', `${summary}${detail}\n\n${result.errors.slice(0, 3).join('\n')}`);
       } else {
-        crossAlert(
-          'Sync complete',
-          `Pushed ${result.pushed} item${result.pushed !== 1 ? 's' : ''}, pulled ${result.pulled} item${result.pulled !== 1 ? 's' : ''}.`,
-        );
+        crossAlert('Sync complete', `${summary}${detail}`);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Sync failed.';
@@ -194,9 +197,14 @@ export default function SettingsScreen() {
   const handleAdminApiKeySave = useCallback(async () => {
     if (!adminApiKeyInput.trim()) return;
     setSavingAdminApiKey(true);
-    await setAdminApiKey(adminApiKeyInput);
-    setAdminApiKeyInput('');
-    setSavingAdminApiKey(false);
+    try {
+      await setAdminApiKey(adminApiKeyInput);
+      setAdminApiKeyInput('');
+    } catch (err) {
+      crossAlert('Failed to save admin key', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSavingAdminApiKey(false);
+    }
   }, [adminApiKeyInput, setAdminApiKey]);
 
   const handleAdminApiKeyClear = useCallback(async () => {
@@ -206,19 +214,12 @@ export default function SettingsScreen() {
     setSavingAdminApiKey(false);
   }, [clearAdminApiKey]);
 
-  const handleApiKeyChange = useCallback(
-    (value: string) => {
-      setSavingApiKey(true);
-      setApiKeyInput(value);
-      setTimeout(() => setSavingApiKey(false), 120);
-    },
-    [],
-  );
+  const handleApiKeyChange = useCallback((value: string) => {
+    setApiKeyInput(value);
+  }, []);
 
   const handleAdminApiKeyChange = useCallback((value: string) => {
-    setSavingAdminApiKey(true);
     setAdminApiKeyInput(value);
-    setTimeout(() => setSavingAdminApiKey(false), 120);
   }, []);
 
   const handleCheckUpdates = useCallback(async () => {
@@ -596,7 +597,7 @@ export default function SettingsScreen() {
         <Text style={styles.subtle}>
           Status: {hasApiKey ? 'Key is configured' : 'No key saved'}
         </Text>
-        {savingApiKey && <Text style={styles.subtle}>Updating key input...</Text>}
+        {savingApiKey && <Text style={styles.subtle}>Saving...</Text>}
       </View>
 
       <View style={styles.card}>

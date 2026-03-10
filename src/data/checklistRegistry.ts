@@ -1,4 +1,4 @@
-import type { ChecklistMeta, StackId } from './types';
+import type { StackId } from './types';
 
 export interface StackInfo {
   id: StackId;

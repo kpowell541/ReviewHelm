@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
 import type { UpsertTrackedPRDto } from './dto/upsert-tracked-pr.dto';
@@ -11,7 +12,7 @@ export class TrackedPRsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listPRs(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const rows = await this.prisma.trackedPR.findMany({
       where: { userId: user.id },
       orderBy: { updatedAt: 'desc' },
@@ -20,7 +21,7 @@ export class TrackedPRsService {
   }
 
   async getPR(authUser: AuthenticatedUser, prId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const row = await this.prisma.trackedPR.findFirst({
       where: { id: prId, userId: user.id },
     });
@@ -29,7 +30,7 @@ export class TrackedPRsService {
   }
 
   async upsertPR(authUser: AuthenticatedUser, input: UpsertTrackedPRDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
 
     const data: Prisma.TrackedPRUncheckedCreateInput = {
       id: input.id,
@@ -71,7 +72,7 @@ export class TrackedPRsService {
   }
 
   async deletePR(authUser: AuthenticatedUser, prId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const row = await this.prisma.trackedPR.findFirst({
       where: { id: prId, userId: user.id },
     });
@@ -106,14 +107,4 @@ export class TrackedPRsService {
     };
   }
 
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: { email: authUser.email },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
-  }
 }

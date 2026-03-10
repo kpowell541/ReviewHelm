@@ -1,24 +1,26 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   Pressable,
-  Modal,
-  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { crossAlert } from '../../src/utils/alert';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
-import type { TrackedPR, PRSize, CIPassing, PRDependency, StackId } from '../../src/data/types';
+import type { TrackedPR, StackId } from '../../src/data/types';
 import { StackLogo } from '../../src/components/StackLogo';
-import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS } from '../../src/data/types';
+import { PR_ACTIVE_STATUSES } from '../../src/data/types';
+import { PRPickerModal } from '../../src/components/PRPickerModal';
+import { EmptyState } from '../../src/components/EmptyState';
 import { STACKS } from '../../src/data/checklistRegistry';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
+import { AddPRModal } from '../../src/components/AddPRModal';
+import { ModalShell } from '../../src/components/ModalShell';
 
 export default function PolishSessionsScreen() {
   const router = useRouter();
@@ -36,16 +38,6 @@ export default function PolishSessionsScreen() {
   const [pendingPRId, setPendingPRId] = useState<string | undefined>(undefined);
   const [selectedStacks, setSelectedStacks] = useState<StackId[]>([]);
   const [showAddPR, setShowAddPR] = useState(false);
-  const [addForm, setAddForm] = useState({
-    title: '',
-    url: '',
-    size: 'medium' as PRSize,
-    repo: '',
-    prNumber: '',
-    dependencies: [] as PRDependency[],
-    ciPassing: 'unknown' as CIPassing,
-  });
-  const [depForm, setDepForm] = useState({ repo: '', prNumber: '', title: '' });
 
   const authorPRs = useMemo(() => {
     return Object.values(prs)
@@ -93,24 +85,6 @@ export default function PolishSessionsScreen() {
     if (pendingPRId) linkSession(pendingPRId, sessionId);
     router.push(`/polish/${sessionId}`);
   };
-
-  const handleSaveNewPR = useCallback(() => {
-    if (!addForm.title.trim()) return;
-    addPR({
-      title: addForm.title.trim(),
-      url: addForm.url.trim() || undefined,
-      role: 'author',
-      size: addForm.size,
-      repo: addForm.repo.trim() || undefined,
-      prNumber: addForm.prNumber ? parseInt(addForm.prNumber, 10) || undefined : undefined,
-      prAuthor: 'Me',
-      dependencies: addForm.dependencies.length > 0 ? addForm.dependencies : undefined,
-      ciPassing: addForm.ciPassing !== 'unknown' ? addForm.ciPassing : undefined,
-    });
-    setAddForm({ title: '', url: '', size: 'medium', repo: '', prNumber: '', dependencies: [], ciPassing: 'unknown' });
-    setDepForm({ repo: '', prNumber: '', title: '' });
-    setShowAddPR(false);
-  }, [addForm, addPR]);
 
   const handleDelete = (sessionId: string, title: string) => {
     crossAlert('Delete Session', `Delete "${title}"?`, [
@@ -222,282 +196,81 @@ export default function PolishSessionsScreen() {
         )}
 
         {sessions.length === 0 && (
-          <Text style={styles.empty}>
-            No sessions yet. Start polishing your next PR!
-          </Text>
+          <EmptyState message="No sessions yet. Start polishing your next PR!" />
         )}
       </ScrollView>
       </DesktopContainer>
 
       {/* PR Picker Modal */}
-      <Modal
+      <PRPickerModal
         visible={showPRPicker}
-        transparent
-        animationType={isDesktop ? 'fade' : 'slide'}
-        onRequestClose={() => setShowPRPicker(false)}
-      >
-        <Pressable
-          style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}
-          onPress={() => setShowPRPicker(false)}
-        >
-          <Pressable style={[styles.modalCard, isDesktop && styles.modalCardDesktop]} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Which PR are you polishing?</Text>
-
-            {authorPRs.length === 0 ? (
-              <View style={styles.emptyPRsContainer}>
-                <Text style={styles.emptyPRs}>No PRs tracked as yours yet.</Text>
-                <Pressable
-                  onPress={() => { setShowPRPicker(false); setShowAddPR(true); }}
-                  style={({ pressed }) => [styles.addPRInlineButton, { opacity: pressed ? 0.85 : 1 }]}
-                >
-                  <Text style={styles.addPRInlineText}>+ Add My PR</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <ScrollView style={styles.prList} showsVerticalScrollIndicator={false}>
-                {authorPRs.map((pr) => {
-                  const subtitle = [pr.repo, pr.prNumber ? `#${pr.prNumber}` : null]
-                    .filter(Boolean)
-                    .join(' ');
-                  return (
-                    <Pressable
-                      key={pr.id}
-                      onPress={() => handleSelectPR(pr)}
-                      style={({ pressed }) => [
-                        styles.prPickerCard,
-                        { opacity: pressed ? 0.85 : 1 },
-                      ]}
-                    >
-                      <View style={styles.prPickerInfo}>
-                        <Text style={styles.prPickerTitle} numberOfLines={1}>{pr.title}</Text>
-                        {subtitle ? (
-                          <Text style={styles.prPickerSubtitle} numberOfLines={1}>{subtitle}</Text>
-                        ) : null}
-                      </View>
-                      {pr.size && (
-                        <Text style={styles.prSizeBadge}>{PR_SIZE_LABELS[pr.size]}</Text>
-                      )}
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            )}
-
-            <View style={styles.pickerButtons}>
-              <Pressable onPress={handleSkipPR} style={styles.skipButton}>
-                <Text style={styles.skipButtonText}>Skip — no PR</Text>
-              </Pressable>
-              <Pressable onPress={() => setShowPRPicker(false)} style={styles.cancelButton}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setShowPRPicker(false)}
+        title="Which PR are you polishing?"
+        prs={authorPRs}
+        onSelectPR={handleSelectPR}
+        onSkip={handleSkipPR}
+        onShowAddPR={() => setShowAddPR(true)}
+        addLabel="+ Add My PR"
+        accentColor={colors.polishMode}
+      />
 
       {/* Stack Picker Modal */}
-      <Modal
+      <ModalShell
         visible={showStackPicker}
-        transparent
-        animationType={isDesktop ? 'fade' : 'slide'}
-        onRequestClose={() => setShowStackPicker(false)}
+        onClose={() => setShowStackPicker(false)}
+        title="What stack is this PR in?"
       >
-        <Pressable
-          style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}
-          onPress={() => setShowStackPicker(false)}
-        >
-          <Pressable style={[styles.modalCard, isDesktop && styles.modalCardDesktop]} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>What stack is this PR in?</Text>
-            <Text style={styles.stackHint}>
-              Select stacks to include domain-specific checks alongside the polish checklist. Skip to use polish only.
+        <Text style={styles.stackHint}>
+          Select stacks to include domain-specific checks alongside the polish checklist. Skip to use polish only.
+        </Text>
+
+        <ScrollView style={styles.prList} showsVerticalScrollIndicator={false}>
+          {STACKS.map((stack) => {
+            const selected = selectedStacks.includes(stack.id);
+            return (
+              <Pressable
+                key={stack.id}
+                onPress={() => toggleStack(stack.id)}
+                style={({ pressed }) => [
+                  styles.stackCard,
+                  selected && { borderColor: stack.color, backgroundColor: stack.color + '15' },
+                  { opacity: pressed ? 0.85 : 1 },
+                ]}
+              >
+                <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={24} style={{ marginRight: spacing.sm }} />
+                <View style={styles.stackInfo}>
+                  <Text style={styles.stackTitle}>{stack.shortTitle}</Text>
+                </View>
+                {selected && <Text style={[styles.stackCheck, { color: stack.color }]}>✓</Text>}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.pickerButtons}>
+          <Pressable onPress={handleStartPolish} style={styles.skipButton}>
+            <Text style={styles.skipButtonText}>
+              {selectedStacks.length === 0 ? 'Skip — polish only' : 'Start'}
             </Text>
-
-            <ScrollView style={styles.prList} showsVerticalScrollIndicator={false}>
-              {STACKS.map((stack) => {
-                const selected = selectedStacks.includes(stack.id);
-                return (
-                  <Pressable
-                    key={stack.id}
-                    onPress={() => toggleStack(stack.id)}
-                    style={({ pressed }) => [
-                      styles.stackCard,
-                      selected && { borderColor: stack.color, backgroundColor: stack.color + '15' },
-                      { opacity: pressed ? 0.85 : 1 },
-                    ]}
-                  >
-                    <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={24} style={{ marginRight: spacing.sm }} />
-                    <View style={styles.stackInfo}>
-                      <Text style={styles.stackTitle}>{stack.shortTitle}</Text>
-                    </View>
-                    {selected && <Text style={[styles.stackCheck, { color: stack.color }]}>✓</Text>}
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            <View style={styles.pickerButtons}>
-              <Pressable onPress={handleStartPolish} style={styles.skipButton}>
-                <Text style={styles.skipButtonText}>
-                  {selectedStacks.length === 0 ? 'Skip — polish only' : 'Start'}
-                </Text>
-              </Pressable>
-              <Pressable onPress={() => setShowStackPicker(false)} style={styles.cancelButton}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </Pressable>
-            </View>
           </Pressable>
-        </Pressable>
-      </Modal>
+          <Pressable onPress={() => setShowStackPicker(false)} style={styles.cancelButton}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </Pressable>
+        </View>
+      </ModalShell>
 
       {/* Add PR Modal */}
-      <Modal
+      <AddPRModal
         visible={showAddPR}
-        transparent
-        animationType={isDesktop ? 'fade' : 'slide'}
-        onRequestClose={() => setShowAddPR(false)}
-      >
-        <Pressable
-          style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}
-          onPress={() => setShowAddPR(false)}
-        >
-          <Pressable style={[styles.modalCard, isDesktop && styles.modalCardDesktop]} onPress={(e) => e.stopPropagation()}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitle}>Add My PR</Text>
-
-              <Text style={styles.fieldLabel}>Title *</Text>
-              <TextInput
-                style={styles.input}
-                value={addForm.title}
-                onChangeText={(v) => setAddForm((f) => ({ ...f, title: v }))}
-                placeholder="PR title"
-                placeholderTextColor={colors.textMuted}
-                autoFocus
-              />
-
-              <Text style={styles.fieldLabel}>URL</Text>
-              <TextInput
-                style={styles.input}
-                value={addForm.url}
-                onChangeText={(v) => setAddForm((f) => ({ ...f, url: v }))}
-                placeholder="https://github.com/..."
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
-
-              <Text style={styles.fieldLabel}>Repo</Text>
-              <TextInput
-                style={styles.input}
-                value={addForm.repo}
-                onChangeText={(v) => setAddForm((f) => ({ ...f, repo: v }))}
-                placeholder="org/repo-name"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-              />
-
-              <Text style={styles.fieldLabel}>PR #</Text>
-              <TextInput
-                style={styles.input}
-                value={addForm.prNumber}
-                onChangeText={(v) => setAddForm((f) => ({ ...f, prNumber: v }))}
-                placeholder="1234"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-              />
-
-              <Text style={styles.fieldLabel}>Size</Text>
-              <View style={styles.chipRow}>
-                {(['small', 'medium', 'large'] as PRSize[]).map((s) => (
-                  <Pressable
-                    key={s}
-                    style={[styles.chip, addForm.size === s && styles.chipActive]}
-                    onPress={() => setAddForm((f) => ({ ...f, size: s }))}
-                  >
-                    <Text style={[styles.chipText, addForm.size === s && styles.chipTextActive]}>
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.fieldLabel}>Build Passing?</Text>
-              <View style={styles.chipRow}>
-                {(['yes', 'no', 'unknown'] as CIPassing[]).map((v) => (
-                  <Pressable
-                    key={v}
-                    style={[styles.chip, addForm.ciPassing === v && styles.chipActive]}
-                    onPress={() => setAddForm((f) => ({ ...f, ciPassing: v }))}
-                  >
-                    <Text style={[styles.chipText, addForm.ciPassing === v && styles.chipTextActive]}>
-                      {v === 'yes' ? 'Yes' : v === 'no' ? 'No' : 'Unknown'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.fieldLabel}>Dependencies</Text>
-              {addForm.dependencies.map((dep, idx) => (
-                <View key={idx} style={styles.depRow}>
-                  <Text style={styles.depText}>
-                    {dep.repo} #{dep.prNumber}{dep.title ? ` — ${dep.title}` : ''}
-                  </Text>
-                  <Pressable onPress={() => setAddForm((f) => ({
-                    ...f,
-                    dependencies: f.dependencies.filter((_, i) => i !== idx),
-                  }))}>
-                    <Text style={styles.depRemove}>X</Text>
-                  </Pressable>
-                </View>
-              ))}
-              <View style={styles.depInputRow}>
-                <TextInput
-                  style={[styles.input, { flex: 2 }]}
-                  value={depForm.repo}
-                  onChangeText={(v) => setDepForm((f) => ({ ...f, repo: v }))}
-                  placeholder="org/repo"
-                  placeholderTextColor={colors.textMuted}
-                  autoCapitalize="none"
-                />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={depForm.prNumber}
-                  onChangeText={(v) => setDepForm((f) => ({ ...f, prNumber: v }))}
-                  placeholder="PR #"
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="number-pad"
-                />
-                <Pressable
-                  style={[styles.depAddBtn, (!depForm.repo.trim() || !depForm.prNumber.trim()) && { opacity: 0.4 }]}
-                  onPress={() => {
-                    if (!depForm.repo.trim() || !depForm.prNumber.trim()) return;
-                    const num = parseInt(depForm.prNumber, 10);
-                    if (!num) return;
-                    setAddForm((f) => ({
-                      ...f,
-                      dependencies: [...f.dependencies, { repo: depForm.repo.trim(), prNumber: num, title: depForm.title.trim() || undefined }],
-                    }));
-                    setDepForm({ repo: '', prNumber: '', title: '' });
-                  }}
-                >
-                  <Text style={styles.depAddBtnText}>+</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.modalButtons}>
-                <Pressable onPress={() => setShowAddPR(false)} style={styles.cancelButton}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleSaveNewPR}
-                  style={[styles.saveButton, !addForm.title.trim() && { opacity: 0.4 }]}
-                >
-                  <Text style={styles.saveButtonText}>Add PR</Text>
-                </Pressable>
-              </View>
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setShowAddPR(false)}
+        onSave={(data) => {
+          addPR(data);
+        }}
+        fixedRole="author"
+        showPriority={false}
+        title="Add My PR"
+        saveButtonColor={colors.polishMode}
+      />
     </View>
   );
 }
@@ -581,95 +354,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
-  },
 
-  // Modals
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalOverlayDesktop: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCard: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.xl,
-    maxHeight: '85%',
-  },
-  modalCardDesktop: {
-    width: 520,
-    maxHeight: '80%',
-    borderRadius: radius.xl,
-  },
-  modalTitle: {
-    fontSize: fontSizes.xl,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
+  // Stack Picker shared
   prList: { maxHeight: 300 },
-  emptyPRsContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  emptyPRs: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  addPRInlineButton: {
-    backgroundColor: colors.polishMode,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-  },
-  addPRInlineText: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  prPickerCard: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  prPickerInfo: { flex: 1 },
-  prPickerTitle: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  prPickerSubtitle: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  prSizeBadge: {
-    fontSize: fontSizes.xs,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.polishMode + '25',
-    color: colors.polishMode,
-    overflow: 'hidden',
-    marginLeft: spacing.sm,
-  },
   pickerButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -688,67 +375,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textSecondary,
   },
-  fieldLabel: {
-    fontSize: fontSizes.sm,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
-  },
-  input: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    fontSize: fontSizes.md,
-    color: colors.textPrimary,
-  },
-  depRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  depText: { fontSize: fontSizes.sm, color: colors.textPrimary, flex: 1 },
-  depRemove: { fontSize: fontSizes.sm, color: colors.error, fontWeight: '600', paddingHorizontal: spacing.sm },
-  depInputRow: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },
-  depAddBtn: {
-    width: 36, height: 36, borderRadius: radius.md,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
-  },
-  depAddBtnText: { fontSize: fontSizes.lg, fontWeight: '700', color: '#fff' },
-  chipRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  chip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  chipActive: {
-    backgroundColor: colors.primary + '25',
-    borderColor: colors.primary,
-  },
-  chipText: { fontSize: fontSizes.sm, color: colors.textSecondary },
-  chipTextActive: { color: colors.primary, fontWeight: '600' },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.sm,
-    marginTop: spacing.xl,
-    paddingBottom: spacing.lg,
-  },
   cancelButton: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
@@ -758,17 +384,8 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textSecondary,
   },
-  saveButton: {
-    backgroundColor: colors.polishMode,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
-  },
-  saveButtonText: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: '#fff',
-  },
+
+  // Stack Picker
   stackHint: {
     fontSize: fontSizes.sm,
     color: colors.textMuted,

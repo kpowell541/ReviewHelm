@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { parseSessionItemResponses } from '../common/sessions/parse-item-responses';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import { getChecklistBySession, getChecklistItemIndex } from '../checklists/bundled-checklists';
 import { DiffsService } from '../diffs/diffs.service';
-import type { SessionItemResponse } from '../sessions/sessions.types';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class RiskService {
     sessionId: string,
     query: { diffId?: string },
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const session = await this.prisma.session.findFirst({
       where: {
         id: sessionId,
@@ -37,7 +37,7 @@ export class RiskService {
 
     const checklist = getChecklistBySession(session.mode as 'review' | 'polish', session.stackId);
     const itemIndex = checklist ? getChecklistItemIndex(checklist) : {};
-    const responses = this.parseItemResponses(session.itemResponses);
+    const responses = parseSessionItemResponses(session.itemResponses);
 
     const severityWeight: Record<string, number> = {
       blocker: 40,
@@ -97,49 +97,5 @@ export class RiskService {
       bySection,
       byFile,
     };
-  }
-
-  private parseItemResponses(value: Prisma.JsonValue): Record<string, SessionItemResponse> {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return {};
-    }
-    const raw = value as Record<string, unknown>;
-    const out: Record<string, SessionItemResponse> = {};
-    for (const [itemId, payload] of Object.entries(raw)) {
-      if (!payload || typeof payload !== 'object') continue;
-      const row = payload as Record<string, unknown>;
-      const verdict = row.verdict;
-      const confidence = Number(row.confidence ?? 0);
-      if (
-        (verdict !== 'looks-good' &&
-          verdict !== 'needs-attention' &&
-          verdict !== 'na' &&
-          verdict !== 'skipped') ||
-        ![1, 2, 3, 4, 5].includes(confidence)
-      ) {
-        continue;
-      }
-      out[itemId] = {
-        verdict,
-        confidence: confidence as 1 | 2 | 3 | 4 | 5,
-        notes: typeof row.notes === 'string' ? row.notes : undefined,
-        draftedComment:
-          typeof row.draftedComment === 'string' ? row.draftedComment : undefined,
-      };
-    }
-    return out;
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

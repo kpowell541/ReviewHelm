@@ -4,7 +4,6 @@ import type {
   Severity,
   ChecklistItem,
 } from '../data/types';
-import { SEVERITY_WEIGHTS } from '../data/types';
 
 export function computeSessionScores(
   session: Session,

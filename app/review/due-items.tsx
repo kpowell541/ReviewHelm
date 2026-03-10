@@ -13,27 +13,15 @@ import { findItemById } from '../../src/data/checklistFinder';
 import {
   CONFIDENCE_EMOJI,
   CONFIDENCE_LABELS,
+  SEVERITY_COLORS,
+  CONFIDENCE_COLORS,
   type ConfidenceLevel,
   type ItemConfidenceHistory,
 } from '../../src/data/types';
 import { computeNextReview } from '../../src/utils/spacedRepetition';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 
-const SEVERITY_COLORS: Record<string, string> = {
-  blocker: colors.blocker,
-  major: colors.major,
-  minor: colors.minor,
-  nit: colors.nit,
-};
-
 const CONFIDENCE_LEVELS: ConfidenceLevel[] = [1, 2, 3, 4, 5];
-const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
-  1: colors.confidence1,
-  2: colors.confidence2,
-  3: colors.confidence3,
-  4: colors.confidence4,
-  5: colors.confidence5,
-};
 
 export default function DueItemsScreen() {
   const router = useRouter();

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Preference } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { KeyCryptoService } from '../common/crypto/key-crypto.service';
 import type { UpdatePreferencesDto } from './dto/update-preferences.dto';
@@ -16,7 +17,7 @@ export class MeService {
   ) {}
 
   async getOrCreateCurrentUser(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
 
     return {
       id: user.id,
@@ -27,7 +28,7 @@ export class MeService {
   }
 
   async getPreferences(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const preference = await this.prisma.preference.upsert({
       where: { userId: user.id },
       update: {},
@@ -37,7 +38,7 @@ export class MeService {
   }
 
   async updatePreferences(authUser: AuthenticatedUser, input: UpdatePreferencesDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const updateData: Prisma.PreferenceUpdateInput = {};
 
     if (input.aiModel !== undefined) {
@@ -108,7 +109,7 @@ export class MeService {
   }
 
   async getAnthropicKeyStatus(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const key = await this.prisma.providerKey.findUnique({
       where: {
         userId_provider: {
@@ -134,7 +135,7 @@ export class MeService {
   }
 
   async upsertAnthropicKey(authUser: AuthenticatedUser, apiKey: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const encrypted = await this.keyCrypto.encryptSecret(apiKey.trim());
 
     await this.prisma.providerKey.upsert({
@@ -182,7 +183,7 @@ export class MeService {
   }
 
   async deleteAnthropicKey(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     await this.prisma.providerKey.deleteMany({
       where: {
         userId: user.id,
@@ -196,19 +197,6 @@ export class MeService {
       severity: 'warn',
       details: {
         provider: 'anthropic',
-      },
-    });
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
       },
     });
   }

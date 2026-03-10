@@ -7,7 +7,6 @@ import type {
   ConfidenceTrend,
   ConfidenceRating,
   Severity,
-  Verdict,
   Session,
 } from '../data/types';
 import { SEVERITY_WEIGHTS } from '../data/types';

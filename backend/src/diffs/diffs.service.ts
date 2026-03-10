@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DiffSource } from '@prisma/client';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -30,7 +31,7 @@ export class DiffsService {
     authUser: AuthenticatedUser,
     input: { content: string; label?: string },
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const content = this.normalizeContent(input.content);
     this.validateDiffLike(content);
     const lineCount = this.countLines(content);
@@ -50,7 +51,7 @@ export class DiffsService {
     authUser: AuthenticatedUser,
     input: { filename: string; content: string; label?: string },
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const content = this.normalizeContent(input.content);
     this.validateDiffLike(content);
     const lineCount = this.countLines(content);
@@ -68,7 +69,7 @@ export class DiffsService {
   }
 
   async getDiffById(authUser: AuthenticatedUser, diffId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const diff = await this.prisma.diffArtifact.findFirst({
       where: {
         id: diffId,
@@ -147,7 +148,7 @@ export class DiffsService {
     if (!diffId) {
       return '';
     }
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const diff = await this.prisma.diffArtifact.findFirst({
       where: { id: diffId, userId: user.id },
       select: { content: true },
@@ -260,18 +261,5 @@ export class DiffsService {
       createdAt: diff.createdAt.toISOString(),
       updatedAt: diff.updatedAt.toISOString(),
     };
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

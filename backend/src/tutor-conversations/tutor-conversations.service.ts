@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -12,7 +13,7 @@ export class TutorConversationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async listConversations(authUser: AuthenticatedUser) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const rows = await this.prisma.tutorConversation.findMany({
       where: { userId: user.id },
       orderBy: { lastAccessed: 'desc' },
@@ -28,7 +29,7 @@ export class TutorConversationsService {
       lastAccessed: string;
     },
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
 
     const data: Omit<Prisma.TutorConversationUncheckedCreateInput, 'id'> = {
       userId: user.id,
@@ -67,7 +68,7 @@ export class TutorConversationsService {
   }
 
   async deleteConversation(authUser: AuthenticatedUser, itemId: string) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     await this.prisma.tutorConversation.deleteMany({
       where: { userId: user.id, itemId },
     });
@@ -83,14 +84,4 @@ export class TutorConversationsService {
     };
   }
 
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: { email: authUser.email },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
-  }
 }

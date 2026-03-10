@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { KeyCryptoService } from '../common/crypto/key-crypto.service';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { RedisService } from '../common/redis/redis.service';
 import { UsageService } from '../usage/usage.service';
@@ -52,7 +53,7 @@ export class AiService {
     dto: AiTutorDto,
     budgetMeta?: AiBudgetMeta,
   ) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const key = await this.prisma.providerKey.findUnique({
       where: {
         userId_provider: {
@@ -457,18 +458,5 @@ export class AiService {
         (outputTokens / 1_000_000) * selected.output
       ).toFixed(6),
     );
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

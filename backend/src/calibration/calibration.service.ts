@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { FeedbackOutcome } from '@prisma/client';
+import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
 import type { SubmitCommentFeedbackDto } from './dto/submit-comment-feedback.dto';
@@ -9,7 +10,7 @@ export class CalibrationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async submitFeedback(authUser: AuthenticatedUser, input: SubmitCommentFeedbackDto) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const created = await this.prisma.commentFeedback.create({
       data: {
         userId: user.id,
@@ -30,7 +31,7 @@ export class CalibrationService {
   }
 
   async getSummary(authUser: AuthenticatedUser, days = 30) {
-    const user = await this.ensureUser(authUser);
+    const user = await upsertUserFromAuth(this.prisma, authUser);
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
     const rows = await this.prisma.commentFeedback.findMany({
       where: {
@@ -113,18 +114,5 @@ export class CalibrationService {
       notes.push('Edits are light; keep responses compact.');
     }
     return notes.join(' ');
-  }
-
-  private async ensureUser(authUser: AuthenticatedUser) {
-    return this.prisma.user.upsert({
-      where: { supabaseUserId: authUser.supabaseUserId },
-      update: {
-        email: authUser.email,
-      },
-      create: {
-        supabaseUserId: authUser.supabaseUserId,
-        email: authUser.email,
-      },
-    });
   }
 }

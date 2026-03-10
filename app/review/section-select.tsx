@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, TextInput } from 'react-native';
 import { crossAlert } from '../../src/utils/alert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { getChecklist } from '../../src/data/checklistLoader';
@@ -10,6 +10,8 @@ import { useTemplateStore } from '../../src/store/useTemplateStore';
 import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { StackLogo } from '../../src/components/StackLogo';
+import { BottomActionBar } from '../../src/components/BottomActionBar';
+import { ModalShell } from '../../src/components/ModalShell';
 
 export default function SectionSelectScreen() {
   const router = useRouter();
@@ -165,92 +167,66 @@ export default function SectionSelectScreen() {
       </ScrollView>
 
       {totalSelected > 0 && (
-        <View style={styles.bottomBar}>
+        <BottomActionBar
+          label={`Continue with ${totalSelected} section${totalSelected > 1 ? 's' : ''}`}
+          onPress={handleContinue}
+          secondaryLabel="Save as template"
+          onSecondaryPress={() => {
+            setTemplateName('');
+            setShowNameModal(true);
+          }}
+        />
+      )}
+
+      <ModalShell
+        visible={showNameModal}
+        onClose={() => setShowNameModal(false)}
+        title="Save Template"
+      >
+        <Text style={styles.modalHint}>
+          Name this configuration for quick access later
+        </Text>
+        <TextInput
+          style={styles.modalInput}
+          value={templateName}
+          onChangeText={setTemplateName}
+          placeholder="e.g. Full Stack Review"
+          placeholderTextColor={colors.textMuted}
+          autoFocus
+          onSubmitEditing={() => {
+            if (templateName.trim()) {
+              saveTemplate(templateName.trim(), stackIds, [...selected]);
+              if (repo) saveRepoConfig(repo, stackIds, [...selected]);
+              setShowNameModal(false);
+              crossAlert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
+            }
+          }}
+        />
+        <View style={styles.modalButtons}>
           <Pressable
-            onPress={handleContinue}
-            style={({ pressed }) => [
-              styles.continueButton,
-              { opacity: pressed ? 0.85 : 1 },
-            ]}
+            onPress={() => setShowNameModal(false)}
+            style={styles.modalCancel}
           >
-            <Text style={styles.continueText}>
-              Continue with {totalSelected} section
-              {totalSelected > 1 ? 's' : ''}
-            </Text>
+            <Text style={styles.modalCancelText}>Cancel</Text>
           </Pressable>
           <Pressable
             onPress={() => {
-              setTemplateName('');
-              setShowNameModal(true);
+              if (templateName.trim()) {
+                saveTemplate(templateName.trim(), stackIds, [...selected]);
+                if (repo) saveRepoConfig(repo, stackIds, [...selected]);
+                setShowNameModal(false);
+                crossAlert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
+              }
             }}
-            style={styles.saveTemplateLink}
+            style={[
+              styles.modalSave,
+              !templateName.trim() && { opacity: 0.4 },
+            ]}
           >
-            <Text style={styles.saveTemplateText}>Save as template</Text>
+            <Text style={styles.modalSaveText}>Save</Text>
           </Pressable>
         </View>
-      )}
-
-      <Modal
-        visible={showNameModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowNameModal(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowNameModal(false)}
-        >
-          <Pressable
-            style={styles.modalCard}
-            onPress={(e) => e.stopPropagation()}
-          >
-            <Text style={styles.modalTitle}>Save Template</Text>
-            <Text style={styles.modalHint}>
-              Name this configuration for quick access later
-            </Text>
-            <TextInput
-              style={styles.modalInput}
-              value={templateName}
-              onChangeText={setTemplateName}
-              placeholder="e.g. Full Stack Review"
-              placeholderTextColor={colors.textMuted}
-              autoFocus
-              onSubmitEditing={() => {
-                if (templateName.trim()) {
-                  saveTemplate(templateName.trim(), stackIds, [...selected]);
-                  if (repo) saveRepoConfig(repo, stackIds, [...selected]);
-                  setShowNameModal(false);
-                  crossAlert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
-                }
-              }}
-            />
-            <View style={styles.modalButtons}>
-              <Pressable
-                onPress={() => setShowNameModal(false)}
-                style={styles.modalCancel}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  if (templateName.trim()) {
-                    saveTemplate(templateName.trim(), stackIds, [...selected]);
-                    if (repo) saveRepoConfig(repo, stackIds, [...selected]);
-                    setShowNameModal(false);
-                    crossAlert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
-                  }
-                }}
-                style={[
-                  styles.modalSave,
-                  !templateName.trim() && { opacity: 0.4 },
-                ]}
-              >
-                <Text style={styles.modalSaveText}>Save</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </ModalShell>
     </View>
   );
 }
@@ -329,57 +305,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textMuted,
     marginLeft: spacing.sm,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.bgCard,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    padding: spacing.lg,
-    paddingBottom: spacing['2xl'],
-  },
-  continueButton: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  saveTemplateLink: {
-    marginTop: spacing.sm,
-    alignItems: 'center',
-  },
-  saveTemplateText: {
-    fontSize: fontSizes.sm,
-    color: colors.textSecondary,
-    textDecorationLine: 'underline',
-  },
-  continueText: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  modalCard: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    width: '100%',
-    maxWidth: 360,
-  },
-  modalTitle: {
-    fontSize: fontSizes.lg,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
   },
   modalHint: {
     fontSize: fontSizes.sm,
