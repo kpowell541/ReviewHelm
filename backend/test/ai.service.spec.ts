@@ -84,6 +84,18 @@ index 1111111..2222222 100644
       }),
     } as any;
 
+    const tierService = {
+      isAdminEmail: jest.fn().mockReturnValue(false),
+    } as any;
+
+    const creditService = {
+      deductCredits: jest.fn().mockResolvedValue({ balanceUsd: 0, unlimited: false }),
+    } as any;
+
+    const config = {
+      get: jest.fn().mockReturnValue('platform-test-key'),
+    } as any;
+
     const service = new AiService(
       prisma,
       keyCrypto,
@@ -93,6 +105,9 @@ index 1111111..2222222 100644
       profiles,
       calibration,
       budget,
+      tierService,
+      creditService,
+      config,
     );
     return { service, usage };
   }
@@ -203,6 +218,9 @@ index 1111111..2222222 100644
       { getActiveOrRequestedProfile: jest.fn().mockResolvedValue(null) } as any,
       { buildPersonalGuidance: jest.fn().mockResolvedValue('') } as any,
       { enforceAiBudgetPolicy: jest.fn().mockResolvedValue({ block: false, resolvedModel: 'haiku' }) } as any,
+      { isAdminEmail: jest.fn().mockReturnValue(false) } as any,
+      { deductCredits: jest.fn().mockResolvedValue({ balanceUsd: 0, unlimited: false }) } as any,
+      { get: jest.fn().mockReturnValue('platform-test-key') } as any,
     );
 
     const fetchSpy = jest.spyOn(global, 'fetch' as any);

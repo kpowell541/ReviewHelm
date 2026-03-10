@@ -12,6 +12,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#1a1a2e"
     },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1a1a2e",
