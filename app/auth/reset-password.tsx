@@ -15,25 +15,51 @@ import { useAuthStore } from '../../src/store/useAuthStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 
-export default function LoginScreen() {
+export default function ResetPasswordScreen() {
   const router = useRouter();
-  const signIn = useAuthStore((s) => s.signIn);
-  const isLoading = useAuthStore((s) => s.isLoading);
-  const error = useAuthStore((s) => s.error);
+  const updatePassword = useAuthStore((s) => s.updatePassword);
 
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignIn = async () => {
+  const isValid = password.length >= 6 && password === confirm;
+
+  const handleUpdate = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      await signIn(email.trim(), password);
-      router.replace('/');
-    } catch {
-      // Error is captured in store
+      await updatePassword(password);
+      setDone(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update password');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const isValid = email.trim().length > 0 && password.length >= 6;
+  if (done) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <DesktopContainer>
+          <View style={styles.content}>
+            <Text style={styles.title}>Password Updated</Text>
+            <Text style={styles.subtitle}>
+              Your password has been changed successfully.
+            </Text>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => router.replace('/')}
+            >
+              <Text style={styles.primaryButtonText}>Continue</Text>
+            </Pressable>
+          </View>
+        </DesktopContainer>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -43,9 +69,9 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.title}>Set New Password</Text>
             <Text style={styles.subtitle}>
-              Sign in to sync your data across devices
+              Choose a new password for your account.
             </Text>
 
             {error && (
@@ -56,61 +82,47 @@ export default function LoginScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder="New password"
               placeholderTextColor={colors.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              textContentType="emailAddress"
-              autoComplete="email"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              textContentType="newPassword"
+              autoComplete="new-password"
               returnKeyType="next"
             />
 
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="Confirm password"
               placeholderTextColor={colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
+              value={confirm}
+              onChangeText={setConfirm}
               secureTextEntry
-              textContentType="password"
-              autoComplete="password"
+              textContentType="newPassword"
+              autoComplete="new-password"
               returnKeyType="done"
-              onSubmitEditing={() => { if (isValid && !isLoading) handleSignIn(); }}
+              onSubmitEditing={() => { if (isValid && !loading) handleUpdate(); }}
             />
 
-            <Pressable
-              style={styles.forgotLink}
-              onPress={() => router.push('/auth/forgot-password')}
-            >
-              <Text style={styles.forgotLinkText}>Forgot password?</Text>
-            </Pressable>
+            {password.length > 0 && password.length < 6 && (
+              <Text style={styles.hint}>Password must be at least 6 characters</Text>
+            )}
+            {confirm.length > 0 && password !== confirm && (
+              <Text style={styles.hint}>Passwords do not match</Text>
+            )}
 
             <Pressable
-              style={[
-                styles.primaryButton,
-                (!isValid || isLoading) && styles.buttonDisabled,
-              ]}
-              onPress={handleSignIn}
-              disabled={!isValid || isLoading}
+              style={[styles.primaryButton, (!isValid || loading) && styles.buttonDisabled]}
+              onPress={handleUpdate}
+              disabled={!isValid || loading}
             >
-              {isLoading ? (
+              {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.primaryButtonText}>Sign In</Text>
+                <Text style={styles.primaryButtonText}>Update Password</Text>
               )}
             </Pressable>
-
-            <Pressable
-              style={styles.secondaryButton}
-              onPress={() => router.push('/auth/signup')}
-            >
-              <Text style={styles.secondaryButtonText}>
-                Don't have an account? Sign Up
-              </Text>
-            </Pressable>
-
           </View>
         </KeyboardAvoidingView>
       </DesktopContainer>
@@ -152,6 +164,11 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     textAlign: 'center',
   },
+  hint: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    marginBottom: spacing.sm,
+  },
   input: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
@@ -174,22 +191,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: fontSizes.lg,
     fontWeight: '600',
-  },
-  secondaryButton: {
-    marginTop: spacing.xl,
-    alignItems: 'center',
-    padding: spacing.sm,
-  },
-  secondaryButtonText: {
-    color: colors.primary,
-    fontSize: fontSizes.md,
-  },
-  forgotLink: {
-    alignSelf: 'flex-end',
-    padding: spacing.xs,
-  },
-  forgotLinkText: {
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
   },
 });

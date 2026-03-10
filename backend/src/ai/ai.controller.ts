@@ -3,6 +3,8 @@ import type { Request } from 'express';
 import { AiEndpoint } from '../common/ai/ai-endpoint.decorator';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { RequiresTier } from '../common/subscription/requires-tier.decorator';
+import { RequiresCredits } from '../common/subscription/requires-credits.decorator';
 import { AiTutorDto } from './dto/ai-tutor.dto';
 import { AiService } from './ai.service';
 
@@ -20,6 +22,8 @@ export class AiController {
 
   @Post('tutor')
   @AiEndpoint('deep_dive')
+  @RequiresTier('premium')
+  @RequiresCredits()
   async tutor(
     @CurrentUser() user: AuthenticatedUser,
     @Body() body: AiTutorDto,

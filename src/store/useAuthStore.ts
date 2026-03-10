@@ -13,6 +13,8 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   getAccessToken: () => Promise<string | null>;
 }
 
@@ -119,6 +121,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         error: err.message || 'Sign out failed',
       });
     }
+  },
+
+  resetPassword: async (email) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw error;
+  },
+
+  updatePassword: async (password) => {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
   },
 
   getAccessToken: async () => {

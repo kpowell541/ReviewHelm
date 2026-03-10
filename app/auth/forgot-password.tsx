@@ -15,25 +15,47 @@ import { useAuthStore } from '../../src/store/useAuthStore';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 
-export default function LoginScreen() {
+export default function ForgotPasswordScreen() {
   const router = useRouter();
-  const signIn = useAuthStore((s) => s.signIn);
-  const isLoading = useAuthStore((s) => s.isLoading);
-  const error = useAuthStore((s) => s.error);
+  const resetPassword = useAuthStore((s) => s.resetPassword);
 
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignIn = async () => {
+  const handleReset = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      await signIn(email.trim(), password);
-      router.replace('/');
-    } catch {
-      // Error is captured in store
+      await resetPassword(email.trim());
+      setSent(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const isValid = email.trim().length > 0 && password.length >= 6;
+  const isValid = email.trim().length > 0;
+
+  if (sent) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <DesktopContainer>
+          <View style={styles.content}>
+            <Text style={styles.title}>Check Your Email</Text>
+            <Text style={styles.subtitle}>
+              We sent a password reset link to {email.trim()}. Follow the link to set a new password.
+            </Text>
+            <Pressable style={styles.secondaryButton} onPress={() => router.back()}>
+              <Text style={styles.secondaryButtonText}>Back to Sign In</Text>
+            </Pressable>
+          </View>
+        </DesktopContainer>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -43,9 +65,9 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.title}>Forgot Password</Text>
             <Text style={styles.subtitle}>
-              Sign in to sync your data across devices
+              Enter your email and we'll send you a link to reset your password.
             </Text>
 
             {error && (
@@ -64,53 +86,25 @@ export default function LoginScreen() {
               keyboardType="email-address"
               textContentType="emailAddress"
               autoComplete="email"
-              returnKeyType="next"
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              textContentType="password"
-              autoComplete="password"
               returnKeyType="done"
-              onSubmitEditing={() => { if (isValid && !isLoading) handleSignIn(); }}
+              onSubmitEditing={() => { if (isValid && !loading) handleReset(); }}
             />
 
             <Pressable
-              style={styles.forgotLink}
-              onPress={() => router.push('/auth/forgot-password')}
+              style={[styles.primaryButton, (!isValid || loading) && styles.buttonDisabled]}
+              onPress={handleReset}
+              disabled={!isValid || loading}
             >
-              <Text style={styles.forgotLinkText}>Forgot password?</Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.primaryButton,
-                (!isValid || isLoading) && styles.buttonDisabled,
-              ]}
-              onPress={handleSignIn}
-              disabled={!isValid || isLoading}
-            >
-              {isLoading ? (
+              {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.primaryButtonText}>Sign In</Text>
+                <Text style={styles.primaryButtonText}>Send Reset Link</Text>
               )}
             </Pressable>
 
-            <Pressable
-              style={styles.secondaryButton}
-              onPress={() => router.push('/auth/signup')}
-            >
-              <Text style={styles.secondaryButtonText}>
-                Don't have an account? Sign Up
-              </Text>
+            <Pressable style={styles.secondaryButton} onPress={() => router.back()}>
+              <Text style={styles.secondaryButtonText}>Back to Sign In</Text>
             </Pressable>
-
           </View>
         </KeyboardAvoidingView>
       </DesktopContainer>
@@ -183,13 +177,5 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: colors.primary,
     fontSize: fontSizes.md,
-  },
-  forgotLink: {
-    alignSelf: 'flex-end',
-    padding: spacing.xs,
-  },
-  forgotLinkText: {
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
   },
 });

@@ -4,16 +4,20 @@ import {
   BadRequestException,
   Injectable,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { KeyCryptoService } from '../common/crypto/key-crypto.service';
 import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
+import type { AppEnv } from '../config/env.schema';
 import { RedisService } from '../common/redis/redis.service';
 import { UsageService } from '../usage/usage.service';
 import { DiffsService, type DiffGroundingContext } from '../diffs/diffs.service';
 import { CommentProfilesService } from '../comment-profiles/comment-profiles.service';
 import { CalibrationService } from '../calibration/calibration.service';
 import { BudgetService } from '../common/budget/budget.service';
+import { TierService } from '../subscription/tier.service';
+import { CreditService } from '../subscription/credit.service';
 import type { AiTutorDto } from './dto/ai-tutor.dto';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -37,6 +41,8 @@ interface AnthropicResult {
 
 @Injectable()
 export class AiService {
+  private readonly platformKey: string;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly keyCrypto: KeyCryptoService,
@@ -46,7 +52,12 @@ export class AiService {
     private readonly profilesService: CommentProfilesService,
     private readonly calibrationService: CalibrationService,
     private readonly budgetService: BudgetService,
-  ) {}
+    private readonly tierService: TierService,
+    private readonly creditService: CreditService,
+    config: ConfigService<AppEnv, true>,
+  ) {
+    this.platformKey = config.get('PLATFORM_ANTHROPIC_KEY');
+  }
 
   async tutor(
     authUser: AuthenticatedUser,
@@ -54,42 +65,7 @@ export class AiService {
     budgetMeta?: AiBudgetMeta,
   ) {
     const user = await upsertUserFromAuth(this.prisma, authUser);
-    const key = await this.prisma.providerKey.findUnique({
-      where: {
-        userId_provider: {
-          userId: user.id,
-          provider: 'anthropic',
-        },
-      },
-    });
-    let apiKey = (dto.apiKey ?? '').trim();
-
-    if (key) {
-      try {
-        const decrypted = await this.keyCrypto.decryptSecret({
-          keyProvider: key.kmsKeyId ? 'aws_kms' : 'local',
-          keyVersion: key.kekVersion,
-          kmsKeyId: key.kmsKeyId,
-          encryptedDek: key.encryptedDek,
-          ciphertext: key.ciphertext,
-          iv: key.iv,
-          authTag: key.authTag,
-        });
-        apiKey = decrypted.trim();
-      } catch {
-        if (!apiKey) {
-          throw new BadRequestException(
-            'Stored Anthropic API key could not be decrypted. Provide a fallback key.',
-          );
-        }
-      }
-    }
-
-    if (!apiKey) {
-      throw new BadRequestException(
-        'No Anthropic API key configured for this user and no fallback key was provided.',
-      );
-    }
+    const apiKey = await this.resolveApiKey(user.id, authUser);
 
     const fallbackModel = this.defaultModelForFeature(dto.feature);
     const requestedModel = budgetMeta?.requestedModel ?? dto.model ?? fallbackModel;
@@ -244,6 +220,16 @@ export class AiService {
         'EX',
         RESPONSE_CACHE_TTL_SECONDS,
       ]);
+    }
+
+    // Deduct AI credits (no-op for admin/sponsored with unlimited credits)
+    if (final.costUsd > 0) {
+      await this.creditService.deductCredits(
+        authUser,
+        final.costUsd,
+        `${dto.feature} (${final.model})`,
+        { inputTokens: final.inputTokens, outputTokens: final.outputTokens },
+      );
     }
 
     return {
@@ -457,6 +443,51 @@ export class AiService {
         (inputTokens / 1_000_000) * selected.input +
         (outputTokens / 1_000_000) * selected.output
       ).toFixed(6),
+    );
+  }
+
+  /**
+   * Resolve the Anthropic API key to use:
+   * - Admin users: try their stored BYOK first, fall back to platform key
+   * - All other users: use the shared platform key
+   */
+  private async resolveApiKey(
+    userId: string,
+    authUser: AuthenticatedUser,
+  ): Promise<string> {
+    const isAdmin = this.tierService.isAdminEmail(authUser.email);
+
+    // Admin users can use their own BYOK key
+    if (isAdmin) {
+      const key = await this.prisma.providerKey.findUnique({
+        where: { userId_provider: { userId, provider: 'anthropic' } },
+      });
+      if (key) {
+        try {
+          const decrypted = await this.keyCrypto.decryptSecret({
+            keyProvider: key.kmsKeyId ? 'aws_kms' : 'local',
+            keyVersion: key.kekVersion,
+            kmsKeyId: key.kmsKeyId,
+            encryptedDek: key.encryptedDek,
+            ciphertext: key.ciphertext,
+            iv: key.iv,
+            authTag: key.authTag,
+          });
+          const trimmed = decrypted.trim();
+          if (trimmed) return trimmed;
+        } catch {
+          // Fall through to platform key
+        }
+      }
+    }
+
+    // Use shared platform key
+    if (this.platformKey) {
+      return this.platformKey;
+    }
+
+    throw new BadRequestException(
+      'No API key available. Please contact support.',
     );
   }
 }
