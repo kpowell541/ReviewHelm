@@ -47,6 +47,9 @@ const EnvSchema = z.object({
   AWS_REGION: z.string().optional().default('us-east-1'),
   AWS_KMS_KEY_ID: z.string().optional().default(''),
 
+  STRIPE_SECRET_KEY: z.string().optional().default(''),
+  STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
+
   PLATFORM_ANTHROPIC_KEY: z.string().optional().default(''),
   ADMIN_USER_IDS: z.string().optional().default(''),
   SPONSORED_EMAILS: z.string().optional().default(''),

@@ -20,6 +20,9 @@ interface TierState {
   fetchTierInfo: () => Promise<void>;
   fetchCreditBalance: () => Promise<void>;
   syncTier: () => Promise<void>;
+  startCheckout: (plan: 'pro' | 'premium') => Promise<string>;
+  startTopUp: (amountUsd: 1 | 5 | 10) => Promise<string>;
+  openPortal: () => Promise<string>;
 }
 
 const TIER_RANK: Record<EffectiveTier, number> = {
@@ -84,6 +87,34 @@ export const useTierStore = create<TierState>()(
       syncTier: async () => {
         await get().fetchTierInfo();
         await get().fetchCreditBalance();
+      },
+
+      startCheckout: async (plan) => {
+        const baseUrl = window?.location?.origin ?? 'reviewhelm://';
+        const result = await api.post<{ url: string }>('/subscription/subscribe', {
+          plan,
+          successUrl: `${baseUrl}/plans?checkout=success`,
+          cancelUrl: `${baseUrl}/plans?checkout=cancelled`,
+        });
+        return result.url;
+      },
+
+      startTopUp: async (amountUsd) => {
+        const baseUrl = window?.location?.origin ?? 'reviewhelm://';
+        const result = await api.post<{ url: string }>('/subscription/credits/topup', {
+          amountUsd,
+          successUrl: `${baseUrl}/plans?topup=success`,
+          cancelUrl: `${baseUrl}/plans?topup=cancelled`,
+        });
+        return result.url;
+      },
+
+      openPortal: async () => {
+        const baseUrl = window?.location?.origin ?? 'reviewhelm://';
+        const result = await api.post<{ url: string }>('/subscription/portal', {
+          returnUrl: `${baseUrl}/settings`,
+        });
+        return result.url;
       },
     }),
     {

@@ -127,6 +127,20 @@ async function bootstrap() {
     }
     next();
   });
+  // Stripe webhooks require the raw body for signature verification.
+  const apiPrefix = config.get('API_BASE_PATH');
+  const stripeWebhookPath = `/${apiPrefix}/stripe/webhook`;
+  app.use(
+    stripeWebhookPath,
+    express.raw({ type: 'application/json', limit: bodyLimit }),
+    (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+      (req as any).rawBody = req.body;
+      if (Buffer.isBuffer(req.body)) {
+        req.body = JSON.parse(req.body.toString('utf-8'));
+      }
+      next();
+    },
+  );
   app.use(express.json({ limit: bodyLimit }));
   app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
   app.useGlobalPipes(

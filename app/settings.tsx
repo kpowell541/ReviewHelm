@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Pressable,
+  Platform,
+  Linking,
 } from 'react-native';
 import Constants from 'expo-constants';
 import { crossAlert } from '../src/utils/alert';
@@ -592,6 +594,25 @@ export default function SettingsScreen() {
         >
           <Text style={styles.secondaryButtonText}>View Plans & Pricing</Text>
         </Pressable>
+        {(effectiveTier === 'pro' || effectiveTier === 'premium') && (
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={async () => {
+              try {
+                const url = await useTierStore.getState().openPortal();
+                if (Platform.OS === 'web') {
+                  window.open(url, '_blank');
+                } else {
+                  void Linking.openURL(url);
+                }
+              } catch {
+                crossAlert('Error', 'Unable to open billing portal');
+              }
+            }}
+          >
+            <Text style={styles.secondaryButtonText}>Manage Subscription</Text>
+          </Pressable>
+        )}
         <Pressable
           style={styles.secondaryButton}
           onPress={() => { void syncTier(); }}
