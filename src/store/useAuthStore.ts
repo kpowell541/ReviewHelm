@@ -136,8 +136,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           return data.session.access_token;
         }
       } catch {
-        return null;
+        // Refresh failed — clear stale session
       }
+      // Token refresh failed or returned no session — sign out
+      set({ session: null, user: null });
+      return null;
     }
 
     return session.access_token;
