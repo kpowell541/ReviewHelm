@@ -5,13 +5,14 @@ import { TierService } from './tier.service';
 import { CreditService } from './credit.service';
 import { StripeService } from './stripe.service';
 import { CreditExpiryCron } from './credit-expiry.cron';
+import { CreditExpiryWarningCron } from './credit-expiry-warning.cron';
 import { SubscriptionController } from './subscription.controller';
 import { StripeWebhookController } from './stripe-webhook.controller';
 
 @Module({
   imports: [PrismaModule, ScheduleModule.forRoot()],
   controllers: [SubscriptionController, StripeWebhookController],
-  providers: [TierService, CreditService, StripeService, CreditExpiryCron],
+  providers: [TierService, CreditService, StripeService, CreditExpiryCron, CreditExpiryWarningCron],
   exports: [TierService, CreditService, StripeService],
 })
 export class SubscriptionModule {}

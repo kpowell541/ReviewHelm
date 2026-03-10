@@ -7,7 +7,7 @@ const SECTIONS = [
   },
   {
     title: 'Payment Information',
-    body: 'Payments are processed by Stripe. ReviewHelm LLC does not store your credit card number or payment card details on its servers. Stripe may store your payment information in accordance with their privacy policy. We retain only the information necessary to manage your subscription: your subscription tier, billing dates, and credit balance.',
+    body: 'Payments are processed by Stripe. ReviewHelm LLC does not store your credit card number or payment card details on its servers. Stripe may store your payment information in accordance with their privacy policy. We retain only the information necessary to manage your subscription: your subscription tier, billing dates, credit balance, and credit expiry dates.',
   },
   {
     title: 'AI Features',

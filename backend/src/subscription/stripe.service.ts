@@ -10,11 +10,19 @@ import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 
 /** Maps our plan names to Stripe price lookup keys. */
 const PLAN_LOOKUP_KEYS: Record<string, string> = {
+  starter: 'reviewhelm_starter_monthly',
   pro: 'reviewhelm_pro_monthly',
   premium: 'reviewhelm_premium_monthly',
 };
 
-const TOPUP_AMOUNTS = [1, 5, 10] as const;
+type SubscriptionPlan = 'starter' | 'pro' | 'premium';
+
+const TOPUP_AMOUNTS = [1, 5, 10, 20] as const;
+
+/** Credit grant amounts by plan and subscription status */
+const CREDIT_GRANTS: Record<string, { active: number; trialing: number }> = {
+  premium: { active: 7.5, trialing: 2 },
+};
 
 @Injectable()
 export class StripeService {
@@ -48,9 +56,10 @@ export class StripeService {
    */
   async createSubscriptionCheckout(
     authUser: AuthenticatedUser,
-    plan: 'pro' | 'premium',
+    plan: SubscriptionPlan,
     successUrl: string,
     cancelUrl: string,
+    options?: { trial?: boolean },
   ): Promise<{ url: string }> {
     if (!this.stripe) throw new Error('Stripe not configured');
 
@@ -69,6 +78,15 @@ export class StripeService {
       throw new Error(`No Stripe price found for lookup key: ${lookupKey}`);
     }
 
+    const subscriptionData: Stripe.Checkout.SessionCreateParams['subscription_data'] = {
+      metadata: { userId: user.id, plan },
+    };
+
+    // Add trial period if requested (Pro and Premium only, not Starter)
+    if (options?.trial && plan !== 'starter') {
+      subscriptionData.trial_period_days = 14;
+    }
+
     const session = await this.stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
@@ -76,9 +94,7 @@ export class StripeService {
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { userId: user.id, plan },
-      subscription_data: {
-        metadata: { userId: user.id, plan },
-      },
+      subscription_data: subscriptionData,
     });
 
     return { url: session.url! };
@@ -215,10 +231,15 @@ export class StripeService {
       return;
     }
 
-    const plan = subscription.metadata?.plan as 'pro' | 'premium' | undefined;
+    const plan = subscription.metadata?.plan as SubscriptionPlan | undefined;
     if (!plan) return;
 
-    const tier = plan === 'premium' ? 'premium' : 'pro';
+    const tierMap: Record<SubscriptionPlan, 'starter' | 'pro' | 'premium'> = {
+      starter: 'starter',
+      pro: 'pro',
+      premium: 'premium',
+    };
+    const tier = tierMap[plan] ?? 'pro';
     const now = new Date();
 
     await this.prisma.user.update({
@@ -228,21 +249,34 @@ export class StripeService {
         billingCycleStart: now,
         stripeCustomerId: subscription.customer as string,
         stripeSubscriptionId: subscription.id,
+        trialEndsAt: subscription.trial_end
+          ? new Date(subscription.trial_end * 1000)
+          : null,
       },
     });
 
-    // Grant initial credits for premium users
-    if (tier === 'premium') {
-      await this.creditService.addCredits(
-        userId,
-        5,
-        'subscription_grant',
-        'Premium subscription credit grant',
-        { stripeSubscriptionId: subscription.id },
-      );
+    // Grant credits for premium users based on subscription status
+    const creditConfig = CREDIT_GRANTS[plan];
+    if (creditConfig) {
+      const grantAmount = status === 'trialing'
+        ? creditConfig.trialing
+        : creditConfig.active;
+
+      if (grantAmount > 0) {
+        const description = status === 'trialing'
+          ? 'Premium trial credit grant'
+          : 'Premium subscription credit grant';
+        await this.creditService.addCredits(
+          userId,
+          grantAmount,
+          'subscription_grant',
+          description,
+          { stripeSubscriptionId: subscription.id, status },
+        );
+      }
     }
 
-    this.logger.log(`User ${userId} upgraded to ${tier}`);
+    this.logger.log(`User ${userId} upgraded to ${tier} (${status})`);
   }
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {

@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { persistStorage } from '../storage/secureStorage';
 import { api } from '../api/client';
 
-type SubscriptionTier = 'free' | 'pro' | 'premium' | 'sponsored';
+type SubscriptionTier = 'free' | 'starter' | 'pro' | 'premium' | 'sponsored';
 type EffectiveTier = SubscriptionTier | 'admin';
 
 interface TierState {
@@ -14,23 +14,25 @@ interface TierState {
   isSponsored: boolean;
   isTrial: boolean;
   trialEndsAt: string | null;
+  billingCycleStart: string | null;
   creditBalanceUsd: number;
   unlimited: boolean;
 
   fetchTierInfo: () => Promise<void>;
   fetchCreditBalance: () => Promise<void>;
   syncTier: () => Promise<void>;
-  startCheckout: (plan: 'pro' | 'premium') => Promise<string>;
-  startTopUp: (amountUsd: 1 | 5 | 10) => Promise<string>;
+  startCheckout: (plan: 'starter' | 'pro' | 'premium', options?: { trial?: boolean }) => Promise<string>;
+  startTopUp: (amountUsd: 1 | 5 | 10 | 20) => Promise<string>;
   openPortal: () => Promise<string>;
 }
 
 const TIER_RANK: Record<EffectiveTier, number> = {
   free: 0,
-  pro: 1,
-  premium: 2,
-  sponsored: 3,
-  admin: 4,
+  starter: 1,
+  pro: 2,
+  premium: 3,
+  sponsored: 4,
+  admin: 5,
 };
 
 export const useTierStore = create<TierState>()(
@@ -43,6 +45,7 @@ export const useTierStore = create<TierState>()(
       isSponsored: false,
       isTrial: false,
       trialEndsAt: null,
+      billingCycleStart: null,
       creditBalanceUsd: 0,
       unlimited: false,
 
@@ -55,6 +58,7 @@ export const useTierStore = create<TierState>()(
             isSponsored: boolean;
             isTrial: boolean;
             trialEndsAt: string | null;
+            billingCycleStart: string | null;
           }>('/subscription/tier');
           set({
             tier: info.tier,
@@ -63,6 +67,7 @@ export const useTierStore = create<TierState>()(
             isSponsored: info.isSponsored,
             isTrial: info.isTrial,
             trialEndsAt: info.trialEndsAt,
+            billingCycleStart: info.billingCycleStart,
           });
         } catch {
           // Offline or not authenticated — keep cached values
@@ -89,10 +94,11 @@ export const useTierStore = create<TierState>()(
         await get().fetchCreditBalance();
       },
 
-      startCheckout: async (plan) => {
+      startCheckout: async (plan, options) => {
         const baseUrl = window?.location?.origin ?? 'reviewhelm://';
         const result = await api.post<{ url: string }>('/subscription/subscribe', {
           plan,
+          trial: options?.trial,
           successUrl: `${baseUrl}/plans?checkout=success`,
           cancelUrl: `${baseUrl}/plans?checkout=cancelled`,
         });
@@ -127,6 +133,7 @@ export const useTierStore = create<TierState>()(
         isSponsored: state.isSponsored,
         isTrial: state.isTrial,
         trialEndsAt: state.trialEndsAt,
+        billingCycleStart: state.billingCycleStart,
         creditBalanceUsd: state.creditBalanceUsd,
         unlimited: state.unlimited,
       }),

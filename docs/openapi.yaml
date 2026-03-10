@@ -1698,7 +1698,7 @@ paths:
               properties:
                 amountUsd:
                   type: number
-                  enum: [1, 5, 10]
+                  enum: [1, 5, 10, 20]
                 successUrl:
                   type: string
                 cancelUrl:
@@ -1734,11 +1734,14 @@ paths:
               properties:
                 plan:
                   type: string
-                  enum: [pro, premium]
+                  enum: [starter, pro, premium]
                 successUrl:
                   type: string
                 cancelUrl:
                   type: string
+                trial:
+                  type: boolean
+                  description: Request a 2-week free trial (Pro and Premium only)
               required: [plan, successUrl, cancelUrl]
       responses:
         '200':

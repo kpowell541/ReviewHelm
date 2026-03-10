@@ -111,6 +111,7 @@ export default function HomeScreen() {
   const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
 
   const [showAddPR, setShowAddPR] = useState(false);
+  const starterGate = useFeatureGate('starter');
   const learnGate = useFeatureGate('pro');
   const gapsGate = useFeatureGate('pro');
 
@@ -175,8 +176,9 @@ export default function HomeScreen() {
             subtitle="Prep your PR for a smooth merge"
             icon="✨"
             color={colors.polishMode}
-            onPress={() => router.push('/polish/sessions')}
+            onPress={() => starterGate.guardedNavigate('/polish/sessions')}
             isDesktop={isDesktop}
+            locked={!starterGate.allowed}
           />
 
           <ModeCard
@@ -210,13 +212,13 @@ export default function HomeScreen() {
         </View>
 
         <Pressable
-          onPress={() => setShowAddPR(true)}
+          onPress={() => starterGate.allowed ? setShowAddPR(true) : starterGate.guardedNavigate('/pr-tracker')}
           style={({ pressed }) => [
             styles.addPRButton,
             { opacity: pressed ? 0.85 : 1 },
           ]}
         >
-          <Text style={styles.addPRButtonText}>+ Add a PR</Text>
+          <Text style={styles.addPRButtonText}>{starterGate.allowed ? '+ Add a PR' : '🔒 Add a PR'}</Text>
         </Pressable>
 
         <View style={styles.quickLinks}>
@@ -228,9 +230,9 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={styles.quickLink}
-            onPress={() => router.push('/dashboard')}
+            onPress={() => starterGate.allowed ? router.push('/dashboard') : starterGate.guardedNavigate('/dashboard')}
           >
-            <Text style={styles.quickLinkText}>📈 Readiness</Text>
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📈' : '🔒'} Readiness</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
@@ -243,23 +245,23 @@ export default function HomeScreen() {
         <View style={styles.quickLinks}>
           <Pressable
             style={styles.quickLink}
-            onPress={() => router.push('/pr-tracker')}
+            onPress={() => starterGate.allowed ? router.push('/pr-tracker') : starterGate.guardedNavigate('/pr-tracker')}
           >
             <Text style={styles.quickLinkText}>
-              🔀 PRs{activePRCount > 0 ? ` (${activePRCount})` : ''}
+              {starterGate.allowed ? '🔀' : '🔒'} PRs{starterGate.allowed && activePRCount > 0 ? ` (${activePRCount})` : ''}
             </Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
-            onPress={() => router.push('/trends')}
+            onPress={() => starterGate.allowed ? router.push('/trends') : starterGate.guardedNavigate('/trends')}
           >
-            <Text style={styles.quickLinkText}>📊 Trends</Text>
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📊' : '🔒'} Trends</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
-            onPress={() => router.push('/past-reviews')}
+            onPress={() => starterGate.allowed ? router.push('/past-reviews') : starterGate.guardedNavigate('/past-reviews')}
           >
-            <Text style={styles.quickLinkText}>📋 Past PRs</Text>
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📋' : '🔒'} Past PRs</Text>
           </Pressable>
           {dueCount > 0 && (
             <Pressable

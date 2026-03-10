@@ -12,6 +12,7 @@ import { estimateCostUsd, safeNumber } from '../common/usage/cost-estimation';
 import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AppEnv } from '../config/env.schema';
 import { PrismaService } from '../prisma/prisma.service';
+import { TierService } from '../subscription/tier.service';
 import {
   getChecklistBySession,
   getChecklistItemIndex,
@@ -28,13 +29,29 @@ type SessionRecord = Awaited<ReturnType<PrismaService['session']['create']>>;
 
 @Injectable()
 export class SessionsService {
+  private static readonly FREE_SESSION_LIMIT = 5;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService<AppEnv, true>,
+    private readonly tierService: TierService,
   ) {}
 
   async createSession(authUser: AuthenticatedUser, input: CreateSessionDto) {
     const user = await upsertUserFromAuth(this.prisma, authUser);
+
+    // Free tier: enforce active session cap
+    const tierInfo = await this.tierService.getTierInfo(authUser);
+    if (tierInfo.effectiveTier === 'free') {
+      const activeCount = await this.prisma.session.count({
+        where: { userId: user.id, isComplete: false },
+      });
+      if (activeCount >= SessionsService.FREE_SESSION_LIMIT) {
+        throw new BadRequestException(
+          `Free accounts are limited to ${SessionsService.FREE_SESSION_LIMIT} active sessions. Complete or delete a session, or upgrade to Starter for unlimited sessions.`,
+        );
+      }
+    }
 
     // Resolve stackIds from either field
     const stackIds = input.stackIds?.length

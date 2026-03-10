@@ -49,7 +49,7 @@ export class SubscriptionController {
     @Req() req: AuthRequest,
     @Body() body: { amountUsd: number; successUrl: string; cancelUrl: string },
   ) {
-    const allowed = [1, 5, 10];
+    const allowed = [1, 5, 10, 20];
     if (!allowed.includes(body.amountUsd)) {
       throw new HttpException(
         `Top-up amount must be one of: ${allowed.join(', ')}`,
@@ -74,7 +74,7 @@ export class SubscriptionController {
 
     return this.stripeService.createTopUpCheckout(
       req.user,
-      body.amountUsd as 1 | 5 | 10,
+      body.amountUsd as 1 | 5 | 10 | 20,
       body.successUrl,
       body.cancelUrl,
     );
@@ -83,11 +83,11 @@ export class SubscriptionController {
   @Post('subscribe')
   async subscribe(
     @Req() req: AuthRequest,
-    @Body() body: { plan: 'pro' | 'premium'; successUrl: string; cancelUrl: string },
+    @Body() body: { plan: 'starter' | 'pro' | 'premium'; successUrl: string; cancelUrl: string; trial?: boolean },
   ) {
-    if (!['pro', 'premium'].includes(body.plan)) {
+    if (!['starter', 'pro', 'premium'].includes(body.plan)) {
       throw new HttpException(
-        'Plan must be "pro" or "premium"',
+        'Plan must be "starter", "pro", or "premium"',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -104,6 +104,7 @@ export class SubscriptionController {
       body.plan,
       body.successUrl,
       body.cancelUrl,
+      { trial: body.trial },
     );
   }
 

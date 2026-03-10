@@ -11,9 +11,11 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from '../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../common/auth/types';
+import { RequiresTier } from '../common/subscription/requires-tier.decorator';
 import { CreateDiffDto } from './dto/create-diff.dto';
 import { DiffsService } from './diffs.service';
 
+@RequiresTier('starter')
 @Controller('diffs')
 export class DiffsController {
   constructor(private readonly diffsService: DiffsService) {}
