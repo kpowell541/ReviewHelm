@@ -15,6 +15,7 @@ import { CONFIDENCE_EMOJI } from '../src/data/types';
 import type { ConfidenceLevel, ItemConfidenceHistory } from '../src/data/types';
 import { findItemById } from '../src/data/checklistFinder';
 import { FilterChips } from '../src/components/FilterChips';
+import { EmptyState } from '../src/components/EmptyState';
 import { groupByField } from '../src/utils/groupBy';
 
 type GapFilter = 'all' | 'active' | 'due' | 'improving' | 'strong';
@@ -178,10 +179,7 @@ export default function GapsScreen() {
       )}
 
       {isEmpty && (
-        <Text style={styles.empty}>
-          No gaps tracked yet. Complete a review session and rate your
-          confidence on each item to start tracking.
-        </Text>
+        <EmptyState message="No gaps tracked yet. Complete a review session and rate your confidence on each item to start tracking." />
       )}
 
       {/* Grouped gap items */}
@@ -205,9 +203,7 @@ export default function GapsScreen() {
       ))}
 
       {!isEmpty && filteredItems.length === 0 && (
-        <Text style={styles.empty}>
-          No items match this filter.
-        </Text>
+        <EmptyState message="No items match this filter." />
       )}
     </ScrollView>
     </DesktopContainer>
@@ -260,12 +256,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: '600',
     color: '#fff',
-  },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
   },
   section: { marginBottom: spacing['2xl'] },
   sectionTitle: {

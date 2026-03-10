@@ -11,6 +11,7 @@ import { getAllReviewChecklists } from '../src/data/checklistLoader';
 import { getSectionItems } from '../src/data/types';
 import type { ChecklistItem } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
+import { EmptyState } from '../src/components/EmptyState';
 import { ChecklistItemCard } from '../src/components/ChecklistItemCard';
 import { groupByField } from '../src/utils/groupBy';
 
@@ -105,9 +106,7 @@ export default function SearchScreen() {
       ))}
 
       {query.trim().length >= 2 && filtered.length === 0 && (
-        <Text style={styles.empty}>
-          No items match "{query}". Try different keywords.
-        </Text>
+        <EmptyState message={`No items match "${query}". Try different keywords.`} />
       )}
     </ScrollView>
   );
@@ -150,11 +149,5 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
   },
 });

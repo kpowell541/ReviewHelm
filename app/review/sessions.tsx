@@ -13,13 +13,14 @@ import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
 import { getStackInfo } from '../../src/data/checklistRegistry';
 import type { StackId, TrackedPR } from '../../src/data/types';
-import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS } from '../../src/data/types';
+import { PR_ACTIVE_STATUSES } from '../../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
 import { StackLogo } from '../../src/components/StackLogo';
 import { AddPRModal } from '../../src/components/AddPRModal';
-import { ModalShell } from '../../src/components/ModalShell';
+import { PRPickerModal } from '../../src/components/PRPickerModal';
+import { EmptyState } from '../../src/components/EmptyState';
 
 export default function ReviewSessionsScreen() {
   const router = useRouter();
@@ -223,72 +224,21 @@ export default function ReviewSessionsScreen() {
         )}
 
         {allSessions.length === 0 && (
-          <Text style={styles.empty}>
-            No sessions yet. Tap above to start your first review!
-          </Text>
+          <EmptyState message="No sessions yet. Tap above to start your first review!" />
         )}
       </ScrollView>
       </DesktopContainer>
 
       {/* PR Picker Modal — shown when starting a new session */}
-      <ModalShell
+      <PRPickerModal
         visible={showPRPicker}
         onClose={() => setShowPRPicker(false)}
         title="Which PR is this session for?"
-      >
-            {activePRs.length === 0 ? (
-              <View style={styles.emptyPRsContainer}>
-                <Text style={styles.emptyPRs}>
-                  No tracked PRs to review yet.
-                </Text>
-                <Pressable
-                  onPress={() => { setShowPRPicker(false); setShowAddPR(true); }}
-                  style={({ pressed }) => [styles.addPRInlineButton, { opacity: pressed ? 0.85 : 1 }]}
-                >
-                  <Text style={styles.addPRInlineText}>+ Add a PR</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <ScrollView style={styles.prList} showsVerticalScrollIndicator={false}>
-                {activePRs.map((pr) => {
-                  const subtitle = [pr.repo, pr.prNumber ? `#${pr.prNumber}` : null, pr.prAuthor ? `by @${pr.prAuthor}` : null]
-                    .filter(Boolean)
-                    .join(' ');
-                  return (
-                    <Pressable
-                      key={pr.id}
-                      onPress={() => handleSelectPR(pr)}
-                      style={({ pressed }) => [
-                        styles.prPickerCard,
-                        { opacity: pressed ? 0.85 : 1 },
-                      ]}
-                    >
-                      <View style={styles.prPickerInfo}>
-                        <Text style={styles.prPickerTitle} numberOfLines={1}>{pr.title}</Text>
-                        {subtitle ? (
-                          <Text style={styles.prPickerSubtitle} numberOfLines={1}>{subtitle}</Text>
-                        ) : null}
-                      </View>
-                      <View style={styles.prPickerBadges}>
-                        {pr.size && (
-                          <Text style={styles.prSizeBadge}>{PR_SIZE_LABELS[pr.size]}</Text>
-                        )}
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            )}
-
-            <View style={styles.pickerButtons}>
-              <Pressable onPress={handleSkipPR} style={styles.skipButton}>
-                <Text style={styles.skipButtonText}>Skip — no PR</Text>
-              </Pressable>
-              <Pressable onPress={() => setShowPRPicker(false)} style={styles.cancelButton}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </Pressable>
-            </View>
-      </ModalShell>
+        prs={activePRs}
+        onSelectPR={handleSelectPR}
+        onSkip={handleSkipPR}
+        onShowAddPR={() => setShowAddPR(true)}
+      />
 
       {/* Add PR Modal */}
       <AddPRModal
@@ -380,99 +330,5 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
     marginTop: spacing.xs,
-  },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
-  },
-
-  // PR Picker
-  prList: { maxHeight: 300 },
-  emptyPRsContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  emptyPRs: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  addPRInlineButton: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-  },
-  addPRInlineText: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  prPickerCard: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  prPickerInfo: { flex: 1 },
-  prPickerTitle: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  prPickerSubtitle: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  prPickerBadges: {
-    flexDirection: 'row',
-    gap: 4,
-    marginLeft: spacing.sm,
-  },
-  prSizeBadge: {
-    fontSize: fontSizes.xs,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.reviewMode + '25',
-    color: colors.reviewMode,
-    overflow: 'hidden',
-  },
-  pickerButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  skipButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  skipButtonText: {
-    fontSize: fontSizes.md,
-    color: colors.textSecondary,
-  },
-
-  cancelButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-  },
-  cancelButtonText: {
-    fontSize: fontSizes.md,
-    color: colors.textSecondary,
   },
 });

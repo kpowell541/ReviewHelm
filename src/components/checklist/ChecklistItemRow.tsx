@@ -16,15 +16,8 @@ import type {
   ConfidenceLevel,
   Verdict,
 } from '../../data/types';
-import { CONFIDENCE_EMOJI, CONFIDENCE_LABELS } from '../../data/types';
+import { CONFIDENCE_EMOJI, CONFIDENCE_LABELS, SEVERITY_COLORS, CONFIDENCE_COLORS } from '../../data/types';
 import { colors, spacing, fontSizes, radius } from '../../theme';
-
-const SEVERITY_COLORS: Record<string, string> = {
-  blocker: colors.blocker,
-  major: colors.major,
-  minor: colors.minor,
-  nit: colors.nit,
-};
 
 const SEVERITY_SHORT: Record<string, string> = {
   blocker: 'BLK',
@@ -40,14 +33,6 @@ const VERDICT_OPTIONS: { value: Verdict; label: string; color: string }[] = [
 ];
 
 const CONFIDENCE_LEVELS: ConfidenceLevel[] = [1, 2, 3, 4, 5];
-
-const CONFIDENCE_COLORS: Record<ConfidenceLevel, string> = {
-  1: colors.confidence1,
-  2: colors.confidence2,
-  3: colors.confidence3,
-  4: colors.confidence4,
-  5: colors.confidence5,
-};
 
 interface Props {
   item: ChecklistItem;

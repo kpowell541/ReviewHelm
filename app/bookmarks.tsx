@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { EmptyState } from '../src/components/EmptyState';
 import { useRouter } from 'expo-router';
 import { useBookmarkStore } from '../src/store/useBookmarkStore';
 import { findItemById } from '../src/data/checklistFinder';
@@ -25,9 +26,7 @@ export default function BookmarksScreen() {
       <Text style={styles.title}>Bookmarks</Text>
 
       {items.length === 0 && (
-        <Text style={styles.empty}>
-          No bookmarks yet. Bookmark items from any checklist to save them here.
-        </Text>
+        <EmptyState message="No bookmarks yet. Bookmark items from any checklist to save them here." />
       )}
 
       {groups.map(([stackTitle, entries]) => (
@@ -61,12 +60,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: spacing.lg,
-  },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
   },
   section: { marginBottom: spacing['2xl'] },
   sectionTitle: {

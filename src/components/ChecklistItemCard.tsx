@@ -1,14 +1,7 @@
 import React from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { colors, spacing, fontSizes, radius } from '../theme';
-import { Severity } from '../data/types';
-
-const SEVERITY_COLORS: Record<Severity, string> = {
-  blocker: colors.blocker,
-  major: colors.major,
-  minor: colors.minor,
-  nit: colors.nit,
-};
+import { SEVERITY_COLORS, type Severity } from '../data/types';
 
 interface ChecklistItemCardProps {
   text: string;

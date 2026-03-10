@@ -7,6 +7,7 @@ import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { PR_SIZE_LABELS } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
+import { EmptyState } from '../src/components/EmptyState';
 import { FilterChips } from '../src/components/FilterChips';
 import { useResponsive } from '../src/hooks/useResponsive';
 
@@ -152,9 +153,7 @@ export default function PastReviewsScreen() {
         })}
 
         {resolvedPRs.length === 0 && (
-          <Text style={styles.empty}>
-            No past reviews found for this filter.
-          </Text>
+          <EmptyState message="No past reviews found for this filter." />
         )}
       </ScrollView>
       </DesktopContainer>
@@ -272,11 +271,5 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     fontStyle: 'italic',
-  },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
   },
 });

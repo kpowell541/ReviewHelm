@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { crossAlert } from '../src/utils/alert';
+import { isToday } from '../src/utils/dateUtils';
 import type {
   PRStatus,
   PRPriority,
@@ -18,21 +19,12 @@ import type {
   AcceptanceOutcome,
   ReviewOutcome,
 } from '../src/data/types';
-import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES } from '../src/data/types';
+import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { AddPRModal } from '../src/components/AddPRModal';
 import { FilterChips } from '../src/components/FilterChips';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useResponsive } from '../src/hooks/useResponsive';
-
-const STATUS_COLORS: Record<PRStatus, string> = {
-  'needs-review': colors.warning,
-  'in-review': colors.reviewMode,
-  'changes-requested': colors.needsAttention,
-  approved: colors.looksGood,
-  merged: colors.looksGood,
-  closed: colors.textMuted,
-};
 
 const STATUS_FILTERS: { key: PRStatus | 'all' | 'resolved'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -42,14 +34,6 @@ const STATUS_FILTERS: { key: PRStatus | 'all' | 'resolved'; label: string }[] = 
   { key: 'approved', label: 'Approved' },
   { key: 'resolved', label: 'Resolved' },
 ];
-
-const PRIORITY_COLORS: Record<PRPriority, string> = {
-  critical: colors.error,
-  high: colors.needsAttention,
-  medium: colors.warning,
-  low: colors.textSecondary,
-  routine: colors.textMuted,
-};
 
 export default function PRTrackerScreen() {
   const router = useRouter();
@@ -105,7 +89,6 @@ export default function PRTrackerScreen() {
     const small = reviewerPRs.filter((pr) => pr.size === 'small');
     const medium = reviewerPRs.filter((pr) => pr.size === 'medium');
     const large = reviewerPRs.filter((pr) => pr.size === 'large');
-    const isToday = (d: string) => new Date(d).toDateString() === new Date().toDateString();
     const smallReviewed = small.filter((pr) => pr.lastReviewedAt && isToday(pr.lastReviewedAt)).length;
     const mediumReviewed = medium.filter((pr) => pr.lastReviewedAt && isToday(pr.lastReviewedAt)).length;
     const largeReviewed = large.filter((pr) => pr.lastReviewedAt && isToday(pr.lastReviewedAt)).length;
@@ -686,16 +669,6 @@ export default function PRTrackerScreen() {
         initialValues={editInitialValues}
       />
     </SafeAreaView>
-  );
-}
-
-function isToday(dateStr: string): boolean {
-  const d = new Date(dateStr);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
   );
 }
 

@@ -12,7 +12,9 @@ import { useSessionStore } from '../../src/store/useSessionStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
 import type { TrackedPR, StackId } from '../../src/data/types';
 import { StackLogo } from '../../src/components/StackLogo';
-import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS } from '../../src/data/types';
+import { PR_ACTIVE_STATUSES } from '../../src/data/types';
+import { PRPickerModal } from '../../src/components/PRPickerModal';
+import { EmptyState } from '../../src/components/EmptyState';
 import { STACKS } from '../../src/data/checklistRegistry';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
@@ -194,68 +196,23 @@ export default function PolishSessionsScreen() {
         )}
 
         {sessions.length === 0 && (
-          <Text style={styles.empty}>
-            No sessions yet. Start polishing your next PR!
-          </Text>
+          <EmptyState message="No sessions yet. Start polishing your next PR!" />
         )}
       </ScrollView>
       </DesktopContainer>
 
       {/* PR Picker Modal */}
-      <ModalShell
+      <PRPickerModal
         visible={showPRPicker}
         onClose={() => setShowPRPicker(false)}
         title="Which PR are you polishing?"
-      >
-        {authorPRs.length === 0 ? (
-          <View style={styles.emptyPRsContainer}>
-            <Text style={styles.emptyPRs}>No PRs tracked as yours yet.</Text>
-            <Pressable
-              onPress={() => { setShowPRPicker(false); setShowAddPR(true); }}
-              style={({ pressed }) => [styles.addPRInlineButton, { opacity: pressed ? 0.85 : 1 }]}
-            >
-              <Text style={styles.addPRInlineText}>+ Add My PR</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <ScrollView style={styles.prList} showsVerticalScrollIndicator={false}>
-            {authorPRs.map((pr) => {
-              const subtitle = [pr.repo, pr.prNumber ? `#${pr.prNumber}` : null]
-                .filter(Boolean)
-                .join(' ');
-              return (
-                <Pressable
-                  key={pr.id}
-                  onPress={() => handleSelectPR(pr)}
-                  style={({ pressed }) => [
-                    styles.prPickerCard,
-                    { opacity: pressed ? 0.85 : 1 },
-                  ]}
-                >
-                  <View style={styles.prPickerInfo}>
-                    <Text style={styles.prPickerTitle} numberOfLines={1}>{pr.title}</Text>
-                    {subtitle ? (
-                      <Text style={styles.prPickerSubtitle} numberOfLines={1}>{subtitle}</Text>
-                    ) : null}
-                  </View>
-                  {pr.size && (
-                    <Text style={styles.prSizeBadge}>{PR_SIZE_LABELS[pr.size]}</Text>
-                  )}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        )}
-
-        <View style={styles.pickerButtons}>
-          <Pressable onPress={handleSkipPR} style={styles.skipButton}>
-            <Text style={styles.skipButtonText}>Skip — no PR</Text>
-          </Pressable>
-          <Pressable onPress={() => setShowPRPicker(false)} style={styles.cancelButton}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </Pressable>
-        </View>
-      </ModalShell>
+        prs={authorPRs}
+        onSelectPR={handleSelectPR}
+        onSkip={handleSkipPR}
+        onShowAddPR={() => setShowAddPR(true)}
+        addLabel="+ Add My PR"
+        accentColor={colors.polishMode}
+      />
 
       {/* Stack Picker Modal */}
       <ModalShell
@@ -397,68 +354,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  empty: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing['4xl'],
-  },
 
-  // PR Picker
+  // Stack Picker shared
   prList: { maxHeight: 300 },
-  emptyPRsContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  emptyPRs: {
-    fontSize: fontSizes.md,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  addPRInlineButton: {
-    backgroundColor: colors.polishMode,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-  },
-  addPRInlineText: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  prPickerCard: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  prPickerInfo: { flex: 1 },
-  prPickerTitle: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  prPickerSubtitle: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  prSizeBadge: {
-    fontSize: fontSizes.xs,
-    fontWeight: '600',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.polishMode + '25',
-    color: colors.polishMode,
-    overflow: 'hidden',
-    marginLeft: spacing.sm,
-  },
   pickerButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
