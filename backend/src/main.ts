@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { webcrypto, randomUUID } from 'node:crypto';
 
 // Polyfill globalThis.crypto for jose ES256 verification on Node < 20
+// trigger rebuild
 if (typeof globalThis.crypto === 'undefined') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (globalThis as any).crypto = webcrypto;
