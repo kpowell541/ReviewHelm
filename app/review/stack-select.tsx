@@ -11,6 +11,7 @@ import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
 import { StackLogo } from '../../src/components/StackLogo';
+import { BottomActionBar } from '../../src/components/BottomActionBar';
 
 export default function StackSelectScreen() {
   const router = useRouter();
@@ -215,35 +216,19 @@ export default function StackSelectScreen() {
       </DesktopContainer>
 
       {selectedStacks.length > 0 && (
-        <View style={styles.bottomBar}>
-          <Pressable
-            onPress={handleContinue}
-            style={({ pressed }) => [
-              styles.continueButton,
-              { opacity: pressed ? 0.85 : 1 },
-            ]}
-          >
-            <Text style={styles.continueText}>
-              Continue with {selectedStacks.length} stack
-              {selectedStacks.length > 1 ? 's' : ''}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              const stackParam = selectedStacks.length === 1
-                ? `stack=${selectedStacks[0]}`
-                : `stacks=${selectedStacks.join(',')}`;
-              router.push(
-                `/review/section-select?${stackParam}${repoParam}` as '/review/section-select',
-              );
-            }}
-            style={styles.sectionPickerLink}
-          >
-            <Text style={styles.sectionPickerText}>
-              Or pick specific sections...
-            </Text>
-          </Pressable>
-        </View>
+        <BottomActionBar
+          label={`Continue with ${selectedStacks.length} stack${selectedStacks.length > 1 ? 's' : ''}`}
+          onPress={handleContinue}
+          secondaryLabel="Or pick specific sections..."
+          onSecondaryPress={() => {
+            const stackParam = selectedStacks.length === 1
+              ? `stack=${selectedStacks[0]}`
+              : `stacks=${selectedStacks.join(',')}`;
+            router.push(
+              `/review/section-select?${stackParam}${repoParam}` as '/review/section-select',
+            );
+          }}
+        />
       )}
     </View>
   );
@@ -318,37 +303,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: '600',
     color: colors.primary,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.bgCard,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    padding: spacing.lg,
-    paddingBottom: spacing['2xl'],
-  },
-  continueButton: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  continueText: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  sectionPickerLink: {
-    marginTop: spacing.sm,
-    alignItems: 'center',
-  },
-  sectionPickerText: {
-    fontSize: fontSizes.sm,
-    color: colors.textSecondary,
-    textDecorationLine: 'underline',
   },
   templateCard: {
     backgroundColor: colors.bgCard,

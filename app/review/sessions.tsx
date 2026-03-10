@@ -4,22 +4,22 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
-  Modal,
-  TextInput,
 } from 'react-native';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { crossAlert } from '../../src/utils/alert';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
 import { getStackInfo } from '../../src/data/checklistRegistry';
-import type { StackId, PRRole, PRSize, PRPriority, CIPassing, PRDependency, TrackedPR } from '../../src/data/types';
-import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER } from '../../src/data/types';
+import type { StackId, TrackedPR } from '../../src/data/types';
+import { PR_ACTIVE_STATUSES, PR_SIZE_LABELS } from '../../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
 import { StackLogo } from '../../src/components/StackLogo';
+import { AddPRModal } from '../../src/components/AddPRModal';
+import { ModalShell } from '../../src/components/ModalShell';
 
 export default function ReviewSessionsScreen() {
   const router = useRouter();
@@ -61,19 +61,6 @@ export default function ReviewSessionsScreen() {
 
   const [showPRPicker, setShowPRPicker] = useState(false);
   const [showAddPR, setShowAddPR] = useState(false);
-  const [addForm, setAddForm] = useState({
-    title: '',
-    url: '',
-    role: 'reviewer' as PRRole,
-    size: 'medium' as PRSize,
-    priority: 'medium' as PRPriority,
-    repo: '',
-    prNumber: '',
-    prAuthor: '',
-    dependencies: [] as PRDependency[],
-    ciPassing: 'unknown' as CIPassing,
-  });
-  const [depForm, setDepForm] = useState({ repo: '', prNumber: '', title: '' });
 
   const activePRs = useMemo(() => {
     return Object.values(prs)
@@ -125,25 +112,6 @@ export default function ReviewSessionsScreen() {
     if (repo) saveRepoConfig(repo, stackIds, selectedSections);
     router.push(`/review/${sessionId}`);
   };
-
-  const handleSaveNewPR = useCallback(() => {
-    if (!addForm.title.trim()) return;
-    addPR({
-      title: addForm.title.trim(),
-      url: addForm.url.trim() || undefined,
-      role: addForm.role,
-      priority: addForm.priority,
-      size: addForm.size,
-      repo: addForm.repo.trim() || undefined,
-      prNumber: addForm.prNumber ? parseInt(addForm.prNumber, 10) || undefined : undefined,
-      prAuthor: addForm.role === 'author' ? 'Me' : (addForm.prAuthor.trim() || undefined),
-      dependencies: addForm.dependencies.length > 0 ? addForm.dependencies : undefined,
-      ciPassing: addForm.ciPassing !== 'unknown' ? addForm.ciPassing : undefined,
-    });
-    setAddForm({ title: '', url: '', role: 'reviewer', size: 'medium', priority: 'medium', repo: '', prNumber: '', prAuthor: '', dependencies: [], ciPassing: 'unknown' });
-    setDepForm({ repo: '', prNumber: '', title: '' });
-    setShowAddPR(false);
-  }, [addForm, addPR]);
 
   const handleDelete = (sessionId: string, title: string) => {
     crossAlert('Delete Session', `Delete "${title}"?`, [
@@ -263,19 +231,11 @@ export default function ReviewSessionsScreen() {
       </DesktopContainer>
 
       {/* PR Picker Modal — shown when starting a new session */}
-      <Modal
+      <ModalShell
         visible={showPRPicker}
-        transparent
-        animationType={isDesktop ? 'fade' : 'slide'}
-        onRequestClose={() => setShowPRPicker(false)}
+        onClose={() => setShowPRPicker(false)}
+        title="Which PR is this session for?"
       >
-        <Pressable
-          style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}
-          onPress={() => setShowPRPicker(false)}
-        >
-          <Pressable style={[styles.modalCard, isDesktop && styles.modalCardDesktop]} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Which PR is this session for?</Text>
-
             {activePRs.length === 0 ? (
               <View style={styles.emptyPRsContainer}>
                 <Text style={styles.emptyPRs}>
@@ -328,210 +288,16 @@ export default function ReviewSessionsScreen() {
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </Pressable>
             </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      </ModalShell>
 
       {/* Add PR Modal */}
-      <Modal
+      <AddPRModal
         visible={showAddPR}
-        transparent
-        animationType={isDesktop ? 'fade' : 'slide'}
-        onRequestClose={() => setShowAddPR(false)}
-      >
-        <Pressable
-          style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}
-          onPress={() => setShowAddPR(false)}
-        >
-          <Pressable style={[styles.modalCard, isDesktop && styles.modalCardDesktop]} onPress={(e) => e.stopPropagation()}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalTitle}>Add a PR</Text>
-
-              <Text style={styles.fieldLabel}>Role</Text>
-              <View style={styles.chipRow}>
-                {(['reviewer', 'author'] as PRRole[]).map((r) => (
-                  <Pressable
-                    key={r}
-                    style={[styles.chip, addForm.role === r && styles.chipActive]}
-                    onPress={() => setAddForm((f) => ({
-                      ...f,
-                      role: r,
-                      prAuthor: r === 'author' ? 'Me' : '',
-                    }))}
-                  >
-                    <Text style={[styles.chipText, addForm.role === r && styles.chipTextActive]}>
-                      {r === 'author' ? 'My PR' : 'Reviewing'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.fieldLabel}>Title *</Text>
-              <TextInput
-                style={styles.input}
-                value={addForm.title}
-                onChangeText={(v) => setAddForm((f) => ({ ...f, title: v }))}
-                placeholder="PR title"
-                placeholderTextColor={colors.textMuted}
-                autoFocus
-              />
-
-              <Text style={styles.fieldLabel}>URL</Text>
-              <TextInput
-                style={styles.input}
-                value={addForm.url}
-                onChangeText={(v) => setAddForm((f) => ({ ...f, url: v }))}
-                placeholder="https://github.com/..."
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-                keyboardType="url"
-              />
-
-              <Text style={styles.fieldLabel}>Repo</Text>
-              <TextInput
-                style={styles.input}
-                value={addForm.repo}
-                onChangeText={(v) => setAddForm((f) => ({ ...f, repo: v }))}
-                placeholder="org/repo-name"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-              />
-
-              <View style={styles.fieldRowSplit}>
-                <View style={styles.fieldHalf}>
-                  <Text style={styles.fieldLabel}>PR #</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={addForm.prNumber}
-                    onChangeText={(v) => setAddForm((f) => ({ ...f, prNumber: v }))}
-                    placeholder="1234"
-                    placeholderTextColor={colors.textMuted}
-                    keyboardType="number-pad"
-                  />
-                </View>
-                {addForm.role === 'reviewer' && (
-                  <View style={styles.fieldHalf}>
-                    <Text style={styles.fieldLabel}>Author</Text>
-                    <TextInput
-                      style={styles.input}
-                      value={addForm.prAuthor}
-                      onChangeText={(v) => setAddForm((f) => ({ ...f, prAuthor: v }))}
-                      placeholder="username"
-                      placeholderTextColor={colors.textMuted}
-                      autoCapitalize="none"
-                    />
-                  </View>
-                )}
-              </View>
-
-              <Text style={styles.fieldLabel}>Size</Text>
-              <View style={styles.chipRow}>
-                {(['small', 'medium', 'large'] as PRSize[]).map((s) => (
-                  <Pressable
-                    key={s}
-                    style={[styles.chip, addForm.size === s && styles.chipActive]}
-                    onPress={() => setAddForm((f) => ({ ...f, size: s }))}
-                  >
-                    <Text style={[styles.chipText, addForm.size === s && styles.chipTextActive]}>
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.fieldLabel}>Priority</Text>
-              <View style={styles.chipRow}>
-                {PR_PRIORITY_ORDER.map((p) => (
-                  <Pressable
-                    key={p}
-                    style={[styles.chip, addForm.priority === p && styles.chipActive]}
-                    onPress={() => setAddForm((f) => ({ ...f, priority: p }))}
-                  >
-                    <Text style={[styles.chipText, addForm.priority === p && styles.chipTextActive]}>
-                      {PR_PRIORITY_LABELS[p]}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.fieldLabel}>Build Passing?</Text>
-              <View style={styles.chipRow}>
-                {(['yes', 'no', 'unknown'] as CIPassing[]).map((v) => (
-                  <Pressable
-                    key={v}
-                    style={[styles.chip, addForm.ciPassing === v && styles.chipActive]}
-                    onPress={() => setAddForm((f) => ({ ...f, ciPassing: v }))}
-                  >
-                    <Text style={[styles.chipText, addForm.ciPassing === v && styles.chipTextActive]}>
-                      {v === 'yes' ? 'Yes' : v === 'no' ? 'No' : 'Unknown'}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Text style={styles.fieldLabel}>Dependencies</Text>
-              {addForm.dependencies.map((dep, idx) => (
-                <View key={idx} style={styles.depRow}>
-                  <Text style={styles.depText}>
-                    {dep.repo} #{dep.prNumber}{dep.title ? ` — ${dep.title}` : ''}
-                  </Text>
-                  <Pressable onPress={() => setAddForm((f) => ({
-                    ...f,
-                    dependencies: f.dependencies.filter((_, i) => i !== idx),
-                  }))}>
-                    <Text style={styles.depRemove}>X</Text>
-                  </Pressable>
-                </View>
-              ))}
-              <View style={styles.depInputRow}>
-                <TextInput
-                  style={[styles.input, { flex: 2 }]}
-                  value={depForm.repo}
-                  onChangeText={(v) => setDepForm((f) => ({ ...f, repo: v }))}
-                  placeholder="org/repo"
-                  placeholderTextColor={colors.textMuted}
-                  autoCapitalize="none"
-                />
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={depForm.prNumber}
-                  onChangeText={(v) => setDepForm((f) => ({ ...f, prNumber: v }))}
-                  placeholder="PR #"
-                  placeholderTextColor={colors.textMuted}
-                  keyboardType="number-pad"
-                />
-                <Pressable
-                  style={[styles.depAddBtn, (!depForm.repo.trim() || !depForm.prNumber.trim()) && { opacity: 0.4 }]}
-                  onPress={() => {
-                    if (!depForm.repo.trim() || !depForm.prNumber.trim()) return;
-                    const num = parseInt(depForm.prNumber, 10);
-                    if (!num) return;
-                    setAddForm((f) => ({
-                      ...f,
-                      dependencies: [...f.dependencies, { repo: depForm.repo.trim(), prNumber: num, title: depForm.title.trim() || undefined }],
-                    }));
-                    setDepForm({ repo: '', prNumber: '', title: '' });
-                  }}
-                >
-                  <Text style={styles.depAddBtnText}>+</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.modalButtons}>
-                <Pressable onPress={() => setShowAddPR(false)} style={styles.cancelButton}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleSaveNewPR}
-                  style={[styles.saveButton, !addForm.title.trim() && { opacity: 0.4 }]}
-                >
-                  <Text style={styles.saveButtonText}>Add PR</Text>
-                </Pressable>
-              </View>
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        onClose={() => setShowAddPR(false)}
+        onSave={(data) => {
+          addPR(data);
+        }}
+      />
     </View>
   );
 }
@@ -622,35 +388,6 @@ const styles = StyleSheet.create({
     marginTop: spacing['4xl'],
   },
 
-  // Modals
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalOverlayDesktop: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalCard: {
-    backgroundColor: colors.bgCard,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.xl,
-    maxHeight: '85%',
-  },
-  modalCardDesktop: {
-    width: 520,
-    maxHeight: '80%',
-    borderRadius: radius.xl,
-  },
-  modalTitle: {
-    fontSize: fontSizes.xl,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-
   // PR Picker
   prList: { maxHeight: 300 },
   emptyPRsContainer: {
@@ -729,73 +466,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
 
-  // Add PR form
-  fieldLabel: {
-    fontSize: fontSizes.sm,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
-  },
-  input: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    fontSize: fontSizes.md,
-    color: colors.textPrimary,
-  },
-  fieldRowSplit: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  fieldHalf: { flex: 1 },
-  depRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  depText: { fontSize: fontSizes.sm, color: colors.textPrimary, flex: 1 },
-  depRemove: { fontSize: fontSizes.sm, color: colors.error, fontWeight: '600', paddingHorizontal: spacing.sm },
-  depInputRow: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },
-  depAddBtn: {
-    width: 36, height: 36, borderRadius: radius.md,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
-  },
-  depAddBtnText: { fontSize: fontSizes.lg, fontWeight: '700', color: '#fff' },
-  chipRow: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flexWrap: 'wrap',
-  },
-  chip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  chipActive: {
-    backgroundColor: colors.primary + '25',
-    borderColor: colors.primary,
-  },
-  chipText: { fontSize: fontSizes.sm, color: colors.textSecondary },
-  chipTextActive: { color: colors.primary, fontWeight: '600' },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.sm,
-    marginTop: spacing.xl,
-    paddingBottom: spacing.lg,
-  },
   cancelButton: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
@@ -804,16 +474,5 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: fontSizes.md,
     color: colors.textSecondary,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
-  },
-  saveButtonText: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: '#fff',
   },
 });

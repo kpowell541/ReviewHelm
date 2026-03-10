@@ -7,6 +7,7 @@ import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { PR_SIZE_LABELS } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
+import { FilterChips } from '../src/components/FilterChips';
 import { useResponsive } from '../src/hooks/useResponsive';
 
 type TimeFilter = 'all' | '30d' | '90d' | '6m' | '1y';
@@ -83,44 +84,14 @@ export default function PastReviewsScreen() {
         <Text style={styles.subtitle}>Browse your completed PR reviews</Text>
 
         {/* Time filter */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterRow}
-          contentContainerStyle={styles.filterContent}
-        >
-          {TIME_FILTERS.map((f) => (
-            <Pressable
-              key={f.key}
-              style={[styles.filterChip, timeFilter === f.key && styles.filterChipActive]}
-              onPress={() => setTimeFilter(f.key)}
-            >
-              <Text style={[styles.filterText, timeFilter === f.key && styles.filterTextActive]}>
-                {f.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={styles.filterRow}>
+          <FilterChips chips={TIME_FILTERS} selected={timeFilter} onSelect={setTimeFilter} />
+        </View>
 
         {/* Role filter */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterRow}
-          contentContainerStyle={styles.filterContent}
-        >
-          {ROLE_FILTERS.map((f) => (
-            <Pressable
-              key={f.key}
-              style={[styles.filterChip, roleFilter === f.key && styles.filterChipActive]}
-              onPress={() => setRoleFilter(f.key)}
-            >
-              <Text style={[styles.filterText, roleFilter === f.key && styles.filterTextActive]}>
-                {f.label}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={styles.filterRow}>
+          <FilterChips chips={ROLE_FILTERS} selected={roleFilter} onSelect={setRoleFilter} />
+        </View>
 
         <Text style={styles.resultCount}>
           {resolvedPRs.length} PR{resolvedPRs.length !== 1 ? 's' : ''}
@@ -207,21 +178,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   filterRow: { marginBottom: spacing.sm },
-  filterContent: { gap: spacing.xs },
-  filterChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  filterChipActive: {
-    backgroundColor: colors.primary + '25',
-    borderColor: colors.primary,
-  },
-  filterText: { fontSize: fontSizes.sm, color: colors.textSecondary },
-  filterTextActive: { color: colors.primary, fontWeight: '600' },
   resultCount: {
     fontSize: fontSizes.sm,
     color: colors.textMuted,

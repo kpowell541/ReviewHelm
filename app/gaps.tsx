@@ -14,6 +14,8 @@ import { useResponsive } from '../src/hooks/useResponsive';
 import { CONFIDENCE_EMOJI } from '../src/data/types';
 import type { ConfidenceLevel, ItemConfidenceHistory } from '../src/data/types';
 import { findItemById } from '../src/data/checklistFinder';
+import { FilterChips } from '../src/components/FilterChips';
+import { groupByField } from '../src/utils/groupBy';
 
 type GapFilter = 'all' | 'active' | 'due' | 'improving' | 'strong';
 
@@ -112,16 +114,6 @@ export default function GapsScreen() {
     [weakest],
   );
 
-  // Group items by stack for display
-  const groupByStack = (items: ItemConfidenceHistory[]) => {
-    const groups: Record<string, ItemConfidenceHistory[]> = {};
-    for (const item of items) {
-      if (!groups[item.stackId]) groups[item.stackId] = [];
-      groups[item.stackId].push(item);
-    }
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  };
-
   const filteredItems = useMemo(() => {
     switch (filter) {
       case 'active':
@@ -138,7 +130,7 @@ export default function GapsScreen() {
   }, [filter, activeGaps, dueItems, improving, strong, weakest]);
 
   const grouped = useMemo(
-    () => groupByStack(filteredItems),
+    () => groupByField(filteredItems, (item) => item.stackId),
     [filteredItems],
   );
 
@@ -177,35 +169,9 @@ export default function GapsScreen() {
 
       {/* Filter chips */}
       {!isEmpty && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filterScroll}
-          contentContainerStyle={styles.filterRow}
-        >
-          {FILTER_OPTIONS.map((opt) => {
-            const isSelected = filter === opt.key;
-            return (
-              <Pressable
-                key={opt.key}
-                onPress={() => setFilter(opt.key)}
-                style={[
-                  styles.filterChip,
-                  isSelected && styles.filterChipSelected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    isSelected && styles.filterChipTextSelected,
-                  ]}
-                >
-                  {opt.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <View style={styles.filterScroll}>
+          <FilterChips chips={FILTER_OPTIONS} selected={filter} onSelect={setFilter} />
+        </View>
       )}
 
       {/* Review Due Items button */}
@@ -291,29 +257,6 @@ const styles = StyleSheet.create({
   },
   filterScroll: {
     marginBottom: spacing.lg,
-  },
-  filterRow: {
-    gap: spacing.xs,
-  },
-  filterChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.bgCard,
-  },
-  filterChipSelected: {
-    backgroundColor: `${colors.primary}18`,
-    borderColor: colors.primary,
-  },
-  filterChipText: {
-    fontSize: fontSizes.sm,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  filterChipTextSelected: {
-    color: colors.primary,
   },
   reviewDueButton: {
     backgroundColor: colors.primary,
