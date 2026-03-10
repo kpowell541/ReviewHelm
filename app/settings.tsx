@@ -158,9 +158,14 @@ export default function SettingsScreen() {
   const handleApiKeySave = useCallback(async () => {
     if (!apiKeyInput.trim()) return;
     setSavingApiKey(true);
-    await setApiKey(apiKeyInput);
-    setApiKeyInput('');
-    setSavingApiKey(false);
+    try {
+      await setApiKey(apiKeyInput);
+      setApiKeyInput('');
+    } catch (err) {
+      crossAlert('Failed to save key', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSavingApiKey(false);
+    }
   }, [apiKeyInput, setApiKey]);
 
   const handleApiKeyClear = useCallback(async () => {
@@ -193,9 +198,14 @@ export default function SettingsScreen() {
   const handleAdminApiKeySave = useCallback(async () => {
     if (!adminApiKeyInput.trim()) return;
     setSavingAdminApiKey(true);
-    await setAdminApiKey(adminApiKeyInput);
-    setAdminApiKeyInput('');
-    setSavingAdminApiKey(false);
+    try {
+      await setAdminApiKey(adminApiKeyInput);
+      setAdminApiKeyInput('');
+    } catch (err) {
+      crossAlert('Failed to save admin key', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSavingAdminApiKey(false);
+    }
   }, [adminApiKeyInput, setAdminApiKey]);
 
   const handleAdminApiKeyClear = useCallback(async () => {
@@ -205,19 +215,12 @@ export default function SettingsScreen() {
     setSavingAdminApiKey(false);
   }, [clearAdminApiKey]);
 
-  const handleApiKeyChange = useCallback(
-    (value: string) => {
-      setSavingApiKey(true);
-      setApiKeyInput(value);
-      setTimeout(() => setSavingApiKey(false), 120);
-    },
-    [],
-  );
+  const handleApiKeyChange = useCallback((value: string) => {
+    setApiKeyInput(value);
+  }, []);
 
   const handleAdminApiKeyChange = useCallback((value: string) => {
-    setSavingAdminApiKey(true);
     setAdminApiKeyInput(value);
-    setTimeout(() => setSavingAdminApiKey(false), 120);
   }, []);
 
   const handleCheckUpdates = useCallback(async () => {
@@ -595,7 +598,7 @@ export default function SettingsScreen() {
         <Text style={styles.subtle}>
           Status: {hasApiKey ? 'Key is configured' : 'No key saved'}
         </Text>
-        {savingApiKey && <Text style={styles.subtle}>Updating key input...</Text>}
+        {savingApiKey && <Text style={styles.subtle}>Saving...</Text>}
       </View>
 
       <View style={styles.card}>

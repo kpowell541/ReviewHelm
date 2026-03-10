@@ -148,12 +148,8 @@ export const usePreferencesStore = create<PreferencesState>()(
           set({ apiKeyToken: null, hasApiKey: false });
           return;
         }
-        try {
-          const token = await saveTokenizedKey(USER_KEY_INDEX, trimmed);
-          set({ apiKeyToken: token, hasApiKey: true });
-        } catch {
-          set({ apiKeyToken: null, hasApiKey: false });
-        }
+        const token = await saveTokenizedKey(USER_KEY_INDEX, trimmed);
+        set({ apiKeyToken: token, hasApiKey: true });
       },
 
       clearApiKey: async () => {
@@ -186,12 +182,8 @@ export const usePreferencesStore = create<PreferencesState>()(
           set({ adminApiKeyToken: null, hasAdminApiKey: false });
           return;
         }
-        try {
-          const token = await saveTokenizedKey(ADMIN_KEY_INDEX, trimmed);
-          set({ adminApiKeyToken: token, hasAdminApiKey: true });
-        } catch {
-          set({ adminApiKeyToken: null, hasAdminApiKey: false });
-        }
+        const token = await saveTokenizedKey(ADMIN_KEY_INDEX, trimmed);
+        set({ adminApiKeyToken: token, hasAdminApiKey: true });
       },
 
       clearAdminApiKey: async () => {

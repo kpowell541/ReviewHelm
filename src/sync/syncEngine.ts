@@ -136,7 +136,7 @@ async function pullSessions(): Promise<{ pulled: number; errors: string[] }> {
   return { pulled, errors };
 }
 
-async function syncPreferences(): Promise<void> {
+async function syncPreferences(): Promise<{ pushed: number; pulled: number }> {
   try {
     const remote = await api.get<{
       aiModel: string;
@@ -155,21 +155,27 @@ async function syncPreferences(): Promise<void> {
       codeBlockTheme: remote.codeBlockTheme as any,
       autoExportPdf: remote.autoExportPdf,
     });
+    return { pushed: 0, pulled: 1 };
   } catch {
     // If preferences don't exist remotely, push local
     const local = usePreferencesStore.getState();
-    await api.patch('/me/preferences', {
-      aiModel: local.aiModel,
-      defaultSeverityFilter: local.defaultSeverityFilter,
-      antiBiasMode: local.antiBiasMode,
-      fontSize: local.fontSize,
-      codeBlockTheme: local.codeBlockTheme,
-      autoExportPdf: local.autoExportPdf,
-    }).catch(() => {});
+    try {
+      await api.patch('/me/preferences', {
+        aiModel: local.aiModel,
+        defaultSeverityFilter: local.defaultSeverityFilter,
+        antiBiasMode: local.antiBiasMode,
+        fontSize: local.fontSize,
+        codeBlockTheme: local.codeBlockTheme,
+        autoExportPdf: local.autoExportPdf,
+      });
+      return { pushed: 1, pulled: 0 };
+    } catch {
+      return { pushed: 0, pulled: 0 };
+    }
   }
 }
 
-async function syncConfidence(): Promise<void> {
+async function syncConfidence(): Promise<{ pulled: number }> {
   try {
     // Backend returns { active, improving, strong } buckets
     const response = await api.get<{
@@ -216,6 +222,7 @@ async function syncConfidence(): Promise<void> {
 
     const localHistories = useConfidenceStore.getState().histories;
     const merged = { ...localHistories };
+    let pulled = 0;
 
     for (const remote of allRemoteGaps) {
       const local = merged[remote.itemId];
@@ -233,12 +240,15 @@ async function syncConfidence(): Promise<void> {
           learningPriority: remote.learningPriority,
           ratings: [],
         };
+        pulled++;
       }
     }
 
     useConfidenceStore.getState().replaceHistories(merged);
+    return { pulled };
   } catch {
     // Gaps sync is best-effort — skip on error
+    return { pulled: 0 };
   }
 }
 
@@ -381,7 +391,7 @@ async function syncTutorConversations(): Promise<{ pushed: number; pulled: numbe
   return { pushed, pulled, errors };
 }
 
-async function syncBookmarksTemplatesRepoConfigs(): Promise<void> {
+async function syncBookmarksTemplatesRepoConfigs(): Promise<{ pushed: number; pulled: number }> {
   try {
     const remote = await api.get<{
       bookmarks: string[];
@@ -389,10 +399,13 @@ async function syncBookmarksTemplatesRepoConfigs(): Promise<void> {
       repoConfigs: Record<string, unknown>;
     }>('/me/preferences');
 
+    let pulled = 0;
+
     // Bookmarks: merge (union of local + remote)
     const localBookmarks = useBookmarkStore.getState().bookmarkedIds;
     const remoteBookmarks = Array.isArray(remote.bookmarks) ? remote.bookmarks : [];
     const mergedBookmarks = [...new Set([...localBookmarks, ...remoteBookmarks])];
+    pulled += mergedBookmarks.length - localBookmarks.length;
     useBookmarkStore.setState({ bookmarkedIds: mergedBookmarks });
 
     // Templates: last-write-wins per template
@@ -401,6 +414,8 @@ async function syncBookmarksTemplatesRepoConfigs(): Promise<void> {
       ? remote.templates as Record<string, any>
       : {};
     const mergedTemplates = { ...remoteTemplates, ...localTemplates };
+    const newTemplateCount = Object.keys(mergedTemplates).length - Object.keys(localTemplates).length;
+    if (newTemplateCount > 0) pulled += newTemplateCount;
     useTemplateStore.setState({ templates: mergedTemplates });
 
     // Repo configs: last-write-wins per repo
@@ -415,16 +430,26 @@ async function syncBookmarksTemplatesRepoConfigs(): Promise<void> {
         mergedConfigs[repo] = local;
       }
     }
+    const newConfigCount = Object.keys(mergedConfigs).length - Object.keys(localConfigs).length;
+    if (newConfigCount > 0) pulled += newConfigCount;
     useRepoConfigStore.getState().replaceConfigs(mergedConfigs);
 
     // Push merged data back
-    await api.patch('/me/preferences', {
-      bookmarks: mergedBookmarks,
-      templates: mergedTemplates,
-      repoConfigs: mergedConfigs,
-    }).catch(() => {});
+    let pushed = 0;
+    try {
+      await api.patch('/me/preferences', {
+        bookmarks: mergedBookmarks,
+        templates: mergedTemplates,
+        repoConfigs: mergedConfigs,
+      });
+      pushed = 1;
+    } catch {
+      // Push is best-effort
+    }
+
+    return { pushed, pulled };
   } catch {
-    // Best-effort
+    return { pushed: 0, pulled: 0 };
   }
 }
 
@@ -468,9 +493,16 @@ export async function runSync(): Promise<SyncResult> {
     allErrors.push(...tutorResult.errors);
 
     // Sync preferences, confidence, bookmarks, templates, repo configs
-    await syncPreferences();
-    await syncConfidence();
-    await syncBookmarksTemplatesRepoConfigs();
+    const prefResult = await syncPreferences();
+    totalPushed += prefResult.pushed;
+    totalPulled += prefResult.pulled;
+
+    const confResult = await syncConfidence();
+    totalPulled += confResult.pulled;
+
+    const miscResult = await syncBookmarksTemplatesRepoConfigs();
+    totalPushed += miscResult.pushed;
+    totalPulled += miscResult.pulled;
 
     if (allErrors.length > 0) {
       syncStore.markSyncFailure(allErrors.slice(0, 3).join(' | '));
