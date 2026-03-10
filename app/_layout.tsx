@@ -336,6 +336,14 @@ export default function RootLayout() {
           name="terms"
           options={{ title: 'Terms of Use' }}
         />
+        <Stack.Screen
+          name="pricing"
+          options={{ title: 'Pricing' }}
+        />
+        <Stack.Screen
+          name="refund-policy"
+          options={{ title: 'Refund Policy' }}
+        />
       </Stack>
       </SafeAreaView>
     </AlertProvider>

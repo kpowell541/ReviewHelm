@@ -11,11 +11,12 @@ export function AppFooter() {
   const router = useRouter();
 
   const links: FooterLink[] = [
-    { label: 'Disclaimer', onPress: () => router.push('/disclaimer') },
+    { label: 'Pricing', onPress: () => router.push('/pricing') },
     { label: 'Privacy', onPress: () => router.push('/privacy') },
     { label: 'Terms', onPress: () => router.push('/terms') },
+    { label: 'Refunds', onPress: () => router.push('/refund-policy') },
+    { label: 'Disclaimer', onPress: () => router.push('/disclaimer') },
     { label: 'Contact', onPress: () => void Linking.openURL('mailto:kaitlin@nesttend.app') },
-    { label: 'Settings', onPress: () => router.push('/settings') },
   ];
 
   return (
