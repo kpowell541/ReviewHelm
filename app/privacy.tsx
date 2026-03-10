@@ -3,15 +3,15 @@ import { LegalDocumentScreen } from '../src/components/LegalDocumentScreen';
 const SECTIONS = [
   {
     title: 'Data Storage',
-    body: 'Your checklist progress, session data, and preferences are stored locally on your device. If you sign in, your data is synced to our servers so you can access it across devices.',
+    body: 'Your checklist progress, session data, and preferences are stored locally on your device. If you sign in, your data is synced to our servers so you can access it across devices. Sensitive data including API keys is encrypted and tokenized at rest.',
   },
   {
-    title: 'API Keys',
-    body: 'Your Anthropic API key is stored securely on your device and is never sent to ReviewHelm servers. It is only used to communicate directly with the Anthropic API for AI features.',
+    title: 'Payment Information',
+    body: 'Payments are processed by Stripe. ReviewHelm LLC does not store your credit card number or payment card details on its servers. Stripe may store your payment information in accordance with their privacy policy. We retain only the information necessary to manage your subscription: your subscription tier, billing dates, and credit balance.',
   },
   {
     title: 'AI Features',
-    body: 'When you use AI-powered features (deep dives, comment drafting, tutoring), your prompts and checklist context are sent to the Anthropic API. ReviewHelm does not store or log these interactions on its servers.',
+    body: 'When you use AI-powered features (deep dives, comment drafting, tutoring), your prompts and checklist context are sent to the Anthropic API. ReviewHelm does not store or log the content of these interactions on its servers. We do track usage metrics (token counts, model used, feature used) for billing and credit deduction purposes.',
   },
   {
     title: 'Analytics',
@@ -19,7 +19,11 @@ const SECTIONS = [
   },
   {
     title: 'Data Deletion',
-    body: 'You can delete all your local data at any time by clearing the app\'s storage. If you have a synced account, contact us to request full deletion of your server-side data.',
+    body: 'You can delete all your local data at any time by clearing the app\'s storage. If you have a synced account, contact us at kaitlin@nesttend.app to request full deletion of your server-side data.',
+  },
+  {
+    title: 'Business Information',
+    body: 'ReviewHelm is operated by ReviewHelm LLC.\n\nContact: kaitlin@nesttend.app',
   },
 ];
 

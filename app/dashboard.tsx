@@ -5,6 +5,7 @@ import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { AppFooter } from '../src/components/AppFooter';
 
 function StatBlock({
   label,
@@ -270,6 +271,7 @@ export default function DashboardScreen() {
           )}
         </>
       )}
+      <AppFooter />
     </ScrollView>
     </DesktopContainer>
   );
