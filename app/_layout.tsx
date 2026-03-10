@@ -341,6 +341,10 @@ export default function RootLayout() {
           options={{ title: 'Settings' }}
         />
         <Stack.Screen
+          name="plans"
+          options={{ title: 'Plans & Pricing' }}
+        />
+        <Stack.Screen
           name="disclaimer"
           options={{ title: 'Disclaimer' }}
         />
