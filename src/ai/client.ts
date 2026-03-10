@@ -1,4 +1,5 @@
 import { ApiError, api } from '../api/client';
+import { useAuthStore } from '../store/useAuthStore';
 import { useUsageStore } from '../store/useUsageStore';
 import { useTutorStore } from '../store/useTutorStore';
 import { estimateCost } from './pricing';
@@ -297,6 +298,16 @@ export async function sendTutorMessage(options: AiRequestOptions): Promise<AiRes
   } catch (err) {
     if (err instanceof ApiError) {
       if (err.status === 401) {
+        // If there's no active auth session, the 401 is from an expired login —
+        // not an invalid API key.
+        const hasSession = !!useAuthStore.getState().session;
+        if (!hasSession) {
+          throw new AiClientError(
+            'Your session has expired. Please sign in again.',
+            401,
+            false,
+          );
+        }
         throw new AiClientError('Invalid API key. Check your settings.', 401, false);
       }
       if (err.status === 429) {
