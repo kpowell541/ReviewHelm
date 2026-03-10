@@ -136,7 +136,8 @@ async function pullSessions(): Promise<{ pulled: number; errors: string[] }> {
   return { pulled, errors };
 }
 
-async function syncPreferences(): Promise<{ pushed: number; pulled: number }> {
+async function syncPreferences(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
+  const errors: string[] = [];
   try {
     const remote = await api.get<{
       aiModel: string;
@@ -155,27 +156,33 @@ async function syncPreferences(): Promise<{ pushed: number; pulled: number }> {
       codeBlockTheme: remote.codeBlockTheme as any,
       autoExportPdf: remote.autoExportPdf,
     });
-    return { pushed: 0, pulled: 1 };
-  } catch {
-    // If preferences don't exist remotely, push local
-    const local = usePreferencesStore.getState();
-    try {
-      await api.patch('/me/preferences', {
-        aiModel: local.aiModel,
-        defaultSeverityFilter: local.defaultSeverityFilter,
-        antiBiasMode: local.antiBiasMode,
-        fontSize: local.fontSize,
-        codeBlockTheme: local.codeBlockTheme,
-        autoExportPdf: local.autoExportPdf,
-      });
-      return { pushed: 1, pulled: 0 };
-    } catch {
-      return { pushed: 0, pulled: 0 };
+    return { pushed: 0, pulled: 1, errors };
+  } catch (getErr) {
+    // If preferences don't exist remotely (404), push local
+    if (getErr instanceof ApiError && getErr.status === 404) {
+      try {
+        const local = usePreferencesStore.getState();
+        await api.patch('/me/preferences', {
+          aiModel: local.aiModel,
+          defaultSeverityFilter: local.defaultSeverityFilter,
+          antiBiasMode: local.antiBiasMode,
+          fontSize: local.fontSize,
+          codeBlockTheme: local.codeBlockTheme,
+          autoExportPdf: local.autoExportPdf,
+        });
+        return { pushed: 1, pulled: 0, errors };
+      } catch (patchErr: any) {
+        errors.push(`Preferences push: ${patchErr.message}`);
+      }
+    } else {
+      errors.push(`Preferences: ${getErr instanceof Error ? getErr.message : String(getErr)}`);
     }
+    return { pushed: 0, pulled: 0, errors };
   }
 }
 
-async function syncConfidence(): Promise<{ pulled: number }> {
+async function syncConfidence(): Promise<{ pulled: number; errors: string[] }> {
+  const errors: string[] = [];
   try {
     // Backend returns { active, improving, strong } buckets
     const response = await api.get<{
@@ -245,10 +252,10 @@ async function syncConfidence(): Promise<{ pulled: number }> {
     }
 
     useConfidenceStore.getState().replaceHistories(merged);
-    return { pulled };
-  } catch {
-    // Gaps sync is best-effort — skip on error
-    return { pulled: 0 };
+    return { pulled, errors };
+  } catch (err: any) {
+    errors.push(`Confidence: ${err.message}`);
+    return { pulled: 0, errors };
   }
 }
 
@@ -391,7 +398,8 @@ async function syncTutorConversations(): Promise<{ pushed: number; pulled: numbe
   return { pushed, pulled, errors };
 }
 
-async function syncBookmarksTemplatesRepoConfigs(): Promise<{ pushed: number; pulled: number }> {
+async function syncBookmarksTemplatesRepoConfigs(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
+  const errors: string[] = [];
   try {
     const remote = await api.get<{
       bookmarks: string[];
@@ -443,13 +451,14 @@ async function syncBookmarksTemplatesRepoConfigs(): Promise<{ pushed: number; pu
         repoConfigs: mergedConfigs,
       });
       pushed = 1;
-    } catch {
-      // Push is best-effort
+    } catch (err: any) {
+      errors.push(`Bookmarks push: ${err.message}`);
     }
 
-    return { pushed, pulled };
-  } catch {
-    return { pushed: 0, pulled: 0 };
+    return { pushed, pulled, errors };
+  } catch (err: any) {
+    errors.push(`Bookmarks/templates: ${err.message}`);
+    return { pushed: 0, pulled: 0, errors };
   }
 }
 
@@ -496,13 +505,16 @@ export async function runSync(): Promise<SyncResult> {
     const prefResult = await syncPreferences();
     totalPushed += prefResult.pushed;
     totalPulled += prefResult.pulled;
+    allErrors.push(...prefResult.errors);
 
     const confResult = await syncConfidence();
     totalPulled += confResult.pulled;
+    allErrors.push(...confResult.errors);
 
     const miscResult = await syncBookmarksTemplatesRepoConfigs();
     totalPushed += miscResult.pushed;
     totalPulled += miscResult.pulled;
+    allErrors.push(...miscResult.errors);
 
     if (allErrors.length > 0) {
       syncStore.markSyncFailure(allErrors.slice(0, 3).join(' | '));
