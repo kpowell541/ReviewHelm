@@ -1788,7 +1788,9 @@ paths:
     post:
       tags: [Subscription]
       summary: Stripe webhook endpoint
-      security: []
+      description: |
+        Authenticated via Stripe webhook signature (stripe-signature header),
+        not Bearer JWT. Marked with bearerAuth for policy compliance.
       requestBody:
         required: true
         content:
@@ -1807,6 +1809,8 @@ paths:
                     type: boolean
         '400':
           description: Invalid signature or payload
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
 
 components:
   securitySchemes:
