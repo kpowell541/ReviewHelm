@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../auth/supabase';
 
+const AUTH_REDIRECT_URI = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI?.trim() ?? '';
+
 interface AuthState {
   session: Session | null;
   user: User | null;
@@ -113,7 +115,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const supabase = getSupabaseClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        email,
+        AUTH_REDIRECT_URI ? { redirectTo: AUTH_REDIRECT_URI } : undefined,
+      );
       if (error) throw error;
       set({ isLoading: false });
     } catch (err: any) {
