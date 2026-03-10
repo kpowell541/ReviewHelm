@@ -10,6 +10,7 @@ import { DesktopContainer } from '../src/components/DesktopContainer';
 import { EmptyState } from '../src/components/EmptyState';
 import { FilterChips } from '../src/components/FilterChips';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { AppFooter } from '../src/components/AppFooter';
 
 type TimeFilter = 'all' | '30d' | '90d' | '6m' | '1y';
 type RoleFilter = 'all' | 'mine' | 'others';
@@ -155,6 +156,7 @@ export default function PastReviewsScreen() {
         {resolvedPRs.length === 0 && (
           <EmptyState message="No past reviews found for this filter." />
         )}
+        <AppFooter />
       </ScrollView>
       </DesktopContainer>
     </SafeAreaView>

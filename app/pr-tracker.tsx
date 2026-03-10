@@ -22,6 +22,7 @@ import { AddPRModal } from '../src/components/AddPRModal';
 import { FilterChips } from '../src/components/FilterChips';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { AppFooter } from '../src/components/AppFooter';
 
 const STATUS_FILTERS: { key: PRStatus | 'all' | 'resolved'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -644,6 +645,7 @@ export default function PRTrackerScreen() {
             </Text>
           </View>
         )}
+        <AppFooter />
       </ScrollView>
       </DesktopContainer>
 

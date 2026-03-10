@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, spacing, fontSizes } from '../theme';
 
@@ -14,6 +14,7 @@ export function AppFooter() {
     { label: 'Disclaimer', onPress: () => router.push('/disclaimer') },
     { label: 'Privacy', onPress: () => router.push('/privacy') },
     { label: 'Terms', onPress: () => router.push('/terms') },
+    { label: 'Contact', onPress: () => void Linking.openURL('mailto:kaitlin@nesttend.app') },
     { label: 'Settings', onPress: () => router.push('/settings') },
   ];
 
