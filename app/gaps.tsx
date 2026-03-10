@@ -17,6 +17,7 @@ import { findItemById } from '../src/data/checklistFinder';
 import { FilterChips } from '../src/components/FilterChips';
 import { EmptyState } from '../src/components/EmptyState';
 import { groupByField } from '../src/utils/groupBy';
+import { AppFooter } from '../src/components/AppFooter';
 
 type GapFilter = 'all' | 'active' | 'due' | 'improving' | 'strong';
 
@@ -205,6 +206,7 @@ export default function GapsScreen() {
       {!isEmpty && filteredItems.length === 0 && (
         <EmptyState message="No items match this filter." />
       )}
+      <AppFooter />
     </ScrollView>
     </DesktopContainer>
   );

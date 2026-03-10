@@ -18,42 +18,42 @@ import { DesktopContainer } from '../../src/components/DesktopContainer';
 export default function ResetPasswordScreen() {
   const router = useRouter();
   const updatePassword = useAuthStore((s) => s.updatePassword);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const error = useAuthStore((s) => s.error);
 
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  const isValid = password.length >= 6 && password === confirm;
+  const passwordMismatch =
+    confirmPassword.length > 0 && password !== confirmPassword;
+  const isValid = password.length >= 6 && password === confirmPassword;
 
   const handleUpdate = async () => {
-    setLoading(true);
-    setError(null);
     try {
       await updatePassword(password);
-      setDone(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update password');
-    } finally {
-      setLoading(false);
+      setSuccess(true);
+    } catch {
+      // Error is captured in store
     }
   };
 
-  if (done) {
+  if (success) {
     return (
       <SafeAreaView style={styles.container}>
         <DesktopContainer>
           <View style={styles.content}>
+            <Text style={styles.successIcon}>✅</Text>
             <Text style={styles.title}>Password Updated</Text>
             <Text style={styles.subtitle}>
-              Your password has been changed successfully.
+              Your password has been changed successfully. You can now sign in
+              with your new password.
             </Text>
             <Pressable
               style={styles.primaryButton}
-              onPress={() => router.replace('/')}
+              onPress={() => router.replace('/auth/login')}
             >
-              <Text style={styles.primaryButtonText}>Continue</Text>
+              <Text style={styles.primaryButtonText}>Go to Sign In</Text>
             </Pressable>
           </View>
         </DesktopContainer>
@@ -71,7 +71,7 @@ export default function ResetPasswordScreen() {
           <View style={styles.content}>
             <Text style={styles.title}>Set New Password</Text>
             <Text style={styles.subtitle}>
-              Choose a new password for your account.
+              Enter your new password below.
             </Text>
 
             {error && (
@@ -82,7 +82,7 @@ export default function ResetPasswordScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder="New password"
+              placeholder="New Password (min 6 characters)"
               placeholderTextColor={colors.textMuted}
               value={password}
               onChangeText={setPassword}
@@ -93,31 +93,34 @@ export default function ResetPasswordScreen() {
             />
 
             <TextInput
-              style={styles.input}
-              placeholder="Confirm password"
+              style={[
+                styles.input,
+                passwordMismatch && styles.inputError,
+              ]}
+              placeholder="Confirm New Password"
               placeholderTextColor={colors.textMuted}
-              value={confirm}
-              onChangeText={setConfirm}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
               secureTextEntry
               textContentType="newPassword"
-              autoComplete="new-password"
               returnKeyType="done"
-              onSubmitEditing={() => { if (isValid && !loading) handleUpdate(); }}
+              onSubmitEditing={() => {
+                if (isValid && !isLoading) handleUpdate();
+              }}
             />
-
-            {password.length > 0 && password.length < 6 && (
-              <Text style={styles.hint}>Password must be at least 6 characters</Text>
-            )}
-            {confirm.length > 0 && password !== confirm && (
-              <Text style={styles.hint}>Passwords do not match</Text>
+            {passwordMismatch && (
+              <Text style={styles.fieldError}>Passwords do not match</Text>
             )}
 
             <Pressable
-              style={[styles.primaryButton, (!isValid || loading) && styles.buttonDisabled]}
+              style={[
+                styles.primaryButton,
+                (!isValid || isLoading) && styles.buttonDisabled,
+              ]}
               onPress={handleUpdate}
-              disabled={!isValid || loading}
+              disabled={!isValid || isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.primaryButtonText}>Update Password</Text>
@@ -138,6 +141,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing['3xl'],
   },
+  successIcon: {
+    fontSize: 48,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
   title: {
     fontSize: fontSizes['2xl'],
     fontWeight: '700',
@@ -150,6 +158,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing['3xl'],
+    lineHeight: 22,
   },
   errorBox: {
     backgroundColor: `${colors.error}20`,
@@ -164,11 +173,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     textAlign: 'center',
   },
-  hint: {
-    color: colors.textMuted,
-    fontSize: fontSizes.sm,
-    marginBottom: spacing.sm,
-  },
   input: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
@@ -177,6 +181,15 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     fontSize: fontSizes.md,
     color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  inputError: {
+    borderColor: colors.error,
+  },
+  fieldError: {
+    color: colors.error,
+    fontSize: fontSizes.xs,
+    marginTop: -spacing.sm,
     marginBottom: spacing.md,
   },
   primaryButton: {

@@ -10,6 +10,7 @@ import {
 import { useSessionStore } from '../src/store/useSessionStore';
 import { getChecklist, getMergedChecklist } from '../src/data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../src/data/types';
+import { AppFooter } from '../src/components/AppFooter';
 import { computeSessionScores } from '../src/utils/scoring';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import type {
@@ -479,6 +480,7 @@ export default function TrendsScreen() {
             onPress={() => handlePickA(session)}
           />
         ))}
+        <AppFooter />
       </ScrollView>
     );
   }
@@ -525,6 +527,7 @@ export default function TrendsScreen() {
             onPress={() => handlePickB(session)}
           />
         ))}
+        <AppFooter />
       </ScrollView>
     );
   }
@@ -690,6 +693,7 @@ export default function TrendsScreen() {
 
       {/* Bottom spacer */}
       <View style={{ height: spacing['5xl'] }} />
+      <AppFooter />
     </ScrollView>
   );
 }

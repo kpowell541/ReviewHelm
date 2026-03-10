@@ -6,6 +6,7 @@ import { findItemById } from '../src/data/checklistFinder';
 import { colors, spacing, fontSizes } from '../src/theme';
 import { ChecklistItemCard } from '../src/components/ChecklistItemCard';
 import { groupByField } from '../src/utils/groupBy';
+import { AppFooter } from '../src/components/AppFooter';
 
 export default function BookmarksScreen() {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function BookmarksScreen() {
           ))}
         </View>
       ))}
+      <AppFooter />
     </ScrollView>
   );
 }

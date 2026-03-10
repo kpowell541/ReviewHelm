@@ -109,6 +109,38 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
+  resetPassword: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      set({ isLoading: false });
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err.message || 'Failed to send reset email',
+      });
+      throw err;
+    }
+  },
+
+  updatePassword: async (password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      set({ isLoading: false });
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err.message || 'Failed to update password',
+      });
+      throw err;
+    }
+  },
+
   signOut: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -121,18 +153,6 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         error: err.message || 'Sign out failed',
       });
     }
-  },
-
-  resetPassword: async (email) => {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
-    if (error) throw error;
-  },
-
-  updatePassword: async (password) => {
-    const supabase = getSupabaseClient();
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) throw error;
   },
 
   getAccessToken: async () => {

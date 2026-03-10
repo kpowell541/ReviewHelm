@@ -236,11 +236,11 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="auth/forgot-password"
-          options={{ title: 'Forgot Password' }}
+          options={{ title: 'Reset Password' }}
         />
         <Stack.Screen
           name="auth/reset-password"
-          options={{ title: 'Reset Password' }}
+          options={{ title: 'New Password' }}
         />
         <Stack.Screen
           name="review/stack-select"
@@ -355,6 +355,14 @@ export default function RootLayout() {
         <Stack.Screen
           name="terms"
           options={{ title: 'Terms of Use' }}
+        />
+        <Stack.Screen
+          name="pricing"
+          options={{ title: 'Pricing' }}
+        />
+        <Stack.Screen
+          name="refund-policy"
+          options={{ title: 'Refund Policy' }}
         />
       </Stack>
       </SafeAreaView>

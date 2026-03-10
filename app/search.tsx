@@ -14,6 +14,7 @@ import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { EmptyState } from '../src/components/EmptyState';
 import { ChecklistItemCard } from '../src/components/ChecklistItemCard';
 import { groupByField } from '../src/utils/groupBy';
+import { AppFooter } from '../src/components/AppFooter';
 
 interface SearchResult {
   item: ChecklistItem;
@@ -108,6 +109,7 @@ export default function SearchScreen() {
       {query.trim().length >= 2 && filtered.length === 0 && (
         <EmptyState message={`No items match "${query}". Try different keywords.`} />
       )}
+      <AppFooter />
     </ScrollView>
   );
 }
