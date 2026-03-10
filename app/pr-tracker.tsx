@@ -5,7 +5,14 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -206,6 +213,7 @@ export default function PRTrackerScreen() {
   const handleMarkReviewed = useCallback(
     (pr: TrackedPR) => {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       markReviewed(pr.id);
     },
     [markReviewed],
@@ -507,7 +515,10 @@ export default function PRTrackerScreen() {
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
-                  if (isReviewedToday) markReviewed(pr.id);
+                  if (isReviewedToday) {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    markReviewed(pr.id);
+                  }
                 }}
               >
                 <View style={[
@@ -527,7 +538,10 @@ export default function PRTrackerScreen() {
                 onPress={(e) => {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
-                  if (!isReviewedToday) markReviewed(pr.id);
+                  if (!isReviewedToday) {
+                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    markReviewed(pr.id);
+                  }
                 }}
               >
                 <View style={[
