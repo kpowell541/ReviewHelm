@@ -183,82 +183,56 @@ async function syncPreferences(): Promise<{ pushed: number; pulled: number; erro
   }
 }
 
-async function syncConfidence(): Promise<{ pulled: number; errors: string[] }> {
+async function syncConfidence(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
   const errors: string[] = [];
-  try {
-    // Backend returns { active, improving, strong } buckets
-    const response = await api.get<{
-      active: Array<{
-        itemId: string;
-        stackId: string;
-        sectionId: string;
-        severity: string;
-        currentConfidence: number;
-        averageConfidence: number;
-        trend: string;
-        learningPriority: number;
-        ratingsCount: number;
-      }>;
-      improving: Array<{
-        itemId: string;
-        stackId: string;
-        sectionId: string;
-        severity: string;
-        currentConfidence: number;
-        averageConfidence: number;
-        trend: string;
-        learningPriority: number;
-        ratingsCount: number;
-      }>;
-      strong: Array<{
-        itemId: string;
-        stackId: string;
-        sectionId: string;
-        severity: string;
-        currentConfidence: number;
-        averageConfidence: number;
-        trend: string;
-        learningPriority: number;
-        ratingsCount: number;
-      }>;
-    }>('/gaps?limit=10000');
+  let pushed = 0;
+  let pulled = 0;
 
-    const allRemoteGaps = [
-      ...response.active,
-      ...response.improving,
-      ...response.strong,
-    ];
+  try {
+    // Pull remote confidence histories
+    const remote = await api.get<{ histories: Record<string, any> }>('/gaps/confidence');
+    const remoteHistories: Record<string, any> = remote.histories ?? {};
 
     const localHistories = useConfidenceStore.getState().histories;
-    const merged = { ...localHistories };
-    let pulled = 0;
+    const merged: Record<string, any> = {};
 
-    for (const remote of allRemoteGaps) {
-      const local = merged[remote.itemId];
-      // Update local if we don't have it, or if remote has more ratings
-      // (meaning other devices completed sessions the backend has seen)
-      if (!local || remote.ratingsCount > (local.ratings?.length ?? 0)) {
-        merged[remote.itemId] = {
-          itemId: remote.itemId,
-          stackId: remote.stackId,
-          sectionId: remote.sectionId,
-          severity: remote.severity as any,
-          currentConfidence: remote.currentConfidence as any,
-          averageConfidence: remote.averageConfidence,
-          trend: remote.trend as any,
-          learningPriority: remote.learningPriority,
-          ratings: local?.ratings ?? [],
-        };
+    // Collect all item IDs from both sides
+    const allIds = new Set([...Object.keys(localHistories), ...Object.keys(remoteHistories)]);
+
+    for (const itemId of allIds) {
+      const local = localHistories[itemId];
+      const rem = remoteHistories[itemId];
+
+      if (local && !rem) {
+        // Only exists locally
+        merged[itemId] = local;
+      } else if (!local && rem) {
+        // Only exists remotely
+        merged[itemId] = rem;
         pulled++;
+      } else if (local && rem) {
+        // Both exist — keep the one with more ratings (more data)
+        const localCount = local.ratings?.length ?? 0;
+        const remoteCount = rem.ratings?.length ?? 0;
+        if (remoteCount > localCount) {
+          merged[itemId] = rem;
+          pulled++;
+        } else {
+          merged[itemId] = local;
+        }
       }
     }
 
     useConfidenceStore.getState().replaceHistories(merged);
-    return { pulled, errors };
+
+    // Push merged histories back to server
+    await api.put('/gaps/confidence', { histories: merged });
+    pushed = 1;
   } catch (err: any) {
     errors.push(`Confidence: ${err.message}`);
-    return { pulled: 0, errors };
   }
+
+  return { pushed, pulled, errors };
 }
 
 async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
@@ -511,6 +485,7 @@ export async function runSync(): Promise<SyncResult> {
     allErrors.push(...prefResult.errors);
 
     const confResult = await syncConfidence();
+    totalPushed += confResult.pushed;
     totalPulled += confResult.pulled;
     allErrors.push(...confResult.errors);
 
@@ -523,7 +498,7 @@ export async function runSync(): Promise<SyncResult> {
     if (pushResult.pushed || pullResult.pulled) detailParts.push(`Sessions: ${pushResult.pushed}↑ ${pullResult.pulled}↓`);
     if (prResult.pushed || prResult.pulled) detailParts.push(`PRs: ${prResult.pushed}↑ ${prResult.pulled}↓`);
     if (tutorResult.pushed || tutorResult.pulled) detailParts.push(`Tutor: ${tutorResult.pushed}↑ ${tutorResult.pulled}↓`);
-    if (confResult.pulled) detailParts.push(`Gaps: ${confResult.pulled}↓`);
+    if (confResult.pushed || confResult.pulled) detailParts.push(`Gaps: ${confResult.pushed}↑ ${confResult.pulled}↓`);
     if (prefResult.pushed || prefResult.pulled) detailParts.push(`Prefs: ${prefResult.pushed}↑ ${prefResult.pulled}↓`);
     if (miscResult.pushed || miscResult.pulled) detailParts.push(`Misc: ${miscResult.pushed}↑ ${miscResult.pulled}↓`);
     details = detailParts.join(', ');
