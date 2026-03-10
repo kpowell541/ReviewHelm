@@ -59,6 +59,7 @@ enum SubscriptionTier {
   free
   pro
   premium
+  sponsored
 }
 
 enum CreditEntryType {

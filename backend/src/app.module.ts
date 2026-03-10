@@ -32,6 +32,7 @@ import { AdminMaintenanceModule } from './admin/maintenance/admin-maintenance.mo
 import { AdminDashboardModule } from './admin/dashboard/admin-dashboard.module';
 import { TrackedPRsModule } from './tracked-prs/tracked-prs.module';
 import { TutorConversationsModule } from './tutor-conversations/tutor-conversations.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { TutorConversationsModule } from './tutor-conversations/tutor-conversati
     ComplianceModule,
     TrackedPRsModule,
     TutorConversationsModule,
+    SubscriptionModule,
     BackupsModule,
     ExportsModule,
     AdminSecurityModule,
