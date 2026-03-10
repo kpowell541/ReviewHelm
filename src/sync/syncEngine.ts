@@ -76,11 +76,12 @@ async function pushSessions(): Promise<{ pushed: number; errors: string[] }> {
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) {
           // Session doesn't exist remotely — create it
+          const isPolish = session.mode === 'polish';
           await api.post('/sessions', {
             id: session.id,
             mode: session.mode,
-            stackId: session.stackId,
-            stackIds: session.stackIds,
+            stackId: isPolish ? undefined : session.stackId,
+            stackIds: isPolish ? [] : session.stackIds,
             selectedSections: session.selectedSections,
             title: session.title,
           });
