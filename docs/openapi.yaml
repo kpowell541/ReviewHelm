@@ -30,6 +30,7 @@ tags:
   - name: Admin
   - name: Tutor Conversations
   - name: Subscription
+  - name: Region
 security:
   - bearerAuth: []
 
@@ -87,6 +88,39 @@ paths:
                     type: string
                     format: date-time
                 required: [ok, service, checks, time]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /region/status:
+    get:
+      tags: [Region]
+      summary: Check region access status
+      responses:
+        '200':
+          description: Region access information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  allowed:
+                    type: boolean
+                  mode:
+                    type: string
+                    enum: [global, us_only]
+                  country:
+                    type: string
+                    nullable: true
+                  allowedCountries:
+                    type: array
+                    items:
+                      type: string
+                  reason:
+                    type: string
+                    nullable: true
+                required: [ok, allowed, mode, country, allowedCountries]
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
