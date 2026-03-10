@@ -221,7 +221,7 @@ async function syncConfidence(): Promise<{ pulled: number; errors: string[] }> {
         learningPriority: number;
         ratingsCount: number;
       }>;
-    }>('/gaps?limit=100');
+    }>('/gaps?limit=10000');
 
     const allRemoteGaps = [
       ...response.active,

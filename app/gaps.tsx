@@ -126,7 +126,6 @@ export default function GapsScreen() {
     [filteredItems],
   );
 
-  const totalHistories = Object.keys(histories).length;
   const isEmpty =
     weakest.length === 0 && dueItems.length === 0;
 
@@ -137,9 +136,6 @@ export default function GapsScreen() {
       contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
     >
       <Text style={styles.title}>My Knowledge Gaps</Text>
-      <Text style={{ color: colors.textMuted, fontSize: 11, marginBottom: 4 }}>
-        histories={totalHistories} weakest={weakest.length} active={activeGaps.length} due={dueItems.length}
-      </Text>
 
       {/* Summary stats */}
       {!isEmpty && (

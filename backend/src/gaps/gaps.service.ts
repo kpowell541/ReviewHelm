@@ -38,7 +38,6 @@ export class GapsService {
     query: { stackId?: string; limit?: number },
   ): Promise<GapBuckets> {
     const user = await upsertUserFromAuth(this.prisma, authUser);
-    const limit = Math.min(100, Math.max(1, query.limit ?? 20));
     const stackFilter = query.stackId && query.stackId !== 'all' ? query.stackId : null;
     const sessions = await this.prisma.session.findMany({
       where: {
@@ -119,18 +118,23 @@ export class GapsService {
       });
     }
 
-    const active = rows
-      .filter((row) => row.currentConfidence <= 2 || row.trend === 'declining')
-      .sort((a, b) => b.learningPriority - a.learningPriority)
-      .slice(0, limit);
+    const improvingSet = new Set<string>();
+    const strongSet = new Set<string>();
+
     const improving = rows
       .filter((row) => row.trend === 'improving' && row.currentConfidence <= 4)
-      .sort((a, b) => b.learningPriority - a.learningPriority)
-      .slice(0, limit);
+      .sort((a, b) => b.learningPriority - a.learningPriority);
+    improving.forEach((r) => improvingSet.add(r.itemId));
+
     const strong = rows
       .filter((row) => row.currentConfidence >= 4 && row.trend !== 'declining')
-      .sort((a, b) => b.currentConfidence - a.currentConfidence)
-      .slice(0, limit);
+      .sort((a, b) => b.currentConfidence - a.currentConfidence);
+    strong.forEach((r) => strongSet.add(r.itemId));
+
+    // Active: confidence <= 2, declining, or anything not in improving/strong
+    const active = rows
+      .filter((row) => !improvingSet.has(row.itemId) && !strongSet.has(row.itemId))
+      .sort((a, b) => b.learningPriority - a.learningPriority);
 
     return { active, improving, strong };
   }
