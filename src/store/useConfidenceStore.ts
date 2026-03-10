@@ -158,8 +158,9 @@ export const useConfidenceStore = create<ConfidenceState>()(
           ? all.filter((h) => h.stackId === stackId)
           : all;
         return filtered
-          .filter((h) => isDueForReview(h.repetitionState))
-          .sort((a, b) => b.learningPriority - a.learningPriority);
+          .filter((h) => h.currentConfidence < 4 && isDueForReview(h.repetitionState))
+          .sort((a, b) => b.learningPriority - a.learningPriority)
+          .slice(0, 5);
       },
 
       getSectionAverages: (stackId) => {
