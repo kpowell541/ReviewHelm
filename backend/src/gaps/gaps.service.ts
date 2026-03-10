@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { parseSessionItemResponses } from '../common/sessions/parse-item-responses';
 import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
-import { getChecklistBySession, getChecklistItemIndex, type Severity } from '../checklists/bundled-checklists';
+import { getChecklistBySession, getChecklistItemIndex, getBundledChecklistById, type Severity } from '../checklists/bundled-checklists';
 import { PrismaService } from '../prisma/prisma.service';
 
 type Trend = 'improving' | 'stable' | 'declining' | 'new';
@@ -50,6 +50,7 @@ export class GapsService {
         id: true,
         mode: true,
         stackId: true,
+        stackIds: true,
         itemResponses: true,
         completedAt: true,
         updatedAt: true,
@@ -67,21 +68,41 @@ export class GapsService {
     >();
 
     for (const session of sessions) {
-      const checklist = getChecklistBySession(
-        session.mode as 'review' | 'polish',
-        session.stackId,
-      );
-      if (!checklist) continue;
-      const itemIndex = getChecklistItemIndex(checklist);
+      // Build a combined item index from all stacks in the session
+      const stacks = session.stackIds.length > 0 ? session.stackIds : (session.stackId ? [session.stackId] : []);
+      const isMultiStack = stacks.length > 1;
+
+      let itemIndex: Record<string, { itemId: string; text: string; severity: Severity; sectionId: string }> = {};
+
+      if (session.mode === 'polish') {
+        const checklist = getChecklistBySession('polish', null);
+        if (!checklist) continue;
+        itemIndex = getChecklistItemIndex(checklist);
+      } else {
+        for (const sid of stacks) {
+          const checklist = getBundledChecklistById(sid);
+          if (!checklist) continue;
+          const partial = getChecklistItemIndex(checklist);
+          Object.assign(itemIndex, partial);
+        }
+        if (Object.keys(itemIndex).length === 0) continue;
+      }
+
       const responses = parseSessionItemResponses(session.itemResponses);
       const at = session.completedAt ?? session.updatedAt;
+      const defaultStackId = session.stackId ?? 'polish-my-pr';
+
       for (const [itemId, response] of Object.entries(responses)) {
         if (response.verdict === 'na') continue;
         const meta = itemIndex[itemId];
         if (!meta) continue;
-        const key = `${session.stackId ?? 'polish-my-pr'}:${itemId}`;
+
+        // For multi-stack sessions, derive stackId from item ID prefix
+        const stackId = isMultiStack ? (itemId.split('.')[0] || defaultStackId) : defaultStackId;
+
+        const key = `${stackId}:${itemId}`;
         const existing = itemRatings.get(key) ?? {
-          stackId: session.stackId ?? 'polish-my-pr',
+          stackId,
           sectionId: meta.sectionId,
           severity: meta.severity,
           ratings: [],
