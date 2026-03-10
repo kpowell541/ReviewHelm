@@ -234,9 +234,9 @@ async function syncConfidence(): Promise<{ pulled: number; errors: string[] }> {
 
     for (const remote of allRemoteGaps) {
       const local = merged[remote.itemId];
-      // Only add items we don't have locally — never overwrite local data,
-      // since local recordSessionResults has the authoritative confidence values
-      if (!local) {
+      // Update local if we don't have it, or if remote has more ratings
+      // (meaning other devices completed sessions the backend has seen)
+      if (!local || remote.ratingsCount > (local.ratings?.length ?? 0)) {
         merged[remote.itemId] = {
           itemId: remote.itemId,
           stackId: remote.stackId,
@@ -246,7 +246,7 @@ async function syncConfidence(): Promise<{ pulled: number; errors: string[] }> {
           averageConfidence: remote.averageConfidence,
           trend: remote.trend as any,
           learningPriority: remote.learningPriority,
-          ratings: [],
+          ratings: local?.ratings ?? [],
         };
         pulled++;
       }
