@@ -39,17 +39,8 @@ export default function DueItemsScreen() {
   const router = useRouter();
   const histories = useConfidenceStore((s) => s.histories);
 
-  const dueItems = useMemo(() => {
-    const now = Date.now();
-    return Object.values(histories)
-      .filter((h) => {
-        if (h.currentConfidence >= 4) return false;
-        if (!h.repetitionState?.nextReviewDate) return false;
-        return new Date(h.repetitionState.nextReviewDate).getTime() <= now;
-      })
-      .sort((a, b) => b.learningPriority - a.learningPriority)
-      .slice(0, 5);
-  }, [histories]);
+  const getDueItems = useConfidenceStore((s) => s.getDueItems);
+  const dueItems = useMemo(() => getDueItems(), [getDueItems, histories]);
   const [reviewed, setReviewed] = useState<Record<string, ConfidenceLevel>>({});
   const [revealedId, setRevealedId] = useState<string | null>(null);
 
