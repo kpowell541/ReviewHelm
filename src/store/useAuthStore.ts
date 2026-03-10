@@ -13,6 +13,8 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   getAccessToken: () => Promise<string | null>;
 }
 
@@ -102,6 +104,38 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       set({
         isLoading: false,
         error: err.message || 'Sign up failed',
+      });
+      throw err;
+    }
+  },
+
+  resetPassword: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      set({ isLoading: false });
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err.message || 'Failed to send reset email',
+      });
+      throw err;
+    }
+  },
+
+  updatePassword: async (password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      set({ isLoading: false });
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err.message || 'Failed to update password',
       });
       throw err;
     }

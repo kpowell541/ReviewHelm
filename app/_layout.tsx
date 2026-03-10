@@ -227,6 +227,14 @@ export default function RootLayout() {
           options={{ title: 'Sign Up' }}
         />
         <Stack.Screen
+          name="auth/forgot-password"
+          options={{ title: 'Reset Password' }}
+        />
+        <Stack.Screen
+          name="auth/reset-password"
+          options={{ title: 'New Password' }}
+        />
+        <Stack.Screen
           name="review/stack-select"
           options={{ title: 'Select Stack' }}
         />
