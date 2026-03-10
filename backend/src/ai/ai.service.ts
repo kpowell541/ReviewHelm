@@ -455,7 +455,7 @@ export class AiService {
     userId: string,
     authUser: AuthenticatedUser,
   ): Promise<string> {
-    const isAdmin = this.tierService.isAdminEmail(authUser.email);
+    const isAdmin = Boolean(authUser.isAdmin) || this.tierService.isAdminEmail(authUser.email);
 
     // Admin users can use their own BYOK key
     if (isAdmin) {

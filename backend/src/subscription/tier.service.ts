@@ -63,14 +63,14 @@ export class TierService {
   }
 
   /** Returns true for admin or sponsored users — both get unlimited AI. */
-  hasUnlimitedCredits(email: string | undefined): boolean {
-    return this.isAdminEmail(email) || this.isSponsoredEmail(email);
+  hasUnlimitedCredits(email: string | undefined, isAdmin = false): boolean {
+    return isAdmin || this.isAdminEmail(email) || this.isSponsoredEmail(email);
   }
 
   async getTierInfo(authUser: AuthenticatedUser): Promise<TierInfo> {
     const user = await upsertUserFromAuth(this.prisma, authUser);
     const email = user.email ?? undefined;
-    const isAdmin = this.isAdminEmail(email);
+    const isAdmin = Boolean(authUser.isAdmin) || this.isAdminEmail(email);
     const isSponsored = this.isSponsoredEmail(email);
     const now = new Date();
     const isTrial = user.trialEndsAt !== null && user.trialEndsAt > now;

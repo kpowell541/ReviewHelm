@@ -28,7 +28,10 @@ export class CreditService {
 
   async getBalance(authUser: AuthenticatedUser): Promise<CreditBalance> {
     const user = await upsertUserFromAuth(this.prisma, authUser);
-    const unlimited = this.tierService.hasUnlimitedCredits(user.email ?? undefined);
+    const unlimited = this.tierService.hasUnlimitedCredits(
+      user.email ?? undefined,
+      Boolean(authUser.isAdmin),
+    );
     return {
       balanceUsd: Number(user.creditBalanceUsd),
       unlimited,
@@ -37,7 +40,9 @@ export class CreditService {
 
   async canAffordAiCall(authUser: AuthenticatedUser): Promise<boolean> {
     const user = await upsertUserFromAuth(this.prisma, authUser);
-    if (this.tierService.hasUnlimitedCredits(user.email ?? undefined)) return true;
+    if (this.tierService.hasUnlimitedCredits(user.email ?? undefined, Boolean(authUser.isAdmin))) {
+      return true;
+    }
     if (user.tier !== 'premium') return false;
     return Number(user.creditBalanceUsd) > 0;
   }
@@ -50,7 +55,7 @@ export class CreditService {
   ): Promise<CreditBalance> {
     const user = await upsertUserFromAuth(this.prisma, authUser);
 
-    if (this.tierService.hasUnlimitedCredits(user.email ?? undefined)) {
+    if (this.tierService.hasUnlimitedCredits(user.email ?? undefined, Boolean(authUser.isAdmin))) {
       return { balanceUsd: Number(user.creditBalanceUsd), unlimited: true };
     }
 
