@@ -172,6 +172,30 @@ export class GapsService {
     return { items: merged };
   }
 
+  async getConfidence(authUser: AuthenticatedUser): Promise<{ histories: Record<string, unknown> }> {
+    const user = await upsertUserFromAuth(this.prisma, authUser);
+    const pref = await this.prisma.preference.findUnique({
+      where: { userId: user.id },
+      select: { confidenceHistories: true },
+    });
+    const histories = (pref?.confidenceHistories as Record<string, unknown>) ?? {};
+    return { histories };
+  }
+
+  async putConfidence(authUser: AuthenticatedUser, histories: Record<string, unknown>): Promise<void> {
+    const user = await upsertUserFromAuth(this.prisma, authUser);
+    await this.prisma.preference.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        confidenceHistories: histories as any,
+      },
+      update: {
+        confidenceHistories: histories as any,
+      },
+    });
+  }
+
   private computeTrend(values: number[]): Trend {
     if (values.length < 2) return 'new';
     const recent = values.slice(-3);
