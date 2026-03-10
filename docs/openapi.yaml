@@ -461,6 +461,50 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /gaps/confidence:
+    get:
+      tags: [Gaps]
+      summary: Get stored confidence histories
+      responses:
+        '200':
+          description: Confidence histories keyed by item ID
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  histories:
+                    type: object
+                    additionalProperties: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      tags: [Gaps]
+      summary: Replace stored confidence histories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                histories:
+                  type: object
+                  additionalProperties: true
+              required: [histories]
+      responses:
+        '200':
+          description: Confidence histories updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   /learn/queue:
     get:
       tags: [Learn]

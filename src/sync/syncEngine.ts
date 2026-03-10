@@ -6,6 +6,7 @@ import { usePreferencesStore } from '../store/usePreferencesStore';
 import { usePRTrackerStore } from '../store/usePRTrackerStore';
 import { useSyncStore } from '../store/useSyncStore';
 import { useTutorStore } from '../store/useTutorStore';
+import { useUsageStore } from '../store/useUsageStore';
 import { useBookmarkStore } from '../store/useBookmarkStore';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { useRepoConfigStore } from '../store/useRepoConfigStore';
@@ -140,7 +141,31 @@ async function pullSessions(): Promise<{ pulled: number; errors: string[] }> {
 
 async function syncPreferences(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
   const errors: string[] = [];
+  let pushed = 0;
+  let pulled = 0;
+
   try {
+    const localPrefs = usePreferencesStore.getState();
+    const localUsage = useUsageStore.getState();
+
+    // Push local preferences + budget settings to remote
+    await api.patch('/me/preferences', {
+      aiModel: localPrefs.aiModel,
+      defaultSeverityFilter: localPrefs.defaultSeverityFilter,
+      antiBiasMode: localPrefs.antiBiasMode,
+      fontSize: localPrefs.fontSize,
+      codeBlockTheme: localPrefs.codeBlockTheme,
+      autoExportPdf: localPrefs.autoExportPdf,
+      monthlyBudgetUsd: localUsage.monthlyBudgetUsd,
+      alertThresholds: localUsage.alertThresholds,
+      hardStopAtBudget: localUsage.hardStopAtBudget,
+      autoDowngradeNearBudget: localUsage.autoDowngradeNearBudget,
+      autoDowngradeThresholdPct: localUsage.autoDowngradeThresholdPct,
+      cooldownSeconds: localUsage.cooldownSeconds,
+    });
+    pushed = 1;
+
+    // Pull remote preferences (now reflects merged state)
     const remote = await api.get<{
       aiModel: string;
       defaultSeverityFilter: string[];
@@ -148,8 +173,15 @@ async function syncPreferences(): Promise<{ pushed: number; pulled: number; erro
       fontSize: string;
       codeBlockTheme: string;
       autoExportPdf: boolean;
+      monthlyBudgetUsd: number;
+      alertThresholds: number[];
+      hardStopAtBudget: boolean;
+      autoDowngradeNearBudget: boolean;
+      autoDowngradeThresholdPct: number;
+      cooldownSeconds: number;
     }>('/me/preferences');
 
+    // Apply UI preferences
     usePreferencesStore.getState().replacePreferences({
       aiModel: remote.aiModel as any,
       defaultSeverityFilter: remote.defaultSeverityFilter as any,
@@ -158,29 +190,22 @@ async function syncPreferences(): Promise<{ pushed: number; pulled: number; erro
       codeBlockTheme: remote.codeBlockTheme as any,
       autoExportPdf: remote.autoExportPdf,
     });
-    return { pushed: 0, pulled: 1, errors };
-  } catch (getErr) {
-    // If preferences don't exist remotely (404), push local
-    if (getErr instanceof ApiError && getErr.status === 404) {
-      try {
-        const local = usePreferencesStore.getState();
-        await api.patch('/me/preferences', {
-          aiModel: local.aiModel,
-          defaultSeverityFilter: local.defaultSeverityFilter,
-          antiBiasMode: local.antiBiasMode,
-          fontSize: local.fontSize,
-          codeBlockTheme: local.codeBlockTheme,
-          autoExportPdf: local.autoExportPdf,
-        });
-        return { pushed: 1, pulled: 0, errors };
-      } catch (patchErr: any) {
-        errors.push(`Preferences push: ${patchErr.message}`);
-      }
-    } else {
-      errors.push(`Preferences: ${getErr instanceof Error ? getErr.message : String(getErr)}`);
-    }
-    return { pushed: 0, pulled: 0, errors };
+
+    // Apply budget settings to usage store
+    useUsageStore.setState({
+      monthlyBudgetUsd: remote.monthlyBudgetUsd,
+      alertThresholds: remote.alertThresholds,
+      hardStopAtBudget: remote.hardStopAtBudget,
+      autoDowngradeNearBudget: remote.autoDowngradeNearBudget,
+      autoDowngradeThresholdPct: remote.autoDowngradeThresholdPct,
+      cooldownSeconds: remote.cooldownSeconds,
+    });
+    pulled = 1;
+  } catch (err: any) {
+    errors.push(`Preferences: ${err.message}`);
   }
+
+  return { pushed, pulled, errors };
 }
 
 async function syncConfidence(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
@@ -374,6 +399,30 @@ async function syncTutorConversations(): Promise<{ pushed: number; pulled: numbe
   return { pushed, pulled, errors };
 }
 
+async function syncUsage(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
+  const errors: string[] = [];
+  let pulled = 0;
+
+  try {
+    // Pull server-side usage summary so budget status reflects cross-device usage
+    const summary = await api.get<{
+      month: string;
+      calls: number;
+      inputTokens: number;
+      outputTokens: number;
+      estimatedCostUsd: number;
+      todayCalls: number;
+    }>('/usage/summary');
+
+    useUsageStore.getState().setExternalMonthlyCost(summary.estimatedCostUsd);
+    pulled = 1;
+  } catch (err: any) {
+    errors.push(`Usage: ${err.message}`);
+  }
+
+  return { pushed: 0, pulled, errors };
+}
+
 async function syncBookmarksTemplatesRepoConfigs(): Promise<{ pushed: number; pulled: number; errors: string[] }> {
   const errors: string[] = [];
   try {
@@ -489,6 +538,11 @@ export async function runSync(): Promise<SyncResult> {
     totalPulled += confResult.pulled;
     allErrors.push(...confResult.errors);
 
+    const usageResult = await syncUsage();
+    totalPushed += usageResult.pushed;
+    totalPulled += usageResult.pulled;
+    allErrors.push(...usageResult.errors);
+
     const miscResult = await syncBookmarksTemplatesRepoConfigs();
     totalPushed += miscResult.pushed;
     totalPulled += miscResult.pulled;
@@ -500,6 +554,7 @@ export async function runSync(): Promise<SyncResult> {
     if (tutorResult.pushed || tutorResult.pulled) detailParts.push(`Tutor: ${tutorResult.pushed}↑ ${tutorResult.pulled}↓`);
     if (confResult.pushed || confResult.pulled) detailParts.push(`Gaps: ${confResult.pushed}↑ ${confResult.pulled}↓`);
     if (prefResult.pushed || prefResult.pulled) detailParts.push(`Prefs: ${prefResult.pushed}↑ ${prefResult.pulled}↓`);
+    if (usageResult.pushed || usageResult.pulled) detailParts.push(`Usage: ${usageResult.pushed}↑ ${usageResult.pulled}↓`);
     if (miscResult.pushed || miscResult.pulled) detailParts.push(`Misc: ${miscResult.pushed}↑ ${miscResult.pulled}↓`);
     details = detailParts.join(', ');
 
