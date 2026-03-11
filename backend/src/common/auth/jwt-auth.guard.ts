@@ -21,12 +21,19 @@ interface RequestLike {
 
 type JoseModule = typeof import('jose');
 type RemoteJwkSet = ReturnType<JoseModule['createRemoteJWKSet']>;
+type JwtAlgorithm = 'RS256' | 'ES256';
+
+const SUPPORTED_JWT_ALGORITHMS = new Set<JwtAlgorithm>(['RS256', 'ES256']);
+const JWT_CLOCK_SKEW_SECONDS = 60;
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   private readonly jwksUrl: string;
   private readonly issuer: string;
   private readonly audience: string;
+  private readonly jwtAlgorithms: JwtAlgorithm[];
+  private readonly maxJwtAgeSeconds: number;
+  private readonly requireSessionIdClaim: boolean;
   private readonly adminUserIds: Set<string>;
   private joseModulePromise: Promise<JoseModule> | null = null;
   private jwks: RemoteJwkSet | null = null;
@@ -39,6 +46,9 @@ export class JwtAuthGuard implements CanActivate {
     this.jwksUrl = this.config.get('SUPABASE_JWKS_URL');
     this.issuer = this.config.get('SUPABASE_JWT_ISSUER');
     this.audience = this.config.get('SUPABASE_JWT_AUDIENCE');
+    this.jwtAlgorithms = this.parseJwtAlgorithms(this.config.get('SUPABASE_JWT_ALGORITHMS'));
+    this.maxJwtAgeSeconds = this.config.get('SUPABASE_MAX_JWT_AGE_SECONDS');
+    this.requireSessionIdClaim = this.config.get('SUPABASE_REQUIRE_SESSION_ID_CLAIM');
     this.adminUserIds = new Set(
       this.config
         .get('ADMIN_USER_IDS')
@@ -46,6 +56,10 @@ export class JwtAuthGuard implements CanActivate {
         .map((id: string) => id.trim())
         .filter(Boolean),
     );
+
+    if (this.jwtAlgorithms.length === 0) {
+      throw new Error('SUPABASE_JWT_ALGORITHMS must include at least one supported algorithm');
+    }
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -98,6 +112,23 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
+    const claimValidationError = this.validateSessionClaims(userPayload);
+    if (claimValidationError) {
+      this.logAuthFailure(req, `Invalid token claims: ${claimValidationError}`);
+      void this.audit.write({
+        eventType: 'auth_failed',
+        eventScope: 'security.auth',
+        severity: 'warn',
+        requestId: req.requestId,
+        details: {
+          reason: claimValidationError,
+          path: req.path,
+          method: req.method,
+        },
+      });
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
     const roleClaim = this.extractRoles(userPayload);
     const isAdmin = roleClaim.includes('admin') || this.adminUserIds.has(userId);
 
@@ -118,7 +149,7 @@ export class JwtAuthGuard implements CanActivate {
       const verified = await jose.jwtVerify(token, jwks, {
         issuer: this.issuer,
         audience: this.audience,
-        algorithms: ['RS256', 'ES256'],
+        algorithms: this.jwtAlgorithms,
       });
       return verified.payload as Record<string, unknown>;
     } catch (err) {
@@ -175,6 +206,42 @@ export class JwtAuthGuard implements CanActivate {
       return [];
     }
     return roles.filter((role): role is string => typeof role === 'string');
+  }
+
+  private validateSessionClaims(payload: Record<string, unknown>): string | null {
+    const issuedAt = payload.iat;
+    if (typeof issuedAt !== 'number' || !Number.isFinite(issuedAt)) {
+      return 'missing_iat_claim';
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (issuedAt > nowSeconds + JWT_CLOCK_SKEW_SECONDS) {
+      return 'iat_in_future';
+    }
+
+    if (nowSeconds - issuedAt > this.maxJwtAgeSeconds) {
+      return 'token_too_old';
+    }
+
+    if (this.requireSessionIdClaim) {
+      const sessionId = payload.session_id;
+      if (typeof sessionId !== 'string' || sessionId.trim().length === 0) {
+        return 'missing_session_id_claim';
+      }
+    }
+
+    return null;
+  }
+
+  private parseJwtAlgorithms(value: string): JwtAlgorithm[] {
+    const parsed = value
+      .split(',')
+      .map((algorithm) => algorithm.trim().toUpperCase())
+      .filter((algorithm): algorithm is JwtAlgorithm =>
+        SUPPORTED_JWT_ALGORITHMS.has(algorithm as JwtAlgorithm),
+      );
+
+    return Array.from(new Set(parsed));
   }
 
   private extractBearerToken(

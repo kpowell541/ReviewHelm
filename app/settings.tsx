@@ -992,7 +992,7 @@ export default function SettingsScreen() {
               style={styles.secondaryButton}
               onPress={async () => {
                 await signOut();
-                crossAlert('Signed out', 'You can continue using the app offline.');
+                crossAlert('Signed out', 'You have been signed out and local account data was cleared.');
               }}
             >
               <Text style={styles.secondaryButtonText}>Sign Out</Text>
