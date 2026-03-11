@@ -34,6 +34,7 @@ interface SessionState {
   completeSession: (sessionId: string) => void;
   deleteSession: (sessionId: string) => void;
   linkPR: (sessionId: string, prId: string | undefined) => void;
+  updateSelectedSections: (sessionId: string, sections: string[] | undefined) => void;
   replaceSessions: (sessions: Record<string, Session>) => void;
   getSession: (sessionId: string) => Session | undefined;
   getSessionsByMode: (mode: ChecklistMode, stackId?: StackId) => Session[];
@@ -167,6 +168,23 @@ export const useSessionStore = create<SessionState>()(
               [sessionId]: {
                 ...session,
                 linkedPRId: prId,
+                updatedAt: new Date().toISOString(),
+              },
+            },
+          };
+        });
+      },
+
+      updateSelectedSections: (sessionId, sections) => {
+        set((state) => {
+          const session = state.sessions[sessionId];
+          if (!session) return state;
+          return {
+            sessions: {
+              ...state.sessions,
+              [sessionId]: {
+                ...session,
+                selectedSections: sections,
                 updatedAt: new Date().toISOString(),
               },
             },

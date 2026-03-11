@@ -165,13 +165,12 @@ export default function StackSelectScreen() {
 
   const handleContinue = () => {
     if (selectedStacks.length === 0) return;
-    if (selectedStacks.length === 1) {
-      router.push(`/review/sessions?stack=${selectedStacks[0]}${repoParam}${prIdParam}${modeParam}` as '/review/sessions');
-    } else {
-      router.push(
-        `/review/sessions?stacks=${selectedStacks.join(',')}${repoParam}${prIdParam}${modeParam}` as '/review/sessions',
-      );
-    }
+    const stackParam = selectedStacks.length === 1
+      ? `stack=${selectedStacks[0]}`
+      : `stacks=${selectedStacks.join(',')}`;
+    router.push(
+      `/review/section-select?${stackParam}${repoParam}${prIdParam}${modeParam}` as '/review/section-select',
+    );
   };
 
   const normalizedSearch = stackSearch.trim().toLowerCase();
@@ -357,17 +356,8 @@ export default function StackSelectScreen() {
 
       {selectedStacks.length > 0 && (
         <BottomActionBar
-          label={`Continue with ${selectedStacks.length} stack${selectedStacks.length > 1 ? 's' : ''}`}
+          label="Continue to unselect irrelevant sections"
           onPress={handleContinue}
-          secondaryLabel="Or pick specific sections..."
-          onSecondaryPress={() => {
-            const stackParam = selectedStacks.length === 1
-              ? `stack=${selectedStacks[0]}`
-              : `stacks=${selectedStacks.join(',')}`;
-            router.push(
-              `/review/section-select?${stackParam}${repoParam}${prIdParam}${modeParam}` as '/review/section-select',
-            );
-          }}
         />
       )}
     </View>

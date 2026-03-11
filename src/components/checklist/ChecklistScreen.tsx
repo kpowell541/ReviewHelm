@@ -87,6 +87,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const setItemResponse = useSessionStore((s) => s.setItemResponse);
   const completeSession = useSessionStore((s) => s.completeSession);
   const updateSessionNotes = useSessionStore((s) => s.updateSessionNotes);
+  const updateSelectedSections = useSessionStore((s) => s.updateSelectedSections);
   const recordSessionResults = useConfidenceStore((s) => s.recordSessionResults);
 
   const antiBiasMode = usePreferencesStore((s) => s.antiBiasMode);
@@ -109,6 +110,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [securityBannerDismissed, setSecurityBannerDismissed] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [showAddSectionsModal, setShowAddSectionsModal] = useState(false);
 
   useEffect(() => {
     setSeverityFilter(defaultSeverityFilter);
@@ -154,6 +156,20 @@ export function ChecklistScreen({ sessionId }: Props) {
       ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
       : getMergedChecklist(sessionEffectiveIds, sessionSelectedSections);
     return withCodeReviewMeta(withSecurityChecklist(base, sessionEffectiveIds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
+
+  // Compute skipped sections (sections excluded by selectedSections filter)
+  const skippedSections = useMemo(() => {
+    if (!sessionMode || !sessionSelectedSections || sessionSelectedSections.length === 0) return [];
+    if (sessionEffectiveIds.length === 0) return [];
+    const selectedSet = new Set(sessionSelectedSections);
+    const fullChecklist = sessionEffectiveIds.length === 1
+      ? getChecklist(sessionEffectiveIds[0])
+      : getMergedChecklist(sessionEffectiveIds);
+    return fullChecklist.sections
+      .filter((s) => !selectedSet.has(s.id))
+      .map((s) => ({ id: s.id, title: s.title, itemCount: getSectionItems(s).length }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
 
@@ -434,6 +450,16 @@ export function ChecklistScreen({ sessionId }: Props) {
     );
   }, [session, scores, finalizeCompletion]);
 
+  const handleAddSectionsBack = useCallback((sectionIds: string[]) => {
+    if (!session || sectionIds.length === 0) return;
+    const current = session.selectedSections ?? [];
+    const updated = [...current, ...sectionIds];
+    updateSelectedSections(sessionId, updated);
+    // Reset the section order ref so newly added sections appear
+    sectionOrderRef.current = null;
+    setShowAddSectionsModal(false);
+  }, [session, sessionId, updateSelectedSections]);
+
   if (!session || !checklist || !scores) {
     return (
       <View style={styles.container}>
@@ -673,6 +699,19 @@ export function ChecklistScreen({ sessionId }: Props) {
                 {session.isComplete ? 'Re-complete Session' : 'Complete Session'}
               </Text>
             </Pressable>
+            {skippedSections.length > 0 && (
+              <Pressable
+                onPress={() => setShowAddSectionsModal(true)}
+                style={({ pressed }) => [
+                  styles.addSectionsButton,
+                  { opacity: pressed ? 0.85 : 1 },
+                ]}
+              >
+                <Text style={styles.addSectionsButtonText}>
+                  Add skipped sections ({skippedSections.length})
+                </Text>
+              </Pressable>
+            )}
           </View>
         }
         contentContainerStyle={styles.listContent}
@@ -721,6 +760,53 @@ export function ChecklistScreen({ sessionId }: Props) {
                 );
               }}
             />
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Add skipped sections modal */}
+      <Modal
+        visible={showAddSectionsModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddSectionsModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowAddSectionsModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Skipped Sections</Text>
+            <Text style={styles.addSectionsHint}>
+              Tap a section to add it back to your review
+            </Text>
+            <FlatList
+              data={skippedSections}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <Pressable
+                  style={styles.modalSectionRow}
+                  onPress={() => handleAddSectionsBack([item.id])}
+                >
+                  <Text style={styles.modalSectionTitle} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.modalSectionCount}>
+                    {item.itemCount} items
+                  </Text>
+                </Pressable>
+              )}
+            />
+            {skippedSections.length > 1 && (
+              <Pressable
+                style={styles.addAllSectionsButton}
+                onPress={() => handleAddSectionsBack(skippedSections.map((s) => s.id))}
+              >
+                <Text style={styles.addAllSectionsText}>
+                  Add all {skippedSections.length} sections
+                </Text>
+              </Pressable>
+            )}
           </View>
         </Pressable>
       </Modal>
@@ -944,6 +1030,37 @@ const styles = StyleSheet.create({
   },
   completeButtonText: {
     fontSize: fontSizes.lg,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  addSectionsButton: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  addSectionsButtonText: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  addSectionsHint: {
+    fontSize: fontSizes.sm,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+  addAllSectionsButton: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  addAllSectionsText: {
+    fontSize: fontSizes.md,
     fontWeight: '600',
     color: '#fff',
   },
