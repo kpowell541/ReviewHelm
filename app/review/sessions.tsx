@@ -124,6 +124,39 @@ export default function ReviewSessionsScreen() {
 
   const handleSelectPR = (pr: TrackedPR) => {
     setShowPRPicker(false);
+
+    // Check for existing active sessions linked to this PR
+    const existingActive = Object.values(rawSessions).filter(
+      (s) => s.linkedPRId === pr.id && !s.isComplete,
+    );
+
+    if (existingActive.length > 0) {
+      const session = existingActive[0];
+      const existingRoute = session.mode === 'polish'
+        ? `/polish/${session.id}` as const
+        : `/review/${session.id}` as const;
+      crossAlert(
+        'Active Session Found',
+        `You have an in-progress session for this PR. Continue it or start a new one?`,
+        [
+          { text: 'Continue Session', onPress: () => router.push(existingRoute) },
+          {
+            text: 'Start New',
+            onPress: () => {
+              const sessionMode = mode === 'polish' || pr.role === 'author' ? 'polish' : 'review';
+              const sessionId = createSession(sessionMode, stackIds, undefined, selectedSections, pr.id);
+              linkSession(pr.id, sessionId);
+              if (repo) saveRepoConfig(repo, stackIds, selectedSections);
+              const route = sessionMode === 'polish' ? `/polish/${sessionId}` : `/review/${sessionId}`;
+              router.push(route);
+            },
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ],
+      );
+      return;
+    }
+
     const sessionMode = mode === 'polish' || pr.role === 'author' ? 'polish' : 'review';
     const sessionId = createSession(sessionMode, stackIds, undefined, selectedSections, pr.id);
     linkSession(pr.id, sessionId);
@@ -141,15 +174,23 @@ export default function ReviewSessionsScreen() {
     router.push(route);
   };
 
-  const handleDelete = (sessionId: string, title: string) => {
-    crossAlert('Delete Session', `Delete "${title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => deleteSession(sessionId),
-      },
-    ]);
+  const completeSession = useSessionStore((s) => s.completeSession);
+
+  const handleSessionAction = (sessionId: string, title: string, isComplete: boolean) => {
+    const actions: { text: string; style?: 'cancel' | 'destructive' | 'default'; onPress?: () => void }[] = [];
+    if (!isComplete) {
+      actions.push({
+        text: 'Mark Complete',
+        onPress: () => completeSession(sessionId),
+      });
+    }
+    actions.push({
+      text: 'Delete',
+      style: 'destructive',
+      onPress: () => deleteSession(sessionId),
+    });
+    actions.push({ text: 'Cancel', style: 'cancel' });
+    crossAlert('Session Options', `"${title}"`, actions);
   };
 
   const getPRTitle = (prId: string | undefined) => {
@@ -198,19 +239,30 @@ export default function ReviewSessionsScreen() {
                 <Pressable
                   key={session.id}
                   onPress={() => router.push(`/review/${session.id}`)}
-                  onLongPress={() => handleDelete(session.id, session.title)}
+                  onLongPress={() => handleSessionAction(session.id, session.title, false)}
                   style={({ pressed }) => [
                     styles.sessionCard,
                     { opacity: pressed ? 0.85 : 1 },
                   ]}
                 >
-                  <Text style={styles.sessionTitle}>{session.title}</Text>
-                  {prTitle && (
-                    <Text style={styles.sessionPR} numberOfLines={1}>PR: {prTitle}</Text>
-                  )}
-                  <Text style={styles.sessionMeta}>
-                    {Object.keys(session.itemResponses).length} items reviewed
-                  </Text>
+                  <View style={styles.sessionRow}>
+                    <View style={styles.sessionInfo}>
+                      <Text style={styles.sessionTitle}>{session.title}</Text>
+                      {prTitle && (
+                        <Text style={styles.sessionPR} numberOfLines={1}>PR: {prTitle}</Text>
+                      )}
+                      <Text style={styles.sessionMeta}>
+                        {Object.keys(session.itemResponses).length} items reviewed
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() => handleSessionAction(session.id, session.title, false)}
+                      hitSlop={8}
+                      style={styles.actionBtn}
+                    >
+                      <Text style={styles.actionBtnText}>...</Text>
+                    </Pressable>
+                  </View>
                 </Pressable>
               );
             })}
@@ -228,22 +280,33 @@ export default function ReviewSessionsScreen() {
                   onPress={() =>
                     router.push(`/session-summary/${session.id}`)
                   }
-                  onLongPress={() => handleDelete(session.id, session.title)}
+                  onLongPress={() => handleSessionAction(session.id, session.title, true)}
                   style={({ pressed }) => [
                     styles.sessionCard,
                     styles.completedCard,
                     { opacity: pressed ? 0.85 : 1 },
                   ]}
                 >
-                  <Text style={styles.sessionTitle}>{session.title}</Text>
-                  {prTitle && (
-                    <Text style={styles.sessionPR} numberOfLines={1}>PR: {prTitle}</Text>
-                  )}
-                  <Text style={styles.sessionMeta}>
-                    {session.completedAt
-                      ? new Date(session.completedAt).toLocaleDateString()
-                      : ''}
-                  </Text>
+                  <View style={styles.sessionRow}>
+                    <View style={styles.sessionInfo}>
+                      <Text style={styles.sessionTitle}>{session.title}</Text>
+                      {prTitle && (
+                        <Text style={styles.sessionPR} numberOfLines={1}>PR: {prTitle}</Text>
+                      )}
+                      <Text style={styles.sessionMeta}>
+                        {session.completedAt
+                          ? new Date(session.completedAt).toLocaleDateString()
+                          : ''}
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() => handleSessionAction(session.id, session.title, true)}
+                      hitSlop={8}
+                      style={styles.actionBtn}
+                    >
+                      <Text style={styles.actionBtnText}>...</Text>
+                    </Pressable>
+                  </View>
                 </Pressable>
               );
             })}
@@ -265,6 +328,7 @@ export default function ReviewSessionsScreen() {
         onSelectPR={handleSelectPR}
         onSkip={handleSkipPR}
         onShowAddPR={() => setShowAddPR(true)}
+        sessions={rawSessions}
       />
 
       {/* Add PR Modal */}
@@ -343,6 +407,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   completedCard: { opacity: 0.7 },
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sessionInfo: {
+    flex: 1,
+  },
   sessionTitle: {
     fontSize: fontSizes.md,
     fontWeight: '500',
@@ -357,5 +428,18 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  actionBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.sm,
+  },
+  actionBtnText: {
+    fontSize: fontSizes.lg,
+    color: colors.textMuted,
+    fontWeight: '700',
+    lineHeight: 20,
   },
 });

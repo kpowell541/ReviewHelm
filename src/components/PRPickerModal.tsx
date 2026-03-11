@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { ModalShell } from './ModalShell';
 import { colors, spacing, fontSizes, radius } from '../theme';
 import { PR_SIZE_LABELS } from '../data/types';
-import type { TrackedPR } from '../data/types';
+import type { TrackedPR, Session } from '../data/types';
 
 interface PRPickerModalProps {
   visible: boolean;
@@ -19,6 +19,8 @@ interface PRPickerModalProps {
   addLabel?: string;
   /** Accent color for the add button and size badge (default: colors.primary) */
   accentColor?: string;
+  /** All sessions, used to show "Active session" indicator */
+  sessions?: Record<string, Session>;
 }
 
 export function PRPickerModal({
@@ -32,8 +34,14 @@ export function PRPickerModal({
   skipLabel = 'Skip — no PR',
   addLabel = '+ Add a PR',
   accentColor,
+  sessions,
 }: PRPickerModalProps) {
   const accent = accentColor ?? colors.primary;
+
+  const hasActiveSession = (prId: string) => {
+    if (!sessions) return false;
+    return Object.values(sessions).some((s) => s.linkedPRId === prId && !s.isComplete);
+  };
 
   return (
     <ModalShell visible={visible} onClose={onClose} title={title}>
@@ -62,12 +70,14 @@ export function PRPickerModal({
             ]
               .filter(Boolean)
               .join(' ');
+            const active = hasActiveSession(pr.id);
             return (
               <Pressable
                 key={pr.id}
                 onPress={() => onSelectPR(pr)}
                 style={({ pressed }) => [
                   styles.card,
+                  active && styles.cardActive,
                   { opacity: pressed ? 0.85 : 1 },
                 ]}
               >
@@ -80,6 +90,9 @@ export function PRPickerModal({
                       {subtitle}
                     </Text>
                   ) : null}
+                  {active && (
+                    <Text style={styles.activeLabel}>In-progress session</Text>
+                  )}
                 </View>
                 {pr.size && (
                   <Text
@@ -144,7 +157,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  cardActive: {
+    borderColor: colors.warning,
+  },
   cardInfo: { flex: 1 },
+  activeLabel: {
+    fontSize: fontSizes.xs,
+    color: colors.warning,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   cardTitle: {
     fontSize: fontSizes.md,
     fontWeight: '600',

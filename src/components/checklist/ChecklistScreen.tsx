@@ -112,15 +112,23 @@ export function ChecklistScreen({ sessionId }: Props) {
     setSessionNotesDraft(session?.sessionNotes ?? '');
   }, [session?.id, session?.sessionNotes]);
 
+  // Derive stable keys so the checklist only recomputes when structure changes,
+  // NOT on every item-response update (which would create new objects and cause
+  // SectionList to lose scroll position).
+  const sessionMode = session?.mode;
+  const sessionSelectedSections = session?.selectedSections;
+  const sessionEffectiveIds = session ? getEffectiveStackIds(session) : [];
+  const effectiveIdsKey = sessionEffectiveIds.join(',');
+  const selectedSectionsKey = sessionSelectedSections?.join(',') ?? '';
+
   const checklist = useMemo(() => {
-    if (!session) return null;
-    if (session.mode === 'polish') {
-      const effectiveIds = getEffectiveStackIds(session);
-      if (effectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
+    if (!sessionMode) return null;
+    if (sessionMode === 'polish') {
+      if (sessionEffectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
       // Merge domain checklists + polish checklist for self-reviews with a stack
-      const domainChecklist = effectiveIds.length === 1
-        ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
-        : getMergedChecklist(effectiveIds, session.selectedSections);
+      const domainChecklist = sessionEffectiveIds.length === 1
+        ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
+        : getMergedChecklist(sessionEffectiveIds, sessionSelectedSections);
       const polishChecklist = getPolishChecklist();
       const merged: Checklist = {
         ...domainChecklist,
@@ -133,15 +141,15 @@ export function ChecklistScreen({ sessionId }: Props) {
         },
         sections: [...domainChecklist.sections, ...polishChecklist.sections],
       };
-      return withCodeReviewMeta(withSecurityChecklist(merged, effectiveIds));
+      return withCodeReviewMeta(withSecurityChecklist(merged, sessionEffectiveIds));
     }
-    const effectiveIds = getEffectiveStackIds(session);
-    if (effectiveIds.length === 0) return null;
-    const base = effectiveIds.length === 1
-      ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
-      : getMergedChecklist(effectiveIds, session.selectedSections);
-    return withCodeReviewMeta(withSecurityChecklist(base, effectiveIds));
-  }, [session]);
+    if (sessionEffectiveIds.length === 0) return null;
+    const base = sessionEffectiveIds.length === 1
+      ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
+      : getMergedChecklist(sessionEffectiveIds, sessionSelectedSections);
+    return withCodeReviewMeta(withSecurityChecklist(base, sessionEffectiveIds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
 
   const allItems = useMemo(() => (checklist ? getAllChecklistItems(checklist) : []), [checklist]);
 
@@ -150,12 +158,13 @@ export function ChecklistScreen({ sessionId }: Props) {
     return computeSessionScores(session, allItems);
   }, [session, allItems]);
 
+  const sessionId_ = session?.id;
   const sections = useMemo<ChecklistSectionListEntry[]>(() => {
-    if (!checklist || !session) return [];
+    if (!checklist || !sessionMode || !sessionId_) return [];
 
     const orderedSections =
-      session.mode === 'polish' && antiBiasMode
-        ? seededShuffle(checklist.sections, hashStringToSeed(session.id))
+      sessionMode === 'polish' && antiBiasMode
+        ? seededShuffle(checklist.sections, hashStringToSeed(sessionId_))
         : checklist.sections;
 
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -177,7 +186,7 @@ export function ChecklistScreen({ sessionId }: Props) {
         };
       })
       .filter((entry) => entry.items.length > 0);
-  }, [checklist, session, antiBiasMode, searchQuery, severityFilter, collapsedSections]);
+  }, [checklist, sessionMode, sessionId_, antiBiasMode, searchQuery, severityFilter, collapsedSections]);
 
   const toggleSection = useCallback((sectionId: string) => {
     setCollapsedSections((prev) => ({

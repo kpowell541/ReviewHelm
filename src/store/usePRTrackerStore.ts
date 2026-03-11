@@ -4,6 +4,7 @@ import { persistStorage } from '../storage/secureStorage';
 import { randomUUID } from 'expo-crypto';
 import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize, PRDependency, CIPassing, AcceptanceOutcome, ReviewOutcome } from '../data/types';
 import { PR_ACTIVE_STATUSES, PR_PRIORITY_ORDER } from '../data/types';
+import { useSessionStore } from './useSessionStore';
 
 interface WipStatus {
   regularCount: number;
@@ -202,6 +203,18 @@ export const usePRTrackerStore = create<PRTrackerState>()(
               : 'closed';
           const now = new Date().toISOString();
           const resolvedAt = toggling ? undefined : now;
+
+          // Auto-complete any linked sessions when PR is accepted/abandoned
+          if (!toggling) {
+            const sessionState = useSessionStore.getState();
+            const linkedSessions = Object.values(sessionState.sessions).filter(
+              (s) => s.linkedPRId === id && !s.isComplete,
+            );
+            for (const s of linkedSessions) {
+              sessionState.completeSession(s.id);
+            }
+          }
+
           return { prs: { ...state.prs, [id]: { ...pr, acceptanceOutcome, status, resolvedAt, updatedAt: now } } };
         });
       },
