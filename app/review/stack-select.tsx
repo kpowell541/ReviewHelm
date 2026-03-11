@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, TextInput } from 'react-native';
 import { crossAlert } from '../../src/utils/alert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { STACKS, getStackInfo } from '../../src/data/checklistRegistry';
+import type { StackInfo } from '../../src/data/checklistRegistry';
 import type { StackId } from '../../src/data/types';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { useTemplateStore } from '../../src/store/useTemplateStore';
@@ -12,6 +13,75 @@ import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
 import { StackLogo } from '../../src/components/StackLogo';
 import { BottomActionBar } from '../../src/components/BottomActionBar';
+
+// -- Stack categories (stacks are alphabetized within each category) ----------
+
+interface StackCategory {
+  name: string;
+  stackIds: Set<StackId>;
+}
+
+const STACK_CATEGORIES: StackCategory[] = [
+  {
+    name: 'Languages',
+    stackIds: new Set<StackId>([
+      'c-lang', 'cpp', 'csharp-dotnet', 'dart-flutter', 'elixir-phoenix',
+      'go', 'java-protobuf', 'lua', 'php', 'python', 'r-lang', 'ruby',
+      'rust', 'scala', 'swift-objc', 'typescript',
+    ]),
+  },
+  {
+    name: 'Web & Mobile Frameworks',
+    stackIds: new Set<StackId>([
+      'angular', 'css-styling', 'django', 'js-ts-react-node',
+      'kotlin-android', 'nextjs', 'spring-boot', 'vue',
+    ]),
+  },
+  {
+    name: 'Data & APIs',
+    stackIds: new Set<StackId>([
+      'data-formats', 'graphql', 'nosql', 'postgresql', 'rest-api',
+      'sql-migrations',
+    ]),
+  },
+  {
+    name: 'Infrastructure & DevOps',
+    stackIds: new Set<StackId>([
+      'cicd', 'docker-k8s', 'package-bundler', 'shell',
+      'terraform-hcl', 'web-devops-config',
+    ]),
+  },
+  {
+    name: 'Testing',
+    stackIds: new Set<StackId>([
+      'api-testing', 'bdd-testing', 'e2e-testing', 'mobile-testing',
+      'performance-testing', 'unit-testing',
+    ]),
+  },
+  {
+    name: 'Cross-cutting',
+    stackIds: new Set<StackId>([
+      'code-review-meta', 'security',
+    ]),
+  },
+];
+
+// Build a lookup so each stack knows its category index
+const STACK_CATEGORY_INDEX = new Map<StackId, number>();
+STACK_CATEGORIES.forEach((cat, idx) => {
+  for (const id of cat.stackIds) STACK_CATEGORY_INDEX.set(id, idx);
+});
+
+// Pre-sort stacks alphabetically by title within each category
+const CATEGORIZED_STACKS: { category: StackCategory; stacks: StackInfo[] }[] =
+  STACK_CATEGORIES.map((cat) => ({
+    category: cat,
+    stacks: STACKS
+      .filter((s) => cat.stackIds.has(s.id))
+      .sort((a, b) => a.title.localeCompare(b.title)),
+  }));
+
+// -------------------------------------------------------------------------
 
 export default function StackSelectScreen() {
   const router = useRouter();
@@ -50,6 +120,14 @@ export default function StackSelectScreen() {
     () => repoConfig?.stackIds ?? [],
   );
   const [stackSearch, setStackSearch] = useState('');
+  // First category starts expanded; all others collapsed
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    STACK_CATEGORIES.forEach((cat, i) => {
+      initial[cat.name] = i !== 0;
+    });
+    return initial;
+  });
 
   // Stacks previously used for this repo (shown as suggestions)
   const previousStackIds = useMemo(
@@ -64,6 +142,13 @@ export default function StackSelectScreen() {
         : [...prev, stackId],
     );
   };
+
+  const toggleCategory = useCallback((categoryName: string) => {
+    setCollapsedCategories((prev) => ({
+      ...prev,
+      [categoryName]: !prev[categoryName],
+    }));
+  }, []);
 
   const repoParam = repo ? `&repo=${encodeURIComponent(repo)}` : '';
   const prIdParam = prId ? `&prId=${encodeURIComponent(prId)}` : '';
@@ -88,6 +173,59 @@ export default function StackSelectScreen() {
         `/review/sessions?stacks=${selectedStacks.join(',')}${repoParam}${prIdParam}${modeParam}` as '/review/sessions',
       );
     }
+  };
+
+  const normalizedSearch = stackSearch.trim().toLowerCase();
+  const isSearching = normalizedSearch.length > 0;
+
+  // When searching, show flat filtered results; otherwise show categorized
+  const filteredFlatStacks = useMemo(() => {
+    if (!isSearching) return [];
+    return STACKS
+      .filter((stack) =>
+        stack.title.toLowerCase().includes(normalizedSearch) ||
+        stack.description.toLowerCase().includes(normalizedSearch) ||
+        stack.id.toLowerCase().includes(normalizedSearch),
+      )
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [isSearching, normalizedSearch]);
+
+  const renderStackCard = (stack: StackInfo) => {
+    const isSelected = selectedStacks.includes(stack.id);
+    const isPrevious = previousStackIds.has(stack.id);
+    const overallAvg = stackAverages[stack.id] ?? null;
+
+    return (
+      <Pressable
+        key={stack.id}
+        onPress={() => toggleStack(stack.id)}
+        style={({ pressed }) => [
+          styles.stackCard,
+          {
+            borderLeftColor: stack.color,
+            opacity: pressed ? 0.85 : 1,
+          },
+          isSelected && styles.stackCardSelected,
+        ]}
+      >
+        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+          {isSelected && <Text style={styles.checkmark}>✓</Text>}
+        </View>
+        <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={36} style={{ marginRight: spacing.md }} />
+        <View style={styles.stackInfo}>
+          <Text style={styles.stackTitle}>{stack.title}</Text>
+          <Text style={styles.stackDescription}>{stack.description}</Text>
+          {isPrevious && (
+            <Text style={styles.previousTag}>Previously used</Text>
+          )}
+        </View>
+        {overallAvg !== null && (
+          <View style={styles.avgBadge}>
+            <Text style={styles.avgText}>{overallAvg.toFixed(1)}/5</Text>
+          </View>
+        )}
+      </Pressable>
+    );
   };
 
   return (
@@ -186,51 +324,35 @@ export default function StackSelectScreen() {
           placeholderTextColor={colors.textMuted}
         />
 
-        {STACKS.filter((stack) => {
-          if (!stackSearch.trim()) return true;
-          const q = stackSearch.trim().toLowerCase();
-          return (
-            stack.title.toLowerCase().includes(q) ||
-            stack.description.toLowerCase().includes(q) ||
-            stack.id.toLowerCase().includes(q)
-          );
-        }).map((stack) => {
-          const isSelected = selectedStacks.includes(stack.id);
-          const isPrevious = previousStackIds.has(stack.id);
-          const overallAvg = stackAverages[stack.id] ?? null;
-
-          return (
-            <Pressable
-              key={stack.id}
-              onPress={() => toggleStack(stack.id)}
-              style={({ pressed }) => [
-                styles.stackCard,
-                {
-                  borderLeftColor: stack.color,
-                  opacity: pressed ? 0.85 : 1,
-                },
-                isSelected && styles.stackCardSelected,
-              ]}
-            >
-              <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                {isSelected && <Text style={styles.checkmark}>✓</Text>}
+        {isSearching ? (
+          // Flat search results
+          filteredFlatStacks.length > 0 ? (
+            filteredFlatStacks.map(renderStackCard)
+          ) : (
+            <Text style={styles.noResults}>No stacks match "{stackSearch}"</Text>
+          )
+        ) : (
+          // Categorized view
+          CATEGORIZED_STACKS.map(({ category, stacks }) => {
+            const isCollapsed = collapsedCategories[category.name];
+            const selectedInCategory = stacks.filter((s) => selectedStacks.includes(s.id)).length;
+            return (
+              <View key={category.name} style={styles.categorySection}>
+                <Pressable
+                  onPress={() => toggleCategory(category.name)}
+                  style={styles.categoryHeader}
+                >
+                  <Text style={styles.categoryChevron}>{isCollapsed ? '▶' : '▼'}</Text>
+                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={styles.categoryCount}>
+                    {selectedInCategory > 0 ? `${selectedInCategory} selected · ` : ''}{stacks.length}
+                  </Text>
+                </Pressable>
+                {!isCollapsed && stacks.map(renderStackCard)}
               </View>
-              <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={36} style={{ marginRight: spacing.md }} />
-              <View style={styles.stackInfo}>
-                <Text style={styles.stackTitle}>{stack.title}</Text>
-                <Text style={styles.stackDescription}>{stack.description}</Text>
-                {isPrevious && (
-                  <Text style={styles.previousTag}>Previously used</Text>
-                )}
-              </View>
-              {overallAvg !== null && (
-                <View style={styles.avgBadge}>
-                  <Text style={styles.avgText}>{overallAvg.toFixed(1)}/5</Text>
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
+            );
+          })
+        )}
       </ScrollView>
       </DesktopContainer>
 
@@ -279,6 +401,40 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     marginBottom: spacing.lg,
   },
+  noResults: {
+    fontSize: fontSizes.md,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing['2xl'],
+  },
+  categorySection: {
+    marginBottom: spacing.sm,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  categoryChevron: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginRight: spacing.sm,
+    width: 14,
+  },
+  categoryName: {
+    flex: 1,
+    fontSize: fontSizes.md,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  categoryCount: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+  },
   stackCard: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.lg,
@@ -311,7 +467,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  stackIcon: { fontSize: 36, marginRight: spacing.md },
   stackInfo: { flex: 1 },
   stackTitle: {
     fontSize: fontSizes.lg,
