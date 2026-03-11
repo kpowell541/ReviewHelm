@@ -222,10 +222,11 @@ export default function PRTrackerScreen() {
 
   const handleStartReview = useCallback(
     (pr: TrackedPR) => {
-      const route = pr.repo
-        ? `/review/stack-select?repo=${encodeURIComponent(pr.repo)}`
-        : '/review/stack-select';
-      router.push(route as '/review/stack-select');
+      const params = new URLSearchParams();
+      if (pr.repo) params.set('repo', pr.repo);
+      params.set('prId', pr.id);
+      const query = params.toString();
+      router.push(`/review/stack-select?${query}` as '/review/stack-select');
     },
     [router],
   );

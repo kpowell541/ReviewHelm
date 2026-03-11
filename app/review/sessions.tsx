@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { crossAlert } from '../../src/utils/alert';
 import { useSessionStore } from '../../src/store/useSessionStore';
@@ -25,11 +25,12 @@ import { EmptyState } from '../../src/components/EmptyState';
 export default function ReviewSessionsScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
-  const { stack, stacks, sections, repo } = useLocalSearchParams<{
+  const { stack, stacks, sections, repo, prId } = useLocalSearchParams<{
     stack?: string;
     stacks?: string;
     sections?: string;
     repo?: string;
+    prId?: string;
   }>();
   const saveRepoConfig = useRepoConfigStore((s) => s.saveRepoConfig);
 
@@ -62,6 +63,20 @@ export default function ReviewSessionsScreen() {
 
   const [showPRPicker, setShowPRPicker] = useState(false);
   const [showAddPR, setShowAddPR] = useState(false);
+
+  // When navigating from PR Tracker with a pre-selected PR, skip the PR picker
+  // and create the session immediately.
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (!prId || autoStarted.current || stackIds.length === 0) return;
+    const pr = prs[prId];
+    if (!pr) return;
+    autoStarted.current = true;
+    const sessionId = createSession('review', stackIds, undefined, selectedSections, pr.id);
+    linkSession(pr.id, sessionId);
+    if (repo) saveRepoConfig(repo, stackIds, selectedSections);
+    router.replace(`/review/${sessionId}`);
+  }, [prId, stackIds, selectedSections, prs, createSession, linkSession, saveRepoConfig, repo, router]);
 
   const activePRs = useMemo(() => {
     return Object.values(prs)

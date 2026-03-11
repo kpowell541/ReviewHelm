@@ -16,7 +16,7 @@ import { BottomActionBar } from '../../src/components/BottomActionBar';
 export default function StackSelectScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
-  const { repo } = useLocalSearchParams<{ repo?: string }>();
+  const { repo, prId } = useLocalSearchParams<{ repo?: string; prId?: string }>();
   const histories = useConfidenceStore((s) => s.histories);
   const stackAverages = useMemo(() => {
     const allItems = Object.values(histories);
@@ -65,24 +65,25 @@ export default function StackSelectScreen() {
   };
 
   const repoParam = repo ? `&repo=${encodeURIComponent(repo)}` : '';
+  const prIdParam = prId ? `&prId=${encodeURIComponent(prId)}` : '';
 
   const handleUseRepoConfig = () => {
     if (!repoConfig) return;
     const params = repoConfig.selectedSections?.length
-      ? `stacks=${repoConfig.stackIds.join(',')}&sections=${repoConfig.selectedSections.join(',')}${repoParam}`
+      ? `stacks=${repoConfig.stackIds.join(',')}&sections=${repoConfig.selectedSections.join(',')}${repoParam}${prIdParam}`
       : repoConfig.stackIds.length === 1
-        ? `stack=${repoConfig.stackIds[0]}${repoParam}`
-        : `stacks=${repoConfig.stackIds.join(',')}${repoParam}`;
+        ? `stack=${repoConfig.stackIds[0]}${repoParam}${prIdParam}`
+        : `stacks=${repoConfig.stackIds.join(',')}${repoParam}${prIdParam}`;
     router.push(`/review/sessions?${params}` as '/review/sessions');
   };
 
   const handleContinue = () => {
     if (selectedStacks.length === 0) return;
     if (selectedStacks.length === 1) {
-      router.push(`/review/sessions?stack=${selectedStacks[0]}${repoParam}` as '/review/sessions');
+      router.push(`/review/sessions?stack=${selectedStacks[0]}${repoParam}${prIdParam}` as '/review/sessions');
     } else {
       router.push(
-        `/review/sessions?stacks=${selectedStacks.join(',')}${repoParam}` as '/review/sessions',
+        `/review/sessions?stacks=${selectedStacks.join(',')}${repoParam}${prIdParam}` as '/review/sessions',
       );
     }
   };
@@ -225,7 +226,7 @@ export default function StackSelectScreen() {
               ? `stack=${selectedStacks[0]}`
               : `stacks=${selectedStacks.join(',')}`;
             router.push(
-              `/review/section-select?${stackParam}${repoParam}` as '/review/section-select',
+              `/review/section-select?${stackParam}${repoParam}${prIdParam}` as '/review/section-select',
             );
           }}
         />
