@@ -26,29 +26,28 @@ const STACK_CATEGORIES: StackCategory[] = [
     name: 'Languages',
     stackIds: new Set<StackId>([
       'c-lang', 'cpp', 'csharp-dotnet', 'dart-flutter', 'elixir-phoenix',
-      'go', 'java-protobuf', 'lua', 'php', 'python', 'r-lang', 'ruby',
-      'rust', 'scala', 'swift-objc', 'typescript',
+      'go', 'java-protobuf', 'js-ts-react-node', 'lua', 'php', 'python',
+      'r-lang', 'ruby', 'rust', 'scala', 'swift-objc', 'typescript',
     ]),
   },
   {
     name: 'Web & Mobile Frameworks',
     stackIds: new Set<StackId>([
-      'angular', 'css-styling', 'django', 'js-ts-react-node',
-      'kotlin-android', 'nextjs', 'spring-boot', 'vue',
+      'angular', 'css-styling', 'django', 'kotlin-android', 'nextjs',
+      'nodejs', 'react', 'spring-boot', 'vue',
     ]),
   },
   {
     name: 'Data & APIs',
     stackIds: new Set<StackId>([
-      'data-formats', 'graphql', 'nosql', 'postgresql', 'rest-api',
-      'sql-migrations',
+      'data-formats', 'graphql', 'nosql', 'postgresql', 'protobuf',
+      'rest-api', 'sql-migrations',
     ]),
   },
   {
     name: 'Infrastructure & DevOps',
     stackIds: new Set<StackId>([
-      'cicd', 'docker-k8s', 'package-bundler', 'shell',
-      'terraform-hcl', 'web-devops-config',
+      'cicd', 'docker-k8s', 'package-bundler', 'shell', 'terraform-hcl',
     ]),
   },
   {

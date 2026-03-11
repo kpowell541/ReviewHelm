@@ -12,7 +12,6 @@ export type StackId =
   | 'go'
   | 'terraform-hcl'
   | 'swift-objc'
-  | 'web-devops-config'
   | 'python'
   | 'ruby'
   | 'lua'
@@ -50,7 +49,10 @@ export type StackId =
   | 'e2e-testing'
   | 'api-testing'
   | 'performance-testing'
-  | 'mobile-testing';
+  | 'mobile-testing'
+  | 'react'
+  | 'nodejs'
+  | 'protobuf';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,
