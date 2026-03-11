@@ -25,12 +25,13 @@ import { EmptyState } from '../../src/components/EmptyState';
 export default function ReviewSessionsScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
-  const { stack, stacks, sections, repo, prId } = useLocalSearchParams<{
+  const { stack, stacks, sections, repo, prId, mode } = useLocalSearchParams<{
     stack?: string;
     stacks?: string;
     sections?: string;
     repo?: string;
     prId?: string;
+    mode?: string;
   }>();
   const saveRepoConfig = useRepoConfigStore((s) => s.saveRepoConfig);
 
@@ -64,19 +65,26 @@ export default function ReviewSessionsScreen() {
   const [showPRPicker, setShowPRPicker] = useState(false);
   const [showAddPR, setShowAddPR] = useState(false);
 
-  // When navigating from PR Tracker with a pre-selected PR, skip the PR picker
-  // and create the session immediately.
+  // When navigating with a pre-selected PR (from PR Tracker or Polish), skip
+  // the PR picker and create the session immediately. Session mode is
+  // determined by the PR's role: author → polish, reviewer → review.
+  // An explicit `mode` param overrides this (e.g. when skipping PR selection).
   const autoStarted = useRef(false);
   useEffect(() => {
-    if (!prId || autoStarted.current || stackIds.length === 0) return;
-    const pr = prs[prId];
-    if (!pr) return;
+    if (autoStarted.current || stackIds.length === 0) return;
+    if (!prId && !mode) return;
+
+    const pr = prId ? prs[prId] : undefined;
+    if (prId && !pr) return;
+
     autoStarted.current = true;
-    const sessionId = createSession('review', stackIds, undefined, selectedSections, pr.id);
-    linkSession(pr.id, sessionId);
+    const sessionMode = mode === 'polish' || pr?.role === 'author' ? 'polish' : 'review';
+    const sessionId = createSession(sessionMode, stackIds, undefined, selectedSections, pr?.id);
+    if (pr) linkSession(pr.id, sessionId);
     if (repo) saveRepoConfig(repo, stackIds, selectedSections);
-    router.replace(`/review/${sessionId}`);
-  }, [prId, stackIds, selectedSections, prs, createSession, linkSession, saveRepoConfig, repo, router]);
+    const route = sessionMode === 'polish' ? `/polish/${sessionId}` : `/review/${sessionId}`;
+    router.replace(route);
+  }, [prId, mode, stackIds, selectedSections, prs, createSession, linkSession, saveRepoConfig, repo, router]);
 
   const activePRs = useMemo(() => {
     return Object.values(prs)
@@ -116,17 +124,21 @@ export default function ReviewSessionsScreen() {
 
   const handleSelectPR = (pr: TrackedPR) => {
     setShowPRPicker(false);
-    const sessionId = createSession('review', stackIds, undefined, selectedSections, pr.id);
+    const sessionMode = mode === 'polish' || pr.role === 'author' ? 'polish' : 'review';
+    const sessionId = createSession(sessionMode, stackIds, undefined, selectedSections, pr.id);
     linkSession(pr.id, sessionId);
     if (repo) saveRepoConfig(repo, stackIds, selectedSections);
-    router.push(`/review/${sessionId}`);
+    const route = sessionMode === 'polish' ? `/polish/${sessionId}` : `/review/${sessionId}`;
+    router.push(route);
   };
 
   const handleSkipPR = () => {
     setShowPRPicker(false);
-    const sessionId = createSession('review', stackIds, undefined, selectedSections);
+    const sessionMode = mode === 'polish' ? 'polish' : 'review';
+    const sessionId = createSession(sessionMode, stackIds, undefined, selectedSections);
     if (repo) saveRepoConfig(repo, stackIds, selectedSections);
-    router.push(`/review/${sessionId}`);
+    const route = sessionMode === 'polish' ? `/polish/${sessionId}` : `/review/${sessionId}`;
+    router.push(route);
   };
 
   const handleDelete = (sessionId: string, title: string) => {

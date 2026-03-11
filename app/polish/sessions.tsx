@@ -10,33 +10,25 @@ import { useRouter } from 'expo-router';
 import { crossAlert } from '../../src/utils/alert';
 import { useSessionStore } from '../../src/store/useSessionStore';
 import { usePRTrackerStore } from '../../src/store/usePRTrackerStore';
-import type { TrackedPR, StackId } from '../../src/data/types';
-import { StackLogo } from '../../src/components/StackLogo';
+import type { TrackedPR } from '../../src/data/types';
 import { PR_ACTIVE_STATUSES } from '../../src/data/types';
 import { PRPickerModal } from '../../src/components/PRPickerModal';
 import { EmptyState } from '../../src/components/EmptyState';
-import { STACKS } from '../../src/data/checklistRegistry';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
 import { useResponsive } from '../../src/hooks/useResponsive';
 import { AddPRModal } from '../../src/components/AddPRModal';
-import { ModalShell } from '../../src/components/ModalShell';
 
 export default function PolishSessionsScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
   const allSessions = useSessionStore((s) => s.sessions);
-  const createSession = useSessionStore((s) => s.createSession);
   const deleteSession = useSessionStore((s) => s.deleteSession);
 
   const prs = usePRTrackerStore((s) => s.prs);
   const addPR = usePRTrackerStore((s) => s.addPR);
-  const linkSession = usePRTrackerStore((s) => s.linkSession);
 
   const [showPRPicker, setShowPRPicker] = useState(false);
-  const [showStackPicker, setShowStackPicker] = useState(false);
-  const [pendingPRId, setPendingPRId] = useState<string | undefined>(undefined);
-  const [selectedStacks, setSelectedStacks] = useState<StackId[]>([]);
   const [showAddPR, setShowAddPR] = useState(false);
 
   const authorPRs = useMemo(() => {
@@ -58,32 +50,16 @@ export default function PolishSessionsScreen() {
 
   const handleSelectPR = (pr: TrackedPR) => {
     setShowPRPicker(false);
-    setPendingPRId(pr.id);
-    setSelectedStacks([]);
-    setShowStackPicker(true);
+    const params = new URLSearchParams();
+    params.set('mode', 'polish');
+    params.set('prId', pr.id);
+    if (pr.repo) params.set('repo', pr.repo);
+    router.push(`/review/stack-select?${params.toString()}` as '/review/stack-select');
   };
 
   const handleSkipPR = () => {
     setShowPRPicker(false);
-    setPendingPRId(undefined);
-    setSelectedStacks([]);
-    setShowStackPicker(true);
-  };
-
-  const toggleStack = (stackId: StackId) => {
-    setSelectedStacks((prev) =>
-      prev.includes(stackId)
-        ? prev.filter((id) => id !== stackId)
-        : [...prev, stackId],
-    );
-  };
-
-  const handleStartPolish = () => {
-    setShowStackPicker(false);
-    const stacks = selectedStacks.length > 0 ? selectedStacks : undefined;
-    const sessionId = createSession('polish', stacks, undefined, undefined, pendingPRId);
-    if (pendingPRId) linkSession(pendingPRId, sessionId);
-    router.push(`/polish/${sessionId}`);
+    router.push('/review/stack-select?mode=polish' as '/review/stack-select');
   };
 
   const handleDelete = (sessionId: string, title: string) => {
@@ -214,51 +190,6 @@ export default function PolishSessionsScreen() {
         accentColor={colors.polishMode}
       />
 
-      {/* Stack Picker Modal */}
-      <ModalShell
-        visible={showStackPicker}
-        onClose={() => setShowStackPicker(false)}
-        title="What stack is this PR in?"
-      >
-        <Text style={styles.stackHint}>
-          Select stacks to include domain-specific checks alongside the polish checklist. Skip to use polish only.
-        </Text>
-
-        <ScrollView style={styles.prList} showsVerticalScrollIndicator={false}>
-          {STACKS.map((stack) => {
-            const selected = selectedStacks.includes(stack.id);
-            return (
-              <Pressable
-                key={stack.id}
-                onPress={() => toggleStack(stack.id)}
-                style={({ pressed }) => [
-                  styles.stackCard,
-                  selected && { borderColor: stack.color, backgroundColor: stack.color + '15' },
-                  { opacity: pressed ? 0.85 : 1 },
-                ]}
-              >
-                <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={24} style={{ marginRight: spacing.sm }} />
-                <View style={styles.stackInfo}>
-                  <Text style={styles.stackTitle}>{stack.shortTitle}</Text>
-                </View>
-                {selected && <Text style={[styles.stackCheck, { color: stack.color }]}>✓</Text>}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        <View style={styles.pickerButtons}>
-          <Pressable onPress={handleStartPolish} style={styles.skipButton}>
-            <Text style={styles.skipButtonText}>
-              {selectedStacks.length === 0 ? 'Skip — polish only' : 'Start'}
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => setShowStackPicker(false)} style={styles.cancelButton}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </Pressable>
-        </View>
-      </ModalShell>
-
       {/* Add PR Modal */}
       <AddPRModal
         visible={showAddPR}
@@ -353,67 +284,5 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
     marginTop: spacing.xs,
-  },
-
-  // Stack Picker shared
-  prList: { maxHeight: 300 },
-  pickerButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  skipButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  skipButtonText: {
-    fontSize: fontSizes.md,
-    color: colors.textSecondary,
-  },
-  cancelButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-  },
-  cancelButtonText: {
-    fontSize: fontSizes.md,
-    color: colors.textSecondary,
-  },
-
-  // Stack Picker
-  stackHint: {
-    fontSize: fontSizes.sm,
-    color: colors.textMuted,
-    marginBottom: spacing.md,
-  },
-  stackCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bg,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  stackIcon: {
-    fontSize: 20,
-    marginRight: spacing.sm,
-  },
-  stackInfo: { flex: 1 },
-  stackTitle: {
-    fontSize: fontSizes.md,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  stackCheck: {
-    fontSize: fontSizes.lg,
-    fontWeight: '700',
-    marginLeft: spacing.sm,
   },
 });
