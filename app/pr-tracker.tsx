@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
+import { useSessionStore } from '../src/store/useSessionStore';
 import { crossAlert } from '../src/utils/alert';
 import { isToday } from '../src/utils/dateUtils';
 import type {
@@ -220,15 +221,48 @@ export default function PRTrackerScreen() {
     [markReviewed],
   );
 
+  const sessions = useSessionStore((s) => s.sessions);
+
   const handleStartReview = useCallback(
     (pr: TrackedPR) => {
+      // Check for existing active sessions linked to this PR
+      const activeSessions = Object.values(sessions).filter(
+        (s) => s.linkedPRId === pr.id && !s.isComplete,
+      );
+
+      if (activeSessions.length > 0) {
+        const session = activeSessions[0];
+        const route = session.mode === 'polish'
+          ? `/polish/${session.id}` as const
+          : `/review/${session.id}` as const;
+        crossAlert(
+          'Active Session Found',
+          `You have an in-progress session for this PR. Continue it or start a new one?`,
+          [
+            { text: 'Continue Session', onPress: () => router.push(route) },
+            {
+              text: 'Start New',
+              onPress: () => {
+                const params = new URLSearchParams();
+                if (pr.repo) params.set('repo', pr.repo);
+                params.set('prId', pr.id);
+                const query = params.toString();
+                router.push(`/review/stack-select?${query}` as '/review/stack-select');
+              },
+            },
+            { text: 'Cancel', style: 'cancel' },
+          ],
+        );
+        return;
+      }
+
       const params = new URLSearchParams();
       if (pr.repo) params.set('repo', pr.repo);
       params.set('prId', pr.id);
       const query = params.toString();
       router.push(`/review/stack-select?${query}` as '/review/stack-select');
     },
-    [router],
+    [router, sessions],
   );
 
   const handleCardPress = useCallback(

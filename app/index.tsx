@@ -13,6 +13,7 @@ import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { AddPRModal } from '../src/components/AddPRModal';
 import { useFeatureGate } from '../src/hooks/useFeatureGate';
+import { crossAlert } from '../src/utils/alert';
 
 const ADMIN_DASHBOARD_EMAILS = (
   process.env.EXPO_PUBLIC_ADMIN_DASHBOARD_EMAILS ??
@@ -61,7 +62,15 @@ function ModeCard({ title, subtitle, icon, color, onPress, badge, isDesktop, loc
   );
 }
 
-function RecentSessionCard({ session }: { session: { id: string; title: string; mode: string; updatedAt: string; isComplete: boolean } }) {
+function RecentSessionCard({
+  session,
+  prTitle,
+  onDelete,
+}: {
+  session: { id: string; title: string; mode: string; updatedAt: string; isComplete: boolean; linkedPRId?: string };
+  prTitle: string | null;
+  onDelete: (id: string, title: string) => void;
+}) {
   const router = useRouter();
   const route = session.mode === 'polish'
     ? `/polish/${session.id}` as const
@@ -70,14 +79,22 @@ function RecentSessionCard({ session }: { session: { id: string; title: string; 
   return (
     <Pressable
       onPress={() => router.push(route)}
+      onLongPress={() => onDelete(session.id, session.title)}
       style={({ pressed }) => [
         styles.recentCard,
         { opacity: pressed ? 0.85 : 1 },
       ]}
     >
-      <Text style={styles.recentTitle} numberOfLines={1}>
-        {session.title}
-      </Text>
+      <View style={styles.recentCardInfo}>
+        <Text style={styles.recentTitle} numberOfLines={1}>
+          {session.title}
+        </Text>
+        {prTitle && (
+          <Text style={styles.recentPR} numberOfLines={1}>
+            {prTitle}
+          </Text>
+        )}
+      </View>
       <Text style={styles.recentMeta}>
         {session.isComplete ? '✅ Complete' : '🔄 In progress'}
       </Text>
@@ -104,6 +121,7 @@ export default function HomeScreen() {
   const { isDesktop } = useResponsive();
   const authUser = useAuthStore((s) => s.user);
   const sessions = useSessionStore((s) => s.sessions);
+  const deleteSession = useSessionStore((s) => s.deleteSession);
   const histories = useConfidenceStore((s) => s.histories);
   const prs = usePRTrackerStore((s) => s.prs);
   const addPR = usePRTrackerStore((s) => s.addPR);
@@ -111,6 +129,20 @@ export default function HomeScreen() {
   const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
 
   const [showAddPR, setShowAddPR] = useState(false);
+
+  const handleDeleteSession = (sessionId: string, title: string) => {
+    crossAlert('Delete Session', `Delete "${title}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteSession(sessionId) },
+    ]);
+  };
+
+  const getPRTitle = (prId: string | undefined) => {
+    if (!prId) return null;
+    const pr = prs[prId];
+    return pr ? pr.title : null;
+  };
+
   const starterGate = useFeatureGate('starter');
   const learnGate = useFeatureGate('pro');
   const gapsGate = useFeatureGate('pro');
@@ -285,7 +317,12 @@ export default function HomeScreen() {
           <View style={styles.recentSection}>
             <Text style={styles.sectionTitle}>Recent Sessions</Text>
             {recentSessions.map((session) => (
-              <RecentSessionCard key={session.id} session={session} />
+              <RecentSessionCard
+                key={session.id}
+                session={session}
+                prTitle={getPRTitle(session.linkedPRId)}
+                onDelete={handleDeleteSession}
+              />
             ))}
           </View>
         )}
@@ -457,10 +494,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  recentCardInfo: {
+    flex: 1,
+  },
   recentTitle: {
     fontSize: fontSizes.md,
     color: colors.textPrimary,
-    flex: 1,
+  },
+  recentPR: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   recentMeta: {
     fontSize: fontSizes.xs,
