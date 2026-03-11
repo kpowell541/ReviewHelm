@@ -454,8 +454,20 @@ export default function PRTrackerScreen() {
         onLongPress={() => handleDelete(pr)}
         accessibilityRole="button"
         accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${PR_STATUS_LABELS[pr.status]}`}
-        accessibilityHint="Tap for actions, long press to delete"
+        accessibilityHint="Tap for actions, or use the actions button"
       >
+        <Pressable
+          onPress={(e) => {
+            e.stopPropagation();
+            handleCardPress(pr);
+          }}
+          hitSlop={8}
+          style={styles.prActionBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Actions for ${pr.title}`}
+        >
+          <Text style={styles.prActionBtnText}>...</Text>
+        </Pressable>
         <View style={styles.prCardLeft}>
           <Pressable
             onPress={() => cycleStatus(pr)}
@@ -965,6 +977,23 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
     overflow: 'hidden' as const,
+  },
+  prActionBtn: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.sm,
+    zIndex: 1,
+  },
+  prActionBtnText: {
+    fontSize: fontSizes.lg,
+    color: colors.textMuted,
+    fontWeight: '700',
+    lineHeight: 20,
   },
   prCardLeft: { marginRight: spacing.sm },
   statusDot: {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Linking, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
@@ -72,8 +72,11 @@ export default function PlansScreen() {
   const startTopUp = useTierStore((s) => s.startTopUp);
   const openPortal = useTierStore((s) => s.openPortal);
   const { isDesktop } = useResponsive();
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = Math.min(screenWidth * 0.8, 300);
   const [loading, setLoading] = useState<string | null>(null);
   const [isRegionAllowed, setIsRegionAllowed] = useState(true);
+  const [activePlanIndex, setActivePlanIndex] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -162,59 +165,137 @@ export default function PlansScreen() {
             </Text>
           )}
 
-          <View style={styles.plansRow}>
-            <PlanCard
-              name="Free"
-              price="$0"
-              period=""
-              features={['PR checklists', 'Search & bookmarks', '5 active sessions']}
-              isCurrent={effectiveTier === 'free'}
-            />
-            <PlanCard
-              name="Starter"
-              price="$3"
-              period="/mo"
-              features={['Everything in Free', 'Unlimited sessions', 'Polish mode', 'PR tracker & analytics']}
-              isCurrent={effectiveTier === 'starter'}
-              actionLabel={effectiveTier === 'free' ? 'Upgrade to Starter' : undefined}
-              onAction={() => handleSubscribe('starter')}
-              loading={loading === 'starter'}
-              disabled={!isRegionAllowed}
-            />
-            <PlanCard
-              name="Pro"
-              price="$7"
-              period="/mo"
-              features={['Everything in Starter', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
-              isCurrent={effectiveTier === 'pro'}
-              trialBadge
-              actionLabel={
-                effectiveTier === 'free' || effectiveTier === 'starter'
-                  ? 'Upgrade to Pro'
-                  : undefined
-              }
-              onAction={() => handleSubscribe('pro')}
-              loading={loading === 'pro'}
-              disabled={!isRegionAllowed}
-            />
-            <PlanCard
-              name="Premium"
-              price="$15"
-              period="/mo"
-              features={['Everything in Pro', 'AI tutor & drafter', '$7.50/mo AI credits included', 'Tutor sync']}
-              isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
-              highlighted
-              trialBadge
-              actionLabel={
-                effectiveTier === 'free' || effectiveTier === 'starter' || effectiveTier === 'pro'
-                  ? 'Upgrade to Premium'
-                  : undefined
-              }
-              onAction={() => handleSubscribe('premium')}
-              loading={loading === 'premium'}
-              disabled={!isRegionAllowed}
-            />
-          </View>
+          {isDesktop ? (
+            <View style={styles.plansRowDesktop}>
+              <PlanCard
+                name="Free"
+                price="$0"
+                period=""
+                features={['PR checklists', 'Search & bookmarks', '5 active sessions']}
+                isCurrent={effectiveTier === 'free'}
+              />
+              <PlanCard
+                name="Starter"
+                price="$3"
+                period="/mo"
+                features={['Everything in Free', 'Unlimited sessions', 'Polish mode', 'PR tracker & analytics']}
+                isCurrent={effectiveTier === 'starter'}
+                actionLabel={effectiveTier === 'free' ? 'Upgrade to Starter' : undefined}
+                onAction={() => handleSubscribe('starter')}
+                loading={loading === 'starter'}
+                disabled={!isRegionAllowed}
+              />
+              <PlanCard
+                name="Pro"
+                price="$7"
+                period="/mo"
+                features={['Everything in Starter', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
+                isCurrent={effectiveTier === 'pro'}
+                trialBadge
+                actionLabel={
+                  effectiveTier === 'free' || effectiveTier === 'starter'
+                    ? 'Upgrade to Pro'
+                    : undefined
+                }
+                onAction={() => handleSubscribe('pro')}
+                loading={loading === 'pro'}
+                disabled={!isRegionAllowed}
+              />
+              <PlanCard
+                name="Premium"
+                price="$15"
+                period="/mo"
+                features={['Everything in Pro', 'AI tutor & drafter', '$7.50/mo AI credits included', 'Tutor sync']}
+                isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
+                highlighted
+                trialBadge
+                actionLabel={
+                  effectiveTier === 'free' || effectiveTier === 'starter' || effectiveTier === 'pro'
+                    ? 'Upgrade to Premium'
+                    : undefined
+                }
+                onAction={() => handleSubscribe('premium')}
+                loading={loading === 'premium'}
+                disabled={!isRegionAllowed}
+              />
+            </View>
+          ) : (
+            <>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={cardWidth + spacing.md}
+                decelerationRate="fast"
+                contentContainerStyle={styles.plansScrollContent}
+                onScroll={(e) => {
+                  const index = Math.round(e.nativeEvent.contentOffset.x / (cardWidth + spacing.md));
+                  setActivePlanIndex(index);
+                }}
+                scrollEventThrottle={16}
+              >
+                <PlanCard
+                  name="Free"
+                  price="$0"
+                  period=""
+                  features={['PR checklists', 'Search & bookmarks', '5 active sessions']}
+                  isCurrent={effectiveTier === 'free'}
+                  width={cardWidth}
+                />
+                <PlanCard
+                  name="Starter"
+                  price="$3"
+                  period="/mo"
+                  features={['Everything in Free', 'Unlimited sessions', 'Polish mode', 'PR tracker & analytics']}
+                  isCurrent={effectiveTier === 'starter'}
+                  actionLabel={effectiveTier === 'free' ? 'Upgrade to Starter' : undefined}
+                  onAction={() => handleSubscribe('starter')}
+                  loading={loading === 'starter'}
+                  disabled={!isRegionAllowed}
+                  width={cardWidth}
+                />
+                <PlanCard
+                  name="Pro"
+                  price="$7"
+                  period="/mo"
+                  features={['Everything in Starter', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
+                  isCurrent={effectiveTier === 'pro'}
+                  trialBadge
+                  actionLabel={
+                    effectiveTier === 'free' || effectiveTier === 'starter'
+                      ? 'Upgrade to Pro'
+                      : undefined
+                  }
+                  onAction={() => handleSubscribe('pro')}
+                  loading={loading === 'pro'}
+                  disabled={!isRegionAllowed}
+                  width={cardWidth}
+                />
+                <PlanCard
+                  name="Premium"
+                  price="$15"
+                  period="/mo"
+                  features={['Everything in Pro', 'AI tutor & drafter', '$7.50/mo AI credits included', 'Tutor sync']}
+                  isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
+                  highlighted
+                  trialBadge
+                  actionLabel={
+                    effectiveTier === 'free' || effectiveTier === 'starter' || effectiveTier === 'pro'
+                      ? 'Upgrade to Premium'
+                      : undefined
+                  }
+                  onAction={() => handleSubscribe('premium')}
+                  loading={loading === 'premium'}
+                  disabled={!isRegionAllowed}
+                  width={cardWidth}
+                />
+              </ScrollView>
+              <View style={styles.dotsRow}>
+                {[0, 1, 2, 3].map((i) => (
+                  <View key={i} style={[styles.dot, i === activePlanIndex && styles.dotActive]} />
+                ))}
+              </View>
+            </>
+          )}
 
           {isPaid && (
             <Pressable
@@ -332,6 +413,7 @@ function PlanCard({
   onAction,
   loading: isLoading,
   disabled,
+  width,
 }: {
   name: string;
   price: string;
@@ -344,6 +426,7 @@ function PlanCard({
   onAction?: () => void;
   loading?: boolean;
   disabled?: boolean;
+  width?: number;
 }) {
   return (
     <View
@@ -351,6 +434,7 @@ function PlanCard({
         styles.planCard,
         highlighted && styles.planCardHighlighted,
         isCurrent && styles.planCardCurrent,
+        width != null ? { width } : { flex: 1, minWidth: 220 },
       ]}
     >
       {isCurrent && (
@@ -425,8 +509,31 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  plansRow: {
+  plansRowDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
+  },
+  plansScrollContent: {
+    paddingHorizontal: spacing.md,
+    gap: spacing.md,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.border,
+  },
+  dotActive: {
+    backgroundColor: colors.primary,
+    width: 24,
   },
   planCard: {
     backgroundColor: colors.bgCard,

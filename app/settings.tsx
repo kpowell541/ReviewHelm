@@ -44,6 +44,15 @@ import { FeatureTourModal } from '../src/components/FeatureTourModal';
 
 const MODEL_OPTIONS: ClaudeModel[] = ['sonnet', 'opus'];
 
+type TabKey = 'general' | 'ai' | 'data' | 'account';
+
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'general', label: 'General' },
+  { key: 'ai', label: 'AI & Billing' },
+  { key: 'data', label: 'Data' },
+  { key: 'account', label: 'Account' },
+];
+
 interface BackupPayload {
   version: number;
   exportedAt: string;
@@ -137,6 +146,7 @@ export default function SettingsScreen() {
   const markSyncSuccess = useSyncStore((s) => s.markSyncSuccess);
   const markSyncFailure = useSyncStore((s) => s.markSyncFailure);
 
+  const [selectedTab, setSelectedTab] = useState<TabKey>('general');
   const [showFeatureTour, setShowFeatureTour] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
@@ -482,26 +492,141 @@ export default function SettingsScreen() {
 
   return (
     <DesktopContainer>
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
-      <Text style={styles.sectionTitle} accessibilityRole="header">Sync</Text>
-      <View style={styles.card}>
-        <Text style={styles.hint}>
-          Sync sessions, PRs, gaps, and preferences across all your devices.
-        </Text>
+    <View style={styles.tabBar} accessibilityRole="tablist">
+      {TABS.map((tab) => (
         <Pressable
-          style={[styles.primaryButton, syncingData && styles.buttonDisabled]}
-          onPress={handleSyncData}
-          disabled={syncingData}
-          accessibilityRole="button"
-          accessibilityLabel="Sync data between devices"
-          accessibilityState={{ disabled: syncingData }}
+          key={tab.key}
+          style={[styles.tab, selectedTab === tab.key && styles.tabActive]}
+          onPress={() => setSelectedTab(tab.key)}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: selectedTab === tab.key }}
+          accessibilityLabel={`${tab.label} tab`}
         >
-          <Text style={styles.primaryButtonText}>
-            {syncingData ? 'Syncing...' : 'Sync data between devices'}
+          <Text style={[styles.tabText, selectedTab === tab.key && styles.tabTextActive]}>
+            {tab.label}
           </Text>
         </Pressable>
+      ))}
+    </View>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
+
+      {selectedTab === 'general' && (<>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Review Settings</Text>
+      <View style={styles.card}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.label}>Anti-Bias Mode</Text>
+            <Text style={styles.hint}>
+              Randomize section order in Polish mode to prevent checklist fatigue.
+            </Text>
+          </View>
+          <Switch
+            value={antiBiasMode}
+            onValueChange={setAntiBiasMode}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Anti-bias mode"
+          />
+        </View>
+        <Text style={[styles.label, styles.inlineLabel]}>Checklist Text Size</Text>
+        <View style={styles.inlineChoices}>
+          {(['small', 'medium', 'large'] as const).map((size) => (
+            <Pressable
+              key={size}
+              style={[
+                styles.inlineChoiceButton,
+                fontSize === size && styles.inlineChoiceButtonActive,
+              ]}
+              onPress={() => setFontSize(size)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: fontSize === size }}
+              accessibilityLabel={`${size[0].toUpperCase() + size.slice(1)} text size`}
+            >
+              <Text
+                style={[
+                  styles.inlineChoiceText,
+                  fontSize === size && styles.inlineChoiceTextActive,
+                ]}
+              >
+                {size[0].toUpperCase() + size.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <Text style={[styles.label, styles.inlineLabel]}>Theme</Text>
+        <View style={styles.inlineChoices}>
+          {(['dark', 'light', 'system'] as const).map((mode) => (
+            <Pressable
+              key={mode}
+              style={[
+                styles.inlineChoiceButton,
+                themeMode === mode && styles.inlineChoiceButtonActive,
+              ]}
+              onPress={() => setThemeMode(mode)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: themeMode === mode }}
+              accessibilityLabel={`${mode[0].toUpperCase() + mode.slice(1)} theme`}
+            >
+              <Text
+                style={[
+                  styles.inlineChoiceText,
+                  themeMode === mode && styles.inlineChoiceTextActive,
+                ]}
+              >
+                {mode[0].toUpperCase() + mode.slice(1)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
+      <Text style={styles.sectionTitle} accessibilityRole="header">PR Tracker</Text>
+      <View style={styles.card}>
+        <Text style={[styles.label, styles.inlineLabel]}>My PR WIP Limit</Text>
+        <Text style={styles.hint}>
+          Maximum active personal PRs before showing a warning.
+        </Text>
+        <View style={styles.inlineChoices}>
+          {[2, 3, 4, 5].map((n) => (
+            <Pressable
+              key={n}
+              style={[
+                styles.inlineChoiceButton,
+                wipLimit === n && styles.inlineChoiceButtonActive,
+              ]}
+              onPress={() => setWipLimit(n)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: wipLimit === n }}
+              accessibilityLabel={`WIP limit: ${n}`}
+            >
+              <Text
+                style={[
+                  styles.inlineChoiceText,
+                  wipLimit === n && styles.inlineChoiceTextActive,
+                ]}
+              >
+                {n}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.label}>Emergency Slot</Text>
+            <Text style={styles.hint}>
+              Reserve one extra slot for emergency/hotfix PRs.
+            </Text>
+          </View>
+          <Switch
+            value={emergencySlotEnabled}
+            onValueChange={setEmergencySlotEnabled}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Emergency slot"
+          />
+        </View>
+      </View>
+      </>)}
+
+      {selectedTab === 'ai' && (<>
       <Text style={styles.sectionTitle} accessibilityRole="header">Subscription</Text>
       <View style={styles.card}>
         <View style={styles.tierRow}>
@@ -691,7 +816,7 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.statText}>Total tokens: {getTotalTokens().toLocaleString()}</Text>
         <Text style={styles.statText}>Estimated spend: ${getEstimatedCost().toFixed(2)}</Text>
-        <Text style={styles.statText}>Today’s API calls: {getTodayCalls()}</Text>
+        <Text style={styles.statText}>Today's API calls: {getTodayCalls()}</Text>
         <Text style={styles.statText}>Tutor cache entries: {responseCacheCount}</Text>
         <Text style={styles.statText}>
           Monthly cost used: ${budgetStatus.monthlyCostUsd.toFixed(2)} / $
@@ -830,119 +955,26 @@ export default function SettingsScreen() {
           backstop. This is external to the app and recommended even with in-app controls.
         </Text>
       </View>
+      </>)}
 
-      <Text style={styles.sectionTitle} accessibilityRole="header">Review Settings</Text>
+      {selectedTab === 'data' && (<>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Sync</Text>
       <View style={styles.card}>
-        <View style={styles.settingRow}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.label}>Anti-Bias Mode</Text>
-            <Text style={styles.hint}>
-              Randomize section order in Polish mode to prevent checklist fatigue.
-            </Text>
-          </View>
-          <Switch
-            value={antiBiasMode}
-            onValueChange={setAntiBiasMode}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            accessibilityLabel="Anti-bias mode"
-          />
-        </View>
-        <Text style={[styles.label, styles.inlineLabel]}>Checklist Text Size</Text>
-        <View style={styles.inlineChoices}>
-          {(['small', 'medium', 'large'] as const).map((size) => (
-            <Pressable
-              key={size}
-              style={[
-                styles.inlineChoiceButton,
-                fontSize === size && styles.inlineChoiceButtonActive,
-              ]}
-              onPress={() => setFontSize(size)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: fontSize === size }}
-              accessibilityLabel={`${size[0].toUpperCase() + size.slice(1)} text size`}
-            >
-              <Text
-                style={[
-                  styles.inlineChoiceText,
-                  fontSize === size && styles.inlineChoiceTextActive,
-                ]}
-              >
-                {size[0].toUpperCase() + size.slice(1)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <Text style={[styles.label, styles.inlineLabel]}>Theme</Text>
-        <View style={styles.inlineChoices}>
-          {(['dark', 'light', 'system'] as const).map((mode) => (
-            <Pressable
-              key={mode}
-              style={[
-                styles.inlineChoiceButton,
-                themeMode === mode && styles.inlineChoiceButtonActive,
-              ]}
-              onPress={() => setThemeMode(mode)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: themeMode === mode }}
-              accessibilityLabel={`${mode[0].toUpperCase() + mode.slice(1)} theme`}
-            >
-              <Text
-                style={[
-                  styles.inlineChoiceText,
-                  themeMode === mode && styles.inlineChoiceTextActive,
-                ]}
-              >
-                {mode[0].toUpperCase() + mode.slice(1)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <Text style={styles.sectionTitle} accessibilityRole="header">PR Tracker</Text>
-      <View style={styles.card}>
-        <Text style={[styles.label, styles.inlineLabel]}>My PR WIP Limit</Text>
         <Text style={styles.hint}>
-          Maximum active personal PRs before showing a warning.
+          Sync sessions, PRs, gaps, and preferences across all your devices.
         </Text>
-        <View style={styles.inlineChoices}>
-          {[2, 3, 4, 5].map((n) => (
-            <Pressable
-              key={n}
-              style={[
-                styles.inlineChoiceButton,
-                wipLimit === n && styles.inlineChoiceButtonActive,
-              ]}
-              onPress={() => setWipLimit(n)}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: wipLimit === n }}
-              accessibilityLabel={`WIP limit: ${n}`}
-            >
-              <Text
-                style={[
-                  styles.inlineChoiceText,
-                  wipLimit === n && styles.inlineChoiceTextActive,
-                ]}
-              >
-                {n}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
-          <View style={styles.settingInfo}>
-            <Text style={styles.label}>Emergency Slot</Text>
-            <Text style={styles.hint}>
-              Reserve one extra slot for emergency/hotfix PRs.
-            </Text>
-          </View>
-          <Switch
-            value={emergencySlotEnabled}
-            onValueChange={setEmergencySlotEnabled}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            accessibilityLabel="Emergency slot"
-          />
-        </View>
+        <Pressable
+          style={[styles.primaryButton, syncingData && styles.buttonDisabled]}
+          onPress={handleSyncData}
+          disabled={syncingData}
+          accessibilityRole="button"
+          accessibilityLabel="Sync data between devices"
+          accessibilityState={{ disabled: syncingData }}
+        >
+          <Text style={styles.primaryButtonText}>
+            {syncingData ? 'Syncing...' : 'Sync data between devices'}
+          </Text>
+        </Pressable>
       </View>
 
       <Text style={styles.sectionTitle} accessibilityRole="header">Data</Text>
@@ -1003,7 +1035,9 @@ export default function SettingsScreen() {
           />
         </View>
       </View>
+      </>)}
 
+      {selectedTab === 'account' && (<>
       <Text style={styles.sectionTitle} accessibilityRole="header">Account</Text>
       <View style={styles.card}>
         {authUser ? (
@@ -1077,21 +1111,47 @@ export default function SettingsScreen() {
           <Text style={styles.connectedLinkArrow}>{'>'}</Text>
         </Pressable>
       </View>
-
-      <FeatureTourModal
-        visible={showFeatureTour}
-        onClose={() => setShowFeatureTour(false)}
-        effectiveTier={effectiveTier}
-      />
+      </>)}
 
       <AppFooter />
       <Text style={styles.footer}>ReviewHelm v{appVersion}</Text>
     </ScrollView>
+    <FeatureTourModal
+      visible={showFeatureTour}
+      onClose={() => setShowFeatureTour(false)}
+      effectiveTier={effectiveTier}
+    />
     </DesktopContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.bg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+    paddingHorizontal: spacing.md,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: colors.primary,
+  },
+  tabText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '500',
+    color: colors.textMuted,
+  },
+  tabTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: spacing['4xl'] },
   contentDesktop: { paddingHorizontal: spacing['2xl'], paddingTop: spacing['2xl'] },

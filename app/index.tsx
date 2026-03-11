@@ -91,7 +91,7 @@ function RecentSessionCard({
       ]}
       accessibilityRole="button"
       accessibilityLabel={`${session.title}${prTitle ? `, ${prTitle}` : ''}, ${session.isComplete ? 'complete' : 'in progress'}`}
-      accessibilityHint="Long press to delete"
+      accessibilityHint="Tap to open, or use the actions button"
     >
       <View style={styles.recentCardInfo}>
         <Text style={styles.recentTitle} numberOfLines={1}>
@@ -106,6 +106,18 @@ function RecentSessionCard({
       <Text style={styles.recentMeta}>
         {session.isComplete ? '✅ Complete' : '🔄 In progress'}
       </Text>
+      <Pressable
+        onPress={(e) => {
+          e.stopPropagation();
+          onDelete(session.id, session.title);
+        }}
+        hitSlop={8}
+        style={styles.recentActionBtn}
+        accessibilityRole="button"
+        accessibilityLabel={`Actions for ${session.title}`}
+      >
+        <Text style={styles.recentActionBtnText}>...</Text>
+      </Pressable>
     </Pressable>
   );
 }
@@ -546,6 +558,20 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textSecondary,
     marginLeft: spacing.sm,
+  },
+  recentActionBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.sm,
+    marginLeft: spacing.xs,
+  },
+  recentActionBtnText: {
+    fontSize: fontSizes.lg,
+    color: colors.textMuted,
+    fontWeight: '700',
+    lineHeight: 20,
   },
 
 });
