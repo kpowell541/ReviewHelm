@@ -1168,6 +1168,47 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /admin/security/key-rotation-status:
+    get:
+      tags: [Admin]
+      summary: Check key rotation health and overdue keys
+      responses:
+        '200':
+          description: Key rotation status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currentKekVersion:
+                    type: integer
+                  rotationPolicyDays:
+                    type: integer
+                  totalKeys:
+                    type: integer
+                  staleVersionCount:
+                    type: integer
+                  overdueRotationCount:
+                    type: integer
+                  healthy:
+                    type: boolean
+                  overdueKeyIds:
+                    type: array
+                    items:
+                      type: string
+                required:
+                  - currentKekVersion
+                  - rotationPolicyDays
+                  - totalKeys
+                  - staleVersionCount
+                  - overdueRotationCount
+                  - healthy
+                  - overdueKeyIds
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
   /admin/security/rotate-provider-keys:
     post:
       tags: [Admin]
