@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, TextInput } from 'react-native';
 import { crossAlert } from '../../src/utils/alert';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { STACKS, getStackInfo } from '../../src/data/checklistRegistry';
@@ -49,6 +49,7 @@ export default function StackSelectScreen() {
   const [selectedStacks, setSelectedStacks] = useState<StackId[]>(
     () => repoConfig?.stackIds ?? [],
   );
+  const [stackSearch, setStackSearch] = useState('');
 
   // Stacks previously used for this repo (shown as suggestions)
   const previousStackIds = useMemo(
@@ -177,7 +178,23 @@ export default function StackSelectScreen() {
           Select one or more stacks that match the PR you're reviewing
         </Text>
 
-        {STACKS.map((stack) => {
+        <TextInput
+          style={styles.stackSearchInput}
+          value={stackSearch}
+          onChangeText={setStackSearch}
+          placeholder="Search stacks..."
+          placeholderTextColor={colors.textMuted}
+        />
+
+        {STACKS.filter((stack) => {
+          if (!stackSearch.trim()) return true;
+          const q = stackSearch.trim().toLowerCase();
+          return (
+            stack.title.toLowerCase().includes(q) ||
+            stack.description.toLowerCase().includes(q) ||
+            stack.id.toLowerCase().includes(q)
+          );
+        }).map((stack) => {
           const isSelected = selectedStacks.includes(stack.id);
           const isPrevious = previousStackIds.has(stack.id);
           const overallAvg = stackAverages[stack.id] ?? null;
@@ -249,7 +266,18 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: fontSizes.md,
     color: colors.textSecondary,
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.md,
+  },
+  stackSearchInput: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.textPrimary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: fontSizes.md,
+    marginBottom: spacing.lg,
   },
   stackCard: {
     backgroundColor: colors.bgCard,

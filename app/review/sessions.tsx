@@ -218,7 +218,11 @@ export default function ReviewSessionsScreen() {
           <Text style={styles.newButtonText}>Start a new session with an existing PR</Text>
         </Pressable>
 
-        <Text style={styles.orText}>OR</Text>
+        <View style={styles.orDivider}>
+          <View style={styles.orLine} />
+          <Text style={styles.orText}>or</Text>
+          <View style={styles.orLine} />
+        </View>
 
         <Pressable
           onPress={() => setShowAddPR(true)}
@@ -232,7 +236,7 @@ export default function ReviewSessionsScreen() {
 
         {activeSessions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active</Text>
+            <Text style={styles.sectionTitle}>Active ({activeSessions.length})</Text>
             {activeSessions.map((session) => {
               const prTitle = getPRTitle(session.linkedPRId);
               return (
@@ -271,7 +275,7 @@ export default function ReviewSessionsScreen() {
 
         {completedSessions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Completed</Text>
+            <Text style={styles.sectionTitle}>Completed ({completedSessions.length})</Text>
             {completedSessions.map((session) => {
               const prTitle = getPRTitle(session.linkedPRId);
               return (
@@ -369,13 +373,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+    gap: spacing.md,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
   orText: {
-    textAlign: 'center',
-    marginVertical: spacing.lg,
-    fontSize: fontSizes['2xl'],
-    fontWeight: '700',
+    fontSize: fontSizes.sm,
     color: colors.textMuted,
-    letterSpacing: 2,
   },
   addPRButton: {
     backgroundColor: colors.bgCard,

@@ -489,7 +489,7 @@ export function ChecklistScreen({ sessionId }: Props) {
             <Text style={styles.scoreValue}>{scores.confidence}%</Text>
           </View>
           <View style={styles.scorePill}>
-            <Text style={styles.scoreLabel}>Issues</Text>
+            <Text style={styles.scoreLabel}>Flagged</Text>
             <Text style={styles.scoreValue}>{scores.totalIssues}</Text>
           </View>
         </View>
@@ -682,8 +682,10 @@ export function ChecklistScreen({ sessionId }: Props) {
       <Pressable
         style={styles.floatingButton}
         onPress={() => setShowSectionPicker(true)}
+        accessibilityLabel="Jump to section"
+        accessibilityRole="button"
       >
-        <Text style={styles.floatingButtonText}>§</Text>
+        <Text style={styles.floatingButtonText}>☰</Text>
       </Pressable>
 
       {/* Section picker modal */}
