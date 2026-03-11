@@ -28,9 +28,9 @@ const EnvSchema = z.object({
   SUPABASE_JWT_ISSUER: z.string().url(),
   SUPABASE_JWT_AUDIENCE: z.string().min(1),
   SUPABASE_JWT_ALGORITHMS: z.string().optional().default('RS256'),
-  SUPABASE_MAX_JWT_AGE_SECONDS: z.coerce.number().int().positive().default(3600),
+  SUPABASE_MAX_JWT_AGE_SECONDS: z.coerce.number().int().positive().default(3660),
   SUPABASE_REQUIRE_SESSION_ID_CLAIM: z.preprocess(
-    (value) => `${value ?? 'true'}`.toLowerCase() === 'true',
+    (value) => `${value ?? 'false'}`.toLowerCase() === 'true',
     z.boolean(),
   ),
   SUPABASE_SERVICE_ROLE_KEY: z

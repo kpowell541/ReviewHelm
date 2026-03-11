@@ -59,7 +59,14 @@ function createWebStorage(primary: Storage | null, fallback: Storage | null): St
 const webLocalStorage = getBrowserStorage('local');
 const webSessionStorage = getBrowserStorage('session');
 const webPersistStorage = createWebStorage(webLocalStorage, webSessionStorage);
-const webAuthStorage = createWebStorage(webSessionStorage, webLocalStorage);
+const WEB_AUTH_STORAGE_MODE =
+  (process.env.EXPO_PUBLIC_WEB_AUTH_STORAGE ?? 'session').toLowerCase() === 'local'
+    ? 'local'
+    : 'session';
+const webAuthStorage =
+  WEB_AUTH_STORAGE_MODE === 'local'
+    ? createWebStorage(webLocalStorage, webSessionStorage)
+    : createWebStorage(webSessionStorage, webLocalStorage);
 
 const nativeSecureStorage: StorageLike = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -76,7 +83,9 @@ export const secureStoreAsyncStorage: StorageLike =
 
 /**
  * Auth session storage.
- * On web this prefers sessionStorage (shorter persistence window) with localStorage fallback.
+ * On web this is controlled by EXPO_PUBLIC_WEB_AUTH_STORAGE:
+ * - "session" (default): sessionStorage first, localStorage fallback
+ * - "local": localStorage first, sessionStorage fallback
  */
 export const authSessionStorage: StorageLike =
   Platform.OS === 'web' ? webAuthStorage : nativeSecureStorage;

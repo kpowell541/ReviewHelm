@@ -197,20 +197,37 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     signOut: async (options) => {
       set({ isLoading: true, error: null });
+      const shouldClearLocalData = options?.clearLocalData ?? true;
+      let signOutError: unknown = null;
+
       try {
         const supabase = getSupabaseClient();
         await supabase.auth.signOut();
-        const shouldClearLocalData = options?.clearLocalData ?? true;
-        if (shouldClearLocalData) {
-          await clearLocalUserData();
-        }
-        set({ session: null, user: null, isLoading: false, error: null });
       } catch (err: any) {
-        set({
-          isLoading: false,
-          error: err.message || 'Sign out failed',
-        });
+        signOutError = err;
       }
+
+      let localClearError: unknown = null;
+      if (shouldClearLocalData) {
+        try {
+          await clearLocalUserData();
+        } catch (err) {
+          localClearError = err;
+        }
+      }
+
+      const finalError = signOutError ?? localClearError;
+      set({
+        session: null,
+        user: null,
+        isLoading: false,
+        error:
+          finalError && typeof finalError === 'object' && 'message' in finalError
+            ? String((finalError as { message?: unknown }).message ?? 'Sign out failed')
+            : finalError
+              ? 'Sign out failed'
+              : null,
+      });
     },
 
     getAccessToken: async () => {

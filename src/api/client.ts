@@ -1,28 +1,11 @@
 import { useAuthStore } from '../store/useAuthStore';
+import { isSecureWebUrl } from '../utils/urlSecurity';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
 const API_BASE_PATH = process.env.EXPO_PUBLIC_API_BASE_PATH ?? '';
 
 function getBaseUrl(): string {
   return `${API_BASE_URL}${API_BASE_PATH}`;
-}
-
-function isLocalHost(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '::1'
-  );
-}
-
-function isSecureWebUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol === 'https:') return true;
-    return parsed.protocol === 'http:' && isLocalHost(parsed.hostname);
-  } catch {
-    return false;
-  }
 }
 
 function assertBaseUrl(baseUrl: string): void {

@@ -94,10 +94,17 @@ export async function clearLocalUserData(): Promise<void> {
   resetStoreToInitial(useBookmarkStore);
   resetStoreToInitial(useTemplateStore);
 
-  // Keep UI preferences but clear any local key tokens.
-  const preferences = usePreferencesStore.getState();
-  await Promise.allSettled([
-    preferences.clearApiKey(),
-    preferences.clearAdminApiKey(),
-  ]);
+  // Keep UI preferences but clear any local key tokens if key-management methods exist.
+  const preferences = usePreferencesStore.getState() as Partial<{
+    clearApiKey: () => Promise<void>;
+    clearAdminApiKey: () => Promise<void>;
+  }>;
+  const keyCleanupTasks: Promise<void>[] = [];
+  if (typeof preferences.clearApiKey === 'function') {
+    keyCleanupTasks.push(preferences.clearApiKey());
+  }
+  if (typeof preferences.clearAdminApiKey === 'function') {
+    keyCleanupTasks.push(preferences.clearAdminApiKey());
+  }
+  await Promise.allSettled(keyCleanupTasks);
 }
