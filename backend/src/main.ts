@@ -150,6 +150,59 @@ async function bootstrap() {
   );
   app.use(express.json({ limit: bodyLimit }));
   app.use(express.urlencoded({ extended: true, limit: bodyLimit }));
+
+  // CORS must be enabled before any middleware that may reject requests (e.g.
+  // the US-only region gate), so that error responses still carry the
+  // Access-Control-Allow-Origin header and browsers can read them.
+  const allowedOrigins = config
+    .get('ALLOWED_ORIGINS')
+    .split(',')
+    .map((origin: string) => origin.trim())
+    .filter(Boolean);
+
+  if (isProduction && allowedOrigins.length === 0) {
+    if (strictStartupChecks) {
+      throw new Error(
+        'ALLOWED_ORIGINS is required in production when STRICT_STARTUP_CHECKS=true.',
+      );
+    }
+    console.warn(
+      JSON.stringify({
+        level: 'warn',
+        type: 'startup',
+        message:
+          'ALLOWED_ORIGINS is empty in production; browser requests will fail CORS.',
+        at: new Date().toISOString(),
+      }),
+    );
+  }
+
+  app.enableCors({
+    origin:
+      allowedOrigins.length > 0
+        ? (
+            origin: string | undefined,
+            callback: (error: Error | null, allow?: boolean) => void,
+          ) => {
+            const corsCallback = callback;
+            const corsOrigin = origin;
+            const allowed = !!corsOrigin && allowedOrigins.includes(corsOrigin);
+
+            if (!corsOrigin) {
+              // Native app requests typically do not send an Origin header.
+              corsCallback(null, true);
+              return;
+            }
+
+            corsCallback(
+              allowed ? null : new Error('Origin not allowed by CORS'),
+              allowed,
+            );
+          }
+        : !isProduction,
+    credentials: true,
+  });
+
   const usOnlyMode = config.get('US_ONLY_MODE');
   const usAllowedCountries = parseCsvList(config.get('US_ALLOWED_COUNTRIES'));
   const usGeoHeader = String(config.get('US_GEO_HEADER') ?? 'cf-ipcountry').trim();
@@ -230,55 +283,6 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
-  const allowedOrigins = config
-    .get('ALLOWED_ORIGINS')
-    .split(',')
-    .map((origin: string) => origin.trim())
-    .filter(Boolean);
-
-  if (isProduction && allowedOrigins.length === 0) {
-    if (strictStartupChecks) {
-      throw new Error(
-        'ALLOWED_ORIGINS is required in production when STRICT_STARTUP_CHECKS=true.',
-      );
-    }
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        type: 'startup',
-        message:
-          'ALLOWED_ORIGINS is empty in production; browser requests will fail CORS.',
-        at: new Date().toISOString(),
-      }),
-    );
-  }
-
-  app.enableCors({
-    origin:
-      allowedOrigins.length > 0
-        ? (
-            origin: string | undefined,
-            callback: (error: Error | null, allow?: boolean) => void,
-          ) => {
-            const corsCallback = callback;
-            const corsOrigin = origin;
-            const allowed = !!corsOrigin && allowedOrigins.includes(corsOrigin);
-
-            if (!corsOrigin) {
-              // Native app requests typically do not send an Origin header.
-              corsCallback(null, true);
-              return;
-            }
-
-            corsCallback(
-              allowed ? null : new Error('Origin not allowed by CORS'),
-              allowed,
-            );
-          }
-        : !isProduction,
-    credentials: true,
-  });
 
   app.use((req: RequestWithMeta, res: express.Response, next: express.NextFunction) => {
     const incomingId = req.header('x-request-id');
