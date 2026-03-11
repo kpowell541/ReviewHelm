@@ -15,7 +15,7 @@ import { crossAlert } from '../../utils/alert';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useConfidenceStore } from '../../store/useConfidenceStore';
 import { usePreferencesStore } from '../../store/usePreferencesStore';
-import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withSecurityChecklist, withCodeReviewMeta, getRelevantSecuritySections } from '../../data/checklistLoader';
+import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withCodeReviewMeta, getRelevantSecuritySections } from '../../data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../../data/types';
 import type {
   Checklist,
@@ -132,7 +132,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const checklist = useMemo(() => {
     if (!sessionMode) return null;
     if (sessionMode === 'polish') {
-      if (sessionEffectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
+      if (sessionEffectiveIds.length === 0) return withCodeReviewMeta(getPolishChecklist());
       // Merge domain checklists + polish checklist for self-reviews with a stack
       const domainChecklist = sessionEffectiveIds.length === 1
         ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
@@ -149,13 +149,13 @@ export function ChecklistScreen({ sessionId }: Props) {
         },
         sections: [...domainChecklist.sections, ...polishChecklist.sections],
       };
-      return withCodeReviewMeta(withSecurityChecklist(merged, sessionEffectiveIds));
+      return withCodeReviewMeta(merged);
     }
     if (sessionEffectiveIds.length === 0) return null;
     const base = sessionEffectiveIds.length === 1
       ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
       : getMergedChecklist(sessionEffectiveIds, sessionSelectedSections);
-    return withCodeReviewMeta(withSecurityChecklist(base, sessionEffectiveIds));
+    return withCodeReviewMeta(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
 
@@ -1153,12 +1153,30 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.md,
   },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  cancelButton: {
+    flex: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
   addAllSectionsButton: {
+    flex: 2,
     backgroundColor: colors.primary,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
-    marginTop: spacing.md,
   },
   addAllSectionsText: {
     fontSize: fontSizes.md,
@@ -1185,7 +1203,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sectionTitleInactive: {
-    opacity: 0.5,
+    color: colors.textMuted,
   },
   headerTopRow: {
     flexDirection: 'row',
@@ -1378,25 +1396,5 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textMuted,
     fontStyle: 'italic',
-  },
-  modalButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cancelButtonText: {
-    fontSize: fontSizes.md,
-    color: colors.textSecondary,
-    fontWeight: '600',
   },
 });

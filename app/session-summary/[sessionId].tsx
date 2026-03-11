@@ -17,7 +17,6 @@ import {
   getPolishChecklist,
   getMergedChecklist,
   filterSections,
-  withSecurityChecklist,
   withCodeReviewMeta,
 } from '../../src/data/checklistLoader';
 import {
@@ -54,12 +53,12 @@ export default function SessionSummaryScreen() {
     if (!session) return null;
     if (session.mode === 'polish') {
       const effectiveIds = getEffectiveStackIds(session);
-      if (effectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
+      if (effectiveIds.length === 0) return withCodeReviewMeta(getPolishChecklist());
       const domainChecklist = effectiveIds.length === 1
         ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
         : getMergedChecklist(effectiveIds, session.selectedSections);
       const polishCl = getPolishChecklist();
-      return withCodeReviewMeta(withSecurityChecklist({
+      return withCodeReviewMeta({
         ...domainChecklist,
         meta: {
           ...domainChecklist.meta,
@@ -69,14 +68,14 @@ export default function SessionSummaryScreen() {
           totalItems: domainChecklist.meta.totalItems + polishCl.meta.totalItems,
         },
         sections: [...domainChecklist.sections, ...polishCl.sections],
-      }, effectiveIds));
+      });
     }
     const effectiveIds = getEffectiveStackIds(session);
     if (effectiveIds.length === 0) return null;
     const base = effectiveIds.length === 1
       ? filterSections(getChecklist(effectiveIds[0]), session.selectedSections)
       : getMergedChecklist(effectiveIds, session.selectedSections);
-    return withCodeReviewMeta(withSecurityChecklist(base, effectiveIds));
+    return withCodeReviewMeta(base);
   }, [session]);
 
   const allItems = useMemo(

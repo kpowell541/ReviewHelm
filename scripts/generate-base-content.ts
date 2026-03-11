@@ -16,7 +16,9 @@ type StackId =
   | 'go'
   | 'terraform-hcl'
   | 'swift-objc'
-  | 'web-devops-config'
+  | 'react'
+  | 'nodejs'
+  | 'protobuf'
   | 'python'
   | 'ruby'
   | 'lua'
@@ -79,7 +81,9 @@ const CHECKLIST_FILES = [
   'go.json',
   'terraform-hcl.json',
   'swift-objc.json',
-  'web-devops-config.json',
+  'react.json',
+  'nodejs.json',
+  'protobuf.json',
   'python.json',
   'ruby.json',
   'lua.json',
@@ -121,8 +125,12 @@ function stackLanguageHint(stackId: StackId): string {
     return 'Prefer Terraform HCL examples and infrastructure-focused review guidance.';
   if (stackId === 'swift-objc')
     return 'Prefer Swift and Objective-C examples focused on iOS/macOS development.';
-  if (stackId === 'web-devops-config')
-    return 'Prefer examples across HTML/CSS, shell scripts, Dockerfiles, Groovy/Jenkins, and configuration files.';
+  if (stackId === 'react')
+    return 'Prefer React/JSX examples focused on components, hooks, and frontend patterns.';
+  if (stackId === 'nodejs')
+    return 'Prefer Node.js examples focused on backend APIs, middleware, and server-side patterns.';
+  if (stackId === 'protobuf')
+    return 'Prefer Protocol Buffers and gRPC examples focused on schema design and API contracts.';
   if (stackId === 'python')
     return 'Prefer Python examples with practical typing, testing, and readability guidance.';
   if (stackId === 'ruby')

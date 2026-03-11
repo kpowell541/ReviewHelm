@@ -6,19 +6,8 @@ const repoRoot = path.resolve(import.meta.dirname, '..');
 const sourceDir = path.join(repoRoot, 'assets', 'data', 'checklists');
 const targetDir = path.join(repoRoot, 'backend', 'src', 'checklists', 'data');
 
-const files = [
-  'c-lang.json',
-  'go.json',
-  'java-protobuf.json',
-  'js-ts-react-node.json',
-  'lua.json',
-  'polish-my-pr.json',
-  'python.json',
-  'ruby.json',
-  'swift-objc.json',
-  'terraform-hcl.json',
-  'web-devops-config.json',
-];
+const entries = await fs.readdir(sourceDir);
+const files = entries.filter((f) => f.endsWith('.json')).sort();
 
 await fs.mkdir(targetDir, { recursive: true });
 

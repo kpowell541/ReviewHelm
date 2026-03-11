@@ -369,7 +369,7 @@ export default function StackSelectScreen() {
 
       {selectedStacks.length > 0 && (
         <BottomActionBar
-          label="Continue to unselect irrelevant sections"
+          label="Next: Refine sections"
           onPress={handleContinue}
         />
       )}
