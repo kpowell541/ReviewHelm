@@ -16,6 +16,8 @@ import { AppModule } from './app.module';
 import type { AppEnv } from './config/env.schema';
 import type { AuthenticatedUser } from './common/auth/types';
 import { SecurityExceptionFilter } from './common/http/safe-exception.filter';
+import { RedisService } from './common/redis/redis.service';
+import { slog } from './common/logging';
 
 interface RequestWithMeta extends express.Request {
   user?: AuthenticatedUser;
@@ -44,6 +46,11 @@ function isIpAllowed(ip: string, allowlist: string[]): boolean {
   return allowlist.length > 0 && allowlist.includes(ip);
 }
 
+/** UTC minute bucket string for rate-limit keys (e.g. "202603111423"). */
+function minuteBucket(date: Date): string {
+  return `${date.getUTCFullYear()}${String(date.getUTCMonth() + 1).padStart(2, '0')}${String(date.getUTCDate()).padStart(2, '0')}${String(date.getUTCHours()).padStart(2, '0')}${String(date.getUTCMinutes()).padStart(2, '0')}`;
+}
+
 function normalizePath(path: string): string {
   const trimmed = path.trim();
   if (!trimmed) return '/';
@@ -53,53 +60,23 @@ function normalizePath(path: string): string {
 
 function installProcessSignalLogging(): void {
   process.on('uncaughtException', (error: Error) => {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        type: 'process',
-        event: 'uncaught_exception',
-        message: error.message,
-        stack: error.stack,
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.error('process', { event: 'uncaught_exception', message: error.message, stack: error.stack });
   });
 
   process.on('unhandledRejection', (reason: unknown) => {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        type: 'process',
-        event: 'unhandled_rejection',
-        reason: reason instanceof Error ? reason.message : String(reason),
-        stack: reason instanceof Error ? reason.stack : undefined,
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.error('process', {
+      event: 'unhandled_rejection',
+      reason: reason instanceof Error ? reason.message : String(reason),
+      stack: reason instanceof Error ? reason.stack : undefined,
+    });
   });
 
   process.on('SIGTERM', () => {
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        type: 'process',
-        event: 'sigterm',
-        message: 'Received SIGTERM',
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.warn('process', { event: 'sigterm', message: 'Received SIGTERM' });
   });
 
   process.on('SIGINT', () => {
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        type: 'process',
-        event: 'sigint',
-        message: 'Received SIGINT',
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.warn('process', { event: 'sigint', message: 'Received SIGINT' });
   });
 }
 
@@ -196,15 +173,7 @@ async function bootstrap() {
         'ALLOWED_ORIGINS is required in production when STRICT_STARTUP_CHECKS=true.',
       );
     }
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        type: 'startup',
-        message:
-          'ALLOWED_ORIGINS is empty in production; browser requests will fail CORS.',
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.warn('startup', { message: 'ALLOWED_ORIGINS is empty in production; browser requests will fail CORS.' });
   }
 
   app.enableCors({
@@ -238,8 +207,7 @@ async function bootstrap() {
   // Global IP-based rate limit — catches unauthenticated brute-force attempts
   // before they reach NestJS guards and JWKS verification.
   const globalIpLimit = config.get('GLOBAL_IP_RATE_LIMIT_PER_MINUTE');
-  const redisUrl = config.get('UPSTASH_REDIS_REST_URL');
-  const redisToken = config.get('UPSTASH_REDIS_REST_TOKEN');
+  const redis = app.get(RedisService);
   app.use(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.method === 'OPTIONS') {
       next();
@@ -251,36 +219,19 @@ async function bootstrap() {
       return;
     }
     const now = new Date();
-    const bucket = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}${String(now.getUTCHours()).padStart(2, '0')}${String(now.getUTCMinutes()).padStart(2, '0')}`;
+    const bucket = minuteBucket(now);
     const key = `ratelimit:global:ip:${ip}:${bucket}`;
     try {
-      const response = await fetch(redisUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(['INCR', key]),
-        signal: AbortSignal.timeout(2000),
-      });
-      if (response.ok) {
-        const payload = (await response.json()) as { result?: number };
-        const hits = typeof payload.result === 'number' ? payload.result : 0;
-        if (hits === 1) {
-          void fetch(redisUrl, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(['EXPIRE', key, 90]),
-            signal: AbortSignal.timeout(2000),
-          }).catch(() => {});
-        }
-        if (hits > globalIpLimit) {
-          const retryAfter = Math.max(1, 60 - now.getUTCSeconds());
-          res.setHeader('Retry-After', String(retryAfter));
-          res.status(429).json({
-            statusCode: 429,
-            error: 'Too Many Requests',
-            message: 'Global rate limit exceeded. Please retry shortly.',
-          });
-          return;
-        }
+      const hits = await redis.incrementWithWindow(key, 90);
+      if (hits > globalIpLimit) {
+        const retryAfter = Math.max(1, 60 - now.getUTCSeconds());
+        res.setHeader('Retry-After', String(retryAfter));
+        res.status(429).json({
+          statusCode: 429,
+          error: 'Too Many Requests',
+          message: 'Global rate limit exceeded. Please retry shortly.',
+        });
+        return;
       }
     } catch {
       // Redis unavailable — fail open
@@ -452,40 +403,20 @@ async function bootstrap() {
     }
 
     if (isProduction && swaggerAllowedIps.length === 0) {
-      console.warn(
-        JSON.stringify({
-          level: 'warn',
-          type: 'startup',
-          message:
-            'Swagger docs are enabled in production without IP allowlist. Configure SWAGGER_DOCS_ALLOWED_IPS.',
-          at: new Date().toISOString(),
-        }),
-      );
+      slog.warn('startup', { message: 'Swagger docs are enabled in production without IP allowlist. Configure SWAGGER_DOCS_ALLOWED_IPS.' });
     }
   }
 
   const port = config.get('PORT');
   await app.listen(port, '0.0.0.0');
-  console.info(
-    JSON.stringify({
-      level: 'info',
-      type: 'startup',
-      message: `ReviewHelm API listening on 0.0.0.0:${port}`,
-      at: new Date().toISOString(),
-    }),
-  );
+  slog.info('startup', { message: `ReviewHelm API listening on 0.0.0.0:${port}` });
 }
 
 void bootstrap().catch((error: unknown) => {
-  console.error(
-    JSON.stringify({
-      level: 'error',
-      type: 'startup',
-      message: 'Bootstrap failed',
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      at: new Date().toISOString(),
-    }),
-  );
+  slog.error('startup', {
+    message: 'Bootstrap failed',
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
   process.exit(1);
 });

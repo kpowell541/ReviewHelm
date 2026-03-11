@@ -69,8 +69,8 @@ export const useTierStore = create<TierState>()(
             trialEndsAt: info.trialEndsAt,
             billingCycleStart: info.billingCycleStart,
           });
-        } catch (err) {
-          console.warn('[TierStore] fetchTierInfo failed:', err);
+        } catch (err: unknown) {
+          console.warn('[TierStore] fetchTierInfo failed:', err instanceof Error ? err.message : String(err));
         }
       },
 
@@ -84,8 +84,8 @@ export const useTierStore = create<TierState>()(
             creditBalanceUsd: credits.balanceUsd,
             unlimited: credits.unlimited,
           });
-        } catch (err) {
-          console.warn('[TierStore] fetchCreditBalance failed:', err);
+        } catch (err: unknown) {
+          console.warn('[TierStore] fetchCreditBalance failed:', err instanceof Error ? err.message : String(err));
         }
       },
 

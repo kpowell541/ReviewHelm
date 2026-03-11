@@ -485,8 +485,19 @@ export class AiService {
           });
           const trimmed = decrypted.trim();
           if (trimmed) return trimmed;
-        } catch {
-          // Fall through to platform key
+        } catch (err) {
+          // User key decryption failed — fall through to platform key.
+          // Log for debugging but don't block the request.
+          console.warn(
+            JSON.stringify({
+              level: 'warn',
+              type: 'ai_service',
+              event: 'user_key_decryption_failed',
+              userId,
+              error: err instanceof Error ? err.message : String(err),
+              at: new Date().toISOString(),
+            }),
+          );
         }
       }
     }
