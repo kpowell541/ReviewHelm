@@ -99,7 +99,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.skipRow}>
-        <Pressable onPress={handleFinish}>
+        <Pressable onPress={handleFinish} accessibilityRole="button" accessibilityLabel="Skip onboarding">
           <Text style={styles.skipText}>Skip</Text>
         </Pressable>
       </View>
@@ -131,7 +131,7 @@ export default function OnboardingScreen() {
       )}
 
       {/* Dots */}
-      <View style={styles.dotsRow}>
+      <View style={styles.dotsRow} accessibilityLabel={`Slide ${currentIndex + 1} of ${SLIDES.length}`}>
         {SLIDES.map((_, i) => (
           <View
             key={i}
@@ -151,6 +151,8 @@ export default function OnboardingScreen() {
             { backgroundColor: SLIDES[currentIndex].color },
           ]}
           onPress={handleNext}
+          accessibilityRole="button"
+          accessibilityLabel={currentIndex < SLIDES.length - 1 ? 'Next slide' : 'Get started'}
         >
           <Text style={styles.nextButtonText}>
             {currentIndex < SLIDES.length - 1

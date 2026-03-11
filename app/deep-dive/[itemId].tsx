@@ -166,7 +166,7 @@ export default function DeepDiveScreen() {
   if (!found) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Item not found</Text>
+        <Text style={styles.errorText} accessibilityRole="alert">Item not found</Text>
         <Text style={styles.errorSubtext}>{itemId}</Text>
       </View>
     );
@@ -195,6 +195,7 @@ export default function DeepDiveScreen() {
                 styles.severityText,
                 { color: getSeverityColor(item.severity) },
               ]}
+              accessibilityLabel={`Severity: ${item.severity}`}
             >
               {item.severity.toUpperCase()}
             </Text>
@@ -209,11 +210,14 @@ export default function DeepDiveScreen() {
             }}
             hitSlop={8}
             style={styles.bookmarkButton}
+            accessibilityRole="button"
+            accessibilityLabel={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+            accessibilityState={{ selected: isBookmarked }}
           >
             <Text style={styles.bookmarkIcon}>{isBookmarked ? '★' : '☆'}</Text>
           </Pressable>
         </View>
-        <Text style={styles.itemText}>{item.text}</Text>
+        <Text style={styles.itemText} accessibilityRole="header">{item.text}</Text>
         {history && (
           <View style={styles.confidenceRow}>
             <Text style={styles.confidenceText}>
@@ -229,6 +233,9 @@ export default function DeepDiveScreen() {
         <Pressable
           style={[styles.tab, activeTab === 'content' && styles.tabActive]}
           onPress={() => setActiveTab('content')}
+          accessibilityRole="button"
+          accessibilityLabel="Content tab"
+          accessibilityState={{ selected: activeTab === 'content' }}
         >
           <Text
             style={[
@@ -242,6 +249,9 @@ export default function DeepDiveScreen() {
         <Pressable
           style={[styles.tab, activeTab === 'tutor' && styles.tabActive]}
           onPress={() => setActiveTab('tutor')}
+          accessibilityRole="button"
+          accessibilityLabel="AI Tutor tab"
+          accessibilityState={{ selected: activeTab === 'tutor' }}
         >
           <View style={styles.tabWithBadge}>
             <Text
@@ -283,6 +293,8 @@ export default function DeepDiveScreen() {
               <Pressable
                 style={styles.askTutorButton}
                 onPress={() => handleQuickAction('concept-explainer')}
+                accessibilityRole="button"
+                accessibilityLabel="Ask the AI Tutor to explain"
               >
                 <Text style={styles.askTutorButtonText}>
                   💡 Ask the AI Tutor to explain
@@ -292,13 +304,15 @@ export default function DeepDiveScreen() {
           )}
 
           {/* Quick Actions */}
-          <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+          <Text style={styles.quickActionsTitle} accessibilityRole="header">Quick Actions</Text>
           <View style={styles.quickActions}>
             {QUICK_ACTIONS.map((action) => (
               <Pressable
                 key={action.role}
                 style={styles.quickActionButton}
                 onPress={() => handleQuickAction(action.role)}
+                accessibilityRole="button"
+                accessibilityLabel={action.label}
               >
                 <Text style={styles.quickActionIcon}>{action.icon}</Text>
                 <Text style={styles.quickActionLabel}>{action.label}</Text>
@@ -336,6 +350,8 @@ export default function DeepDiveScreen() {
                       key={action.role}
                       style={styles.chatQuickActionButton}
                       onPress={() => handleQuickAction(action.role)}
+                      accessibilityRole="button"
+                      accessibilityLabel={action.label}
                     >
                       <Text style={styles.chatQuickActionText}>
                         {action.icon} {action.label}
@@ -350,6 +366,8 @@ export default function DeepDiveScreen() {
               <Pressable
                 style={styles.clearChatButton}
                 onPress={() => clearConversation(itemId)}
+                accessibilityRole="button"
+                accessibilityLabel="Clear saved chat"
               >
                 <Text style={styles.clearChatButtonText}>Clear saved chat</Text>
               </Pressable>
@@ -383,7 +401,7 @@ export default function DeepDiveScreen() {
             )}
 
             {error && (
-              <View style={styles.errorBubble}>
+              <View style={styles.errorBubble} accessibilityRole="alert" accessibilityLiveRegion="polite">
                 <Text style={styles.errorBubbleText}>{error}</Text>
               </View>
             )}
@@ -414,6 +432,8 @@ export default function DeepDiveScreen() {
                   multiline
                   maxLength={2000}
                   editable={!isLoading}
+                  accessibilityLabel="Ask a follow-up question"
+                  accessibilityHint="Type your message to the AI tutor"
                 />
                 <Pressable
                   style={[
@@ -423,6 +443,9 @@ export default function DeepDiveScreen() {
                   ]}
                   onPress={() => sendMessage(inputText, activeRole)}
                   disabled={!inputText.trim() || isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send message"
+                  accessibilityState={{ disabled: !inputText.trim() || isLoading }}
                 >
                   <Text style={styles.sendButtonText}>↑</Text>
                 </Pressable>
@@ -486,7 +509,7 @@ function BaseContentView({ content }: { content: BaseContent }) {
         ))}
       {content.keyTakeaway !== '' && (
         <View style={sectionStyles.takeaway}>
-          <Text style={sectionStyles.takeawayLabel}>Key Takeaway</Text>
+          <Text style={sectionStyles.takeawayLabel} accessibilityRole="header">Key Takeaway</Text>
           <Text style={sectionStyles.takeawayText}>
             {content.keyTakeaway}
           </Text>
@@ -494,7 +517,7 @@ function BaseContentView({ content }: { content: BaseContent }) {
       )}
       {content.references && content.references.length > 0 && (
         <View style={sectionStyles.section}>
-          <Text style={sectionStyles.sectionTitle}>References</Text>
+          <Text style={sectionStyles.sectionTitle} accessibilityRole="header">References</Text>
           {content.references.map((ref, i) => (
             <Text key={i} style={sectionStyles.reference}>
               • {ref}
@@ -517,7 +540,7 @@ function ContentSection({
 }) {
   return (
     <View style={sectionStyles.section}>
-      <Text style={sectionStyles.sectionTitle}>{title}</Text>
+      <Text style={sectionStyles.sectionTitle} accessibilityRole="header">{title}</Text>
       <Text style={isCode ? sectionStyles.codeText : sectionStyles.bodyText}>
         {body}
       </Text>

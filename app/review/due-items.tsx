@@ -88,11 +88,11 @@ export default function DueItemsScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyIcon}>✅</Text>
-        <Text style={styles.emptyTitle}>No items due for review</Text>
+        <Text style={styles.emptyTitle} accessibilityRole="header">No items due for review</Text>
         <Text style={styles.emptyHint}>
           Complete more review sessions to build up your spaced repetition queue.
         </Text>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
           <Text style={styles.backButtonText}>Go Back</Text>
         </Pressable>
       </View>
@@ -104,12 +104,12 @@ export default function DueItemsScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyIcon}>🎉</Text>
-        <Text style={styles.emptyTitle}>All done!</Text>
+        <Text style={styles.emptyTitle} accessibilityRole="header">All done!</Text>
         <Text style={styles.emptyHint}>
           You reviewed {reviewedCount} item{reviewedCount !== 1 ? 's' : ''}.
           Great work staying on top of your knowledge gaps.
         </Text>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable style={styles.backButton} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Done">
           <Text style={styles.backButtonText}>Done</Text>
         </Pressable>
       </View>
@@ -124,10 +124,10 @@ export default function DueItemsScreen() {
     <View style={styles.container}>
       {/* Progress bar */}
       <View style={styles.progressSection}>
-        <Text style={styles.progressText}>
+        <Text style={styles.progressText} accessibilityRole="text" accessibilityLabel={`${reviewedCount} of ${totalCount} reviewed`}>
           {reviewedCount} / {totalCount} reviewed
         </Text>
-        <View style={styles.progressTrack}>
+        <View style={styles.progressTrack} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: totalCount, now: reviewedCount }}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
       </View>
@@ -162,6 +162,9 @@ export default function DueItemsScreen() {
             <Pressable
               style={styles.revealButton}
               onPress={() => setRevealedId(currentItem.itemId)}
+              accessibilityRole="button"
+              accessibilityLabel="Reveal context"
+              accessibilityHint="Shows section, stack, and review count for this item"
             >
               <Text style={styles.revealButtonText}>Tap to reveal context</Text>
             </Pressable>
@@ -187,6 +190,8 @@ export default function DueItemsScreen() {
                     `/deep-dive/${encodeURIComponent(currentItem.itemId)}`,
                   )
                 }
+                accessibilityRole="link"
+                accessibilityLabel="Open deep dive"
               >
                 <Text style={styles.deepDiveLinkText}>📚 Open deep dive</Text>
               </Pressable>
@@ -195,7 +200,7 @@ export default function DueItemsScreen() {
         </View>
 
         {/* Rating section */}
-        <Text style={styles.ratePrompt}>How confident are you now?</Text>
+        <Text style={styles.ratePrompt} accessibilityRole="header">How confident are you now?</Text>
         <View style={styles.ratingRow}>
           {CONFIDENCE_LEVELS.map((level) => (
             <Pressable
@@ -205,6 +210,8 @@ export default function DueItemsScreen() {
                 { borderColor: CONFIDENCE_COLORS[level] + '60' },
               ]}
               onPress={() => handleRate(level)}
+              accessibilityRole="button"
+              accessibilityLabel={`Rate confidence ${level} out of 5, ${CONFIDENCE_LABELS[level]}`}
             >
               <Text style={styles.ratingEmoji}>{CONFIDENCE_EMOJI[level]}</Text>
               <Text

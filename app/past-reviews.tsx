@@ -82,7 +82,7 @@ export default function PastReviewsScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <DesktopContainer>
       <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
-        <Text style={styles.heading}>Past Reviews</Text>
+        <Text style={styles.heading} accessibilityRole="header">Past Reviews</Text>
         <Text style={styles.subtitle}>Browse your completed PR reviews</Text>
 
         {/* Time filter */}
@@ -116,6 +116,8 @@ export default function PastReviewsScreen() {
                   router.push(`/session-summary/${pr.linkedSessionId}`);
                 }
               }}
+              accessibilityRole="link"
+              accessibilityLabel={`${pr.title}, ${pr.status === 'merged' ? 'merged' : 'closed'}${pr.linkedSessionId ? ', view session summary' : ''}`}
             >
               <View style={styles.prCardHeader}>
                 <View style={styles.prCardInfo}>

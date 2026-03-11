@@ -17,7 +17,7 @@ function StatBlock({
   color?: string;
 }) {
   return (
-    <View style={styles.statBlock}>
+    <View style={styles.statBlock} accessibilityLabel={`${label}: ${value}`}>
       <Text style={[styles.statValue, color ? { color } : undefined]}>
         {value}
       </Text>
@@ -169,7 +169,7 @@ export default function DashboardScreen() {
       style={styles.container}
       contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
     >
-      <Text style={styles.title}>Dashboard</Text>
+      <Text style={styles.title} accessibilityRole="header">Dashboard</Text>
 
       {isEmpty && (
         <Text style={styles.empty}>
@@ -200,7 +200,7 @@ export default function DashboardScreen() {
 
           {/* Session breakdown */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Sessions</Text>
+            <Text style={styles.cardTitle} accessibilityRole="header">Sessions</Text>
             <View style={styles.breakdownRow}>
               <Text style={styles.breakdownLabel}>Reviews</Text>
               <Text style={styles.breakdownValue}>
@@ -218,7 +218,7 @@ export default function DashboardScreen() {
           {/* By stack */}
           {stats.byStack.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Reviews by Stack</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Reviews by Stack</Text>
               {stats.byStack.map(([stackId, count]) => (
                 <View key={stackId} style={styles.breakdownRow}>
                   <Text style={styles.breakdownLabel}>{stackId}</Text>
@@ -230,7 +230,7 @@ export default function DashboardScreen() {
 
           {/* Confidence overview */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Knowledge</Text>
+            <Text style={styles.cardTitle} accessibilityRole="header">Knowledge</Text>
             <View style={styles.statsRow}>
               <StatBlock
                 label="Tracked"
@@ -257,7 +257,7 @@ export default function DashboardScreen() {
           {/* Weakest sections */}
           {stats.sectionAverages.length > 0 && (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>
+              <Text style={styles.cardTitle} accessibilityRole="header">
                 Weakest Sections (Top 10)
               </Text>
               {stats.sectionAverages.map((s) => (

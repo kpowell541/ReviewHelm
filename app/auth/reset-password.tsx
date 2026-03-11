@@ -69,13 +69,13 @@ export default function ResetPasswordScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Set New Password</Text>
+            <Text style={styles.title} accessibilityRole="header">Set New Password</Text>
             <Text style={styles.subtitle}>
               Enter your new password below.
             </Text>
 
             {error && (
-              <View style={styles.errorBox}>
+              <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -90,6 +90,7 @@ export default function ResetPasswordScreen() {
               textContentType="newPassword"
               autoComplete="new-password"
               returnKeyType="next"
+              accessibilityLabel="New password, minimum 6 characters"
             />
 
             <TextInput
@@ -107,9 +108,10 @@ export default function ResetPasswordScreen() {
               onSubmitEditing={() => {
                 if (isValid && !isLoading) handleUpdate();
               }}
+              accessibilityLabel="Confirm new password"
             />
             {passwordMismatch && (
-              <Text style={styles.fieldError}>Passwords do not match</Text>
+              <Text style={styles.fieldError} accessibilityRole="alert" accessibilityLiveRegion="polite">Passwords do not match</Text>
             )}
 
             <Pressable
@@ -119,6 +121,9 @@ export default function ResetPasswordScreen() {
               ]}
               onPress={handleUpdate}
               disabled={!isValid || isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Update password"
+              accessibilityState={{ disabled: !isValid || isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />

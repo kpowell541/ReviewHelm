@@ -112,6 +112,9 @@ function SessionPickerCard({
         { opacity: pressed ? 0.85 : 1 },
       ]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Session: ${session.title}, ${session.mode === 'polish' ? 'Polish' : 'Review'}`}
+      accessibilityState={{ selected: isSelected }}
     >
       <View style={styles.sessionCardHeader}>
         <Text style={styles.sessionCardTitle} numberOfLines={1}>
@@ -458,7 +461,7 @@ export default function TrendsScreen() {
   if (step === 'pick-a') {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Compare Sessions</Text>
+        <Text style={styles.title} accessibilityRole="header">Compare Sessions</Text>
         <Text style={styles.subtitle}>
           Select the first session to compare (Session A)
         </Text>
@@ -491,11 +494,11 @@ export default function TrendsScreen() {
   if (step === 'pick-b') {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Pressable onPress={handleReset} style={styles.backButton}>
+        <Pressable onPress={handleReset} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Change Session A">
           <Text style={styles.backButtonText}>{'\u2190'} Change Session A</Text>
         </Pressable>
 
-        <Text style={styles.title}>Compare Sessions</Text>
+        <Text style={styles.title} accessibilityRole="header">Compare Sessions</Text>
         <Text style={styles.subtitle}>
           Session A selected. Now pick Session B to compare against.
         </Text>
@@ -556,15 +559,15 @@ export default function TrendsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Navigation */}
       <View style={styles.navRow}>
-        <Pressable onPress={handleBackToPickB} style={styles.backButton}>
+        <Pressable onPress={handleBackToPickB} style={styles.backButton} accessibilityRole="button" accessibilityLabel="Change Session B">
           <Text style={styles.backButtonText}>{'\u2190'} Change Session B</Text>
         </Pressable>
-        <Pressable onPress={handleReset} style={styles.resetButton}>
+        <Pressable onPress={handleReset} style={styles.resetButton} accessibilityRole="button" accessibilityLabel="Start over">
           <Text style={styles.resetButtonText}>Start Over</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.title}>Session Comparison</Text>
+      <Text style={styles.title} accessibilityRole="header">Session Comparison</Text>
 
       {/* Session Labels */}
       <View style={styles.sessionLabels}>
@@ -594,7 +597,7 @@ export default function TrendsScreen() {
 
       {/* Score Comparison */}
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionHeaderText}>Overall Scores</Text>
+        <Text style={styles.sectionHeaderText} accessibilityRole="header">Overall Scores</Text>
       </View>
 
       <View style={styles.scoresGrid}>
@@ -622,7 +625,7 @@ export default function TrendsScreen() {
       {sectionComparisons.length > 0 && (
         <>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionHeaderText}>By Section</Text>
+            <Text style={styles.sectionHeaderText} accessibilityRole="header">By Section</Text>
             <Text style={styles.sectionHeaderSub}>
               A {'\u2192'} B
             </Text>
@@ -637,7 +640,7 @@ export default function TrendsScreen() {
       {/* Item-Level Changes */}
       {(improved.length > 0 || regressed.length > 0 || newIssues.length > 0) && (
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionHeaderText}>Item-Level Changes</Text>
+          <Text style={styles.sectionHeaderText} accessibilityRole="header">Item-Level Changes</Text>
         </View>
       )}
 

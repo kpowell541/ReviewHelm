@@ -96,13 +96,13 @@ export default function SignupScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.title} accessibilityRole="header">Create Account</Text>
             <Text style={styles.subtitle}>
               Sign up to sync your reviews and progress
             </Text>
 
             {error && (
-              <View style={styles.errorBox}>
+              <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -118,6 +118,7 @@ export default function SignupScreen() {
               textContentType="emailAddress"
               autoComplete="email"
               returnKeyType="next"
+              accessibilityLabel="Email address"
             />
 
             <TextInput
@@ -130,6 +131,7 @@ export default function SignupScreen() {
               textContentType="newPassword"
               autoComplete="new-password"
               returnKeyType="next"
+              accessibilityLabel="Password, minimum 6 characters"
             />
 
             <TextInput
@@ -145,9 +147,10 @@ export default function SignupScreen() {
               textContentType="newPassword"
               returnKeyType="done"
               onSubmitEditing={() => { if (isValid && !isLoading) handleSignUp(); }}
+              accessibilityLabel="Confirm password"
             />
             {passwordMismatch && (
-              <Text style={styles.fieldError}>Passwords do not match</Text>
+              <Text style={styles.fieldError} accessibilityRole="alert" accessibilityLiveRegion="polite">Passwords do not match</Text>
             )}
 
             <Pressable
@@ -157,6 +160,9 @@ export default function SignupScreen() {
               ]}
               onPress={handleSignUp}
               disabled={!isValid || isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Sign up"
+              accessibilityState={{ disabled: !isValid || isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
@@ -168,6 +174,8 @@ export default function SignupScreen() {
             <Pressable
               style={styles.secondaryButton}
               onPress={() => router.back()}
+              accessibilityRole="link"
+              accessibilityLabel="Already have an account? Sign in"
             >
               <Text style={styles.secondaryButtonText}>
                 Already have an account? Sign In

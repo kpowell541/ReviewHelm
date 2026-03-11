@@ -66,13 +66,13 @@ export default function ForgotPasswordScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.title} accessibilityRole="header">Reset Password</Text>
             <Text style={styles.subtitle}>
               Enter your email and we'll send you a link to reset your password.
             </Text>
 
             {error && (
-              <View style={styles.errorBox}>
+              <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -91,6 +91,7 @@ export default function ForgotPasswordScreen() {
               onSubmitEditing={() => {
                 if (isValid && !isLoading) handleReset();
               }}
+              accessibilityLabel="Email address"
             />
 
             <Pressable
@@ -100,6 +101,9 @@ export default function ForgotPasswordScreen() {
               ]}
               onPress={handleReset}
               disabled={!isValid || isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Send reset link"
+              accessibilityState={{ disabled: !isValid || isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
@@ -111,6 +115,8 @@ export default function ForgotPasswordScreen() {
             <Pressable
               style={styles.secondaryButton}
               onPress={() => router.back()}
+              accessibilityRole="link"
+              accessibilityLabel="Back to sign in"
             >
               <Text style={styles.secondaryButtonText}>
                 Back to Sign In
