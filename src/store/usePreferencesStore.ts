@@ -60,6 +60,7 @@ interface PreferencesState {
   isApiKeyLoaded: boolean;
   hasHydrated: boolean;
   hasCompletedOnboarding: boolean;
+  hasSeenTourForTier: string | null;
   aiModel: ClaudeModel;
   defaultSeverityFilter: Severity[];
   antiBiasMode: boolean;
@@ -107,6 +108,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       isApiKeyLoaded: false,
       hasHydrated: false,
       hasCompletedOnboarding: false,
+      hasSeenTourForTier: null,
       aiModel: 'sonnet' as ClaudeModel,
       defaultSeverityFilter: ['blocker', 'major', 'minor', 'nit'],
       antiBiasMode: true,
@@ -222,6 +224,7 @@ export const usePreferencesStore = create<PreferencesState>()(
       storage: createJSONStorage(() => persistStorage),
       partialize: (state) => ({
         hasCompletedOnboarding: state.hasCompletedOnboarding,
+        hasSeenTourForTier: state.hasSeenTourForTier,
         aiModel: state.aiModel,
         defaultSeverityFilter: state.defaultSeverityFilter,
         antiBiasMode: state.antiBiasMode,

@@ -41,6 +41,7 @@ import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { AppFooter } from '../src/components/AppFooter';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { FeatureTourModal } from '../src/components/FeatureTourModal';
 
 const MODEL_OPTIONS: ClaudeModel[] = ['sonnet', 'opus'];
 
@@ -150,6 +151,7 @@ export default function SettingsScreen() {
   const markSyncSuccess = useSyncStore((s) => s.markSyncSuccess);
   const markSyncFailure = useSyncStore((s) => s.markSyncFailure);
 
+  const [showFeatureTour, setShowFeatureTour] = useState(false);
   const [savingApiKey, setSavingApiKey] = useState(false);
   const [savingAdminApiKey, setSavingAdminApiKey] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
@@ -1140,6 +1142,13 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Pressable
           style={styles.connectedLink}
+          onPress={() => setShowFeatureTour(true)}
+        >
+          <Text style={styles.connectedLinkText}>Feature Guide</Text>
+          <Text style={styles.connectedLinkArrow}>{'>'}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.connectedLink}
           onPress={() => router.push('/pr-tracker')}
         >
           <Text style={styles.connectedLinkText}>PR Tracker</Text>
@@ -1160,6 +1169,12 @@ export default function SettingsScreen() {
           <Text style={styles.connectedLinkArrow}>{'>'}</Text>
         </Pressable>
       </View>
+
+      <FeatureTourModal
+        visible={showFeatureTour}
+        onClose={() => setShowFeatureTour(false)}
+        effectiveTier={effectiveTier}
+      />
 
       <AppFooter />
       <Text style={styles.footer}>ReviewHelm v{appVersion}</Text>
