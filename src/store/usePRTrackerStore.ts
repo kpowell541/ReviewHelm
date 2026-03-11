@@ -111,6 +111,21 @@ function byUpdatedDesc(a: TrackedPR, b: TrackedPR): number {
   return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
 }
 
+/** Loosely coupled side-effect: complete linked sessions when a PR is resolved. */
+function autoCompleteLinkedSessions(prId: string): void {
+  try {
+    const sessionState = useSessionStore.getState();
+    const linkedSessions = Object.values(sessionState.sessions).filter(
+      (s) => s.linkedPRId === prId && !s.isComplete,
+    );
+    for (const s of linkedSessions) {
+      sessionState.completeSession(s.id);
+    }
+  } catch {
+    // Session store may not be initialized (e.g. in tests)
+  }
+}
+
 export const usePRTrackerStore = create<PRTrackerState>()(
   persist(
     (set, get) => ({
@@ -206,13 +221,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
 
           // Auto-complete any linked sessions when PR is accepted/abandoned
           if (!toggling) {
-            const sessionState = useSessionStore.getState();
-            const linkedSessions = Object.values(sessionState.sessions).filter(
-              (s) => s.linkedPRId === id && !s.isComplete,
-            );
-            for (const s of linkedSessions) {
-              sessionState.completeSession(s.id);
-            }
+            autoCompleteLinkedSessions(id);
           }
 
           return { prs: { ...state.prs, [id]: { ...pr, acceptanceOutcome, status, resolvedAt, updatedAt: now } } };

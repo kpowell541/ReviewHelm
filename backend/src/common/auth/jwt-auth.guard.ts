@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import type { AppEnv } from '../../config/env.schema';
 import { AuditService } from '../audit/audit.service';
 import { IS_PUBLIC_KEY } from './constants';
+import { slog } from '../logging';
 import type { AuthenticatedUser } from './types';
 
 interface RequestLike {
@@ -162,19 +163,14 @@ export class JwtAuthGuard implements CanActivate {
       } catch {
         // ignore decode errors
       }
-      console.warn(
-        JSON.stringify({
-          level: 'warn',
-          type: 'jwt_verify_failed',
-          error: err instanceof Error ? err.message : String(err),
-          errorName: err instanceof Error ? err.name : undefined,
-          tokenAlg,
-          issuer: this.issuer,
-          audience: this.audience,
-          jwksUrl: this.jwksUrl,
-          at: new Date().toISOString(),
-        }),
-      );
+      slog.warn('jwt_verify_failed', {
+        error: err instanceof Error ? err.message : String(err),
+        errorName: err instanceof Error ? err.name : undefined,
+        tokenAlg,
+        issuer: this.issuer,
+        audience: this.audience,
+        jwksUrl: this.jwksUrl,
+      });
       return null;
     }
   }
@@ -262,16 +258,11 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private logAuthFailure(req: RequestLike, reason: string): void {
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        type: 'auth_failure',
-        reason,
-        path: req.path,
-        method: req.method,
-        requestId: req.requestId,
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.warn('auth_failure', {
+      reason,
+      path: req.path,
+      method: req.method,
+      requestId: req.requestId,
+    });
   }
 }
