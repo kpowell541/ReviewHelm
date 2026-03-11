@@ -157,7 +157,9 @@ export class SubscriptionController {
           HttpStatus.CONFLICT,
         );
       }
-    } catch {
+    } catch (err) {
+      // Re-throw intentional HTTP exceptions (e.g. duplicate key conflict).
+      if (err instanceof HttpException) throw err;
       // If Redis is unavailable, fail open rather than blocking customer actions.
     }
 

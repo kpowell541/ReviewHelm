@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { Response, Request } from 'express';
+import { slog } from '../logging';
 
 /** Paths whose error details must never leak request body content. */
 const SENSITIVE_PATHS = new Set([
@@ -86,18 +87,13 @@ export class SecurityExceptionFilter implements ExceptionFilter {
       payload.details = details;
     }
 
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        type: 'unhandled_exception',
-        status,
-        requestId: request.requestId,
-        path: request?.url,
-        message,
-        error,
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.error('unhandled_exception', {
+      status,
+      requestId: request.requestId,
+      path: request?.url,
+      message,
+      error,
+    });
 
     response.status(status).json(payload);
   }

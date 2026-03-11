@@ -12,6 +12,7 @@ import { AuditService } from '../audit/audit.service';
 import { IS_AI_ENDPOINT_KEY, IS_PUBLIC_KEY } from '../auth/constants';
 import type { AuthenticatedUser } from '../auth/types';
 import { RedisService } from './redis.service';
+import { slog } from '../logging';
 import type { Response } from 'express';
 
 interface RequestLike {
@@ -24,12 +25,20 @@ interface RequestLike {
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
+  private readonly apiLimit: number;
+  private readonly aiLimit: number;
+  private readonly aiCooldownSeconds: number;
+
   constructor(
     private readonly reflector: Reflector,
     private readonly config: ConfigService<AppEnv, true>,
     private readonly redis: RedisService,
     private readonly audit: AuditService,
-  ) {}
+  ) {
+    this.apiLimit = this.config.get('RATE_LIMIT_PER_MINUTE');
+    this.aiLimit = this.config.get('AI_RATE_LIMIT_PER_MINUTE');
+    this.aiCooldownSeconds = this.config.get('AI_COOLDOWN_SECONDS');
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
@@ -48,19 +57,11 @@ export class RateLimitGuard implements CanActivate {
     ]);
 
     const now = new Date();
-    const minuteBucket = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(
-      2,
-      '0',
-    )}${String(now.getUTCDate()).padStart(2, '0')}${String(now.getUTCHours()).padStart(
-      2,
-      '0',
-    )}${String(now.getUTCMinutes()).padStart(2, '0')}`;
+    const minuteBucket = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}${String(now.getUTCHours()).padStart(2, '0')}${String(now.getUTCMinutes()).padStart(2, '0')}`;
 
     const response = context.switchToHttp().getResponse<Response>();
     const isAiRoute = isAiEndpoint || this.looksLikeAiPath(req.path);
-    const limit = isAiRoute
-      ? this.config.get('AI_RATE_LIMIT_PER_MINUTE')
-      : this.config.get('RATE_LIMIT_PER_MINUTE');
+    const limit = isAiRoute ? this.aiLimit : this.apiLimit;
 
     const rateKey = `ratelimit:${isAiRoute ? 'ai' : 'api'}:${identity}:${minuteBucket}`;
     let hits: number;
@@ -109,7 +110,7 @@ export class RateLimitGuard implements CanActivate {
     }
 
     if (isAiRoute) {
-      const cooldownSeconds = this.config.get('AI_COOLDOWN_SECONDS');
+      const cooldownSeconds = this.aiCooldownSeconds;
       const cooldownKey = `cooldown:ai:${identity}`;
       let cooldownSet = false;
       try {
@@ -178,18 +179,13 @@ export class RateLimitGuard implements CanActivate {
     req: RequestLike,
     details: Record<string, unknown>,
   ): void {
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        type: 'security_event',
-        event,
-        method: req.method,
-        path: req.path,
-        requestId: req.requestId,
-        userId: req.user?.supabaseUserId,
-        details,
-        at: new Date().toISOString(),
-      }),
-    );
+    slog.warn('security_event', {
+      event,
+      method: req.method,
+      path: req.path,
+      requestId: req.requestId,
+      userId: req.user?.supabaseUserId,
+      ...details,
+    });
   }
 }
