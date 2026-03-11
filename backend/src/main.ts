@@ -165,6 +165,12 @@ async function bootstrap() {
 
   if (usOnlyMode) {
     app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
+      // Always allow CORS preflight requests through.
+      if (req.method === 'OPTIONS') {
+        next();
+        return;
+      }
+
       const requestPath = normalizePath(req.path);
       if (usOnlyBypassPaths.has(requestPath)) {
         next();
