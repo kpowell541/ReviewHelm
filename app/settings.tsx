@@ -26,7 +26,7 @@ import { useTutorStore } from '../src/store/useTutorStore';
 import { useSyncStore } from '../src/store/useSyncStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
-import { useTierStore } from '../src/store/useTierStore';
+import { useTierStore, hasAccess } from '../src/store/useTierStore';
 import { syncChecklistsFromGithub } from '../src/data/checklistSync';
 import { runSync } from '../src/sync/syncEngine';
 import { fetchMonthlyCostFromAdminApi } from '../src/ai/costApi';
@@ -63,6 +63,7 @@ export default function SettingsScreen() {
   const { isDesktop } = useResponsive();
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
+  const refreshSession = useAuthStore((s) => s.refreshSession);
   const resolveAdminApiKey = usePreferencesStore((s) => s.resolveAdminApiKey);
   const replacePreferences = usePreferencesStore((s) => s.replacePreferences);
   const aiModel = usePreferencesStore((s) => s.aiModel);
@@ -142,6 +143,7 @@ export default function SettingsScreen() {
   const [syncingOfficialCost, setSyncingOfficialCost] = useState(false);
   const [syncingData, setSyncingData] = useState(false);
   const [refreshingTier, setRefreshingTier] = useState(false);
+  const [refreshingAiSession, setRefreshingAiSession] = useState(false);
   const [budgetInput, setBudgetInput] = useState(String(monthlyBudgetUsd));
   const [thresholdInput, setThresholdInput] = useState(alertThresholds.join(','));
   const [autoDowngradeThresholdInput, setAutoDowngradeThresholdInput] = useState(
@@ -593,6 +595,38 @@ export default function SettingsScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {hasAccess(effectiveTier, 'premium') && (
+        <View style={styles.card}>
+          <Text style={styles.label}>AI Session</Text>
+          <Text style={styles.hint}>
+            If AI features stop working, refresh your session to re-establish authentication.
+          </Text>
+          <Pressable
+            style={[styles.secondaryButton, refreshingAiSession && styles.buttonDisabled]}
+            onPress={async () => {
+              setRefreshingAiSession(true);
+              try {
+                const ok = await refreshSession();
+                if (ok) {
+                  crossAlert('Session Refreshed', 'Your AI session has been refreshed. Try your AI request again.');
+                } else {
+                  crossAlert('Session Expired', 'Could not refresh session. Please sign out and sign back in.');
+                }
+              } catch {
+                crossAlert('Error', 'Failed to refresh session. Please sign out and sign back in.');
+              } finally {
+                setRefreshingAiSession(false);
+              }
+            }}
+            disabled={refreshingAiSession}
+          >
+            <Text style={styles.secondaryButtonText}>
+              {refreshingAiSession ? 'Refreshing...' : 'Refresh AI Session'}
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       <Text style={styles.sectionTitle}>AI Tutor</Text>
       <View style={styles.card}>
