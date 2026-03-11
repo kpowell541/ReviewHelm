@@ -128,7 +128,11 @@ export default function PolishSessionsScreen() {
           <Text style={styles.newButtonText}>Start a new session with an existing PR</Text>
         </Pressable>
 
-        <Text style={styles.orText}>OR</Text>
+        <View style={styles.orDivider}>
+          <View style={styles.orLine} />
+          <Text style={styles.orText}>or</Text>
+          <View style={styles.orLine} />
+        </View>
 
         <Pressable
           onPress={() => setShowAddPR(true)}
@@ -285,13 +289,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+    gap: spacing.md,
+  },
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
   orText: {
-    textAlign: 'center',
-    marginVertical: spacing.lg,
-    fontSize: fontSizes['2xl'],
-    fontWeight: '700',
+    fontSize: fontSizes.sm,
     color: colors.textMuted,
-    letterSpacing: 2,
   },
   addPRButton: {
     backgroundColor: colors.bgCard,

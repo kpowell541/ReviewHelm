@@ -363,14 +363,6 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
 };
 
 /**
- * No-op passthrough — security sections are no longer auto-appended.
- * Kept for API compatibility; callers can remove calls over time.
- */
-export function withSecurityChecklist(checklist: Checklist, _stackIds?: StackId[]): Checklist {
-  return checklist;
-}
-
-/**
  * Returns the names of security sections relevant to the given stacks.
  * Used to display a reminder banner in the checklist UI.
  */

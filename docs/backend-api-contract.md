@@ -85,7 +85,9 @@ Common `error.code` values:
   - `go`
   - `terraform-hcl`
   - `swift-objc`
-  - `web-devops-config`
+  - `react`
+  - `nodejs`
+  - `protobuf`
   - `python`
   - `ruby`
   - `lua`
