@@ -96,6 +96,10 @@ export function ChecklistScreen({ sessionId }: Props) {
 
   const sectionListRef = useRef<SectionList<ChecklistItem, ChecklistSectionListEntry>>(null);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const scrollYRef = useRef(0);
+  const listHeightRef = useRef(0);
+  const prevContentHeightRef = useRef(0);
+  const sectionOrderRef = useRef<string[] | null>(null);
   const [sessionNotesCollapsed, setSessionNotesCollapsed] = useState(true);
   const [sessionNotesDraft, setSessionNotesDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,6 +108,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [securityBannerDismissed, setSecurityBannerDismissed] = useState(false);
+  const [completing, setCompleting] = useState(false);
 
   useEffect(() => {
     setSeverityFilter(defaultSeverityFilter);
@@ -167,7 +172,9 @@ export function ChecklistScreen({ sessionId }: Props) {
   }, [session, allItems]);
 
   const sessionId_ = session?.id;
-  const sections = useMemo<ChecklistSectionListEntry[]>(() => {
+
+  // Step 1: Compute filtered sections (without collapse state to avoid full recomputation on toggle)
+  const filteredSections = useMemo<ChecklistSectionListEntry[]>(() => {
     if (!checklist || !sessionMode || !sessionId_) return [];
 
     const orderedSections =
@@ -177,7 +184,7 @@ export function ChecklistScreen({ sessionId }: Props) {
 
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return orderedSections
+    const result = orderedSections
       .map((section) => {
         const items = getSectionItems(section).filter((item) => {
           const severityMatch = severityFilter.includes(item.severity);
@@ -187,21 +194,76 @@ export function ChecklistScreen({ sessionId }: Props) {
             item.id.toLowerCase().includes(normalizedQuery);
           return severityMatch && textMatch;
         });
-        return {
-          section,
-          items,
-          data: collapsedSections[section.id] ? [] : items,
-        };
+        return { section, items, data: items };
       })
       .filter((entry) => entry.items.length > 0);
-  }, [checklist, sessionMode, sessionId_, antiBiasMode, searchQuery, severityFilter, collapsedSections]);
+
+    // On first load, sort started sections to top (skip for anti-bias shuffle)
+    if (!sectionOrderRef.current && !(sessionMode === 'polish' && antiBiasMode)) {
+      const currentSession = useSessionStore.getState().sessions[sessionId];
+      if (currentSession) {
+        const started: typeof result = [];
+        const unstarted: typeof result = [];
+        for (const entry of result) {
+          const hasResponses = entry.items.some((item) => {
+            const r = currentSession.itemResponses[item.id];
+            return r && r.verdict && r.verdict !== 'skipped';
+          });
+          (hasResponses ? started : unstarted).push(entry);
+        }
+        const sorted = [...started, ...unstarted];
+        sectionOrderRef.current = sorted.map((e) => e.section.id);
+        return sorted;
+      }
+    }
+
+    // Maintain locked order on subsequent computations
+    if (sectionOrderRef.current) {
+      const orderMap = new Map(sectionOrderRef.current.map((id, i) => [id, i]));
+      result.sort(
+        (a, b) =>
+          (orderMap.get(a.section.id) ?? Infinity) - (orderMap.get(b.section.id) ?? Infinity),
+      );
+    }
+
+    return result;
+  }, [checklist, sessionMode, sessionId_, antiBiasMode, searchQuery, severityFilter]);
+
+  // Step 2: Apply collapse state separately (cheap map, avoids recomputing filters)
+  const sections = useMemo(
+    () =>
+      filteredSections.map((entry) => ({
+        ...entry,
+        data: collapsedSections[entry.section.id] ? [] : entry.items,
+      })),
+    [filteredSections, collapsedSections],
+  );
 
   const toggleSection = useCallback((sectionId: string) => {
+    const isCollapsing = !collapsedSections[sectionId];
     setCollapsedSections((prev) => ({
       ...prev,
       [sectionId]: !prev[sectionId],
     }));
-  }, []);
+    // When collapsing, scroll to the section header to prevent blank space below
+    if (isCollapsing) {
+      const sectionIndex = sections.findIndex((s) => s.section.id === sectionId);
+      if (sectionIndex >= 0) {
+        requestAnimationFrame(() => {
+          try {
+            sectionListRef.current?.scrollToLocation({
+              sectionIndex,
+              itemIndex: 0,
+              animated: true,
+              viewOffset: 0,
+            });
+          } catch {
+            // scrollToLocation can throw with empty sections on some RN versions
+          }
+        });
+      }
+    }
+  }, [collapsedSections, sections]);
 
   const handleSetVerdict = useCallback(
     (itemId: string, verdict: Verdict) => {
@@ -304,7 +366,8 @@ export function ChecklistScreen({ sessionId }: Props) {
   }, [bulkSelected, sessionId, setItemResponse]);
 
   const finalizeCompletion = useCallback(() => {
-    if (!checklist) return;
+    if (!checklist || completing) return;
+    setCompleting(true);
     // Read the latest session directly from the store to avoid stale closure data
     const freshSession = useSessionStore.getState().sessions[sessionId];
     if (!freshSession) return;
@@ -335,6 +398,7 @@ export function ChecklistScreen({ sessionId }: Props) {
     router.replace(destination);
   }, [
     checklist,
+    completing,
     sessionId,
     completeSession,
     recordSessionResults,
@@ -374,6 +438,12 @@ export function ChecklistScreen({ sessionId }: Props) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Session not found</Text>
+        <Pressable
+          onPress={() => router.replace('/')}
+          style={styles.errorRecoveryButton}
+        >
+          <Text style={styles.errorRecoveryText}>Go Home</Text>
+        </Pressable>
       </View>
     );
   }
@@ -492,6 +562,27 @@ export function ChecklistScreen({ sessionId }: Props) {
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
         stickySectionHeadersEnabled
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          scrollYRef.current = e.nativeEvent.contentOffset.y;
+        }}
+        onLayout={(e) => {
+          listHeightRef.current = e.nativeEvent.layout.height;
+        }}
+        onContentSizeChange={(_w, contentHeight) => {
+          // Prevent blank space when content shrinks (e.g. after collapsing a section)
+          const shrunk = contentHeight < prevContentHeightRef.current;
+          prevContentHeightRef.current = contentHeight;
+          if (shrunk) {
+            const maxScroll = contentHeight - listHeightRef.current;
+            if (maxScroll >= 0 && scrollYRef.current > maxScroll) {
+              (sectionListRef.current as any)?.scrollToOffset?.({
+                offset: Math.max(0, maxScroll),
+                animated: true,
+              });
+            }
+          }
+        }}
         ListHeaderComponent={
           relevantSecuritySections.length > 0 && !securityBannerDismissed ? (
             <View style={styles.securityBanner}>
@@ -670,6 +761,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     textAlign: 'center',
     marginTop: spacing['4xl'],
+  },
+  errorRecoveryButton: {
+    alignSelf: 'center',
+    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  errorRecoveryText: {
+    color: '#fff',
+    fontSize: fontSizes.md,
+    fontWeight: '600',
   },
   header: {
     backgroundColor: colors.bgCard,

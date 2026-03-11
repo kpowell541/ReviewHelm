@@ -15,9 +15,9 @@ export default function BookmarksScreen() {
 
   const items = bookmarkedIds
     .map((id) => ({ id, found: findItemById(id) }))
-    .filter((entry) => entry.found !== null);
+    .filter((entry): entry is { id: string; found: NonNullable<ReturnType<typeof findItemById>> } => entry.found !== null);
 
-  const groups = groupByField(items, (entry) => entry.found!.stackTitle);
+  const groups = groupByField(items, (entry) => entry.found.stackTitle);
 
   return (
     <ScrollView
@@ -38,9 +38,9 @@ export default function BookmarksScreen() {
           {entries.map(({ id, found }) => (
             <ChecklistItemCard
               key={id}
-              text={found!.item.text}
-              sectionTitle={found!.sectionTitle}
-              severity={found!.item.severity}
+              text={found.item.text}
+              sectionTitle={found.sectionTitle}
+              severity={found.item.severity}
               onPress={() =>
                 router.push(`/deep-dive/${encodeURIComponent(id)}`)
               }
