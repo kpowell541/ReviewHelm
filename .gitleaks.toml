@@ -22,8 +22,8 @@ description = "Allow educational placeholder tokens in checklist content and exa
 paths = [
   '''docs/backend-api-contract\.md''',
   '''backend/\.env\.example''',
-  '''assets/data/checklists/(python|ruby|java-protobuf|web-devops-config)\.json''',
-  '''scripts/content-(python|ruby|java|web-devops-config)\.js''',
+  '''assets/data/checklists/(python|ruby|java-protobuf)\.json''',
+  '''scripts/content-(python|ruby|java)\.js''',
 ]
 regexes = [
   '''tokenHint":\s*"atk_[^"]+''',

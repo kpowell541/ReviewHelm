@@ -15,7 +15,7 @@ import { crossAlert } from '../../utils/alert';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useConfidenceStore } from '../../store/useConfidenceStore';
 import { usePreferencesStore } from '../../store/usePreferencesStore';
-import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withSecurityChecklist, withCodeReviewMeta, getRelevantSecuritySections } from '../../data/checklistLoader';
+import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withCodeReviewMeta, getRelevantSecuritySections } from '../../data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../../data/types';
 import type {
   Checklist,
@@ -87,6 +87,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const setItemResponse = useSessionStore((s) => s.setItemResponse);
   const completeSession = useSessionStore((s) => s.completeSession);
   const updateSessionNotes = useSessionStore((s) => s.updateSessionNotes);
+  const updateSelectedSections = useSessionStore((s) => s.updateSelectedSections);
   const recordSessionResults = useConfidenceStore((s) => s.recordSessionResults);
 
   const antiBiasMode = usePreferencesStore((s) => s.antiBiasMode);
@@ -96,6 +97,10 @@ export function ChecklistScreen({ sessionId }: Props) {
 
   const sectionListRef = useRef<SectionList<ChecklistItem, ChecklistSectionListEntry>>(null);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const scrollYRef = useRef(0);
+  const listHeightRef = useRef(0);
+  const prevContentHeightRef = useRef(0);
+  const sectionOrderRef = useRef<string[] | null>(null);
   const [sessionNotesCollapsed, setSessionNotesCollapsed] = useState(true);
   const [sessionNotesDraft, setSessionNotesDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,6 +109,8 @@ export function ChecklistScreen({ sessionId }: Props) {
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
   const [securityBannerDismissed, setSecurityBannerDismissed] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [showAddSectionsModal, setShowAddSectionsModal] = useState(false);
 
   useEffect(() => {
     setSeverityFilter(defaultSeverityFilter);
@@ -125,7 +132,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const checklist = useMemo(() => {
     if (!sessionMode) return null;
     if (sessionMode === 'polish') {
-      if (sessionEffectiveIds.length === 0) return withCodeReviewMeta(withSecurityChecklist(getPolishChecklist()));
+      if (sessionEffectiveIds.length === 0) return withCodeReviewMeta(getPolishChecklist());
       // Merge domain checklists + polish checklist for self-reviews with a stack
       const domainChecklist = sessionEffectiveIds.length === 1
         ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
@@ -142,15 +149,33 @@ export function ChecklistScreen({ sessionId }: Props) {
         },
         sections: [...domainChecklist.sections, ...polishChecklist.sections],
       };
-      return withCodeReviewMeta(withSecurityChecklist(merged, sessionEffectiveIds));
+      return withCodeReviewMeta(merged);
     }
     if (sessionEffectiveIds.length === 0) return null;
     const base = sessionEffectiveIds.length === 1
       ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
       : getMergedChecklist(sessionEffectiveIds, sessionSelectedSections);
-    return withCodeReviewMeta(withSecurityChecklist(base, sessionEffectiveIds));
+    return withCodeReviewMeta(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
+
+  // Compute all available sections with their active/skipped status
+  const allAvailableSections = useMemo(() => {
+    if (!sessionMode || sessionEffectiveIds.length === 0) return [];
+    const fullChecklist = sessionEffectiveIds.length === 1
+      ? getChecklist(sessionEffectiveIds[0])
+      : getMergedChecklist(sessionEffectiveIds);
+    const selectedSet = sessionSelectedSections ? new Set(sessionSelectedSections) : null;
+    return fullChecklist.sections.map((s) => ({
+      id: s.id,
+      title: s.title,
+      itemCount: getSectionItems(s).length,
+      isActive: selectedSet ? selectedSet.has(s.id) : true,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
+
+  const hasSkippedSections = allAvailableSections.some((s) => !s.isActive);
 
   const hasSecurityStack = checklist?.sections.some((s) => s.id.startsWith('security.')) ?? false;
   const relevantSecuritySections = useMemo(() => {
@@ -167,7 +192,9 @@ export function ChecklistScreen({ sessionId }: Props) {
   }, [session, allItems]);
 
   const sessionId_ = session?.id;
-  const sections = useMemo<ChecklistSectionListEntry[]>(() => {
+
+  // Step 1: Compute filtered sections (without collapse state to avoid full recomputation on toggle)
+  const filteredSections = useMemo<ChecklistSectionListEntry[]>(() => {
     if (!checklist || !sessionMode || !sessionId_) return [];
 
     const orderedSections =
@@ -177,7 +204,7 @@ export function ChecklistScreen({ sessionId }: Props) {
 
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return orderedSections
+    const result = orderedSections
       .map((section) => {
         const items = getSectionItems(section).filter((item) => {
           const severityMatch = severityFilter.includes(item.severity);
@@ -187,21 +214,76 @@ export function ChecklistScreen({ sessionId }: Props) {
             item.id.toLowerCase().includes(normalizedQuery);
           return severityMatch && textMatch;
         });
-        return {
-          section,
-          items,
-          data: collapsedSections[section.id] ? [] : items,
-        };
+        return { section, items, data: items };
       })
       .filter((entry) => entry.items.length > 0);
-  }, [checklist, sessionMode, sessionId_, antiBiasMode, searchQuery, severityFilter, collapsedSections]);
+
+    // On first load, sort started sections to top (skip for anti-bias shuffle)
+    if (!sectionOrderRef.current && !(sessionMode === 'polish' && antiBiasMode)) {
+      const currentSession = useSessionStore.getState().sessions[sessionId];
+      if (currentSession) {
+        const started: typeof result = [];
+        const unstarted: typeof result = [];
+        for (const entry of result) {
+          const hasResponses = entry.items.some((item) => {
+            const r = currentSession.itemResponses[item.id];
+            return r && r.verdict && r.verdict !== 'skipped';
+          });
+          (hasResponses ? started : unstarted).push(entry);
+        }
+        const sorted = [...started, ...unstarted];
+        sectionOrderRef.current = sorted.map((e) => e.section.id);
+        return sorted;
+      }
+    }
+
+    // Maintain locked order on subsequent computations
+    if (sectionOrderRef.current) {
+      const orderMap = new Map(sectionOrderRef.current.map((id, i) => [id, i]));
+      result.sort(
+        (a, b) =>
+          (orderMap.get(a.section.id) ?? Infinity) - (orderMap.get(b.section.id) ?? Infinity),
+      );
+    }
+
+    return result;
+  }, [checklist, sessionMode, sessionId_, antiBiasMode, searchQuery, severityFilter]);
+
+  // Step 2: Apply collapse state separately (cheap map, avoids recomputing filters)
+  const sections = useMemo(
+    () =>
+      filteredSections.map((entry) => ({
+        ...entry,
+        data: collapsedSections[entry.section.id] ? [] : entry.items,
+      })),
+    [filteredSections, collapsedSections],
+  );
 
   const toggleSection = useCallback((sectionId: string) => {
+    const isCollapsing = !collapsedSections[sectionId];
     setCollapsedSections((prev) => ({
       ...prev,
       [sectionId]: !prev[sectionId],
     }));
-  }, []);
+    // When collapsing, scroll to the section header to prevent blank space below
+    if (isCollapsing) {
+      const sectionIndex = sections.findIndex((s) => s.section.id === sectionId);
+      if (sectionIndex >= 0) {
+        requestAnimationFrame(() => {
+          try {
+            sectionListRef.current?.scrollToLocation({
+              sectionIndex,
+              itemIndex: 0,
+              animated: true,
+              viewOffset: 0,
+            });
+          } catch {
+            // scrollToLocation can throw with empty sections on some RN versions
+          }
+        });
+      }
+    }
+  }, [collapsedSections, sections]);
 
   const handleSetVerdict = useCallback(
     (itemId: string, verdict: Verdict) => {
@@ -304,7 +386,8 @@ export function ChecklistScreen({ sessionId }: Props) {
   }, [bulkSelected, sessionId, setItemResponse]);
 
   const finalizeCompletion = useCallback(() => {
-    if (!checklist) return;
+    if (!checklist || completing) return;
+    setCompleting(true);
     // Read the latest session directly from the store to avoid stale closure data
     const freshSession = useSessionStore.getState().sessions[sessionId];
     if (!freshSession) return;
@@ -335,6 +418,7 @@ export function ChecklistScreen({ sessionId }: Props) {
     router.replace(destination);
   }, [
     checklist,
+    completing,
     sessionId,
     completeSession,
     recordSessionResults,
@@ -370,10 +454,27 @@ export function ChecklistScreen({ sessionId }: Props) {
     );
   }, [session, scores, finalizeCompletion]);
 
+  const handleSaveSections = useCallback((sectionIds: string[]) => {
+    if (!session) return;
+    const allIds = allAvailableSections.map((s) => s.id);
+    // If all sections are selected, clear the filter entirely
+    const updated = sectionIds.length === allIds.length ? undefined : sectionIds;
+    updateSelectedSections(sessionId, updated);
+    // Reset the section order ref so newly added sections appear
+    sectionOrderRef.current = null;
+    setShowAddSectionsModal(false);
+  }, [session, sessionId, allAvailableSections, updateSelectedSections]);
+
   if (!session || !checklist || !scores) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Session not found</Text>
+        <Pressable
+          onPress={() => router.replace('/')}
+          style={styles.errorRecoveryButton}
+        >
+          <Text style={styles.errorRecoveryText}>Go Home</Text>
+        </Pressable>
       </View>
     );
   }
@@ -419,7 +520,7 @@ export function ChecklistScreen({ sessionId }: Props) {
             <Text style={styles.scoreValue}>{scores.confidence}%</Text>
           </View>
           <View style={styles.scorePill}>
-            <Text style={styles.scoreLabel}>Issues</Text>
+            <Text style={styles.scoreLabel}>Flagged</Text>
             <Text style={styles.scoreValue}>{scores.totalIssues}</Text>
           </View>
         </View>
@@ -492,6 +593,27 @@ export function ChecklistScreen({ sessionId }: Props) {
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
         stickySectionHeadersEnabled
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          scrollYRef.current = e.nativeEvent.contentOffset.y;
+        }}
+        onLayout={(e) => {
+          listHeightRef.current = e.nativeEvent.layout.height;
+        }}
+        onContentSizeChange={(_w, contentHeight) => {
+          // Prevent blank space when content shrinks (e.g. after collapsing a section)
+          const shrunk = contentHeight < prevContentHeightRef.current;
+          prevContentHeightRef.current = contentHeight;
+          if (shrunk) {
+            const maxScroll = contentHeight - listHeightRef.current;
+            if (maxScroll >= 0 && scrollYRef.current > maxScroll) {
+              (sectionListRef.current as any)?.scrollToOffset?.({
+                offset: Math.max(0, maxScroll),
+                animated: true,
+              });
+            }
+          }
+        }}
         ListHeaderComponent={
           relevantSecuritySections.length > 0 && !securityBannerDismissed ? (
             <View style={styles.securityBanner}>
@@ -582,6 +704,19 @@ export function ChecklistScreen({ sessionId }: Props) {
                 {session.isComplete ? 'Re-complete Session' : 'Complete Session'}
               </Text>
             </Pressable>
+            {allAvailableSections.length > 0 && (
+              <Pressable
+                onPress={() => setShowAddSectionsModal(true)}
+                style={({ pressed }) => [
+                  styles.addSectionsButton,
+                  { opacity: pressed ? 0.85 : 1 },
+                ]}
+              >
+                <Text style={styles.addSectionsButtonText}>
+                  {hasSkippedSections ? 'Add / Remove sections' : 'Remove sections'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         }
         contentContainerStyle={styles.listContent}
@@ -591,8 +726,10 @@ export function ChecklistScreen({ sessionId }: Props) {
       <Pressable
         style={styles.floatingButton}
         onPress={() => setShowSectionPicker(true)}
+        accessibilityLabel="Jump to section"
+        accessibilityRole="button"
       >
-        <Text style={styles.floatingButtonText}>§</Text>
+        <Text style={styles.floatingButtonText}>☰</Text>
       </Pressable>
 
       {/* Section picker modal */}
@@ -632,6 +769,14 @@ export function ChecklistScreen({ sessionId }: Props) {
         </Pressable>
       </Modal>
 
+      {/* Add/Remove sections modal */}
+      <SectionManagerModal
+        visible={showAddSectionsModal}
+        onClose={() => setShowAddSectionsModal(false)}
+        sections={allAvailableSections}
+        onSave={handleSaveSections}
+      />
+
       {/* Bulk action bar */}
       {bulkMode && bulkSelected.size > 0 && (
         <View style={styles.bulkActionBar}>
@@ -663,6 +808,95 @@ export function ChecklistScreen({ sessionId }: Props) {
   );
 }
 
+interface SectionEntry {
+  id: string;
+  title: string;
+  itemCount: number;
+  isActive: boolean;
+}
+
+function SectionManagerModal({
+  visible,
+  onClose,
+  sections,
+  onSave,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  sections: SectionEntry[];
+  onSave: (sectionIds: string[]) => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Sync local state when modal opens
+  useEffect(() => {
+    if (visible) {
+      setSelected(new Set(sections.filter((s) => s.isActive).map((s) => s.id)));
+    }
+  }, [visible, sections]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const hasChanges = sections.some((s) => s.isActive !== selected.has(s.id));
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Add / Remove Sections</Text>
+          <Text style={styles.addSectionsHint}>
+            Toggle sections to include or exclude from your review
+          </Text>
+          <FlatList
+            data={sections}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const isSelected = selected.has(item.id);
+              return (
+                <Pressable style={styles.modalSectionRow} onPress={() => toggle(item.id)}>
+                  <View style={[styles.sectionCheckbox, isSelected && styles.sectionCheckboxSelected]}>
+                    {isSelected && <Text style={styles.sectionCheckmark}>✓</Text>}
+                  </View>
+                  <Text style={[styles.modalSectionTitle, !isSelected && styles.sectionTitleInactive]} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.modalSectionCount}>{item.itemCount} items</Text>
+                </Pressable>
+              );
+            }}
+          />
+          <View style={styles.modalButtonRow}>
+            <Pressable
+              style={styles.cancelButton}
+              onPress={onClose}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.addAllSectionsButton, !hasChanges && { opacity: 0.4 }]}
+              onPress={() => hasChanges && onSave([...selected])}
+            >
+              <Text style={styles.addAllSectionsText}>
+                Save ({selected.size}/{sections.length})
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   errorText: {
@@ -670,6 +904,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     textAlign: 'center',
     marginTop: spacing['4xl'],
+  },
+  errorRecoveryButton: {
+    alignSelf: 'center',
+    marginTop: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  errorRecoveryText: {
+    color: '#fff',
+    fontSize: fontSizes.md,
+    fontWeight: '600',
   },
   header: {
     backgroundColor: colors.bgCard,
@@ -840,6 +1087,77 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     fontWeight: '600',
     color: '#fff',
+  },
+  addSectionsButton: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  addSectionsButtonText: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  addSectionsHint: {
+    fontSize: fontSizes.sm,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  cancelButton: {
+    flex: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  addAllSectionsButton: {
+    flex: 2,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  addAllSectionsText: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  sectionCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: colors.border,
+    marginRight: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionCheckboxSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  sectionCheckmark: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sectionTitleInactive: {
+    color: colors.textMuted,
   },
   headerTopRow: {
     flexDirection: 'row',

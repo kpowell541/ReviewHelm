@@ -289,6 +289,7 @@ const styles = StyleSheet.create({
   },
   deepDiveIcon: {
     fontSize: 18,
+    color: colors.textSecondary,
   },
   verdictRow: {
     flexDirection: 'row',
