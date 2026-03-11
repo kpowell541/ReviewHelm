@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { api, ApiError } from '../src/api/client';
 import { useAuthStore } from '../src/store/useAuthStore';
+import { usePreferencesStore } from '../src/store/usePreferencesStore';
+import { crossAlert } from '../src/utils/alert';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { colors, fontSizes, radius, spacing } from '../src/theme';
 
@@ -103,6 +105,12 @@ interface DashboardPayload {
   };
 }
 
+function maskToken(token: string | null): string {
+  if (!token) return 'none';
+  if (token.length <= 12) return token;
+  return `${token.slice(0, 6)}...${token.slice(-4)}`;
+}
+
 function StatCard(props: { label: string; value: string | number; tone?: 'default' | 'warn' | 'danger' | 'good' }) {
   const toneStyle =
     props.tone === 'good'
@@ -132,11 +140,26 @@ export default function AdminDashboardScreen() {
   const email = (user?.email ?? '').trim().toLowerCase();
   const isAllowed = ALLOWED_ADMIN_EMAILS.includes(email);
 
+  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
+  const isApiKeyLoaded = usePreferencesStore((s) => s.isApiKeyLoaded);
+  const setApiKey = usePreferencesStore((s) => s.setApiKey);
+  const clearApiKey = usePreferencesStore((s) => s.clearApiKey);
+  const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
+  const hasAdminApiKey = usePreferencesStore((s) => s.hasAdminApiKey);
+  const adminApiKeyToken = usePreferencesStore((s) => s.adminApiKeyToken);
+  const setAdminApiKey = usePreferencesStore((s) => s.setAdminApiKey);
+  const clearAdminApiKey = usePreferencesStore((s) => s.clearAdminApiKey);
+
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<string | null>(null);
+  const [reauthenticating, setReauthenticating] = useState(false);
+  const [savingApiKey, setSavingApiKey] = useState(false);
+  const [savingAdminApiKey, setSavingAdminApiKey] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [adminApiKeyInput, setAdminApiKeyInput] = useState('');
 
   const fetchDashboard = useCallback(() => {
     setLoading(true);
@@ -183,6 +206,84 @@ export default function AdminDashboardScreen() {
     }
   }, [data, fetchDashboard]);
 
+  const handleReauthenticate = useCallback(async () => {
+    if (!hasApiKey) {
+      crossAlert('No API Key', 'No Anthropic API key is saved. Add one below.');
+      return;
+    }
+    setReauthenticating(true);
+    try {
+      const key = await resolveApiKey();
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'hi' }],
+        }),
+      });
+      if (response.ok || response.status === 200) {
+        crossAlert('Authenticated', 'Your Anthropic API key is valid and working.');
+      } else if (response.status === 401) {
+        crossAlert('Authentication Failed', 'Your API key is invalid or expired. Update it below.');
+      } else if (response.status === 403) {
+        crossAlert('Authentication Failed', 'Your API key does not have permission. Check your Anthropic account.');
+      } else {
+        const body = await response.text();
+        crossAlert('Validation Error', `Anthropic returned status ${response.status}. ${body.slice(0, 200)}`);
+      }
+    } catch (err) {
+      crossAlert('Network Error', err instanceof Error ? err.message : 'Could not reach Anthropic API.');
+    } finally {
+      setReauthenticating(false);
+    }
+  }, [hasApiKey, resolveApiKey]);
+
+  const handleApiKeySave = useCallback(async () => {
+    if (!apiKeyInput.trim()) return;
+    setSavingApiKey(true);
+    try {
+      await setApiKey(apiKeyInput);
+      setApiKeyInput('');
+    } catch (err) {
+      crossAlert('Failed to save key', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSavingApiKey(false);
+    }
+  }, [apiKeyInput, setApiKey]);
+
+  const handleApiKeyClear = useCallback(async () => {
+    setSavingApiKey(true);
+    await clearApiKey();
+    setApiKeyInput('');
+    setSavingApiKey(false);
+  }, [clearApiKey]);
+
+  const handleAdminApiKeySave = useCallback(async () => {
+    if (!adminApiKeyInput.trim()) return;
+    setSavingAdminApiKey(true);
+    try {
+      await setAdminApiKey(adminApiKeyInput);
+      setAdminApiKeyInput('');
+    } catch (err) {
+      crossAlert('Failed to save admin key', err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSavingAdminApiKey(false);
+    }
+  }, [adminApiKeyInput, setAdminApiKey]);
+
+  const handleAdminApiKeyClear = useCallback(async () => {
+    setSavingAdminApiKey(true);
+    await clearAdminApiKey();
+    setAdminApiKeyInput('');
+    setSavingAdminApiKey(false);
+  }, [clearAdminApiKey]);
+
   const staleCount = useMemo(
     () => data?.checklistStaleness.summary.stale ?? 0,
     [data],
@@ -197,6 +298,106 @@ export default function AdminDashboardScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Admin Dashboard</Text>
         <Text style={styles.subtitle}>Anonymized aggregate metrics only</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Anthropic Authentication</Text>
+          <Text style={styles.metaText}>
+            Validate that the platform Claude API key is still working.
+          </Text>
+          <Pressable
+            style={[styles.publishButton, reauthenticating && styles.publishButtonDisabled]}
+            onPress={handleReauthenticate}
+            disabled={reauthenticating}
+          >
+            <Text style={styles.publishButtonText}>
+              {reauthenticating ? 'Validating...' : 'Reauthenticate with Anthropic'}
+            </Text>
+          </Pressable>
+          <Text style={styles.metaText}>
+            Status: {hasApiKey ? 'Key is configured' : 'No key saved'}
+          </Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Claude API Key</Text>
+          {!isApiKeyLoaded ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <>
+              <TextInput
+                style={styles.keyInput}
+                value={apiKeyInput}
+                onChangeText={setApiKeyInput}
+                placeholder="Paste Claude API key"
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <View style={styles.keyActions}>
+                <Pressable
+                  style={[styles.publishButton, (!apiKeyInput.trim() || savingApiKey) && styles.publishButtonDisabled]}
+                  onPress={handleApiKeySave}
+                  disabled={!apiKeyInput.trim() || savingApiKey}
+                >
+                  <Text style={styles.publishButtonText}>Save Key</Text>
+                </Pressable>
+                {hasApiKey && (
+                  <Pressable
+                    style={[styles.clearButton, savingApiKey && styles.publishButtonDisabled]}
+                    onPress={handleApiKeyClear}
+                    disabled={savingApiKey}
+                  >
+                    <Text style={styles.clearButtonText}>Clear Key</Text>
+                  </Pressable>
+                )}
+              </View>
+            </>
+          )}
+          <Text style={styles.metaText}>
+            Stored securely on this device. Status: {hasApiKey ? 'Configured' : 'No key saved'}
+          </Text>
+          {savingApiKey && <Text style={styles.metaText}>Saving...</Text>}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Anthropic Admin API Key (Optional)</Text>
+          <Text style={styles.metaText}>
+            Enables official monthly cost sync from Anthropic Usage/Cost API.
+          </Text>
+          <TextInput
+            style={styles.keyInput}
+            value={adminApiKeyInput}
+            onChangeText={setAdminApiKeyInput}
+            placeholder="Paste Admin API key"
+            placeholderTextColor={colors.textMuted}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <View style={styles.keyActions}>
+            <Pressable
+              style={[styles.publishButton, (!adminApiKeyInput.trim() || savingAdminApiKey) && styles.publishButtonDisabled]}
+              onPress={handleAdminApiKeySave}
+              disabled={!adminApiKeyInput.trim() || savingAdminApiKey}
+            >
+              <Text style={styles.publishButtonText}>Save Admin Key</Text>
+            </Pressable>
+            {hasAdminApiKey && (
+              <Pressable
+                style={[styles.clearButton, savingAdminApiKey && styles.publishButtonDisabled]}
+                onPress={handleAdminApiKeyClear}
+                disabled={savingAdminApiKey}
+              >
+                <Text style={styles.clearButtonText}>Clear Admin Key</Text>
+              </Pressable>
+            )}
+          </View>
+          <Text style={styles.metaText}>
+            Token: {maskToken(adminApiKeyToken)} · Status:{' '}
+            {hasAdminApiKey ? 'Configured' : 'Not configured'}
+          </Text>
+        </View>
 
         {loading && (
           <View style={styles.loadingWrap}>
@@ -512,5 +713,32 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: fontSizes.md,
     fontFamily: 'Quicksand_700Bold',
+  },
+  keyInput: {
+    backgroundColor: colors.bg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  keyActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  clearButton: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center' as const,
+  },
+  clearButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    fontFamily: 'Quicksand_600SemiBold',
   },
 });

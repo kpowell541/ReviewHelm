@@ -7,7 +7,6 @@ import {
   TextInput,
   Switch,
   TouchableOpacity,
-  ActivityIndicator,
   Pressable,
   Platform,
   Linking,
@@ -59,25 +58,11 @@ interface BackupPayload {
   repoConfigs?: unknown;
 }
 
-function maskToken(token: string | null): string {
-  if (!token) return 'none';
-  if (token.length <= 12) return token;
-  return `${token.slice(0, 6)}...${token.slice(-4)}`;
-}
-
 export default function SettingsScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
   const authUser = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
-  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
-  const adminApiKeyToken = usePreferencesStore((s) => s.adminApiKeyToken);
-  const hasAdminApiKey = usePreferencesStore((s) => s.hasAdminApiKey);
-  const isApiKeyLoaded = usePreferencesStore((s) => s.isApiKeyLoaded);
-  const setApiKey = usePreferencesStore((s) => s.setApiKey);
-  const clearApiKey = usePreferencesStore((s) => s.clearApiKey);
-  const setAdminApiKey = usePreferencesStore((s) => s.setAdminApiKey);
-  const clearAdminApiKey = usePreferencesStore((s) => s.clearAdminApiKey);
   const resolveAdminApiKey = usePreferencesStore((s) => s.resolveAdminApiKey);
   const replacePreferences = usePreferencesStore((s) => s.replacePreferences);
   const aiModel = usePreferencesStore((s) => s.aiModel);
@@ -152,41 +137,17 @@ export default function SettingsScreen() {
   const markSyncFailure = useSyncStore((s) => s.markSyncFailure);
 
   const [showFeatureTour, setShowFeatureTour] = useState(false);
-  const [savingApiKey, setSavingApiKey] = useState(false);
-  const [savingAdminApiKey, setSavingAdminApiKey] = useState(false);
   const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
   const [syncingOfficialCost, setSyncingOfficialCost] = useState(false);
   const [syncingData, setSyncingData] = useState(false);
   const [refreshingTier, setRefreshingTier] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [adminApiKeyInput, setAdminApiKeyInput] = useState('');
   const [budgetInput, setBudgetInput] = useState(String(monthlyBudgetUsd));
   const [thresholdInput, setThresholdInput] = useState(alertThresholds.join(','));
   const [autoDowngradeThresholdInput, setAutoDowngradeThresholdInput] = useState(
     String(autoDowngradeThresholdPct),
   );
   const [cooldownInput, setCooldownInput] = useState(String(cooldownSeconds));
-
-  const handleApiKeySave = useCallback(async () => {
-    if (!apiKeyInput.trim()) return;
-    setSavingApiKey(true);
-    try {
-      await setApiKey(apiKeyInput);
-      setApiKeyInput('');
-    } catch (err) {
-      crossAlert('Failed to save key', err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setSavingApiKey(false);
-    }
-  }, [apiKeyInput, setApiKey]);
-
-  const handleApiKeyClear = useCallback(async () => {
-    setSavingApiKey(true);
-    await clearApiKey();
-    setApiKeyInput('');
-    setSavingApiKey(false);
-  }, [clearApiKey]);
 
   const handleSyncData = useCallback(async () => {
     setSyncingData(true);
@@ -205,34 +166,6 @@ export default function SettingsScreen() {
     } finally {
       setSyncingData(false);
     }
-  }, []);
-
-  const handleAdminApiKeySave = useCallback(async () => {
-    if (!adminApiKeyInput.trim()) return;
-    setSavingAdminApiKey(true);
-    try {
-      await setAdminApiKey(adminApiKeyInput);
-      setAdminApiKeyInput('');
-    } catch (err) {
-      crossAlert('Failed to save admin key', err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setSavingAdminApiKey(false);
-    }
-  }, [adminApiKeyInput, setAdminApiKey]);
-
-  const handleAdminApiKeyClear = useCallback(async () => {
-    setSavingAdminApiKey(true);
-    await clearAdminApiKey();
-    setAdminApiKeyInput('');
-    setSavingAdminApiKey(false);
-  }, [clearAdminApiKey]);
-
-  const handleApiKeyChange = useCallback((value: string) => {
-    setApiKeyInput(value);
-  }, []);
-
-  const handleAdminApiKeyChange = useCallback((value: string) => {
-    setAdminApiKeyInput(value);
   }, []);
 
   const handleCheckUpdates = useCallback(async () => {
@@ -662,97 +595,6 @@ export default function SettingsScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>AI Tutor</Text>
-      <View style={styles.card}>
-        <Text style={styles.label}>Claude API Key</Text>
-        {!isApiKeyLoaded ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : (
-          <>
-            <TextInput
-              style={styles.input}
-              value={apiKeyInput}
-              onChangeText={handleApiKeyChange}
-              placeholder="Paste Claude API key"
-              placeholderTextColor={colors.textMuted}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <View style={styles.keyActions}>
-              <Pressable
-                style={[
-                  styles.primaryButton,
-                  (!apiKeyInput.trim() || savingApiKey) && styles.buttonDisabled,
-                ]}
-                onPress={handleApiKeySave}
-                disabled={!apiKeyInput.trim() || savingApiKey}
-              >
-                <Text style={styles.primaryButtonText}>Save Key</Text>
-              </Pressable>
-              {hasApiKey && (
-                <Pressable
-                  style={[styles.secondaryButton, savingApiKey && styles.buttonDisabled]}
-                  onPress={handleApiKeyClear}
-                  disabled={savingApiKey}
-                >
-                  <Text style={styles.secondaryButtonText}>Clear Key</Text>
-                </Pressable>
-              )}
-            </View>
-          </>
-        )}
-        <Text style={styles.hint}>
-          Stored securely on this device only. You must enter it on each device separately.
-        </Text>
-        <Text style={styles.subtle}>
-          Status: {hasApiKey ? 'Key is configured' : 'No key saved'}
-        </Text>
-        {savingApiKey && <Text style={styles.subtle}>Saving...</Text>}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Anthropic Admin API Key (Optional)</Text>
-        <Text style={styles.hint}>
-          Enables official monthly cost sync from Anthropic Usage/Cost API.
-        </Text>
-        <TextInput
-          style={styles.input}
-          value={adminApiKeyInput}
-          onChangeText={handleAdminApiKeyChange}
-          placeholder="Paste Admin API key"
-          placeholderTextColor={colors.textMuted}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <View style={styles.keyActions}>
-          <Pressable
-            style={[
-              styles.primaryButton,
-              (!adminApiKeyInput.trim() || savingAdminApiKey) &&
-                styles.buttonDisabled,
-            ]}
-            onPress={handleAdminApiKeySave}
-            disabled={!adminApiKeyInput.trim() || savingAdminApiKey}
-          >
-            <Text style={styles.primaryButtonText}>Save Admin Key</Text>
-          </Pressable>
-          {hasAdminApiKey && (
-            <Pressable
-              style={[styles.secondaryButton, savingAdminApiKey && styles.buttonDisabled]}
-              onPress={handleAdminApiKeyClear}
-              disabled={savingAdminApiKey}
-            >
-              <Text style={styles.secondaryButtonText}>Clear Admin Key</Text>
-            </Pressable>
-          )}
-        </View>
-        <Text style={styles.subtle}>
-          Token: {maskToken(adminApiKeyToken)} · Status:{' '}
-          {hasAdminApiKey ? 'Configured' : 'Not configured'}
-        </Text>
-      </View>
-
       <View style={styles.card}>
         <Text style={styles.label}>AI Model</Text>
         <Text style={styles.hint}>
@@ -1226,10 +1068,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  keyActions: {
-    marginTop: spacing.sm,
-    gap: spacing.xs,
   },
   settingRow: {
     flexDirection: 'row',
