@@ -18,6 +18,7 @@ export function FilterChips<T extends string>({
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}
+      accessibilityRole="radiogroup"
     >
       {chips.map((chip) => {
         const active = chip.key === selected;
@@ -29,6 +30,9 @@ export function FilterChips<T extends string>({
               styles.chip,
               active ? styles.chipActive : styles.chipInactive,
             ]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: active }}
+            accessibilityLabel={chip.label}
           >
             <Text
               style={[

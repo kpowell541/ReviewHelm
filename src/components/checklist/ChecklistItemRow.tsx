@@ -101,6 +101,9 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
       <Pressable
         onPress={() => setExpanded(!expanded)}
         style={styles.textRow}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={`${item.severity} severity: ${item.text}`}
       >
         <View style={[styles.severityBadge, { backgroundColor: sevColor + '20' }]}>
           <Text style={[styles.severityText, { color: sevColor }]}>
@@ -158,6 +161,9 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
                 borderColor: opt.color,
               },
             ]}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: currentVerdict === opt.value }}
+            accessibilityLabel={opt.value === 'looks-good' ? 'Looks good' : opt.value === 'needs-attention' ? 'Needs attention' : 'Not applicable'}
           >
             <Text
               style={[
@@ -186,6 +192,9 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
                   borderColor: CONFIDENCE_COLORS[level],
                 },
               ]}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: currentConfidence === level }}
+              accessibilityLabel={`Confidence ${level}, ${CONFIDENCE_LABELS[level]}`}
             >
               <Text style={styles.confidenceEmoji}>
                 {CONFIDENCE_EMOJI[level]}
@@ -213,6 +222,9 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
       <Pressable
         onPress={() => setNotesExpanded((prev) => !prev)}
         style={styles.notesToggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: notesExpanded }}
+        accessibilityLabel={hasNotes ? 'Edit per-item notes' : 'Add per-item notes'}
       >
         <Text style={styles.notesToggleText}>
           {hasNotes ? '📝 Notes (saved)' : '📝 Add per-item notes'}
@@ -229,6 +241,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           placeholderTextColor={colors.textMuted}
           multiline
           textAlignVertical="top"
+          accessibilityLabel="Per-item notes"
         />
       )}
 
@@ -237,6 +250,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         <Pressable
           onPress={() => onDeepDive(item.id)}
           style={styles.tutorNudge}
+          accessibilityRole="button"
+          accessibilityLabel="Open AI tutor for this concept"
         >
           <Text style={styles.tutorNudgeText}>
             {currentConfidence === 1
@@ -251,6 +266,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         <Pressable
           onPress={() => onDraftComment(item.id)}
           style={styles.attentionHint}
+          accessibilityRole="button"
+          accessibilityLabel="Draft a review comment for this issue"
         >
           <Text style={styles.attentionHintText}>
             ✍️ Found an issue — tap to draft a comment

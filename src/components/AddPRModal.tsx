@@ -184,6 +184,9 @@ export function AddPRModal({
                       prAuthor: r === 'author' ? 'Me' : '',
                     }))
                   }
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: role === r }}
+                  accessibilityLabel={r === 'author' ? 'My PR' : 'Reviewing'}
                 >
                   <Text
                     style={[
@@ -208,6 +211,7 @@ export function AddPRModal({
           placeholder="PR title"
           placeholderTextColor={colors.textMuted}
           autoFocus={!initialValues?.title}
+          accessibilityLabel="PR title, required"
         />
 
         {/* URL */}
@@ -220,6 +224,7 @@ export function AddPRModal({
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           keyboardType="url"
+          accessibilityLabel="PR URL"
         />
 
         {/* Repo */}
@@ -231,6 +236,7 @@ export function AddPRModal({
           placeholder="org/repo-name"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
+          accessibilityLabel="Repository name"
         />
 
         {/* PR # and Author */}
@@ -244,6 +250,7 @@ export function AddPRModal({
               placeholder="1234"
               placeholderTextColor={colors.textMuted}
               keyboardType="number-pad"
+              accessibilityLabel="PR number"
             />
           </View>
           {role === 'reviewer' && (
@@ -256,6 +263,7 @@ export function AddPRModal({
                 placeholder="username"
                 placeholderTextColor={colors.textMuted}
                 autoCapitalize="none"
+                accessibilityLabel="PR author"
               />
             </View>
           )}
@@ -269,6 +277,9 @@ export function AddPRModal({
               key={s}
               style={[styles.chip, form.size === s && styles.chipActive]}
               onPress={() => setForm((f) => ({ ...f, size: s }))}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: form.size === s }}
+              accessibilityLabel={s.charAt(0).toUpperCase() + s.slice(1)}
             >
               <Text
                 style={[
@@ -292,6 +303,9 @@ export function AddPRModal({
                   key={p}
                   style={[styles.chip, form.priority === p && styles.chipActive]}
                   onPress={() => setForm((f) => ({ ...f, priority: p }))}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: form.priority === p }}
+                  accessibilityLabel={PR_PRIORITY_LABELS[p]}
                 >
                   <Text
                     style={[
@@ -315,6 +329,7 @@ export function AddPRModal({
               value={form.isEmergency}
               onValueChange={(v) => setForm((f) => ({ ...f, isEmergency: v }))}
               trackColor={{ false: colors.border, true: colors.error }}
+              accessibilityLabel="Emergency or hotfix PR"
             />
           </View>
         )}
@@ -327,6 +342,9 @@ export function AddPRModal({
               key={v}
               style={[styles.chip, form.ciPassing === v && styles.chipActive]}
               onPress={() => setForm((f) => ({ ...f, ciPassing: v }))}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: form.ciPassing === v }}
+              accessibilityLabel={`Build passing: ${v === 'yes' ? 'Yes' : v === 'no' ? 'No' : 'Unknown'}`}
             >
               <Text
                 style={[
@@ -355,6 +373,8 @@ export function AddPRModal({
                   dependencies: f.dependencies.filter((_, i) => i !== idx),
                 }))
               }
+              accessibilityRole="button"
+              accessibilityLabel={`Remove dependency ${dep.repo} number ${dep.prNumber}`}
             >
               <Text style={styles.depRemove}>X</Text>
             </Pressable>
@@ -368,6 +388,7 @@ export function AddPRModal({
             placeholder="org/repo"
             placeholderTextColor={colors.textMuted}
             autoCapitalize="none"
+            accessibilityLabel="Dependency repository"
           />
           <TextInput
             style={[styles.input, { flex: 1 }]}
@@ -376,6 +397,7 @@ export function AddPRModal({
             placeholder="PR #"
             placeholderTextColor={colors.textMuted}
             keyboardType="number-pad"
+            accessibilityLabel="Dependency PR number"
           />
           <Pressable
             style={[
@@ -384,6 +406,9 @@ export function AddPRModal({
                 opacity: 0.4,
               },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel="Add dependency"
+            accessibilityState={{ disabled: !depForm.repo.trim() || !depForm.prNumber.trim() }}
             onPress={() => {
               if (!depForm.repo.trim() || !depForm.prNumber.trim()) return;
               const num = parseInt(depForm.prNumber, 10);
@@ -418,13 +443,19 @@ export function AddPRModal({
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={3}
+              accessibilityLabel="PR notes"
             />
           </>
         )}
 
         {/* Buttons */}
         <View style={styles.modalButtons}>
-          <Pressable onPress={resetAndClose} style={styles.cancelButton}>
+          <Pressable
+            onPress={resetAndClose}
+            style={styles.cancelButton}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
+          >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
           <Pressable
@@ -434,6 +465,9 @@ export function AddPRModal({
               saveButtonColor ? { backgroundColor: saveButtonColor } : undefined,
               !form.title.trim() && { opacity: 0.4 },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={saveLabel}
+            accessibilityState={{ disabled: !form.title.trim() }}
           >
             <Text style={styles.saveButtonText}>{saveLabel}</Text>
           </Pressable>

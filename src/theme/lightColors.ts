@@ -9,10 +9,10 @@ export const lightColors = {
   // Text
   textPrimary: '#1a1a2e',
   textSecondary: '#555570',
-  textMuted: '#8888a0',
+  textMuted: '#6e6e88',
 
   // Accent
-  primary: '#6c63ff',
+  primary: '#5b52e0',
   primaryLight: '#8b83ff',
   primaryDark: '#4a42d4',
 

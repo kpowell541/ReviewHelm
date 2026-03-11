@@ -483,7 +483,7 @@ export default function SettingsScreen() {
   return (
     <DesktopContainer>
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]} keyboardShouldPersistTaps="handled">
-      <Text style={styles.sectionTitle}>Sync</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Sync</Text>
       <View style={styles.card}>
         <Text style={styles.hint}>
           Sync sessions, PRs, gaps, and preferences across all your devices.
@@ -492,6 +492,9 @@ export default function SettingsScreen() {
           style={[styles.primaryButton, syncingData && styles.buttonDisabled]}
           onPress={handleSyncData}
           disabled={syncingData}
+          accessibilityRole="button"
+          accessibilityLabel="Sync data between devices"
+          accessibilityState={{ disabled: syncingData }}
         >
           <Text style={styles.primaryButtonText}>
             {syncingData ? 'Syncing...' : 'Sync data between devices'}
@@ -499,7 +502,7 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.sectionTitle}>Subscription</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Subscription</Text>
       <View style={styles.card}>
         <View style={styles.tierRow}>
           <View style={styles.tierBadge}>
@@ -628,7 +631,7 @@ export default function SettingsScreen() {
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>AI Tutor</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">AI Tutor</Text>
       <View style={styles.card}>
         <Text style={styles.label}>AI Model</Text>
         <Text style={styles.hint}>
@@ -646,6 +649,9 @@ export default function SettingsScreen() {
                 ]}
                 onPress={() => setAiModel(model)}
                 activeOpacity={0.7}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={`${CLAUDE_MODEL_LABELS[model]}: ${CLAUDE_MODEL_DESCRIPTIONS[model]}`}
               >
                 <View style={styles.modelHeader}>
                   <View style={styles.modelRadioRow}>
@@ -681,7 +687,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>API Usage</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">API Usage</Text>
       <View style={styles.card}>
         <Text style={styles.statText}>Total tokens: {getTotalTokens().toLocaleString()}</Text>
         <Text style={styles.statText}>Estimated spend: ${getEstimatedCost().toFixed(2)}</Text>
@@ -707,10 +713,10 @@ export default function SettingsScreen() {
             Official cost last synced: {new Date(externalCostUpdatedAt).toLocaleString()}
           </Text>
         )}
-        <Pressable style={styles.secondaryButton} onPress={resetUsage}>
+        <Pressable style={styles.secondaryButton} onPress={resetUsage} accessibilityRole="button" accessibilityLabel="Reset usage">
           <Text style={styles.secondaryButtonText}>Reset usage</Text>
         </Pressable>
-        <Pressable style={styles.secondaryButton} onPress={handleClearTutorCache}>
+        <Pressable style={styles.secondaryButton} onPress={handleClearTutorCache} accessibilityRole="button" accessibilityLabel="Clear tutor response cache">
           <Text style={styles.secondaryButtonText}>Clear tutor response cache</Text>
         </Pressable>
         <Pressable
@@ -724,7 +730,7 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.sectionTitle}>Budget Controls</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Budget Controls</Text>
       <View style={styles.card}>
         <Text style={styles.label}>Monthly Budget (USD)</Text>
         <TextInput
@@ -734,6 +740,7 @@ export default function SettingsScreen() {
           keyboardType="decimal-pad"
           placeholder="40"
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Monthly budget in USD"
         />
         <Pressable style={styles.secondaryButton} onPress={handleSaveBudget}>
           <Text style={styles.secondaryButtonText}>Save budget</Text>
@@ -746,6 +753,7 @@ export default function SettingsScreen() {
           onChangeText={setThresholdInput}
           placeholder="70,85,95"
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Alert thresholds as percentages"
         />
         <Pressable style={styles.secondaryButton} onPress={handleSaveThresholds}>
           <Text style={styles.secondaryButtonText}>Save thresholds</Text>
@@ -762,6 +770,7 @@ export default function SettingsScreen() {
             value={hardStopAtBudget}
             onValueChange={setHardStopAtBudget}
             trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Hard stop at budget"
           />
         </View>
 
@@ -776,6 +785,7 @@ export default function SettingsScreen() {
             value={autoDowngradeNearBudget}
             onValueChange={setAutoDowngradeNearBudget}
             trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Auto-downgrade near budget"
           />
         </View>
 
@@ -789,6 +799,7 @@ export default function SettingsScreen() {
           keyboardType="number-pad"
           placeholder="85"
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Auto-downgrade threshold percentage"
         />
         <Pressable
           style={styles.secondaryButton}
@@ -805,13 +816,14 @@ export default function SettingsScreen() {
           keyboardType="number-pad"
           placeholder="6"
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="AI call cooldown in seconds"
         />
         <Pressable style={styles.secondaryButton} onPress={handleSaveCooldown}>
           <Text style={styles.secondaryButtonText}>Save cooldown</Text>
         </Pressable>
       </View>
 
-      <Text style={styles.sectionTitle}>Anthropic Workspace Limits</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Anthropic Workspace Limits</Text>
       <View style={styles.card}>
         <Text style={styles.hint}>
           Set hard spend and rate limits in Anthropic Console Workspaces for an account-level
@@ -819,7 +831,7 @@ export default function SettingsScreen() {
         </Text>
       </View>
 
-      <Text style={styles.sectionTitle}>Review Settings</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Review Settings</Text>
       <View style={styles.card}>
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
@@ -832,6 +844,7 @@ export default function SettingsScreen() {
             value={antiBiasMode}
             onValueChange={setAntiBiasMode}
             trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Anti-bias mode"
           />
         </View>
         <Text style={[styles.label, styles.inlineLabel]}>Checklist Text Size</Text>
@@ -844,6 +857,9 @@ export default function SettingsScreen() {
                 fontSize === size && styles.inlineChoiceButtonActive,
               ]}
               onPress={() => setFontSize(size)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: fontSize === size }}
+              accessibilityLabel={`${size[0].toUpperCase() + size.slice(1)} text size`}
             >
               <Text
                 style={[
@@ -866,6 +882,9 @@ export default function SettingsScreen() {
                 themeMode === mode && styles.inlineChoiceButtonActive,
               ]}
               onPress={() => setThemeMode(mode)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: themeMode === mode }}
+              accessibilityLabel={`${mode[0].toUpperCase() + mode.slice(1)} theme`}
             >
               <Text
                 style={[
@@ -880,7 +899,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>PR Tracker</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">PR Tracker</Text>
       <View style={styles.card}>
         <Text style={[styles.label, styles.inlineLabel]}>My PR WIP Limit</Text>
         <Text style={styles.hint}>
@@ -895,6 +914,9 @@ export default function SettingsScreen() {
                 wipLimit === n && styles.inlineChoiceButtonActive,
               ]}
               onPress={() => setWipLimit(n)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: wipLimit === n }}
+              accessibilityLabel={`WIP limit: ${n}`}
             >
               <Text
                 style={[
@@ -918,11 +940,12 @@ export default function SettingsScreen() {
             value={emergencySlotEnabled}
             onValueChange={setEmergencySlotEnabled}
             trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Emergency slot"
           />
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Data</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Data</Text>
       <View style={styles.card}>
         <Pressable
           style={[styles.primaryButton, checkingUpdates && styles.buttonDisabled]}
@@ -963,7 +986,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Export</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Export</Text>
       <View style={styles.card}>
         <View style={styles.settingRow}>
           <View style={styles.settingInfo}>
@@ -976,11 +999,12 @@ export default function SettingsScreen() {
             value={autoExportPdf}
             onValueChange={setAutoExportPdf}
             trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Auto-export PDF"
           />
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>Account</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Account</Text>
       <View style={styles.card}>
         {authUser ? (
           <>
@@ -1014,11 +1038,13 @@ export default function SettingsScreen() {
         )}
       </View>
 
-      <Text style={styles.sectionTitle}>Connected Features</Text>
+      <Text style={styles.sectionTitle} accessibilityRole="header">Connected Features</Text>
       <View style={styles.card}>
         <Pressable
           style={styles.connectedLink}
           onPress={() => setShowFeatureTour(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Feature Guide"
         >
           <Text style={styles.connectedLinkText}>Feature Guide</Text>
           <Text style={styles.connectedLinkArrow}>{'>'}</Text>
@@ -1026,6 +1052,8 @@ export default function SettingsScreen() {
         <Pressable
           style={styles.connectedLink}
           onPress={() => router.push('/pr-tracker')}
+          accessibilityRole="link"
+          accessibilityLabel="PR Tracker"
         >
           <Text style={styles.connectedLinkText}>PR Tracker</Text>
           <Text style={styles.connectedLinkArrow}>{'>'}</Text>
@@ -1033,6 +1061,8 @@ export default function SettingsScreen() {
         <Pressable
           style={styles.connectedLink}
           onPress={() => router.push('/comment-profiles')}
+          accessibilityRole="link"
+          accessibilityLabel="Comment Style Profiles"
         >
           <Text style={styles.connectedLinkText}>Comment Style Profiles</Text>
           <Text style={styles.connectedLinkArrow}>{'>'}</Text>
@@ -1040,6 +1070,8 @@ export default function SettingsScreen() {
         <Pressable
           style={styles.connectedLink}
           onPress={() => router.push('/diffs')}
+          accessibilityRole="link"
+          accessibilityLabel="Diff Artifacts"
         >
           <Text style={styles.connectedLinkText}>Diff Artifacts</Text>
           <Text style={styles.connectedLinkArrow}>{'>'}</Text>

@@ -63,7 +63,7 @@ export default function LoginScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.content}>
-            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.title} accessibilityRole="header">Welcome Back</Text>
             <Text style={styles.subtitle}>
               Sign in to sync your data across devices
             </Text>
@@ -78,7 +78,7 @@ export default function LoginScreen() {
             )}
 
             {error && !stagingBlocked && (
-              <View style={styles.errorBox}>
+              <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -94,6 +94,7 @@ export default function LoginScreen() {
               textContentType="emailAddress"
               autoComplete="email"
               returnKeyType="next"
+              accessibilityLabel="Email address"
             />
 
             <TextInput
@@ -107,11 +108,14 @@ export default function LoginScreen() {
               autoComplete="password"
               returnKeyType="done"
               onSubmitEditing={() => { if (isValid && !isLoading) handleSignIn(); }}
+              accessibilityLabel="Password"
             />
 
             <Pressable
               style={styles.forgotButton}
               onPress={() => router.push('/auth/forgot-password')}
+              accessibilityRole="link"
+              accessibilityLabel="Forgot password"
             >
               <Text style={styles.forgotButtonText}>Forgot password?</Text>
             </Pressable>
@@ -123,6 +127,9 @@ export default function LoginScreen() {
               ]}
               onPress={handleSignIn}
               disabled={!isValid || isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              accessibilityState={{ disabled: !isValid || isLoading }}
             >
               {isLoading ? (
                 <ActivityIndicator color="#fff" />
@@ -135,6 +142,8 @@ export default function LoginScreen() {
               <Pressable
                 style={styles.secondaryButton}
                 onPress={() => router.push('/auth/signup')}
+                accessibilityRole="link"
+                accessibilityLabel="Don't have an account? Sign up"
               >
                 <Text style={styles.secondaryButtonText}>
                   Don't have an account? Sign Up

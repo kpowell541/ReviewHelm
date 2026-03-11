@@ -23,11 +23,18 @@ export function BottomActionBar({
           styles.primaryButton,
           { opacity: pressed ? 0.85 : 1 },
         ]}
+        accessibilityRole="button"
+        accessibilityLabel={label}
       >
         <Text style={styles.primaryLabel}>{label}</Text>
       </Pressable>
       {secondaryLabel && onSecondaryPress && (
-        <Pressable onPress={onSecondaryPress} style={styles.secondaryButton}>
+        <Pressable
+          onPress={onSecondaryPress}
+          style={styles.secondaryButton}
+          accessibilityRole="button"
+          accessibilityLabel={secondaryLabel}
+        >
           <Text style={styles.secondaryLabel}>{secondaryLabel}</Text>
         </Pressable>
       )}
