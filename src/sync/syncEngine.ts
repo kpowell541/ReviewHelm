@@ -11,7 +11,7 @@ import { useBookmarkStore } from '../store/useBookmarkStore';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { useRepoConfigStore } from '../store/useRepoConfigStore';
 import { useTierStore } from '../store/useTierStore';
-import type { Session, TrackedPR, TutorConversation } from '../data/types';
+import type { ClaudeModel, Session, Severity, TrackedPR, TutorConversation } from '../data/types';
 
 /**
  * Local-first sync engine.
@@ -94,8 +94,8 @@ async function pushSessions(): Promise<{ pushed: number; errors: string[] }> {
           throw err;
         }
       }
-    } catch (err: any) {
-      errors.push(`Session ${session.id}: ${err.message}`);
+    } catch (err: unknown) {
+      errors.push(`Session ${session.id}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -133,8 +133,8 @@ async function pullSessions(): Promise<{ pulled: number; errors: string[] }> {
         pulled++;
       }
     }
-  } catch (err: any) {
-    errors.push(`Pull sessions: ${err.message}`);
+  } catch (err: unknown) {
+    errors.push(`Pull sessions: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return { pulled, errors };
@@ -168,11 +168,11 @@ async function syncPreferences(): Promise<{ pushed: number; pulled: number; erro
 
     // Pull remote preferences (now reflects merged state)
     const remote = await api.get<{
-      aiModel: string;
-      defaultSeverityFilter: string[];
+      aiModel: ClaudeModel;
+      defaultSeverityFilter: Severity[];
       antiBiasMode: boolean;
-      fontSize: string;
-      codeBlockTheme: string;
+      fontSize: 'small' | 'medium' | 'large';
+      codeBlockTheme: 'dark' | 'light';
       autoExportPdf: boolean;
       monthlyBudgetUsd: number;
       alertThresholds: number[];
@@ -184,11 +184,11 @@ async function syncPreferences(): Promise<{ pushed: number; pulled: number; erro
 
     // Apply UI preferences
     usePreferencesStore.getState().replacePreferences({
-      aiModel: remote.aiModel as any,
-      defaultSeverityFilter: remote.defaultSeverityFilter as any,
+      aiModel: remote.aiModel,
+      defaultSeverityFilter: remote.defaultSeverityFilter,
       antiBiasMode: remote.antiBiasMode,
-      fontSize: remote.fontSize as any,
-      codeBlockTheme: remote.codeBlockTheme as any,
+      fontSize: remote.fontSize,
+      codeBlockTheme: remote.codeBlockTheme,
       autoExportPdf: remote.autoExportPdf,
     });
 
@@ -202,8 +202,8 @@ async function syncPreferences(): Promise<{ pushed: number; pulled: number; erro
       cooldownSeconds: remote.cooldownSeconds,
     });
     pulled = 1;
-  } catch (err: any) {
-    errors.push(`Preferences: ${err.message}`);
+  } catch (err: unknown) {
+    errors.push(`Preferences: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return { pushed, pulled, errors };
@@ -254,8 +254,8 @@ async function syncConfidence(): Promise<{ pushed: number; pulled: number; error
     // Push merged histories back to server
     await api.put('/gaps/confidence', { histories: merged });
     pushed = 1;
-  } catch (err: any) {
-    errors.push(`Confidence: ${err.message}`);
+  } catch (err: unknown) {
+    errors.push(`Confidence: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return { pushed, pulled, errors };
@@ -312,8 +312,8 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
             updatedAt: local.updatedAt,
           });
           pushed++;
-        } catch (err: any) {
-          errors.push(`PR ${local.id}: ${err.message}`);
+        } catch (err: unknown) {
+          errors.push(`PR ${local.id}: ${err instanceof Error ? err.message : String(err)}`);
         }
       }
     }
@@ -331,8 +331,8 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
 
     usePRTrackerStore.getState().replacePRs(mergedPRs);
     usePRTrackerStore.getState().clearDeletedPRIds();
-  } catch (err: any) {
-    errors.push(`Sync PRs: ${err.message}`);
+  } catch (err: unknown) {
+    errors.push(`Sync PRs: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return { pushed, pulled, errors };
@@ -387,14 +387,14 @@ async function syncTutorConversations(): Promise<{ pushed: number; pulled: numbe
       try {
         await api.put('/tutor-conversations', { conversations: toPush });
         pushed += toPush.length;
-      } catch (err: any) {
-        errors.push(`Push conversations: ${err.message}`);
+      } catch (err: unknown) {
+        errors.push(`Push conversations: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
     useTutorStore.getState().replaceConversations(merged);
-  } catch (err: any) {
-    errors.push(`Sync conversations: ${err.message}`);
+  } catch (err: unknown) {
+    errors.push(`Sync conversations: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return { pushed, pulled, errors };
@@ -417,8 +417,8 @@ async function syncUsage(): Promise<{ pushed: number; pulled: number; errors: st
 
     useUsageStore.getState().setExternalMonthlyCost(summary.estimatedCostUsd);
     pulled = 1;
-  } catch (err: any) {
-    errors.push(`Usage: ${err.message}`);
+  } catch (err: unknown) {
+    errors.push(`Usage: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return { pushed: 0, pulled, errors };
@@ -477,13 +477,13 @@ async function syncBookmarksTemplatesRepoConfigs(): Promise<{ pushed: number; pu
         repoConfigs: mergedConfigs,
       });
       pushed = 1;
-    } catch (err: any) {
-      errors.push(`Bookmarks push: ${err.message}`);
+    } catch (err: unknown) {
+      errors.push(`Bookmarks push: ${err instanceof Error ? err.message : String(err)}`);
     }
 
     return { pushed, pulled, errors };
-  } catch (err: any) {
-    errors.push(`Bookmarks/templates: ${err.message}`);
+  } catch (err: unknown) {
+    errors.push(`Bookmarks/templates: ${err instanceof Error ? err.message : String(err)}`);
     return { pushed: 0, pulled: 0, errors };
   }
 }
@@ -572,9 +572,10 @@ export async function runSync(): Promise<SyncResult> {
       const version = new Date().toISOString();
       syncStore.markSyncSuccess(version);
     }
-  } catch (err: any) {
-    allErrors.push(err.message);
-    syncStore.markSyncFailure(err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    allErrors.push(message);
+    syncStore.markSyncFailure(message);
   }
 
   return { pushed: totalPushed, pulled: totalPulled, errors: allErrors, details };

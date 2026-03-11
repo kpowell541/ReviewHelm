@@ -260,22 +260,26 @@ export default function HomeScreen() {
           />
         </View>
 
-        <Pressable
-          onPress={() => starterGate.allowed ? setShowAddPR(true) : starterGate.guardedNavigate('/pr-tracker')}
-          style={({ pressed }) => [
-            styles.addPRButton,
-            { opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Text style={styles.addPRButtonText}>{starterGate.allowed ? '+ Add a PR' : '🔒 Add a PR'}</Text>
-        </Pressable>
-
-        <View style={styles.quickLinks}>
+        <View style={styles.quickLinksGrid}>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => starterGate.allowed ? setShowAddPR(true) : starterGate.guardedNavigate('/pr-tracker')}
+          >
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '＋' : '🔒'} Add PR</Text>
+          </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => router.push('/search')}
           >
             <Text style={styles.quickLinkText}>🔎 Search</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => starterGate.allowed ? router.push('/pr-tracker') : starterGate.guardedNavigate('/pr-tracker')}
+          >
+            <Text style={styles.quickLinkText}>
+              {starterGate.allowed ? '🔀' : '🔒'} PRs{starterGate.allowed && activePRCount > 0 ? ` (${activePRCount})` : ''}
+            </Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
@@ -289,28 +293,11 @@ export default function HomeScreen() {
           >
             <Text style={styles.quickLinkText}>⭐ Bookmarks</Text>
           </Pressable>
-        </View>
-
-        <View style={styles.quickLinks}>
-          <Pressable
-            style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/pr-tracker') : starterGate.guardedNavigate('/pr-tracker')}
-          >
-            <Text style={styles.quickLinkText}>
-              {starterGate.allowed ? '🔀' : '🔒'} PRs{starterGate.allowed && activePRCount > 0 ? ` (${activePRCount})` : ''}
-            </Text>
-          </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => starterGate.allowed ? router.push('/trends') : starterGate.guardedNavigate('/trends')}
           >
             <Text style={styles.quickLinkText}>{starterGate.allowed ? '📊' : '🔒'} Trends</Text>
-          </Pressable>
-          <Pressable
-            style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/past-reviews') : starterGate.guardedNavigate('/past-reviews')}
-          >
-            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📋' : '🔒'} Past PRs</Text>
           </Pressable>
           {dueCount > 0 && (
             <Pressable
@@ -482,16 +469,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     opacity: 0.5,
   },
-  quickLinks: {
+  quickLinksGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginTop: spacing.xl,
   },
   quickLink: {
-    flex: 1,
+    flexBasis: '31%',
+    flexGrow: 1,
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     alignItems: 'center',
   },
   quickLinkText: {
@@ -533,20 +522,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.textSecondary,
     marginLeft: spacing.sm,
-  },
-  addPRButton: {
-    backgroundColor: colors.bgCard,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  addPRButtonText: {
-    fontSize: fontSizes.md,
-    fontFamily: 'Quicksand_600SemiBold',
-    color: colors.textSecondary,
   },
 
 });

@@ -106,9 +106,9 @@ export default function SectionSelectScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.heading}>Pick sections</Text>
+        <Text style={styles.heading}>Refine your sections</Text>
         <Text style={styles.subtitle}>
-          Select which sections to include in your combined review
+          Uncheck any sections that aren't relevant to this PR. Don't worry — you can add skipped sections back during your review.
         </Text>
 
         {stackSections.map(({ stackId, stackInfo, sections }) => {

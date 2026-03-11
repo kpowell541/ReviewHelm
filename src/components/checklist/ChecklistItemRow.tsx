@@ -120,6 +120,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           }}
           hitSlop={8}
           style={styles.deepDiveButton}
+          accessibilityLabel={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+          accessibilityRole="button"
         >
           <Text style={styles.deepDiveIcon}>{isBookmarked ? '★' : '☆'}</Text>
         </Pressable>
@@ -127,6 +129,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           onPress={() => void handleShare()}
           hitSlop={8}
           style={styles.deepDiveButton}
+          accessibilityLabel="Share item"
+          accessibilityRole="button"
         >
           <Text style={styles.deepDiveIcon}>↗</Text>
         </Pressable>
@@ -134,6 +138,8 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           onPress={() => onDeepDive(item.id)}
           hitSlop={8}
           style={styles.deepDiveButton}
+          accessibilityLabel="Deep dive"
+          accessibilityRole="button"
         >
           <Text style={styles.deepDiveIcon}>📚</Text>
         </Pressable>

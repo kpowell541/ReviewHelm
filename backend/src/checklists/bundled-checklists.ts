@@ -42,7 +42,9 @@ import terraformData from './data/terraform-hcl.json';
 import typescriptData from './data/typescript.json';
 import unitTestingData from './data/unit-testing.json';
 import vueData from './data/vue.json';
-import webDevopsData from './data/web-devops-config.json';
+import nodejsData from './data/nodejs.json';
+import protobufData from './data/protobuf.json';
+import reactData from './data/react.json';
 
 export type ChecklistMode = 'review' | 'polish';
 export type Severity = 'blocker' | 'major' | 'minor' | 'nit';
@@ -70,13 +72,16 @@ export type StackId =
   | 'lua'
   | 'mobile-testing'
   | 'nextjs'
+  | 'nodejs'
   | 'nosql'
   | 'package-bundler'
   | 'performance-testing'
   | 'php'
   | 'postgresql'
+  | 'protobuf'
   | 'python'
   | 'r-lang'
+  | 'react'
   | 'rest-api'
   | 'ruby'
   | 'rust'
@@ -89,8 +94,7 @@ export type StackId =
   | 'terraform-hcl'
   | 'typescript'
   | 'unit-testing'
-  | 'vue'
-  | 'web-devops-config';
+  | 'vue';
 
 export interface ChecklistItemShape {
   id: string;
@@ -170,7 +174,9 @@ const BUNDLED = {
   typescript: typescriptData,
   'unit-testing': unitTestingData,
   vue: vueData,
-  'web-devops-config': webDevopsData,
+  nodejs: nodejsData,
+  protobuf: protobufData,
+  react: reactData,
 } as const satisfies Record<string, ChecklistShape>;
 
 export type ChecklistId = keyof typeof BUNDLED;

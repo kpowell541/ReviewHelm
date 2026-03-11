@@ -145,6 +145,18 @@ export async function apiRequest<T>(
           window.location.replace('/region-unavailable');
         }
 
+        // On 401, attempt a single token refresh and retry
+        if (response.status === 401 && !options.public && attempt < maxAttempts - 1) {
+          const refreshed = await useAuthStore.getState().refreshSession();
+          if (refreshed) {
+            const newToken = await useAuthStore.getState().getAccessToken();
+            if (newToken) {
+              requestHeaders['Authorization'] = `Bearer ${newToken}`;
+            }
+            continue;
+          }
+        }
+
         if (RETRYABLE_STATUS_CODES.includes(response.status) && attempt < maxAttempts - 1) {
           await sleep(RETRY_DELAY_MS * Math.pow(2, attempt));
           continue;

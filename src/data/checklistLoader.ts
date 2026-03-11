@@ -9,7 +9,9 @@ import goData from '../../assets/data/checklists/go.json';
 import terraformHclData from '../../assets/data/checklists/terraform-hcl.json';
 import polishMyPrData from '../../assets/data/checklists/polish-my-pr.json';
 import swiftObjcData from '../../assets/data/checklists/swift-objc.json';
-import webDevopsConfigData from '../../assets/data/checklists/web-devops-config.json';
+import reactData from '../../assets/data/checklists/react.json';
+import nodejsData from '../../assets/data/checklists/nodejs.json';
+import protobufData from '../../assets/data/checklists/protobuf.json';
 import pythonData from '../../assets/data/checklists/python.json';
 import rubyData from '../../assets/data/checklists/ruby.json';
 import luaData from '../../assets/data/checklists/lua.json';
@@ -55,7 +57,9 @@ export const CHECKLIST_IDS = [
   'go',
   'terraform-hcl',
   'swift-objc',
-  'web-devops-config',
+  'react',
+  'nodejs',
+  'protobuf',
   'python',
   'ruby',
   'lua',
@@ -108,7 +112,9 @@ const bundledChecklists: ChecklistMap = {
   go: goData as unknown as Checklist,
   'terraform-hcl': terraformHclData as unknown as Checklist,
   'swift-objc': swiftObjcData as unknown as Checklist,
-  'web-devops-config': webDevopsConfigData as unknown as Checklist,
+  react: reactData as unknown as Checklist,
+  nodejs: nodejsData as unknown as Checklist,
+  protobuf: protobufData as unknown as Checklist,
   python: pythonData as unknown as Checklist,
   ruby: rubyData as unknown as Checklist,
   lua: luaData as unknown as Checklist,
@@ -233,7 +239,9 @@ export function getAllReviewChecklists(): Checklist[] {
     'go',
     'terraform-hcl',
     'swift-objc',
-    'web-devops-config',
+    'react',
+    'nodejs',
+    'protobuf',
     'python',
     'ruby',
     'lua',
@@ -314,7 +322,9 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
     'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
     'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
     'rest-api', 'graphql', 'docker-k8s', 'cicd', 'terraform-hcl',
-    'web-devops-config', 'shell', 'data-formats',
+    'react',
+    'nodejs',
+    'protobuf', 'shell', 'data-formats',
   ],
   // Data protection: relevant for stacks that handle user data
   'security.data-protection': [
@@ -347,7 +357,7 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
   // Infrastructure: relevant for infra/deployment stacks
   'security.infrastructure': [
     'js-ts-react-node', 'nextjs', 'django', 'spring-boot', 'elixir-phoenix',
-    'docker-k8s', 'cicd', 'terraform-hcl', 'web-devops-config', 'rest-api',
+    'docker-k8s', 'cicd', 'terraform-hcl', 'nodejs', 'rest-api',
     'graphql',
   ],
 };
