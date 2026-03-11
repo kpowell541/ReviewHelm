@@ -353,48 +353,28 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
 };
 
 /**
- * Append security checklist sections to any checklist if not already present.
- * Only includes security sections relevant to the given stacks.
+ * No-op passthrough — security sections are no longer auto-appended.
+ * Kept for API compatibility; callers can remove calls over time.
  */
-export function withSecurityChecklist(checklist: Checklist, stackIds?: StackId[]): Checklist {
-  const securityChecklist = getChecklist('security');
-  // Skip if security sections are already included (user explicitly selected security stack)
-  const hasSecuritySections = checklist.sections.some((s) =>
-    s.id.startsWith('security.'),
-  );
-  if (hasSecuritySections) return checklist;
+export function withSecurityChecklist(checklist: Checklist, _stackIds?: StackId[]): Checklist {
+  return checklist;
+}
 
-  // Filter to relevant security sections based on selected stacks
+/**
+ * Returns the names of security sections relevant to the given stacks.
+ * Used to display a reminder banner in the checklist UI.
+ */
+export function getRelevantSecuritySections(stackIds?: StackId[]): string[] {
+  const securityChecklist = getChecklist('security');
   let relevantSections = securityChecklist.sections;
   if (stackIds && stackIds.length > 0) {
     relevantSections = securityChecklist.sections.filter((s) => {
       const relevantStacks = SECURITY_RELEVANCE[s.id];
-      if (!relevantStacks) return true; // unknown section — include by default
+      if (!relevantStacks) return true;
       return stackIds.some((id) => relevantStacks.includes(id));
     });
   }
-
-  if (relevantSections.length === 0) return checklist;
-
-  const securityItems = relevantSections.reduce(
-    (sum, s) => sum + getSectionItems(s).length,
-    0,
-  );
-
-  return {
-    ...checklist,
-    meta: {
-      ...checklist.meta,
-      totalItems: checklist.meta.totalItems + securityItems,
-    },
-    sections: [
-      ...checklist.sections,
-      ...relevantSections.map((s) => ({
-        ...s,
-        title: `[Security] ${s.title}`,
-      })),
-    ],
-  };
+  return relevantSections.map((s) => s.title);
 }
 
 /**

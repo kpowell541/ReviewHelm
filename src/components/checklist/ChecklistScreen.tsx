@@ -15,7 +15,7 @@ import { crossAlert } from '../../utils/alert';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useConfidenceStore } from '../../store/useConfidenceStore';
 import { usePreferencesStore } from '../../store/usePreferencesStore';
-import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withSecurityChecklist, withCodeReviewMeta } from '../../data/checklistLoader';
+import { getChecklist, getPolishChecklist, getMergedChecklist, filterSections, withSecurityChecklist, withCodeReviewMeta, getRelevantSecuritySections } from '../../data/checklistLoader';
 import { getAllChecklistItems, getSectionItems, getEffectiveStackIds } from '../../data/types';
 import type {
   Checklist,
@@ -103,6 +103,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const [showSectionPicker, setShowSectionPicker] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
+  const [securityBannerDismissed, setSecurityBannerDismissed] = useState(false);
 
   useEffect(() => {
     setSeverityFilter(defaultSeverityFilter);
@@ -150,6 +151,13 @@ export function ChecklistScreen({ sessionId }: Props) {
     return withCodeReviewMeta(withSecurityChecklist(base, sessionEffectiveIds));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
+
+  const hasSecurityStack = checklist?.sections.some((s) => s.id.startsWith('security.')) ?? false;
+  const relevantSecuritySections = useMemo(() => {
+    if (hasSecurityStack) return [];
+    return getRelevantSecuritySections(sessionEffectiveIds.length > 0 ? sessionEffectiveIds : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSecurityStack, effectiveIdsKey]);
 
   const allItems = useMemo(() => (checklist ? getAllChecklistItems(checklist) : []), [checklist]);
 
@@ -484,6 +492,27 @@ export function ChecklistScreen({ sessionId }: Props) {
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
         stickySectionHeadersEnabled
+        ListHeaderComponent={
+          relevantSecuritySections.length > 0 && !securityBannerDismissed ? (
+            <View style={styles.securityBanner}>
+              <View style={styles.securityBannerHeader}>
+                <Text style={styles.securityBannerTitle}>Security Reminder</Text>
+                <Pressable onPress={() => setSecurityBannerDismissed(true)} hitSlop={8}>
+                  <Text style={styles.securityBannerDismiss}>x</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.securityBannerText}>
+                Consider adding the Security checklist sections that apply to this PR:
+              </Text>
+              <Text style={styles.securityBannerSections}>
+                {relevantSecuritySections.join(' · ')}
+              </Text>
+              <Text style={styles.securityBannerHint}>
+                Add the Security stack when starting a session to include these sections.
+              </Text>
+            </View>
+          ) : null
+        }
         renderSectionHeader={({ section: sectionEntry }) => {
           const progress = getSectionProgress(sectionEntry.items);
           const isCollapsed = collapsedSections[sectionEntry.section.id];
@@ -960,5 +989,48 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.textSecondary,
     marginLeft: spacing.sm,
+  },
+  securityBanner: {
+    backgroundColor: '#f59e0b18',
+    borderWidth: 1,
+    borderColor: '#f59e0b40',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  securityBannerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  securityBannerTitle: {
+    fontSize: fontSizes.md,
+    fontWeight: '700',
+    color: '#f59e0b',
+  },
+  securityBannerDismiss: {
+    fontSize: fontSizes.md,
+    color: colors.textMuted,
+    fontWeight: '600',
+    paddingHorizontal: spacing.xs,
+  },
+  securityBannerText: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  securityBannerSections: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  securityBannerHint: {
+    fontSize: fontSizes.xs,
+    color: colors.textMuted,
+    fontStyle: 'italic',
   },
 });
