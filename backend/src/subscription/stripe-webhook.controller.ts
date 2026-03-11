@@ -1,12 +1,11 @@
 import {
+  BadRequestException,
   Controller,
+  Logger,
   Post,
   Req,
-  Res,
-  HttpStatus,
-  Logger,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { Public } from '../common/auth/public.decorator';
 import { StripeService } from './stripe.service';
 
@@ -17,6 +16,7 @@ import { StripeService } from './stripe.service';
 @Controller('stripe')
 export class StripeWebhookController {
   private readonly logger = new Logger(StripeWebhookController.name);
+  private static readonly contentTypeRegex = /^\s*application\/json(?:;.*)?$/i;
 
   constructor(private readonly stripeService: StripeService) {}
 
@@ -24,28 +24,62 @@ export class StripeWebhookController {
   @Post('webhook')
   async handleWebhook(
     @Req() req: Request,
-    @Res() res: Response,
-  ): Promise<void> {
-    const signature = req.headers['stripe-signature'];
-    if (!signature || typeof signature !== 'string') {
-      res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing stripe-signature header' });
-      return;
+  ): Promise<{ received: true }> {
+    const signature = this.getSingleHeader(req.headers['stripe-signature']);
+    if (!signature) {
+      throw new BadRequestException('Missing stripe-signature header');
     }
 
-    // req.body should be a Buffer thanks to the raw body parser in main.ts
+    if (!this.isValidStripeSignatureHeader(signature)) {
+      throw new BadRequestException('Invalid stripe-signature header');
+    }
+
+    const contentType = this.getSingleHeader(req.headers['content-type']);
+    if (!contentType || !StripeWebhookController.contentTypeRegex.test(contentType)) {
+      throw new BadRequestException('Invalid webhook content-type');
+    }
+
     const rawBody = (req as any).rawBody as Buffer | undefined;
     if (!rawBody) {
-      res.status(HttpStatus.BAD_REQUEST).json({ error: 'Missing raw body' });
-      return;
+      throw new BadRequestException('Missing raw body');
     }
 
     try {
       const event = this.stripeService.constructWebhookEvent(rawBody, signature);
       await this.stripeService.handleWebhookEvent(event);
-      res.status(HttpStatus.OK).json({ received: true });
+      return { received: true };
     } catch (err: any) {
       this.logger.error(`Webhook error: ${err.message}`);
-      res.status(HttpStatus.BAD_REQUEST).json({ error: err.message });
+      throw new BadRequestException(
+        typeof err?.message === 'string' ? err.message : 'Unable to process webhook',
+      );
     }
+  }
+
+  private getSingleHeader(
+    value: string | string[] | undefined,
+  ): string | null {
+    if (!value) {
+      return null;
+    }
+    const next = Array.isArray(value) ? value[0] : value;
+    if (!next) {
+      return null;
+    }
+    const trimmed = next.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  private isValidStripeSignatureHeader(signature: string): boolean {
+    const segments = signature
+      .split(',')
+      .map((segment) => segment.trim())
+      .filter(Boolean);
+
+    const timestamp = segments.find((segment) => segment.startsWith('t='));
+    const hasValidTimestamp = !!timestamp && /^t=\d+$/.test(timestamp);
+    const hasValidV1 = segments.some((segment) => /^v1=[A-Fa-f0-9]{20,}$/i.test(segment));
+
+    return hasValidTimestamp && hasValidV1;
   }
 }

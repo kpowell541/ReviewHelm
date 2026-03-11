@@ -251,10 +251,14 @@ export class JwtAuthGuard implements CanActivate {
       ? authorization[0]
       : authorization;
     if (!header) return null;
-    const [scheme, value] = header.split(' ');
-    if (!scheme || !value) return null;
-    if (scheme.toLowerCase() !== 'bearer') return null;
-    return value;
+    const match = header.match(
+      /^\s*Bearer\s+([A-Za-z0-9_-]+={0,2}\.[A-Za-z0-9_-]+={0,2}\.[A-Za-z0-9_-]+={0,2})\s*$/i,
+    );
+    if (!match) return null;
+    const token = match[1];
+    if (token.length > 4096) return null;
+    if (token.split('.').length !== 3) return null;
+    return token;
   }
 
   private logAuthFailure(req: RequestLike, reason: string): void {

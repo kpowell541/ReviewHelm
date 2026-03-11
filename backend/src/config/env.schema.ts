@@ -30,7 +30,12 @@ const EnvSchema = z.object({
   SUPABASE_JWT_ALGORITHMS: z.string().optional().default('RS256'),
   SUPABASE_MAX_JWT_AGE_SECONDS: z.coerce.number().int().positive().default(3660),
   SUPABASE_REQUIRE_SESSION_ID_CLAIM: z.preprocess(
-    (value) => `${value ?? 'false'}`.toLowerCase() === 'true',
+    (value) => {
+      const raw = `${value ?? ''}`.toLowerCase();
+      // Default to true in production, false in development/test
+      if (raw === '') return process.env.NODE_ENV === 'production';
+      return raw === 'true';
+    },
     z.boolean(),
   ),
   SUPABASE_SERVICE_ROLE_KEY: z
@@ -55,6 +60,18 @@ const EnvSchema = z.object({
 
   STRIPE_SECRET_KEY: z.string().optional().default(''),
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),
+  STRIPE_WEBHOOK_MAX_PAYLOAD_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(10_000_000)
+    .default(1_048_576),
+  STRIPE_WEBHOOK_EVENT_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(300)
+    .max(604_800)
+    .default(172_800),
 
   STAGING_ACCESS_GATE: z.preprocess(
     (value) => `${value ?? 'false'}`.toLowerCase() === 'true',
@@ -102,6 +119,7 @@ const EnvSchema = z.object({
   BACKUP_IMPORT_MAX_PAYLOAD_BYTES: z.coerce.number().int().min(1024).default(1_048_576),
   BACKUP_IMPORT_MAX_SESSIONS: z.coerce.number().int().min(1).default(2000),
   BACKUP_IMPORT_MAX_USAGE_ROWS: z.coerce.number().int().min(1).default(366),
+  GLOBAL_IP_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(300),
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
   AI_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(20),
   AI_COOLDOWN_SECONDS: z.coerce.number().int().min(0).max(60).default(6),

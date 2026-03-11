@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import { AdminOnly } from '../../common/auth/admin.decorator';
 import type { AuthenticatedUser } from '../../common/auth/types';
@@ -9,6 +9,11 @@ import { RotateProviderKeysDto } from './dto/rotate-provider-keys.dto';
 @AdminOnly()
 export class AdminSecurityController {
   constructor(private readonly adminSecurityService: AdminSecurityService) {}
+
+  @Get('key-rotation-status')
+  async getKeyRotationStatus() {
+    return this.adminSecurityService.getKeyRotationStatus();
+  }
 
   @Post('rotate-provider-keys')
   async rotateProviderKeys(

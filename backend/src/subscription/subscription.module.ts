@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RedisModule } from '../common/redis/redis.module';
 import { TierService } from './tier.service';
 import { CreditService } from './credit.service';
 import { StripeService } from './stripe.service';
@@ -10,7 +11,7 @@ import { SubscriptionController } from './subscription.controller';
 import { StripeWebhookController } from './stripe-webhook.controller';
 
 @Module({
-  imports: [PrismaModule, ScheduleModule.forRoot()],
+  imports: [PrismaModule, RedisModule, ScheduleModule.forRoot()],
   controllers: [SubscriptionController, StripeWebhookController],
   providers: [TierService, CreditService, StripeService, CreditExpiryCron, CreditExpiryWarningCron],
   exports: [TierService, CreditService, StripeService],

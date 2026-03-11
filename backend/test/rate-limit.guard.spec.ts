@@ -1,4 +1,4 @@
-import { ConflictException, HttpException } from '@nestjs/common';
+import { HttpException } from '@nestjs/common';
 import { IS_AI_ENDPOINT_KEY, IS_PUBLIC_KEY } from '../src/common/auth/constants';
 import { RateLimitGuard } from '../src/common/redis/rate-limit.guard';
 
@@ -54,10 +54,18 @@ describe('RateLimitGuard', () => {
       },
       ...(requestOverrides ?? {}),
     };
+    const res = {
+      headers: {} as Record<string, string>,
+      setHeader: jest.fn(function (name: string, value: string) {
+        this.headers[name.toLowerCase()] = String(value);
+      }),
+    };
     return {
       switchToHttp: () => ({
         getRequest: () => req,
+        getResponse: () => res,
       }),
+      response: res,
       getHandler: () => ({}),
       getClass: () => ({}),
     } as any;
@@ -69,14 +77,14 @@ describe('RateLimitGuard', () => {
       cooldownAccepted: false,
       cooldownTtl: 4,
     });
+    const context = createContext();
 
-    await expect(guard.canActivate(createContext())).rejects.toBeInstanceOf(
-      ConflictException,
-    );
+    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(HttpException);
 
     expect(redis.incrementWithWindow).toHaveBeenCalled();
     expect(redis.trySetCooldown).toHaveBeenCalled();
     expect(redis.getTtlSeconds).toHaveBeenCalled();
+    expect(context.response.headers['retry-after']).toBeDefined();
     expect(audit.write).toHaveBeenCalledWith(
       expect.objectContaining({ eventType: 'cooldown_block' }),
     );
@@ -88,11 +96,16 @@ describe('RateLimitGuard', () => {
       rateHits: 21,
       cooldownAccepted: true,
     });
+    const context = createContext();
 
-    await expect(guard.canActivate(createContext())).rejects.toBeInstanceOf(HttpException);
+    await expect(guard.canActivate(context)).rejects.toBeInstanceOf(HttpException);
 
     expect(redis.incrementWithWindow).toHaveBeenCalled();
     expect(redis.trySetCooldown).not.toHaveBeenCalled();
+    expect(context.response.headers['retry-after']).toBeDefined();
+    expect(context.response.headers['x-ratelimit-limit']).toBeDefined();
+    expect(context.response.headers['x-ratelimit-reset']).toBeDefined();
+    expect(context.response.headers['x-ratelimit-remaining']).toBe('0');
     expect(audit.write).toHaveBeenCalledWith(
       expect.objectContaining({ eventType: 'rate_limited' }),
     );

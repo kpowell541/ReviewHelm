@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuthenticatedUser } from '../common/auth/types';
@@ -59,29 +59,56 @@ export class CreditService {
       return { balanceUsd: Number(user.creditBalanceUsd), unlimited: true };
     }
 
-    const currentBalance = new Prisma.Decimal(user.creditBalanceUsd);
     const deduction = new Prisma.Decimal(amountUsd);
-    const newBalance = currentBalance.minus(deduction);
+    if (deduction.isNaN() || deduction.lte(0)) {
+      throw new BadRequestException('Credit deduction amount must be positive');
+    }
 
-    const [updatedUser] = await this.prisma.$transaction([
-      this.prisma.user.update({
+    const result = await this.prisma.$transaction(async (tx) => {
+      const updatedRows = await tx.user.updateMany({
+        where: {
+          id: user.id,
+          creditBalanceUsd: {
+            gte: deduction,
+          },
+        },
+        data: {
+          creditBalanceUsd: {
+            decrement: deduction,
+          },
+        },
+      });
+
+      if (updatedRows.count === 0) {
+        throw new BadRequestException('Insufficient credits');
+      }
+
+      const updatedUser = await tx.user.findUnique({
         where: { id: user.id },
-        data: { creditBalanceUsd: newBalance },
-      }),
-      this.prisma.creditLedgerEntry.create({
+        select: { creditBalanceUsd: true },
+      });
+      if (!updatedUser) {
+        throw new BadRequestException('Failed to update user credits');
+      }
+
+      await tx.creditLedgerEntry.create({
         data: {
           userId: user.id,
           type: 'ai_usage',
           amountUsd: deduction.negated(),
-          balanceAfter: newBalance,
+          balanceAfter: updatedUser.creditBalanceUsd,
           description: description ?? 'AI usage',
           metadata: (metadata ?? {}) as Prisma.InputJsonValue,
         },
-      }),
-    ]);
+      });
+
+      return {
+        balanceUsd: updatedUser.creditBalanceUsd,
+      };
+    });
 
     return {
-      balanceUsd: Number(updatedUser.creditBalanceUsd),
+      balanceUsd: Number(result.balanceUsd),
       unlimited: false,
     };
   }

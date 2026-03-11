@@ -11,6 +11,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsObject,
   Max,
   MaxLength,
   Min,
@@ -97,8 +98,10 @@ export class UpdatePreferencesDto {
   bookmarks?: string[];
 
   @IsOptional()
+  @IsObject()
   templates?: Record<string, unknown>;
 
   @IsOptional()
+  @IsObject()
   repoConfigs?: Record<string, unknown>;
 }

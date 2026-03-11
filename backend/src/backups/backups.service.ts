@@ -1,4 +1,6 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import { lookup } from 'node:dns/promises';
+import net from 'node:net';
 import {
   BadRequestException,
   Injectable,
@@ -10,6 +12,7 @@ import type { AppEnv } from '../config/env.schema';
 import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import { PrismaService } from '../prisma/prisma.service';
+import { reliableFetch } from '../common/http/reliable-fetch';
 
 @Injectable()
 export class BackupsService {
@@ -332,9 +335,12 @@ ${380 + stream.length}
       if (!match) throw new BadRequestException('Invalid data URL');
       const isBase64 = !!match[2];
       const data = match[3] || '';
-      const decoded = isBase64
-        ? Buffer.from(data, 'base64').toString('utf8')
-        : decodeURIComponent(data);
+      let decoded: string;
+      try {
+        decoded = isBase64 ? this.decodeBase64Data(data) : decodeURIComponent(data);
+      } catch {
+        throw new BadRequestException('Invalid data URL encoding');
+      }
       if (Buffer.byteLength(decoded, 'utf8') > this.maxPayloadBytes) {
         throw new BadRequestException('Backup payload exceeds size limit');
       }
@@ -353,12 +359,33 @@ ${380 + stream.length}
     }
 
     const host = parsedUrl.hostname.toLowerCase();
+    if (!host) {
+      throw new BadRequestException('Backup source URL is missing a hostname');
+    }
+    if (parsedUrl.protocol !== 'https:') {
+      throw new BadRequestException('Backup source URL must use HTTPS');
+    }
     const isAllowedHost = this.allowlistHosts.includes(host);
     if (!isAllowedHost) {
       throw new BadRequestException('Backup source host is not allowed');
     }
+    if (parsedUrl.username || parsedUrl.password) {
+      throw new BadRequestException('Backup source URL must not contain credentials');
+    }
+    await this.assertPublicAddress(parsedUrl.hostname);
 
-    const response = await fetch(sourceUrl);
+    const response = await reliableFetch(parsedUrl, {
+      method: 'GET',
+      redirect: 'error',
+      headers: {
+        accept: 'application/json, text/plain;q=0.9',
+      },
+    }, {
+      timeoutMs: 15_000,
+      maxAttempts: 3,
+      baseRetryDelayMs: 250,
+      retryableStatuses: [408, 429, 500, 502, 503, 504],
+    });
     if (!response.ok) {
       throw new BadRequestException(`Failed to download backup (${response.status})`);
     }
@@ -418,9 +445,110 @@ ${380 + stream.length}
   private parseAllowlist(raw: string): string[] {
     const hosts = raw
       .split(',')
-      .map((host) => host.trim().toLowerCase())
+      .map((host) => this.stripTrailingDot(host.trim().toLowerCase()))
       .filter(Boolean);
     return hosts.length > 0 ? hosts : ['raw.githubusercontent.com'];
+  }
+
+  private decodeBase64Data(raw: string): string {
+    const base64 = raw.replace(/\s+/g, '');
+    if (base64.length === 0) {
+      throw new BadRequestException('Invalid data URL encoding');
+    }
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64) || base64.length % 4 !== 0) {
+      throw new BadRequestException('Invalid data URL encoding');
+    }
+    return Buffer.from(base64, 'base64').toString('utf8');
+  }
+
+  private async assertPublicAddress(hostname: string): Promise<void> {
+    const normalizedHost = this.stripTrailingDot(hostname.trim().toLowerCase());
+    if (this.isPrivateHostname(normalizedHost)) {
+      throw new BadRequestException('Backup source host is restricted');
+    }
+
+    const ipVersion = net.isIP(normalizedHost);
+    if (ipVersion === 4 || ipVersion === 6) {
+      if (this.isPrivateIpAddress(normalizedHost)) {
+        throw new BadRequestException('Backup source resolves to a private network address');
+      }
+      return;
+    }
+
+    let addresses: Array<{ address: string; family: 4 | 6 }>;
+    try {
+      addresses = (await lookup(normalizedHost, { all: true })) as Array<{
+        address: string;
+        family: 4 | 6;
+      }>;
+    } catch {
+      throw new BadRequestException('Unable to resolve backup source host');
+    }
+
+    if (addresses.length === 0) {
+      throw new BadRequestException('Backup source host does not resolve');
+    }
+
+    const hasPublicAddress = addresses.some((entry) => this.isPublicIpAddress(entry.address));
+    if (!hasPublicAddress) {
+      throw new BadRequestException('Backup source host does not resolve to a public address');
+    }
+
+    if (addresses.some((entry) => this.isPrivateIpAddress(entry.address))) {
+      throw new BadRequestException('Backup source host resolves to a private network address');
+    }
+  }
+
+  private isPrivateIpAddress(rawIp: string): boolean {
+    const ip = rawIp.toLowerCase();
+    const ipType = net.isIP(ip);
+    if (ipType === 4) {
+      const [a, b, c] = ip.split('.').map((part) => Number(part));
+      if (!Number.isFinite(a) || !Number.isFinite(b) || !Number.isFinite(c)) return false;
+      if (a === 10) return true;
+      if (a === 127) return true;
+      if (a === 0) return true;
+      if (a === 169 && b === 254) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 100 && b >= 64 && b <= 127) return true;
+      if (a === 198 && (b === 18 || b === 19)) return true;
+      if (a === 203 && b === 0 && c === 113) return true;
+      if (a >= 224) return true;
+      return false;
+    }
+
+    if (ipType === 6) {
+      if (ip === '::1' || ip === '::' || ip.startsWith('fe8') || ip.startsWith('fe9') || ip.startsWith('fea') || ip.startsWith('feb')) {
+        return true;
+      }
+      if (ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('2001:db8')) {
+        return true;
+      }
+      if (ip.startsWith('::ffff:')) {
+        return this.isPrivateIpAddress(ip.substring(7));
+      }
+    }
+
+    return false;
+  }
+
+  private isPublicIpAddress(rawIp: string): boolean {
+    return net.isIP(rawIp) > 0 && !this.isPrivateIpAddress(rawIp);
+  }
+
+  private isPrivateHostname(hostname: string): boolean {
+    return (
+      hostname === 'localhost' ||
+      hostname === '::1' ||
+      hostname === '127.0.0.1' ||
+      hostname.endsWith('.localhost') ||
+      hostname.startsWith('localhost.')
+    );
+  }
+
+  private stripTrailingDot(value: string): string {
+    return value.endsWith('.') ? value.slice(0, -1) : value;
   }
 
   private verifyPayloadSignature(args: {

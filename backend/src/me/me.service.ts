@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import type { Preference } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,6 +10,8 @@ import { AuditService } from '../common/audit/audit.service';
 
 @Injectable()
 export class MeService {
+  private readonly maxPreferencePayloadBytes = 32_768;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly keyCrypto: KeyCryptoService,
@@ -81,12 +83,15 @@ export class MeService {
       updateData.cooldownSeconds = input.cooldownSeconds;
     }
     if (input.bookmarks !== undefined) {
+      this.assertPreferencePayloadSize('bookmarks', input.bookmarks);
       updateData.bookmarks = input.bookmarks as Prisma.JsonArray;
     }
     if (input.templates !== undefined) {
+      this.assertPreferencePayloadSize('templates', input.templates);
       updateData.templates = input.templates as Prisma.JsonObject;
     }
     if (input.repoConfigs !== undefined) {
+      this.assertPreferencePayloadSize('repoConfigs', input.repoConfigs);
       updateData.repoConfigs = input.repoConfigs as Prisma.JsonObject;
     }
 
@@ -221,5 +226,14 @@ export class MeService {
       templates: preference.templates,
       repoConfigs: preference.repoConfigs,
     };
+  }
+
+  private assertPreferencePayloadSize(field: string, value: unknown): void {
+    const sizeBytes = Buffer.byteLength(JSON.stringify(value), 'utf8');
+    if (sizeBytes > this.maxPreferencePayloadBytes) {
+      throw new BadRequestException(
+        `Preference field "${field}" exceeds ${this.maxPreferencePayloadBytes} bytes`,
+      );
+    }
   }
 }

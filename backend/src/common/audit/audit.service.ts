@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -13,6 +13,12 @@ interface AuditInput {
 
 @Injectable()
 export class AuditService {
+  private readonly logger = new Logger(AuditService.name);
+  private failureCount = 0;
+  private failureWindowStart = Date.now();
+  private readonly failureWindowMs = 5 * 60 * 1000;
+  private readonly failureAlertThreshold = 5;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async write(input: AuditInput): Promise<void> {
@@ -28,7 +34,32 @@ export class AuditService {
         },
       });
     } catch {
-      // Best effort only; audit persistence should not break request flow.
+      this.recordFailure('Unknown audit persistence failure');
+    }
+  }
+
+  private recordFailure(message: string): void {
+    const now = Date.now();
+    if (now - this.failureWindowStart > this.failureWindowMs) {
+      this.failureCount = 0;
+      this.failureWindowStart = now;
+    }
+
+    this.failureCount += 1;
+    if (
+      this.failureCount === 1 ||
+      this.failureCount % this.failureAlertThreshold === 0
+    ) {
+      this.logger.error(
+        JSON.stringify({
+          level: 'error',
+          type: 'audit_write_failure',
+          message,
+          failureCount: this.failureCount,
+          windowMinutes: this.failureWindowMs / 60000,
+          at: new Date().toISOString(),
+        }),
+      );
     }
   }
 }

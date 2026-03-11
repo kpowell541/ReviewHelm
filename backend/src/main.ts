@@ -15,6 +15,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import type { AppEnv } from './config/env.schema';
 import type { AuthenticatedUser } from './common/auth/types';
+import { SecurityExceptionFilter } from './common/http/safe-exception.filter';
 
 interface RequestWithMeta extends express.Request {
   user?: AuthenticatedUser;
@@ -111,6 +112,8 @@ async function bootstrap() {
   const strictStartupChecks = config.get('STRICT_STARTUP_CHECKS');
   const bodyLimit = config.get('REQUEST_BODY_LIMIT');
   const expressApp = app.getHttpAdapter().getInstance() as express.Express;
+  expressApp.disable('x-powered-by');
+  expressApp.set('trust proxy', isProduction ? 1 : false);
 
   // Keep root liveness outside the API prefix for platform probes.
   expressApp.get('/', (_req: express.Request, res: express.Response) => {
@@ -128,7 +131,18 @@ async function bootstrap() {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('X-XSS-Protection', '0');
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; base-uri 'self'; connect-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; form-action 'none'; object-src 'none'; font-src 'self' data:",
+    );
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), serial=()',
+    );
+    res.setHeader('X-DNS-Prefetch-Control', 'off');
     if (isProduction) {
       res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
@@ -140,10 +154,26 @@ async function bootstrap() {
   app.use(
     stripeWebhookPath,
     express.raw({ type: 'application/json', limit: bodyLimit }),
-    (req: express.Request, _res: express.Response, next: express.NextFunction) => {
+    (req: express.Request, res: express.Response, next: express.NextFunction) => {
       (req as any).rawBody = req.body;
-      if (Buffer.isBuffer(req.body)) {
+      if (!Buffer.isBuffer(req.body)) {
+        res.status(400).json({
+          statusCode: 400,
+          error: 'Invalid webhook body',
+          message: 'Stripe webhook payload must be sent as a raw buffer.',
+        });
+        return;
+      }
+
+      try {
         req.body = JSON.parse(req.body.toString('utf-8'));
+      } catch {
+        res.status(400).json({
+          statusCode: 400,
+          error: 'Invalid webhook body',
+          message: 'Stripe webhook payload must contain valid JSON.',
+        });
+        return;
       }
       next();
     },
@@ -178,6 +208,8 @@ async function bootstrap() {
   }
 
   app.enableCors({
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'Idempotency-Key', 'X-Request-ID', 'X-Device-ID'],
     origin:
       allowedOrigins.length > 0
         ? (
@@ -201,6 +233,59 @@ async function bootstrap() {
           }
         : !isProduction,
     credentials: true,
+  });
+
+  // Global IP-based rate limit — catches unauthenticated brute-force attempts
+  // before they reach NestJS guards and JWKS verification.
+  const globalIpLimit = config.get('GLOBAL_IP_RATE_LIMIT_PER_MINUTE');
+  const redisUrl = config.get('UPSTASH_REDIS_REST_URL');
+  const redisToken = config.get('UPSTASH_REDIS_REST_TOKEN');
+  app.use(async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.method === 'OPTIONS') {
+      next();
+      return;
+    }
+    const ip = normalizeIpAddress(req.ip);
+    if (!ip) {
+      next();
+      return;
+    }
+    const now = new Date();
+    const bucket = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}${String(now.getUTCHours()).padStart(2, '0')}${String(now.getUTCMinutes()).padStart(2, '0')}`;
+    const key = `ratelimit:global:ip:${ip}:${bucket}`;
+    try {
+      const response = await fetch(redisUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(['INCR', key]),
+        signal: AbortSignal.timeout(2000),
+      });
+      if (response.ok) {
+        const payload = (await response.json()) as { result?: number };
+        const hits = typeof payload.result === 'number' ? payload.result : 0;
+        if (hits === 1) {
+          void fetch(redisUrl, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${redisToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(['EXPIRE', key, 90]),
+            signal: AbortSignal.timeout(2000),
+          }).catch(() => {});
+        }
+        if (hits > globalIpLimit) {
+          const retryAfter = Math.max(1, 60 - now.getUTCSeconds());
+          res.setHeader('Retry-After', String(retryAfter));
+          res.status(429).json({
+            statusCode: 429,
+            error: 'Too Many Requests',
+            message: 'Global rate limit exceeded. Please retry shortly.',
+          });
+          return;
+        }
+      }
+    } catch {
+      // Redis unavailable — fail open
+    }
+    next();
   });
 
   const usOnlyMode = config.get('US_ONLY_MODE');
@@ -230,13 +315,7 @@ async function bootstrap() {
         return;
       }
 
-      const forwarded = req.headers['x-forwarded-for'];
-      const incomingIp = Array.isArray(forwarded)
-        ? forwarded[0]
-        : typeof forwarded === 'string'
-          ? forwarded
-          : req.ip;
-      const requestIp = normalizeIpAddress(incomingIp);
+      const requestIp = normalizeIpAddress(req.ip);
       if (requestIp && isIpAllowed(requestIp, usOnlyBypassIps)) {
         next();
         return;
@@ -283,10 +362,20 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  app.useGlobalFilters(new SecurityExceptionFilter());
 
   app.use((req: RequestWithMeta, res: express.Response, next: express.NextFunction) => {
     const incomingId = req.header('x-request-id');
-    const requestId = incomingId && incomingId.length <= 128 ? incomingId : randomUUID();
+    const sanitizedIncomingId =
+      typeof incomingId === 'string'
+        ? incomingId.trim()
+        : '';
+    const requestId =
+      sanitizedIncomingId.length > 0 &&
+      sanitizedIncomingId.length <= 128 &&
+      /^[A-Za-z0-9._-]+$/.test(sanitizedIncomingId)
+        ? sanitizedIncomingId
+        : randomUUID();
     req.requestId = requestId;
     res.setHeader('x-request-id', requestId);
     const startedAt = Date.now();
@@ -303,6 +392,7 @@ async function bootstrap() {
         durationMs,
         userId: req.user?.supabaseUserId,
         ip: req.ip,
+        deviceId: req.header('x-device-id') || undefined,
         userAgent: req.header('user-agent'),
         at: new Date().toISOString(),
       };
@@ -347,13 +437,7 @@ async function bootstrap() {
       app.use(
         '/docs',
         (req: express.Request, res: express.Response, next: express.NextFunction) => {
-          const forwarded = req.headers['x-forwarded-for'];
-          const incomingIp = Array.isArray(forwarded)
-            ? forwarded[0]
-            : typeof forwarded === 'string'
-              ? forwarded
-              : req.ip;
-          const requestIp = normalizeIpAddress(incomingIp);
+          const requestIp = normalizeIpAddress(req.ip);
           if (!isIpAllowed(requestIp, swaggerAllowedIps)) {
             res.status(403).json({
               statusCode: 403,

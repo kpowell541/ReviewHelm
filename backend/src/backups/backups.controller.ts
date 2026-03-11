@@ -21,7 +21,7 @@ export class BackupsController {
   ) {
     return this.backupsService.importBackup(
       user,
-      body.sourceUrl,
+      body.sourceUrl.trim(),
       body.signature,
       body.signatureTimestamp,
     );
