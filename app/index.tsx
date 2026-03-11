@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter, Redirect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +13,8 @@ import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { AddPRModal } from '../src/components/AddPRModal';
 import { useFeatureGate } from '../src/hooks/useFeatureGate';
+import { useTierStore } from '../src/store/useTierStore';
+import { FeatureTourModal } from '../src/components/FeatureTourModal';
 import { crossAlert } from '../src/utils/alert';
 
 const ADMIN_DASHBOARD_EMAILS = (
@@ -129,6 +131,21 @@ export default function HomeScreen() {
   const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
 
   const [showAddPR, setShowAddPR] = useState(false);
+
+  const effectiveTier = useTierStore((s) => s.effectiveTier);
+  const hasSeenTourForTier = usePreferencesStore((s) => s.hasSeenTourForTier);
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    if (authUser && hasSeenTourForTier !== effectiveTier) {
+      setShowTour(true);
+    }
+  }, [authUser, effectiveTier, hasSeenTourForTier]);
+
+  const handleTourClose = () => {
+    setShowTour(false);
+    usePreferencesStore.setState({ hasSeenTourForTier: effectiveTier } as any);
+  };
 
   const handleDeleteSession = (sessionId: string, title: string) => {
     crossAlert('Delete Session', `Delete "${title}"?`, [
@@ -337,6 +354,12 @@ export default function HomeScreen() {
         onSave={(data) => {
           addPR(data);
         }}
+      />
+
+      <FeatureTourModal
+        visible={showTour}
+        onClose={handleTourClose}
+        effectiveTier={effectiveTier}
       />
     </SafeAreaView>
     </AuthGate>
