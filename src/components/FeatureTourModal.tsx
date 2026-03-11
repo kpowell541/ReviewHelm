@@ -20,9 +20,12 @@ interface TourSlide {
   howTo: string;
   color: string;
   requiredTier: 'free' | 'starter' | 'pro' | 'premium';
+  /** Optional section label shown above the title */
+  section?: string;
 }
 
 const ALL_SLIDES: TourSlide[] = [
+  // ── Features ──
   {
     icon: '🔍',
     title: 'Review a PR',
@@ -32,6 +35,90 @@ const ALL_SLIDES: TourSlide[] = [
     color: colors.reviewMode,
     requiredTier: 'free',
   },
+
+  // ── Checklist Guide (always shown, part of free tier) ──
+  {
+    icon: '📊',
+    title: 'Score Header',
+    section: 'Using the Checklist',
+    description:
+      'At the top of every session you\'ll see three scores: Coverage (% of items reviewed), Confidence (your average self-rated understanding), and Issues (items marked "Needs Attention"). A progress bar tracks your overall coverage.',
+    howTo: 'These update live as you work through items. Aim for high coverage before completing a session.',
+    color: colors.reviewMode,
+    requiredTier: 'free',
+  },
+  {
+    icon: '🏷️',
+    title: 'Severity Levels',
+    section: 'Using the Checklist',
+    description:
+      'Every checklist item has a severity badge: BLK (Blocker) for critical issues that must be fixed, MAJ (Major) for significant problems, MIN (Minor) for smaller improvements, and NIT for style/preference suggestions.',
+    howTo: 'Use the severity filter chips below the search bar to focus on the levels that matter most for your review.',
+    color: colors.blocker,
+    requiredTier: 'free',
+  },
+  {
+    icon: '✅',
+    title: 'Verdict Buttons',
+    section: 'Using the Checklist',
+    description:
+      'For each item, choose a verdict: "Good" means the code passes this check, "Attn" (Needs Attention) flags an issue you found, and "N/A" means this check doesn\'t apply to the current PR. Unreviewed items count as "skipped".',
+    howTo: 'Tap the verdict button for each item. Marking "Attn" will prompt you to draft a review comment.',
+    color: colors.looksGood,
+    requiredTier: 'free',
+  },
+  {
+    icon: '🎯',
+    title: 'Confidence Rating',
+    section: 'Using the Checklist',
+    description:
+      'Rate your confidence from 1 to 5 on each item. 1 = "I have no idea what this means" and 5 = "I could teach this." Low confidence items (1-2) will trigger an AI tutor suggestion to help you learn.',
+    howTo: 'Be honest! Low ratings help ReviewHelm identify your knowledge gaps for targeted learning later.',
+    color: colors.learnMode,
+    requiredTier: 'free',
+  },
+  {
+    icon: '📝',
+    title: 'Notes & Actions',
+    section: 'Using the Checklist',
+    description:
+      'Each item has action icons: star (bookmark for later), arrow (share the item), and book (deep-dive with AI tutor). You can also add per-item notes to capture specifics, and session-wide notes at the top for general context.',
+    howTo: 'Tap an item\'s text to expand/collapse it. Tap "Add per-item notes" to attach notes that appear in your session summary.',
+    color: colors.info,
+    requiredTier: 'free',
+  },
+  {
+    icon: '📑',
+    title: 'Sections & Navigation',
+    section: 'Using the Checklist',
+    description:
+      'Items are grouped into collapsible sections (e.g., Security, Performance, Error Handling). Each section header shows a progress counter like "3/8" — items reviewed out of total.',
+    howTo: 'Tap a section header to collapse/expand it. Use the floating "§" button to jump directly to any section.',
+    color: colors.primary,
+    requiredTier: 'free',
+  },
+  {
+    icon: '⚡',
+    title: 'Bulk Mode',
+    section: 'Using the Checklist',
+    description:
+      'When you have many items that share the same verdict (e.g., all look good), Bulk Mode lets you select multiple items and apply a verdict or confidence rating to all of them at once.',
+    howTo: 'Tap "Bulk" in the header, check the items you want, then use the floating action bar to apply "Good", "N/A", or a confidence level.',
+    color: colors.primaryLight,
+    requiredTier: 'free',
+  },
+  {
+    icon: '🏁',
+    title: 'Completing a Session',
+    section: 'Using the Checklist',
+    description:
+      'When you\'re done reviewing, tap "Complete Session" at the bottom. This locks in your scores, records confidence data for gap tracking, and generates a session summary. You\'ll be warned if coverage is below 70%.',
+    howTo: 'You can re-open and re-complete a session later to update your scores. Your summary and PDF export will reflect the latest answers.',
+    color: colors.success,
+    requiredTier: 'free',
+  },
+
+  // ── More features ──
   {
     icon: '🔎',
     title: 'Search',
@@ -118,7 +205,7 @@ const ALL_SLIDES: TourSlide[] = [
     title: 'AI Tutor',
     description:
       'Deep-dive into any review topic with an AI tutor powered by Claude. Ask follow-ups, get examples, and build understanding.',
-    howTo: 'During Learn mode or from a checklist item, tap "Ask AI" to start a conversation.',
+    howTo: 'During Learn mode or from a checklist item, tap the book icon to start a conversation.',
     color: colors.primary,
     requiredTier: 'premium',
   },
@@ -127,7 +214,7 @@ const ALL_SLIDES: TourSlide[] = [
     title: 'AI Comment Drafter',
     description:
       'Get review comments drafted for you in your preferred tone and style using AI.',
-    howTo: 'During a review session, tap the AI comment icon on any item that needs attention.',
+    howTo: 'During a review session, mark an item as "Attn" and tap the prompt to draft a comment.',
     color: colors.primaryLight,
     requiredTier: 'premium',
   },
@@ -225,6 +312,9 @@ export function FeatureTourModal({ visible, onClose, effectiveTier }: FeatureTou
             <View style={[styles.iconCircle, { backgroundColor: slide.color + '20' }]}>
               <Text style={styles.slideIcon}>{slide.icon}</Text>
             </View>
+            {slide.section && (
+              <Text style={styles.sectionBadge}>{slide.section}</Text>
+            )}
             <Text style={[styles.slideTitle, { color: slide.color }]}>
               {slide.title}
             </Text>
@@ -321,6 +411,14 @@ const styles = StyleSheet.create({
   },
   slideIcon: {
     fontSize: 40,
+  },
+  sectionBadge: {
+    fontSize: fontSizes.xs,
+    fontFamily: 'Quicksand_600SemiBold',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
   },
   slideTitle: {
     fontSize: fontSizes['2xl'],
