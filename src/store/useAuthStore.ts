@@ -18,6 +18,7 @@ interface AuthState {
   resetPassword: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   getAccessToken: () => Promise<string | null>;
+  refreshSession: () => Promise<boolean>;
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -183,5 +184,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
 
     return session.access_token;
+  },
+
+  refreshSession: async () => {
+    const { session } = get();
+    if (!session) return false;
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error || !data.session) {
+        set({ session: null, user: null });
+        return false;
+      }
+      set({ session: data.session, user: data.session.user ?? null });
+      return true;
+    } catch {
+      return false;
+    }
   },
 }));

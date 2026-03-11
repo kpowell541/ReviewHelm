@@ -48,6 +48,7 @@ export default function RootLayout() {
   const initAuth = useAuthStore((s) => s.initialize);
   const authUser = useAuthStore((s) => s.user);
   const authIsLoading = useAuthStore((s) => s.isLoading);
+  const refreshSession = useAuthStore((s) => s.refreshSession);
 
   const [fontsLoaded] = useFonts({
     Quicksand_400Regular,
@@ -99,6 +100,19 @@ export default function RootLayout() {
     });
     return () => subscription.remove();
   }, [authUser]);
+
+  // Keep session alive: refresh token every 15 minutes while app is active
+  useEffect(() => {
+    if (!authUser) return;
+    const REFRESH_INTERVAL_MS = 15 * 60 * 1000;
+    const interval = setInterval(() => {
+      // Only refresh if app is in the foreground
+      if (AppState.currentState === 'active') {
+        void refreshSession();
+      }
+    }, REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [authUser, refreshSession]);
 
   const storesReady =
     preferencesHydrated &&

@@ -297,8 +297,6 @@ export async function sendTutorMessage(options: AiRequestOptions): Promise<AiRes
   } catch (err) {
     if (err instanceof ApiError) {
       if (err.status === 401) {
-        // If there's no active auth session, the 401 is from an expired login —
-        // not an invalid API key.
         const hasSession = !!useAuthStore.getState().session;
         if (!hasSession) {
           throw new AiClientError(
@@ -307,7 +305,11 @@ export async function sendTutorMessage(options: AiRequestOptions): Promise<AiRes
             false,
           );
         }
-        throw new AiClientError('Invalid API key. Check your settings.', 401, false);
+        throw new AiClientError(
+          'AI authentication failed. Go to Settings and tap "Refresh AI Session" to re-establish your connection.',
+          401,
+          false,
+        );
       }
       if (err.status === 429) {
         throw new AiClientError('Rate limited. Wait a moment and try again.', 429, true);
