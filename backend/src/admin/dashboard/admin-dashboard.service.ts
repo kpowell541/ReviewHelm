@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { getBundledChecklists } from '../../checklists/bundled-checklists';
 import type { AppEnv } from '../../config/env.schema';
+import { reliableFetch } from '../../common/http/reliable-fetch';
 
 type StalenessState = 'fresh' | 'due' | 'stale' | 'never_published';
 
@@ -227,11 +228,16 @@ export class AdminDashboardService {
 
     try {
       const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${file}/runs?per_page=1`;
-      const response = await fetch(url, {
+      const response = await reliableFetch(url, {
         headers: {
           Accept: 'application/vnd.github+json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+      }, {
+        timeoutMs: 8_000,
+        maxAttempts: 2,
+        baseRetryDelayMs: 250,
+        retryableStatuses: [408, 429, 500, 502, 503, 504],
       });
       if (!response.ok) {
         return {

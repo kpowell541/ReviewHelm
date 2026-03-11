@@ -9,17 +9,64 @@ type StorageLike = {
   removeItem: (key: string) => Promise<void>;
 };
 
-const webStorage: StorageLike = {
-  getItem: (key) => Promise.resolve(localStorage.getItem(key)),
-  setItem: (key, value) => {
-    localStorage.setItem(key, value);
-    return Promise.resolve();
-  },
-  removeItem: (key) => {
-    localStorage.removeItem(key);
-    return Promise.resolve();
-  },
-};
+function getBrowserStorage(kind: 'local' | 'session'): Storage | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const storage = kind === 'session' ? window.sessionStorage : window.localStorage;
+    const probeKey = '__reviewhelm_storage_probe__';
+    storage.setItem(probeKey, '1');
+    storage.removeItem(probeKey);
+    return storage;
+  } catch {
+    return null;
+  }
+}
+
+function createWebStorage(primary: Storage | null, fallback: Storage | null): StorageLike {
+  const resolveStorage = (): Storage | null => primary ?? fallback;
+
+  return {
+    getItem: async (key) => {
+      const storage = resolveStorage();
+      if (!storage) return null;
+      try {
+        return storage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    setItem: async (key, value) => {
+      const storage = resolveStorage();
+      if (!storage) return;
+      try {
+        storage.setItem(key, value);
+      } catch {
+        // Best effort only for browser storage.
+      }
+    },
+    removeItem: async (key) => {
+      const storage = resolveStorage();
+      if (!storage) return;
+      try {
+        storage.removeItem(key);
+      } catch {
+        // Best effort only for browser storage.
+      }
+    },
+  };
+}
+
+const webLocalStorage = getBrowserStorage('local');
+const webSessionStorage = getBrowserStorage('session');
+const webPersistStorage = createWebStorage(webLocalStorage, webSessionStorage);
+const WEB_AUTH_STORAGE_MODE =
+  (process.env.EXPO_PUBLIC_WEB_AUTH_STORAGE ?? 'session').toLowerCase() === 'local'
+    ? 'local'
+    : 'session';
+const webAuthStorage =
+  WEB_AUTH_STORAGE_MODE === 'local'
+    ? createWebStorage(webLocalStorage, webSessionStorage)
+    : createWebStorage(webSessionStorage, webLocalStorage);
 
 const nativeSecureStorage: StorageLike = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -32,7 +79,16 @@ const nativeSecureStorage: StorageLike = {
 
 /** Secure storage — SecureStore on native, localStorage on web */
 export const secureStoreAsyncStorage: StorageLike =
-  Platform.OS === 'web' ? webStorage : nativeSecureStorage;
+  Platform.OS === 'web' ? webPersistStorage : nativeSecureStorage;
+
+/**
+ * Auth session storage.
+ * On web this is controlled by EXPO_PUBLIC_WEB_AUTH_STORAGE:
+ * - "session" (default): sessionStorage first, localStorage fallback
+ * - "local": localStorage first, sessionStorage fallback
+ */
+export const authSessionStorage: StorageLike =
+  Platform.OS === 'web' ? webAuthStorage : nativeSecureStorage;
 
 /**
  * General-purpose persisted storage for Zustand stores.
@@ -45,7 +101,7 @@ function getAsyncStorage(): StorageLike {
   if (_asyncStorage) return _asyncStorage;
 
   if (Platform.OS === 'web') {
-    _asyncStorage = webStorage;
+    _asyncStorage = webPersistStorage;
   } else {
     // Lazy-require to avoid loading the native module on web
     // eslint-disable-next-line @typescript-eslint/no-var-requires

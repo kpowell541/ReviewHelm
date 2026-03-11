@@ -19,6 +19,7 @@ import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
 import { useRepoConfigStore } from '../src/store/useRepoConfigStore';
 import { useTierStore } from '../src/store/useTierStore';
 import { initializeChecklistCache } from '../src/data/checklistLoader';
+import { initDeviceId } from '../src/utils/deviceId';
 import { runSync } from '../src/sync/syncEngine';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
@@ -75,6 +76,7 @@ export default function RootLayout() {
   }, [loadApiKey, initAuth]);
 
   useEffect(() => {
+    initDeviceId().catch(() => {});
     initializeChecklistCache()
       .then(() => setCacheReady(true))
       .catch(() => setCacheReady(true));

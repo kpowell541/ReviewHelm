@@ -1,6 +1,5 @@
 import {
   CanActivate,
-  ConflictException,
   ExecutionContext,
   HttpException,
   HttpStatus,
@@ -13,6 +12,7 @@ import { AuditService } from '../audit/audit.service';
 import { IS_AI_ENDPOINT_KEY, IS_PUBLIC_KEY } from '../auth/constants';
 import type { AuthenticatedUser } from '../auth/types';
 import { RedisService } from './redis.service';
+import type { Response } from 'express';
 
 interface RequestLike {
   path?: string;
@@ -56,15 +56,33 @@ export class RateLimitGuard implements CanActivate {
       '0',
     )}${String(now.getUTCMinutes()).padStart(2, '0')}`;
 
+    const response = context.switchToHttp().getResponse<Response>();
     const isAiRoute = isAiEndpoint || this.looksLikeAiPath(req.path);
     const limit = isAiRoute
       ? this.config.get('AI_RATE_LIMIT_PER_MINUTE')
       : this.config.get('RATE_LIMIT_PER_MINUTE');
 
     const rateKey = `ratelimit:${isAiRoute ? 'ai' : 'api'}:${identity}:${minuteBucket}`;
-    const hits = await this.redis.incrementWithWindow(rateKey, 90);
+    let hits: number;
+    try {
+      hits = await this.redis.incrementWithWindow(rateKey, 90);
+    } catch {
+      this.logSecurityEvent('rate_limit_redis_unavailable', req, {
+        identity,
+        path: req.path,
+      });
+      return true;
+    }
 
     if (hits > limit) {
+      const retryAfterSeconds = Math.max(1, 60 - now.getUTCSeconds());
+      response.setHeader('Retry-After', String(retryAfterSeconds));
+      response.setHeader('X-RateLimit-Limit', String(limit));
+      response.setHeader('X-RateLimit-Remaining', '0');
+      response.setHeader(
+        'X-RateLimit-Reset',
+        String(Math.floor(now.getTime() / 1000) + retryAfterSeconds),
+      );
       this.logSecurityEvent('rate_limited', req, { limit, hits });
       await this.audit.write({
         eventType: 'rate_limited',
@@ -80,7 +98,12 @@ export class RateLimitGuard implements CanActivate {
         },
       });
       throw new HttpException(
-        'Rate limit exceeded. Please retry shortly.',
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          error: 'Too Many Requests',
+          message: 'Rate limit exceeded. Please retry shortly.',
+          retryAfterSeconds,
+        },
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
@@ -88,13 +111,31 @@ export class RateLimitGuard implements CanActivate {
     if (isAiRoute) {
       const cooldownSeconds = this.config.get('AI_COOLDOWN_SECONDS');
       const cooldownKey = `cooldown:ai:${identity}`;
-      const accepted = await this.redis.trySetCooldown(
-        cooldownKey,
-        String(Date.now()),
-        cooldownSeconds,
-      );
-      if (!accepted) {
-        const ttl = await this.redis.getTtlSeconds(cooldownKey);
+      let cooldownSet = false;
+      try {
+        cooldownSet = await this.redis.trySetCooldown(
+          cooldownKey,
+          String(Date.now()),
+          cooldownSeconds,
+        );
+      } catch {
+        this.logSecurityEvent('cooldown_redis_unavailable', req, {
+          identity,
+          path: req.path,
+        });
+        return true;
+      }
+      if (!cooldownSet) {
+        let ttl: number;
+        try {
+          ttl = await this.redis.getTtlSeconds(cooldownKey);
+        } catch {
+          this.logSecurityEvent('cooldown_ttl_redis_unavailable', req, {
+            identity,
+            path: req.path,
+          });
+          return true;
+        }
         this.logSecurityEvent('cooldown_block', req, { ttl });
         await this.audit.write({
           eventType: 'cooldown_block',
@@ -108,8 +149,16 @@ export class RateLimitGuard implements CanActivate {
             ttl,
           },
         });
-        throw new ConflictException(
-          `Cooldown active. Please wait ${Math.max(1, ttl)}s before the next AI request.`,
+        const retryAfterSeconds = Math.max(1, ttl);
+        response.setHeader('Retry-After', String(retryAfterSeconds));
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.CONFLICT,
+            error: 'Conflict',
+            message: `Cooldown active. Please wait ${retryAfterSeconds}s before the next AI request.`,
+            retryAfterSeconds,
+          },
+          HttpStatus.CONFLICT,
         );
       }
     }

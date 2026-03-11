@@ -99,6 +99,11 @@ SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 SUPABASE_JWKS_URL=https://YOUR_PROJECT_REF.supabase.co/auth/v1/.well-known/jwks.json
 SUPABASE_JWT_ISSUER=https://YOUR_PROJECT_REF.supabase.co/auth/v1
 SUPABASE_JWT_AUDIENCE=authenticated
+SUPABASE_JWT_ALGORITHMS=RS256
+# Keep this >= your Supabase JWT expiry.
+SUPABASE_MAX_JWT_AGE_SECONDS=3660
+# Optional hardening; enable only after confirming session_id claim presence.
+SUPABASE_REQUIRE_SESSION_ID_CLAIM=false
 SUPABASE_SERVICE_ROLE_KEY=REPLACE_ME
 
 DATABASE_URL=postgresql://postgres.YOUR_REF:YOUR_PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1

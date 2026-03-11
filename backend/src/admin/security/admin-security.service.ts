@@ -5,11 +5,62 @@ import { AuditService } from '../../common/audit/audit.service';
 
 @Injectable()
 export class AdminSecurityService {
+  private static readonly KEY_ROTATION_POLICY_DAYS = 90;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly keyCrypto: KeyCryptoService,
     private readonly audit: AuditService,
   ) {}
+
+  async getKeyRotationStatus() {
+    const currentVersion = this.keyCrypto.getCurrentVersion();
+    const policyDays = AdminSecurityService.KEY_ROTATION_POLICY_DAYS;
+    const cutoff = new Date(Date.now() - policyDays * 24 * 60 * 60 * 1000);
+
+    const keys = await this.prisma.providerKey.findMany({
+      select: {
+        id: true,
+        userId: true,
+        provider: true,
+        kekVersion: true,
+        lastRotatedAt: true,
+        updatedAt: true,
+      },
+    });
+
+    const staleVersionKeys = keys.filter((k) => k.kekVersion !== currentVersion);
+    const overdueKeys = keys.filter((k) => {
+      const rotatedAt = k.lastRotatedAt ?? k.updatedAt;
+      return rotatedAt < cutoff;
+    });
+
+    const status = {
+      currentKekVersion: currentVersion,
+      rotationPolicyDays: policyDays,
+      totalKeys: keys.length,
+      staleVersionCount: staleVersionKeys.length,
+      overdueRotationCount: overdueKeys.length,
+      healthy: staleVersionKeys.length === 0 && overdueKeys.length === 0,
+      overdueKeyIds: overdueKeys.map((k) => k.id),
+    };
+
+    if (!status.healthy) {
+      await this.audit.write({
+        eventType: 'key_rotation_overdue',
+        eventScope: 'security.keys',
+        severity: 'warn',
+        details: {
+          staleVersionCount: status.staleVersionCount,
+          overdueRotationCount: status.overdueRotationCount,
+          policyDays,
+          currentKekVersion: currentVersion,
+        },
+      });
+    }
+
+    return status;
+  }
 
   async rotateProviderKeys(params: {
     actorSupabaseUserId: string;

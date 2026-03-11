@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
-import { secureStoreAsyncStorage } from '../storage/secureStorage';
+import { authSessionStorage } from '../storage/secureStorage';
+import { isSecureWebUrl } from '../utils/urlSecurity';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -18,10 +19,15 @@ export function getSupabaseClient(): SupabaseClient {
       'Supabase URL and Anon Key must be configured. Ensure Infisical secrets are loaded.',
     );
   }
+  if (Platform.OS === 'web' && !isSecureWebUrl(url)) {
+    throw new Error(
+      'Supabase URL must use HTTPS on web (except localhost).',
+    );
+  }
 
   client = createClient(url, anonKey, {
     auth: {
-      storage: secureStoreAsyncStorage,
+      storage: authSessionStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: Platform.OS === 'web',

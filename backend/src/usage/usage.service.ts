@@ -9,6 +9,7 @@ import type { AppEnv } from '../config/env.schema';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateBudgetConfigDto } from './dto/update-budget-config.dto';
 import { OfficialCostQueryDto } from './dto/official-cost.dto';
+import { reliableFetch } from '../common/http/reliable-fetch';
 
 const ANTHROPIC_COST_API_URL = 'https://api.anthropic.com/v1/organizations/cost_report';
 const ANTHROPIC_API_VERSION = '2023-06-01';
@@ -91,7 +92,7 @@ export class UsageService {
       ending_at: args.endDate,
       granularity: '1d',
     });
-    const response = await fetch(
+    const response = await reliableFetch(
       `${ANTHROPIC_COST_API_URL}?${params.toString()}`,
       {
         method: 'GET',
@@ -99,6 +100,12 @@ export class UsageService {
           'x-api-key': args.adminApiKey,
           'anthropic-version': ANTHROPIC_API_VERSION,
         },
+      },
+      {
+        timeoutMs: 12_000,
+        maxAttempts: 3,
+        baseRetryDelayMs: 250,
+        retryableStatuses: [408, 429, 500, 502, 503, 504],
       },
     );
 

@@ -18,6 +18,7 @@ import { CalibrationService } from '../calibration/calibration.service';
 import { BudgetService } from '../common/budget/budget.service';
 import { TierService } from '../subscription/tier.service';
 import { CreditService } from '../subscription/credit.service';
+import { reliableFetch } from '../common/http/reliable-fetch';
 import type { AiTutorDto } from './dto/ai-tutor.dto';
 
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
@@ -260,15 +261,24 @@ export class AiService {
       messages: args.messageBody,
     };
 
-    const response = await fetch(ANTHROPIC_URL, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'anthropic-version': ANTHROPIC_VERSION,
-        'x-api-key': args.apiKey,
+    const response = await reliableFetch(
+      ANTHROPIC_URL,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'anthropic-version': ANTHROPIC_VERSION,
+          'x-api-key': args.apiKey,
+        },
+        body: JSON.stringify(requestBody),
       },
-      body: JSON.stringify(requestBody),
-    });
+      {
+        timeoutMs: 12_000,
+        maxAttempts: 2,
+        baseRetryDelayMs: 250,
+        retryOnNetworkErrorsOnly: true,
+      },
+    );
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');

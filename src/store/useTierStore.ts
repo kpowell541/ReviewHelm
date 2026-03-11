@@ -101,6 +101,8 @@ export const useTierStore = create<TierState>()(
           trial: options?.trial,
           successUrl: `${baseUrl}/plans?checkout=success`,
           cancelUrl: `${baseUrl}/plans?checkout=cancelled`,
+        }, {
+          idempotencyKey: generateIdempotencyKey(),
         });
         return result.url;
       },
@@ -111,6 +113,8 @@ export const useTierStore = create<TierState>()(
           amountUsd,
           successUrl: `${baseUrl}/plans?topup=success`,
           cancelUrl: `${baseUrl}/plans?topup=cancelled`,
+        }, {
+          idempotencyKey: generateIdempotencyKey(),
         });
         return result.url;
       },
@@ -119,6 +123,8 @@ export const useTierStore = create<TierState>()(
         const baseUrl = window?.location?.origin ?? 'reviewhelm://';
         const result = await api.post<{ url: string }>('/subscription/portal', {
           returnUrl: `${baseUrl}/settings`,
+        }, {
+          idempotencyKey: generateIdempotencyKey(),
         });
         return result.url;
       },
@@ -150,4 +156,10 @@ export function hasAccess(
   requiredTier: SubscriptionTier,
 ): boolean {
   return TIER_RANK[effectiveTier] >= TIER_RANK[requiredTier];
+}
+
+function generateIdempotencyKey(): string {
+  const random = Math.random().toString(36).slice(2, 18);
+  const timestamp = Date.now().toString(36);
+  return `rh_${timestamp}_${random}`;
 }
