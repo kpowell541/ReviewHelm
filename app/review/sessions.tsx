@@ -78,13 +78,26 @@ export default function ReviewSessionsScreen() {
     if (prId && !pr) return;
 
     autoStarted.current = true;
+
+    // Reuse existing active session for this PR if one exists (1:1 PR↔Session)
+    if (pr) {
+      const existing = Object.values(rawSessions).find(
+        (s) => s.linkedPRId === pr.id && !s.isComplete,
+      );
+      if (existing) {
+        const route = existing.mode === 'polish' ? `/polish/${existing.id}` : `/review/${existing.id}`;
+        router.replace(route);
+        return;
+      }
+    }
+
     const sessionMode = mode === 'polish' || pr?.role === 'author' ? 'polish' : 'review';
     const sessionId = createSession(sessionMode, stackIds, undefined, selectedSections, pr?.id);
     if (pr) linkSession(pr.id, sessionId);
     if (repo) saveRepoConfig(repo, stackIds, selectedSections);
     const route = sessionMode === 'polish' ? `/polish/${sessionId}` : `/review/${sessionId}`;
     router.replace(route);
-  }, [prId, mode, stackIds, selectedSections, prs, createSession, linkSession, saveRepoConfig, repo, router]);
+  }, [prId, mode, stackIds, selectedSections, prs, rawSessions, createSession, linkSession, saveRepoConfig, repo, router]);
 
   const activePRs = useMemo(() => {
     return Object.values(prs)
@@ -137,20 +150,9 @@ export default function ReviewSessionsScreen() {
         : `/review/${session.id}` as const;
       crossAlert(
         'Active Session Found',
-        `You have an in-progress session for this PR. Continue it or start a new one?`,
+        `You have an in-progress session for this PR. Would you like to continue it?`,
         [
           { text: 'Continue Session', onPress: () => router.push(existingRoute) },
-          {
-            text: 'Start New',
-            onPress: () => {
-              const sessionMode = mode === 'polish' || pr.role === 'author' ? 'polish' : 'review';
-              const sessionId = createSession(sessionMode, stackIds, undefined, selectedSections, pr.id);
-              linkSession(pr.id, sessionId);
-              if (repo) saveRepoConfig(repo, stackIds, selectedSections);
-              const route = sessionMode === 'polish' ? `/polish/${sessionId}` : `/review/${sessionId}`;
-              router.push(route);
-            },
-          },
           { text: 'Cancel', style: 'cancel' },
         ],
       );

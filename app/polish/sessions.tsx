@@ -63,19 +63,9 @@ export default function PolishSessionsScreen() {
         : `/review/${session.id}` as const;
       crossAlert(
         'Active Session Found',
-        `You have an in-progress session for this PR. Continue it or start a new one?`,
+        `You have an in-progress session for this PR. Would you like to continue it?`,
         [
           { text: 'Continue Session', onPress: () => router.push(existingRoute) },
-          {
-            text: 'Start New',
-            onPress: () => {
-              const params = new URLSearchParams();
-              params.set('mode', 'polish');
-              params.set('prId', pr.id);
-              if (pr.repo) params.set('repo', pr.repo);
-              router.push(`/review/stack-select?${params.toString()}` as '/review/stack-select');
-            },
-          },
           { text: 'Cancel', style: 'cancel' },
         ],
       );

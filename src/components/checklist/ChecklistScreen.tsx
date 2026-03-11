@@ -159,19 +159,23 @@ export function ChecklistScreen({ sessionId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
 
-  // Compute skipped sections (sections excluded by selectedSections filter)
-  const skippedSections = useMemo(() => {
-    if (!sessionMode || !sessionSelectedSections || sessionSelectedSections.length === 0) return [];
-    if (sessionEffectiveIds.length === 0) return [];
-    const selectedSet = new Set(sessionSelectedSections);
+  // Compute all available sections with their active/skipped status
+  const allAvailableSections = useMemo(() => {
+    if (!sessionMode || sessionEffectiveIds.length === 0) return [];
     const fullChecklist = sessionEffectiveIds.length === 1
       ? getChecklist(sessionEffectiveIds[0])
       : getMergedChecklist(sessionEffectiveIds);
-    return fullChecklist.sections
-      .filter((s) => !selectedSet.has(s.id))
-      .map((s) => ({ id: s.id, title: s.title, itemCount: getSectionItems(s).length }));
+    const selectedSet = sessionSelectedSections ? new Set(sessionSelectedSections) : null;
+    return fullChecklist.sections.map((s) => ({
+      id: s.id,
+      title: s.title,
+      itemCount: getSectionItems(s).length,
+      isActive: selectedSet ? selectedSet.has(s.id) : true,
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode, effectiveIdsKey, selectedSectionsKey]);
+
+  const hasSkippedSections = allAvailableSections.some((s) => !s.isActive);
 
   const hasSecurityStack = checklist?.sections.some((s) => s.id.startsWith('security.')) ?? false;
   const relevantSecuritySections = useMemo(() => {
@@ -450,15 +454,16 @@ export function ChecklistScreen({ sessionId }: Props) {
     );
   }, [session, scores, finalizeCompletion]);
 
-  const handleAddSectionsBack = useCallback((sectionIds: string[]) => {
-    if (!session || sectionIds.length === 0) return;
-    const current = session.selectedSections ?? [];
-    const updated = [...current, ...sectionIds];
+  const handleSaveSections = useCallback((sectionIds: string[]) => {
+    if (!session) return;
+    const allIds = allAvailableSections.map((s) => s.id);
+    // If all sections are selected, clear the filter entirely
+    const updated = sectionIds.length === allIds.length ? undefined : sectionIds;
     updateSelectedSections(sessionId, updated);
     // Reset the section order ref so newly added sections appear
     sectionOrderRef.current = null;
     setShowAddSectionsModal(false);
-  }, [session, sessionId, updateSelectedSections]);
+  }, [session, sessionId, allAvailableSections, updateSelectedSections]);
 
   if (!session || !checklist || !scores) {
     return (
@@ -699,7 +704,7 @@ export function ChecklistScreen({ sessionId }: Props) {
                 {session.isComplete ? 'Re-complete Session' : 'Complete Session'}
               </Text>
             </Pressable>
-            {skippedSections.length > 0 && (
+            {allAvailableSections.length > 0 && (
               <Pressable
                 onPress={() => setShowAddSectionsModal(true)}
                 style={({ pressed }) => [
@@ -708,7 +713,7 @@ export function ChecklistScreen({ sessionId }: Props) {
                 ]}
               >
                 <Text style={styles.addSectionsButtonText}>
-                  Add skipped sections ({skippedSections.length})
+                  {hasSkippedSections ? 'Add / Remove sections' : 'Remove sections'}
                 </Text>
               </Pressable>
             )}
@@ -764,52 +769,13 @@ export function ChecklistScreen({ sessionId }: Props) {
         </Pressable>
       </Modal>
 
-      {/* Add skipped sections modal */}
-      <Modal
+      {/* Add/Remove sections modal */}
+      <SectionManagerModal
         visible={showAddSectionsModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowAddSectionsModal(false)}
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setShowAddSectionsModal(false)}
-        >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Skipped Sections</Text>
-            <Text style={styles.addSectionsHint}>
-              Tap a section to add it back to your review
-            </Text>
-            <FlatList
-              data={skippedSections}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.modalSectionRow}
-                  onPress={() => handleAddSectionsBack([item.id])}
-                >
-                  <Text style={styles.modalSectionTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.modalSectionCount}>
-                    {item.itemCount} items
-                  </Text>
-                </Pressable>
-              )}
-            />
-            {skippedSections.length > 1 && (
-              <Pressable
-                style={styles.addAllSectionsButton}
-                onPress={() => handleAddSectionsBack(skippedSections.map((s) => s.id))}
-              >
-                <Text style={styles.addAllSectionsText}>
-                  Add all {skippedSections.length} sections
-                </Text>
-              </Pressable>
-            )}
-          </View>
-        </Pressable>
-      </Modal>
+        onClose={() => setShowAddSectionsModal(false)}
+        sections={allAvailableSections}
+        onSave={handleSaveSections}
+      />
 
       {/* Bulk action bar */}
       {bulkMode && bulkSelected.size > 0 && (
@@ -839,6 +805,87 @@ export function ChecklistScreen({ sessionId }: Props) {
       )}
     </View>
     </DesktopContainer>
+  );
+}
+
+interface SectionEntry {
+  id: string;
+  title: string;
+  itemCount: number;
+  isActive: boolean;
+}
+
+function SectionManagerModal({
+  visible,
+  onClose,
+  sections,
+  onSave,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  sections: SectionEntry[];
+  onSave: (sectionIds: string[]) => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Sync local state when modal opens
+  useEffect(() => {
+    if (visible) {
+      setSelected(new Set(sections.filter((s) => s.isActive).map((s) => s.id)));
+    }
+  }, [visible, sections]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const hasChanges = sections.some((s) => s.isActive !== selected.has(s.id));
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Add / Remove Sections</Text>
+          <Text style={styles.addSectionsHint}>
+            Toggle sections to include or exclude from your review
+          </Text>
+          <FlatList
+            data={sections}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const isSelected = selected.has(item.id);
+              return (
+                <Pressable style={styles.modalSectionRow} onPress={() => toggle(item.id)}>
+                  <View style={[styles.sectionCheckbox, isSelected && styles.sectionCheckboxSelected]}>
+                    {isSelected && <Text style={styles.sectionCheckmark}>✓</Text>}
+                  </View>
+                  <Text style={[styles.modalSectionTitle, !isSelected && styles.sectionTitleInactive]} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                  <Text style={styles.modalSectionCount}>{item.itemCount} items</Text>
+                </Pressable>
+              );
+            }}
+          />
+          <Pressable
+            style={[styles.addAllSectionsButton, !hasChanges && { opacity: 0.4 }]}
+            onPress={() => hasChanges && onSave([...selected])}
+          >
+            <Text style={styles.addAllSectionsText}>
+              Save ({selected.size} of {sections.length} sections)
+            </Text>
+          </Pressable>
+        </View>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -1063,6 +1110,28 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: '600',
     color: '#fff',
+  },
+  sectionCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: colors.border,
+    marginRight: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionCheckboxSelected: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  sectionCheckmark: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sectionTitleInactive: {
+    opacity: 0.5,
   },
   headerTopRow: {
     flexDirection: 'row',

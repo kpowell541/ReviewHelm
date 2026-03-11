@@ -237,19 +237,9 @@ export default function PRTrackerScreen() {
           : `/review/${session.id}` as const;
         crossAlert(
           'Active Session Found',
-          `You have an in-progress session for this PR. Continue it or start a new one?`,
+          `You have an in-progress session for this PR. Would you like to continue it?`,
           [
             { text: 'Continue Session', onPress: () => router.push(route) },
-            {
-              text: 'Start New',
-              onPress: () => {
-                const params = new URLSearchParams();
-                if (pr.repo) params.set('repo', pr.repo);
-                params.set('prId', pr.id);
-                const query = params.toString();
-                router.push(`/review/stack-select?${query}` as '/review/stack-select');
-              },
-            },
             { text: 'Cancel', style: 'cancel' },
           ],
         );
