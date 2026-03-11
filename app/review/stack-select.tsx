@@ -197,6 +197,9 @@ export default function StackSelectScreen() {
       <Pressable
         key={stack.id}
         onPress={() => toggleStack(stack.id)}
+        accessibilityRole="checkbox"
+        accessibilityLabel={`${stack.title}${isPrevious ? ', previously used' : ''}${overallAvg !== null ? `, average ${overallAvg.toFixed(1)} out of 5` : ''}`}
+        accessibilityState={{ checked: isSelected }}
         style={({ pressed }) => [
           styles.stackCard,
           {
@@ -233,6 +236,8 @@ export default function StackSelectScreen() {
         {repo && repoConfig && (
           <Pressable
             onPress={handleUseRepoConfig}
+            accessibilityRole="button"
+            accessibilityLabel={`Use saved config for ${repo}`}
             style={({ pressed }) => [
               styles.repoBanner,
               { opacity: pressed ? 0.85 : 1 },
@@ -260,7 +265,7 @@ export default function StackSelectScreen() {
 
         {templates.length > 0 && (
           <>
-            <Text style={styles.heading}>Saved Templates</Text>
+            <Text style={styles.heading} accessibilityRole="header">Saved Templates</Text>
             {templates.map((tmpl) => {
               const templateStackInfos = tmpl.stackIds
                 .map((id) => {
@@ -285,6 +290,9 @@ export default function StackSelectScreen() {
                       { text: 'Delete', style: 'destructive', onPress: () => deleteTemplate(tmpl.id) },
                     ]);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Use template ${tmpl.name}`}
+                  accessibilityHint="Long press to delete this template"
                   style={({ pressed }) => [
                     styles.templateCard,
                     { opacity: pressed ? 0.85 : 1 },
@@ -309,7 +317,7 @@ export default function StackSelectScreen() {
           </>
         )}
 
-        <Text style={styles.heading}>Choose tech stacks</Text>
+        <Text style={styles.heading} accessibilityRole="header">Choose tech stacks</Text>
         <Text style={styles.subtitle}>
           Select one or more stacks that match the PR you're reviewing
         </Text>
@@ -320,6 +328,8 @@ export default function StackSelectScreen() {
           onChangeText={setStackSearch}
           placeholder="Search stacks..."
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Search stacks"
+          accessibilityRole="search"
         />
 
         {isSearching ? (
@@ -339,6 +349,9 @@ export default function StackSelectScreen() {
                 <Pressable
                   onPress={() => toggleCategory(category.name)}
                   style={styles.categoryHeader}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${category.name}, ${selectedInCategory > 0 ? `${selectedInCategory} selected, ` : ''}${stacks.length} stacks`}
+                  accessibilityState={{ expanded: !isCollapsed }}
                 >
                   <Text style={styles.categoryChevron}>{isCollapsed ? '▶' : '▼'}</Text>
                   <Text style={styles.categoryName}>{category.name}</Text>

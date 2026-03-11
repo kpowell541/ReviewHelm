@@ -115,7 +115,7 @@ export default function PolishSessionsScreen() {
       <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
         <View style={styles.header}>
           <Text style={styles.icon}>✨</Text>
-          <Text style={styles.heading}>Polish My PR</Text>
+          <Text style={styles.heading} accessibilityRole="header">Polish My PR</Text>
         </View>
 
         <Pressable
@@ -124,6 +124,8 @@ export default function PolishSessionsScreen() {
             styles.newButton,
             { opacity: pressed ? 0.85 : 1 },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Start a new polish session with an existing PR"
         >
           <Text style={styles.newButtonText}>Start a new session with an existing PR</Text>
         </Pressable>
@@ -140,13 +142,15 @@ export default function PolishSessionsScreen() {
             styles.addPRButton,
             { opacity: pressed ? 0.85 : 1 },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Add my PR"
         >
           <Text style={styles.addPRButtonText}>Add my PR</Text>
         </Pressable>
 
         {activeSessions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Active</Text>
             {activeSessions.map((session) => {
               const prTitle = getPRTitle(session.linkedPRId);
               return (
@@ -185,7 +189,7 @@ export default function PolishSessionsScreen() {
 
         {completedSessions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Completed</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Completed</Text>
             {completedSessions.map((session) => {
               const prTitle = getPRTitle(session.linkedPRId);
               return (

@@ -45,6 +45,9 @@ function ModeCard({ title, subtitle, icon, color, onPress, badge, isDesktop, loc
         isDesktop && styles.modeCardDesktop,
         { borderLeftColor: locked ? colors.textMuted : color, opacity: pressed ? 0.85 : 1 },
       ]}
+      accessibilityRole="button"
+      accessibilityLabel={locked ? `${title}, locked` : title}
+      accessibilityHint={locked ? 'Upgrade to unlock' : subtitle}
     >
       <View style={styles.modeCardContent}>
         <Text style={[styles.modeIcon, locked && { opacity: 0.4 }]}>{icon}</Text>
@@ -86,6 +89,9 @@ function RecentSessionCard({
         styles.recentCard,
         { opacity: pressed ? 0.85 : 1 },
       ]}
+      accessibilityRole="button"
+      accessibilityLabel={`${session.title}${prTitle ? `, ${prTitle}` : ''}, ${session.isComplete ? 'complete' : 'in progress'}`}
+      accessibilityHint="Long press to delete"
     >
       <View style={styles.recentCardInfo}>
         <Text style={styles.recentTitle} numberOfLines={1}>
@@ -202,6 +208,8 @@ export default function HomeScreen() {
           <Pressable
             style={styles.headerSettingsBtn}
             onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
           >
             <Text style={styles.headerSettingsIcon}>&#x2699;&#xFE0E;</Text>
           </Pressable>
@@ -264,18 +272,24 @@ export default function HomeScreen() {
           <Pressable
             style={styles.quickLink}
             onPress={() => starterGate.allowed ? setShowAddPR(true) : starterGate.guardedNavigate('/pr-tracker')}
+            accessibilityRole="button"
+            accessibilityLabel="Add PR"
           >
             <Text style={styles.quickLinkText}>{starterGate.allowed ? '＋' : '🔒'} Add PR</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => router.push('/search')}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
           >
             <Text style={styles.quickLinkText}>🔎 Search</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => starterGate.allowed ? router.push('/pr-tracker') : starterGate.guardedNavigate('/pr-tracker')}
+            accessibilityRole="button"
+            accessibilityLabel={`PRs${starterGate.allowed && activePRCount > 0 ? `, ${activePRCount} active` : ''}`}
           >
             <Text style={styles.quickLinkText}>
               {starterGate.allowed ? '🔀' : '🔒'} PRs{starterGate.allowed && activePRCount > 0 ? ` (${activePRCount})` : ''}
@@ -284,18 +298,24 @@ export default function HomeScreen() {
           <Pressable
             style={styles.quickLink}
             onPress={() => starterGate.allowed ? router.push('/dashboard') : starterGate.guardedNavigate('/dashboard')}
+            accessibilityRole="button"
+            accessibilityLabel="Readiness dashboard"
           >
             <Text style={styles.quickLinkText}>{starterGate.allowed ? '📈' : '🔒'} Readiness</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => router.push('/bookmarks')}
+            accessibilityRole="button"
+            accessibilityLabel="Bookmarks"
           >
             <Text style={styles.quickLinkText}>⭐ Bookmarks</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => starterGate.allowed ? router.push('/trends') : starterGate.guardedNavigate('/trends')}
+            accessibilityRole="button"
+            accessibilityLabel="Trends"
           >
             <Text style={styles.quickLinkText}>{starterGate.allowed ? '📊' : '🔒'} Trends</Text>
           </Pressable>
@@ -303,6 +323,8 @@ export default function HomeScreen() {
             <Pressable
               style={styles.quickLink}
               onPress={() => router.push('/review/due-items')}
+              accessibilityRole="button"
+              accessibilityLabel={`Due items, ${dueCount}`}
             >
               <Text style={styles.quickLinkText}>🔁 Due ({dueCount})</Text>
             </Pressable>
@@ -311,6 +333,8 @@ export default function HomeScreen() {
             <Pressable
               style={styles.quickLink}
               onPress={() => router.push('/admin-dashboard')}
+              accessibilityRole="button"
+              accessibilityLabel="Admin dashboard"
             >
               <Text style={styles.quickLinkText}>🛡 Admin</Text>
             </Pressable>
@@ -319,7 +343,7 @@ export default function HomeScreen() {
 
         {recentSessions.length > 0 && (
           <View style={styles.recentSection}>
-            <Text style={styles.sectionTitle}>Recent Sessions</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Recent Sessions</Text>
             {recentSessions.map((session) => (
               <RecentSessionCard
                 key={session.id}

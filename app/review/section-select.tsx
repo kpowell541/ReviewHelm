@@ -106,7 +106,7 @@ export default function SectionSelectScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.heading}>Refine your sections</Text>
+        <Text style={styles.heading} accessibilityRole="header">Refine your sections</Text>
         <Text style={styles.subtitle}>
           Uncheck any sections that aren't relevant to this PR. Don't worry — you can add skipped sections back during your review.
         </Text>
@@ -122,6 +122,8 @@ export default function SectionSelectScreen() {
               <Pressable
                 onPress={() => toggleStack(stackId)}
                 style={styles.stackHeader}
+                accessibilityRole="button"
+                accessibilityLabel={`${allStackSelected ? 'Deselect' : 'Select'} all sections for ${stackInfo.shortTitle}`}
               >
                 <StackLogo stackId={stackInfo.id} fallbackIcon={stackInfo.icon} size={28} style={{ marginRight: spacing.sm }} />
                 <Text style={styles.stackTitle}>{stackInfo.shortTitle}</Text>
@@ -141,6 +143,9 @@ export default function SectionSelectScreen() {
                   <Pressable
                     key={section.id}
                     onPress={() => toggleSection(section.id)}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={`${section.title}, ${section.itemCount} items`}
+                    accessibilityState={{ checked: isSelected }}
                     style={[
                       styles.sectionRow,
                       isSelected && styles.sectionRowSelected,
@@ -194,6 +199,7 @@ export default function SectionSelectScreen() {
           onChangeText={setTemplateName}
           placeholder="e.g. Full Stack Review"
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Template name"
           autoFocus
           onSubmitEditing={() => {
             if (templateName.trim()) {
@@ -208,6 +214,8 @@ export default function SectionSelectScreen() {
           <Pressable
             onPress={() => setShowNameModal(false)}
             style={styles.modalCancel}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
           >
             <Text style={styles.modalCancelText}>Cancel</Text>
           </Pressable>
@@ -220,6 +228,9 @@ export default function SectionSelectScreen() {
                 crossAlert('Template saved', `"${templateName.trim()}" saved for quick reuse.`);
               }
             }}
+            accessibilityRole="button"
+            accessibilityLabel="Save template"
+            accessibilityState={{ disabled: !templateName.trim() }}
             style={[
               styles.modalSave,
               !templateName.trim() && { opacity: 0.4 },

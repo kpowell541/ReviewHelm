@@ -40,6 +40,9 @@ function GapCard({ gap, onPress }: { gap: ItemConfidenceHistory; onPress: () => 
         { opacity: pressed ? 0.85 : 1 },
       ]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${item?.item.text ?? gap.itemId}, confidence ${gap.currentConfidence}`}
+      accessibilityHint="Opens deep dive for this item"
     >
       <Text style={styles.gapEmoji}>
         {CONFIDENCE_EMOJI[gap.currentConfidence as ConfidenceLevel]}
@@ -136,7 +139,7 @@ export default function GapsScreen() {
       style={styles.container}
       contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}
     >
-      <Text style={styles.title}>My Knowledge Gaps</Text>
+      <Text style={styles.title} accessibilityRole="header">My Knowledge Gaps</Text>
 
       {/* Summary stats */}
       {!isEmpty && (
@@ -172,6 +175,8 @@ export default function GapsScreen() {
         <Pressable
           style={styles.reviewDueButton}
           onPress={() => router.push('/review/due-items')}
+          accessibilityRole="button"
+          accessibilityLabel={`Review ${dueItems.length} due item${dueItems.length !== 1 ? 's' : ''}`}
         >
           <Text style={styles.reviewDueText}>
             🔁 Review {dueItems.length} Due Item{dueItems.length !== 1 ? 's' : ''}
@@ -186,7 +191,7 @@ export default function GapsScreen() {
       {/* Grouped gap items */}
       {grouped.map(([stackId, items]) => (
         <View key={stackId} style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
             {stackId} ({items.length})
           </Text>
           {items.map((gap) => (

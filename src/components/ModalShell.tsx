@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Pressable, Text, StyleSheet } from 'react-native';
+import { Modal, Pressable, Text, View, StyleSheet } from 'react-native';
 import { colors, spacing, fontSizes, radius } from '../theme';
 import { useResponsive } from '../hooks/useResponsive';
 
@@ -31,14 +31,17 @@ export function ModalShell({
       <Pressable
         onPress={onClose}
         style={[styles.overlay, isDesktop && styles.overlayDesktop]}
+        accessible={false}
       >
-        <Pressable
-          onPress={(e) => e.stopPropagation()}
+        <View
           style={[styles.card, isDesktop && styles.cardDesktop]}
+          accessibilityViewIsModal={true}
+          accessibilityRole="none"
+          onStartShouldSetResponder={() => true}
         >
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title} accessibilityRole="header">{title}</Text>
           {children}
-        </Pressable>
+        </View>
       </Pressable>
     </Modal>
   );

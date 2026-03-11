@@ -148,7 +148,7 @@ export default function LearnSessionScreen() {
       <View style={styles.container}>
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>🎉</Text>
-          <Text style={styles.emptyTitle}>No gaps to study!</Text>
+          <Text style={styles.emptyTitle} accessibilityRole="header">No gaps to study!</Text>
           <Text style={styles.emptySubtext}>
             Complete review sessions and rate your confidence to identify areas
             for learning.
@@ -156,6 +156,8 @@ export default function LearnSessionScreen() {
           <Pressable
             style={styles.backButton}
             onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
           >
             <Text style={styles.backButtonText}>Go Back</Text>
           </Pressable>
@@ -178,7 +180,7 @@ export default function LearnSessionScreen() {
             ]}
           />
         </View>
-        <Text style={styles.progressText}>
+        <Text style={styles.progressText} accessibilityLabel={`Item ${currentIndex + 1} of ${gaps.length}`}>
           {currentIndex + 1} of {gaps.length} items
         </Text>
       </View>
@@ -197,7 +199,7 @@ export default function LearnSessionScreen() {
               </Text>
             </View>
           </View>
-          <Text style={styles.itemText}>{found.item.text}</Text>
+          <Text style={styles.itemText} accessibilityRole="header">{found.item.text}</Text>
           <View style={styles.itemMeta}>
             <Text style={styles.metaText}>
               Severity: {found.item.severity} · {currentGap.ratings.length}{' '}
@@ -219,6 +221,8 @@ export default function LearnSessionScreen() {
               <Pressable
                 style={styles.settingsLink}
                 onPress={() => router.push('/settings')}
+                accessibilityRole="link"
+                accessibilityLabel="Go to Settings"
               >
                 <Text style={styles.settingsLinkText}>
                   Go to Settings
@@ -227,7 +231,12 @@ export default function LearnSessionScreen() {
             </View>
           ) : (
             <>
-              <Pressable style={styles.startButton} onPress={startLesson}>
+              <Pressable
+                style={styles.startButton}
+                onPress={startLesson}
+                accessibilityRole="button"
+                accessibilityLabel={`Start learning with ${CLAUDE_MODEL_LABELS[aiModel]}`}
+              >
                 <Text style={styles.startButtonText}>
                   💡 Start Learning with {CLAUDE_MODEL_LABELS[aiModel]}
                 </Text>
@@ -239,6 +248,8 @@ export default function LearnSessionScreen() {
                     `/deep-dive/${encodeURIComponent(currentGap!.itemId)}`,
                   )
                 }
+                accessibilityRole="link"
+                accessibilityLabel="View base content instead"
               >
                 <Text style={styles.deepDiveLinkText}>
                   📖 View base content instead
@@ -276,7 +287,7 @@ export default function LearnSessionScreen() {
           )}
 
           {error && (
-            <View style={styles.errorCard}>
+            <View style={styles.errorCard} accessibilityRole="alert" accessibilityLiveRegion="polite">
               <Text style={styles.errorText}>{error}</Text>
             </View>
           )}
@@ -287,6 +298,8 @@ export default function LearnSessionScreen() {
               <Pressable
                 style={styles.actionButton}
                 onPress={requestExercise}
+                accessibilityRole="button"
+                accessibilityLabel="Practice exercise"
               >
                 <Text style={styles.actionButtonText}>
                   🏋️ Practice exercise
@@ -299,6 +312,8 @@ export default function LearnSessionScreen() {
                     `/deep-dive/${encodeURIComponent(currentGap!.itemId)}`,
                   )
                 }
+                accessibilityRole="link"
+                accessibilityLabel="Open AI Tutor chat"
               >
                 <Text style={styles.actionButtonText}>
                   🎓 Open AI Tutor chat
@@ -308,6 +323,8 @@ export default function LearnSessionScreen() {
                 <Pressable
                   style={[styles.actionButton, styles.nextButton]}
                   onPress={nextItem}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Next item, ${currentIndex + 2} of ${gaps.length}`}
                 >
                   <Text style={styles.nextButtonText}>
                     Next item →

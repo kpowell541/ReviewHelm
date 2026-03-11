@@ -296,13 +296,21 @@ export function FeatureTourModal({ visible, onClose, effectiveTier }: FeatureTou
       onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.modal, { width: contentWidth - spacing['2xl'] * 2 }]}>
+        <View
+          style={[styles.modal, { width: contentWidth - spacing['2xl'] * 2 }]}
+          accessibilityViewIsModal={true}
+        >
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>
+            <Text style={styles.headerTitle} accessibilityRole="header">
               Your {getTierLabel(effectiveTier)} Features
             </Text>
-            <Pressable onPress={handleClose} hitSlop={12}>
+            <Pressable
+              onPress={handleClose}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Skip feature tour"
+            >
               <Text style={styles.closeText}>Skip</Text>
             </Pressable>
           </View>
@@ -315,7 +323,7 @@ export function FeatureTourModal({ visible, onClose, effectiveTier }: FeatureTou
             {slide.section && (
               <Text style={styles.sectionBadge}>{slide.section}</Text>
             )}
-            <Text style={[styles.slideTitle, { color: slide.color }]}>
+            <Text style={[styles.slideTitle, { color: slide.color }]} accessibilityRole="header">
               {slide.title}
             </Text>
             <Text style={styles.slideDescription}>{slide.description}</Text>
@@ -326,7 +334,7 @@ export function FeatureTourModal({ visible, onClose, effectiveTier }: FeatureTou
           </View>
 
           {/* Progress dots */}
-          <View style={styles.dotsRow}>
+          <View style={styles.dotsRow} accessibilityLabel={`Slide ${currentIndex + 1} of ${slides.length}`}>
             {slides.map((_, i) => (
               <View
                 key={i}
@@ -341,7 +349,12 @@ export function FeatureTourModal({ visible, onClose, effectiveTier }: FeatureTou
           {/* Navigation buttons */}
           <View style={styles.navRow}>
             {currentIndex > 0 ? (
-              <Pressable style={styles.backButton} onPress={handleBack}>
+              <Pressable
+                style={styles.backButton}
+                onPress={handleBack}
+                accessibilityRole="button"
+                accessibilityLabel="Previous slide"
+              >
                 <Text style={styles.backButtonText}>Back</Text>
               </Pressable>
             ) : (
@@ -353,6 +366,8 @@ export function FeatureTourModal({ visible, onClose, effectiveTier }: FeatureTou
             <Pressable
               style={[styles.nextButton, { backgroundColor: slide.color }]}
               onPress={handleNext}
+              accessibilityRole="button"
+              accessibilityLabel={isLast ? 'Finish tour' : 'Next slide'}
             >
               <Text style={styles.nextButtonText}>
                 {isLast ? 'Done' : 'Next'}

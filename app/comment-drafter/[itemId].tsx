@@ -201,7 +201,7 @@ export default function CommentDrafterScreen() {
   if (!found) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Item not found</Text>
+        <Text style={styles.errorText} accessibilityRole="alert">Item not found</Text>
       </View>
     );
   }
@@ -228,7 +228,7 @@ export default function CommentDrafterScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What did you find?</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">What did you find?</Text>
           <Text style={styles.sectionHint}>
             Describe the specific issue you noticed (optional — helps generate a
             more targeted comment)
@@ -241,6 +241,8 @@ export default function CommentDrafterScreen() {
             placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
+            accessibilityLabel="What did you find?"
+            accessibilityHint="Describe the specific issue you noticed to generate a more targeted comment"
           />
         </View>
 
@@ -249,6 +251,9 @@ export default function CommentDrafterScreen() {
             style={[styles.generateButton, (!hasApiKey || isLoading) && styles.buttonDisabled]}
             onPress={generateDraft}
             disabled={!hasApiKey || isLoading}
+            accessibilityRole="button"
+            accessibilityLabel={`Generate draft with ${CLAUDE_MODEL_LABELS[aiModel]}`}
+            accessibilityState={{ disabled: !hasApiKey || isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -267,7 +272,7 @@ export default function CommentDrafterScreen() {
         )}
 
         {error && (
-          <View style={styles.errorCard}>
+          <View style={styles.errorCard} accessibilityRole="alert" accessibilityLiveRegion="polite">
             <Text style={styles.errorCardText}>{error}</Text>
           </View>
         )}
@@ -282,7 +287,7 @@ export default function CommentDrafterScreen() {
 
         {draftedComment !== '' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Drafted Comment</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Drafted Comment</Text>
             <View style={styles.draftCard}>
               <TextInput
                 style={styles.draftInput}
@@ -290,11 +295,18 @@ export default function CommentDrafterScreen() {
                 onChangeText={setDraftedComment}
                 multiline
                 scrollEnabled={false}
+                accessibilityLabel="Drafted comment"
+                accessibilityHint="Edit the generated comment draft"
               />
             </View>
 
             <View style={styles.actions}>
-              <Pressable style={styles.actionButton} onPress={copyToClipboard}>
+              <Pressable
+                style={styles.actionButton}
+                onPress={copyToClipboard}
+                accessibilityRole="button"
+                accessibilityLabel={copied ? 'Copied to clipboard' : 'Copy comment to clipboard'}
+              >
                 <Text style={styles.actionButtonText}>
                   {copied ? '✅ Copied!' : '📋 Copy'}
                 </Text>
@@ -303,6 +315,9 @@ export default function CommentDrafterScreen() {
                 style={styles.actionButton}
                 onPress={() => refineDraft('Make this more concise')}
                 disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Make shorter"
+                accessibilityState={{ disabled: isLoading }}
               >
                 <Text style={styles.actionButtonText}>✂️ Shorter</Text>
               </Pressable>
@@ -310,6 +325,9 @@ export default function CommentDrafterScreen() {
                 style={styles.actionButton}
                 onPress={() => refineDraft('Make this more detailed with a code suggestion')}
                 disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Add more detail"
+                accessibilityState={{ disabled: isLoading }}
               >
                 <Text style={styles.actionButtonText}>📝 More detail</Text>
               </Pressable>
@@ -317,11 +335,19 @@ export default function CommentDrafterScreen() {
                 style={styles.actionButton}
                 onPress={() => refineDraft('Make the tone softer and more encouraging')}
                 disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Softer tone"
+                accessibilityState={{ disabled: isLoading }}
               >
                 <Text style={styles.actionButtonText}>🤝 Softer tone</Text>
               </Pressable>
               {decodedSessionId && (
-                <Pressable style={styles.actionButton} onPress={saveDraftToSession}>
+                <Pressable
+                  style={styles.actionButton}
+                  onPress={saveDraftToSession}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save draft to session"
+                >
                   <Text style={styles.actionButtonText}>💾 Save to session</Text>
                 </Pressable>
               )}
@@ -338,6 +364,9 @@ export default function CommentDrafterScreen() {
               style={styles.regenerateButton}
               onPress={generateDraft}
               disabled={isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Regenerate from scratch"
+              accessibilityState={{ disabled: isLoading }}
             >
               <Text style={styles.regenerateButtonText}>
                 🔄 Regenerate from scratch
@@ -345,7 +374,7 @@ export default function CommentDrafterScreen() {
             </Pressable>
 
             <View style={styles.previewCard}>
-              <Text style={styles.previewTitle}>Rendered preview</Text>
+              <Text style={styles.previewTitle} accessibilityRole="header">Rendered preview</Text>
               <Markdown style={markdownStyles}>{draftedComment}</Markdown>
             </View>
 

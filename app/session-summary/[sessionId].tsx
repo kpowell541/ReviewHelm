@@ -171,7 +171,7 @@ export default function SessionSummaryScreen() {
   if (!session || !scores) {
     return (
       <View style={styles.container}>
-        <Text style={styles.error}>Session not found</Text>
+        <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">Session not found</Text>
       </View>
     );
   }
@@ -182,7 +182,7 @@ export default function SessionSummaryScreen() {
       contentContainerStyle={styles.content}
     >
       {/* Header */}
-      <Text style={styles.title}>{session.title}</Text>
+      <Text style={styles.title} accessibilityRole="header">{session.title}</Text>
       <Text style={styles.subtitle}>
         {session.completedAt
           ? `Completed ${new Date(session.completedAt).toLocaleDateString()}`
@@ -230,7 +230,7 @@ export default function SessionSummaryScreen() {
 
       {/* Issues Breakdown */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Issues by Severity</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">Issues by Severity</Text>
         <IssueRow emoji="🔴" label="Blockers" count={scores.issuesBySeverity.blocker} color={colors.blocker} />
         <IssueRow emoji="🟠" label="Majors" count={scores.issuesBySeverity.major} color={colors.major} />
         <IssueRow emoji="🟡" label="Minors" count={scores.issuesBySeverity.minor} color={colors.minor} />
@@ -240,7 +240,7 @@ export default function SessionSummaryScreen() {
       {/* Items Needing Attention */}
       {needsAttentionItems.length > 0 && (
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
             Items Needing Attention ({needsAttentionItems.length})
           </Text>
           {needsAttentionItems.map((item) => {
@@ -254,6 +254,9 @@ export default function SessionSummaryScreen() {
                     `/deep-dive/${encodeURIComponent(item.id)}?sessionId=${encodeURIComponent(sessionId)}`,
                   )
                 }
+                accessibilityRole="link"
+                accessibilityLabel={`${item.text}, needs attention`}
+                accessibilityHint="Opens deep dive for this item"
               >
                 <View style={styles.attentionItemHeader}>
                   <View
@@ -280,7 +283,7 @@ export default function SessionSummaryScreen() {
       {/* Low Confidence Items */}
       {lowConfidenceItems.length > 0 && (
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
             Learning Opportunities ({lowConfidenceItems.length})
           </Text>
           <Text style={styles.sectionHint}>
@@ -297,6 +300,9 @@ export default function SessionSummaryScreen() {
                     `/deep-dive/${encodeURIComponent(item.id)}?sessionId=${encodeURIComponent(sessionId)}`,
                   )
                 }
+                accessibilityRole="link"
+                accessibilityLabel={`${item.text}, confidence ${item.confidence} of 5`}
+                accessibilityHint="Opens deep dive for this item"
               >
                 <Text style={styles.confEmoji}>
                   {CONFIDENCE_EMOJI[conf]}
@@ -316,7 +322,7 @@ export default function SessionSummaryScreen() {
       )}
 
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>AI Usage This Session</Text>
+        <Text style={styles.sectionTitle} accessibilityRole="header">AI Usage This Session</Text>
         <Text style={styles.usageStat}>
           Calls: {sessionUsage.calls} · Tokens:{' '}
           {(sessionUsage.inputTokens + sessionUsage.outputTokens).toLocaleString()}
@@ -346,6 +352,9 @@ export default function SessionSummaryScreen() {
           style={[styles.exportButton, exporting && styles.buttonDisabled]}
           onPress={handleExportPdf}
           disabled={exporting}
+          accessibilityRole="button"
+          accessibilityLabel="Export PDF"
+          accessibilityState={{ disabled: exporting }}
         >
           {exporting ? (
             <ActivityIndicator size="small" color="#fff" />
@@ -357,6 +366,9 @@ export default function SessionSummaryScreen() {
           style={[styles.exportButton, styles.exportButtonSecondary, exporting && styles.buttonDisabled]}
           onPress={handleExportMarkdown}
           disabled={exporting}
+          accessibilityRole="button"
+          accessibilityLabel="Export Markdown"
+          accessibilityState={{ disabled: exporting }}
         >
           <Text style={[styles.exportButtonText, styles.exportButtonSecondaryText]}>
             📝 Export Markdown
@@ -368,6 +380,8 @@ export default function SessionSummaryScreen() {
       <Pressable
         style={styles.closeButton}
         onPress={() => router.replace('/')}
+        accessibilityRole="button"
+        accessibilityLabel="Close summary"
       >
         <Text style={styles.closeButtonText}>Close Summary</Text>
       </Pressable>

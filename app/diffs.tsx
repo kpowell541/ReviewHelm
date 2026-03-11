@@ -84,7 +84,7 @@ export default function DiffsScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Diff Artifacts</Text>
+      <Text style={styles.title} accessibilityRole="header">Diff Artifacts</Text>
       <Text style={styles.subtitle}>
         Paste or upload diffs to provide AI context during reviews.
       </Text>
@@ -93,6 +93,8 @@ export default function DiffsScreen() {
         <Pressable
           style={styles.newButton}
           onPress={() => setShowPasteForm(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Paste a diff"
         >
           <Text style={styles.newButtonText}>+ Paste a Diff</Text>
         </Pressable>
@@ -105,6 +107,7 @@ export default function DiffsScreen() {
             onChangeText={setPasteLabel}
             placeholder="e.g., auth-refactor PR #142"
             placeholderTextColor={colors.textMuted}
+            accessibilityLabel="Diff label"
           />
 
           <Text style={styles.fieldLabel}>Diff Content</Text>
@@ -116,6 +119,7 @@ export default function DiffsScreen() {
             placeholderTextColor={colors.textMuted}
             multiline
             textAlignVertical="top"
+            accessibilityLabel="Diff content"
           />
 
           <View style={styles.formActions}>
@@ -126,6 +130,8 @@ export default function DiffsScreen() {
                 setPasteContent('');
                 setPasteLabel('');
               }}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
             >
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
@@ -137,6 +143,9 @@ export default function DiffsScreen() {
               ]}
               onPress={handlePaste}
               disabled={isPasting || !pasteContent.trim()}
+              accessibilityRole="button"
+              accessibilityLabel="Upload diff"
+              accessibilityState={{ disabled: isPasting || !pasteContent.trim() }}
             >
               {isPasting ? (
                 <ActivityIndicator size="small" color="#fff" />

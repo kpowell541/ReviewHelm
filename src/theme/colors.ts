@@ -9,10 +9,10 @@ export const colors = {
   // Text
   textPrimary: '#e8e8f0',
   textSecondary: '#9a9ab0',
-  textMuted: '#6a6a80',
+  textMuted: '#8585a0',
 
   // Accent
-  primary: '#6c63ff',
+  primary: '#7b73ff',
   primaryLight: '#8b83ff',
   primaryDark: '#4a42d4',
 
@@ -25,8 +25,8 @@ export const colors = {
   // Verdict
   looksGood: '#2ecc71',
   needsAttention: '#ff8c42',
-  na: '#555570',
-  skipped: '#3a3a50',
+  na: '#7a7a98',
+  skipped: '#5a5a78',
 
   // Confidence scale
   confidence1: '#ff4757',

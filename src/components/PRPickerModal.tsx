@@ -56,6 +56,8 @@ export function PRPickerModal({
               styles.addButton,
               { backgroundColor: accent, opacity: pressed ? 0.85 : 1 },
             ]}
+            accessibilityRole="button"
+            accessibilityLabel={addLabel}
           >
             <Text style={styles.addButtonText}>{addLabel}</Text>
           </Pressable>
@@ -80,6 +82,8 @@ export function PRPickerModal({
                   active && styles.cardActive,
                   { opacity: pressed ? 0.85 : 1 },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Select PR: ${pr.title}${subtitle ? ', ' + subtitle : ''}${active ? ', has in-progress session' : ''}`}
               >
                 <View style={styles.cardInfo}>
                   <Text style={styles.cardTitle} numberOfLines={1}>
@@ -114,10 +118,10 @@ export function PRPickerModal({
       )}
 
       <View style={styles.buttons}>
-        <Pressable onPress={onSkip} style={styles.skipButton}>
+        <Pressable onPress={onSkip} style={styles.skipButton} accessibilityRole="button" accessibilityLabel={skipLabel}>
           <Text style={styles.skipButtonText}>{skipLabel}</Text>
         </Pressable>
-        <Pressable onPress={onClose} style={styles.cancelButton}>
+        <Pressable onPress={onClose} style={styles.cancelButton} accessibilityRole="button" accessibilityLabel="Cancel">
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </Pressable>
       </View>

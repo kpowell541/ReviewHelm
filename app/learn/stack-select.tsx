@@ -11,7 +11,7 @@ export default function LearnStackSelectScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>
+      <Text style={styles.heading} accessibilityRole="header">
         Choose a stack to study your weak areas
       </Text>
 
@@ -33,6 +33,9 @@ export default function LearnStackSelectScreen() {
             onPress={() =>
               router.push(`/learn/${stack.id}`)
             }
+            accessibilityRole="link"
+            accessibilityLabel={`${stack.title}: ${stack.description}${gaps.length > 0 ? `, ${gaps.length} gap${gaps.length !== 1 ? 's' : ''}` : ''}`}
+            accessibilityHint="Opens learning session for this stack"
           >
             <StackLogo stackId={stack.id} fallbackIcon={stack.icon} size={32} style={{ marginRight: spacing.md }} />
             <View style={styles.stackInfo}>
@@ -79,6 +82,9 @@ export default function LearnStackSelectScreen() {
           { borderLeftColor: colors.learnMode, opacity: pressed ? 0.85 : 1 },
         ]}
         onPress={() => router.push('/learn/all')}
+        accessibilityRole="link"
+        accessibilityLabel="All Stacks: Study your weakest areas across all tech stacks"
+        accessibilityHint="Opens learning session for all stacks combined"
       >
         <Text style={styles.stackIcon}>📚</Text>
         <View style={styles.stackInfo}>

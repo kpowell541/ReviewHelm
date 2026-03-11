@@ -30,6 +30,7 @@ import { AddPRModal } from '../src/components/AddPRModal';
 import { FilterChips } from '../src/components/FilterChips';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useResponsive } from '../src/hooks/useResponsive';
+import { useReducedMotion } from '../src/hooks/useReducedMotion';
 import { AppFooter } from '../src/components/AppFooter';
 
 const STATUS_FILTERS: { key: PRStatus | 'all' | 'resolved'; label: string }[] = [
@@ -44,6 +45,7 @@ const STATUS_FILTERS: { key: PRStatus | 'all' | 'resolved'; label: string }[] = 
 export default function PRTrackerScreen() {
   const router = useRouter();
   const { isDesktop } = useResponsive();
+  const reduceMotion = useReducedMotion();
   const prs = usePRTrackerStore((s) => s.prs);
   const wipLimit = usePRTrackerStore((s) => s.wipLimit);
   const emergencySlotEnabled = usePRTrackerStore((s) => s.emergencySlotEnabled);
@@ -215,10 +217,10 @@ export default function PRTrackerScreen() {
   const handleMarkReviewed = useCallback(
     (pr: TrackedPR) => {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       markReviewed(pr.id);
     },
-    [markReviewed],
+    [markReviewed, reduceMotion],
   );
 
   const sessions = useSessionStore((s) => s.sessions);
@@ -418,6 +420,9 @@ export default function PRTrackerScreen() {
                   style={[styles.planReviewBtn, pr.lastReviewedAt && isToday(pr.lastReviewedAt) && styles.planReviewBtnActive]}
                   onPress={() => handleMarkReviewed(pr)}
                   hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Mark ${pr.title} as reviewed`}
+                  accessibilityState={{ checked: !!(pr.lastReviewedAt && isToday(pr.lastReviewedAt)) }}
                 >
                   <Text style={[styles.planReviewBtnText, pr.lastReviewedAt && isToday(pr.lastReviewedAt) && styles.planReviewBtnTextActive]}>
                     {pr.lastReviewedAt && isToday(pr.lastReviewedAt) ? '✓' : '○'}
@@ -447,9 +452,17 @@ export default function PRTrackerScreen() {
         style={styles.prCard}
         onPress={() => handleCardPress(pr)}
         onLongPress={() => handleDelete(pr)}
+        accessibilityRole="button"
+        accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${PR_STATUS_LABELS[pr.status]}`}
+        accessibilityHint="Tap for actions, long press to delete"
       >
         <View style={styles.prCardLeft}>
-          <Pressable onPress={() => cycleStatus(pr)} hitSlop={8}>
+          <Pressable
+            onPress={() => cycleStatus(pr)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={`Cycle status, currently ${PR_STATUS_LABELS[pr.status]}`}
+          >
             <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
           </Pressable>
         </View>
@@ -497,6 +510,9 @@ export default function PRTrackerScreen() {
                   void Haptics.selectionAsync();
                   setReviewOutcome(pr.id, 'requested-changes');
                 }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: pr.reviewOutcome === 'requested-changes' }}
+                accessibilityLabel="Changes needed"
               >
                 <View style={[
                   styles.radioCircle,
@@ -517,6 +533,9 @@ export default function PRTrackerScreen() {
                   void Haptics.selectionAsync();
                   setReviewOutcome(pr.id, 'no-changes-requested');
                 }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: pr.reviewOutcome === 'no-changes-requested' }}
+                accessibilityLabel="No changes needed"
               >
                 <View style={[
                   styles.radioCircle,
@@ -542,10 +561,13 @@ export default function PRTrackerScreen() {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
                   if (isReviewedToday) {
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     markReviewed(pr.id);
                   }
                 }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: !isReviewedToday }}
+                accessibilityLabel="Not reviewed today"
               >
                 <View style={[
                   styles.radioCircle,
@@ -565,10 +587,13 @@ export default function PRTrackerScreen() {
                   e.stopPropagation();
                   void Haptics.selectionAsync();
                   if (!isReviewedToday) {
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                     markReviewed(pr.id);
                   }
                 }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: isReviewedToday }}
+                accessibilityLabel="Reviewed today"
               >
                 <View style={[
                   styles.radioCircle,
@@ -595,6 +620,9 @@ export default function PRTrackerScreen() {
                   void Haptics.selectionAsync();
                   markAccepted(pr.id, 'accepted-clean');
                 }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: pr.acceptanceOutcome === 'accepted-clean' }}
+                accessibilityLabel="PR accepted"
               >
                 <View style={[
                   styles.checkbox,
@@ -617,6 +645,9 @@ export default function PRTrackerScreen() {
                   void Haptics.selectionAsync();
                   markAccepted(pr.id, 'abandoned');
                 }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: pr.acceptanceOutcome === 'abandoned' }}
+                accessibilityLabel="PR abandoned"
               >
                 <View style={[
                   styles.checkbox,
@@ -655,6 +686,8 @@ export default function PRTrackerScreen() {
         <Pressable
           style={({ pressed }) => [styles.addButton, { opacity: pressed ? 0.85 : 1 }]}
           onPress={openAddModal}
+          accessibilityRole="button"
+          accessibilityLabel="Add a PR"
         >
           <Text style={styles.addButtonText}>+ Add PR</Text>
         </Pressable>
@@ -662,7 +695,7 @@ export default function PRTrackerScreen() {
         {/* My PRs */}
         {authoredPRs.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>My PRs</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">My PRs</Text>
             {authoredPRs.map(renderPRCard)}
           </View>
         )}
@@ -670,7 +703,7 @@ export default function PRTrackerScreen() {
         {/* Reviewing */}
         {reviewPRs.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Reviewing</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Reviewing</Text>
             {reviewPRs.map(renderPRCard)}
           </View>
         )}

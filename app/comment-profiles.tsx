@@ -58,6 +58,9 @@ function Slider({
                 styles.sliderDot,
                 v <= value && styles.sliderDotActive,
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${label} level ${v}`}
+              accessibilityState={{ selected: v === value }}
             >
               <Text
                 style={[
@@ -171,7 +174,7 @@ export default function CommentProfilesScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.title}>
+        <Text style={styles.title} accessibilityRole="header">
           {editingProfile.id ? 'Edit Profile' : 'New Profile'}
         </Text>
 
@@ -184,6 +187,7 @@ export default function CommentProfilesScreen() {
           }
           placeholder="e.g., Mentoring, Direct..."
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Profile name"
         />
 
         <Text style={styles.fieldLabel}>Tone</Text>
@@ -198,6 +202,9 @@ export default function CommentProfilesScreen() {
               onPress={() =>
                 setEditingProfile({ ...editingProfile, tone })
               }
+              accessibilityRole="radio"
+              accessibilityLabel={`Tone: ${tone}`}
+              accessibilityState={{ selected: editingProfile.tone === tone }}
             >
               <Text
                 style={[
@@ -236,6 +243,9 @@ export default function CommentProfilesScreen() {
               includePraise: !editingProfile.includePraise,
             })
           }
+          accessibilityRole="switch"
+          accessibilityLabel="Include praise"
+          accessibilityState={{ checked: !!editingProfile.includePraise }}
         >
           <Text style={styles.toggleLabel}>Include praise</Text>
           <Text style={styles.toggleValue}>
@@ -251,6 +261,9 @@ export default function CommentProfilesScreen() {
               includeActionItems: !(editingProfile.includeActionItems ?? true),
             })
           }
+          accessibilityRole="switch"
+          accessibilityLabel="Include action items"
+          accessibilityState={{ checked: editingProfile.includeActionItems !== false }}
         >
           <Text style={styles.toggleLabel}>Include action items</Text>
           <Text style={styles.toggleValue}>
@@ -262,6 +275,8 @@ export default function CommentProfilesScreen() {
           <Pressable
             style={styles.cancelButton}
             onPress={() => setEditingProfile(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel editing profile"
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </Pressable>
@@ -272,6 +287,9 @@ export default function CommentProfilesScreen() {
             ]}
             onPress={saveProfile}
             disabled={isSaving}
+            accessibilityRole="button"
+            accessibilityLabel="Save profile"
+            accessibilityState={{ disabled: isSaving }}
           >
             {isSaving ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -289,7 +307,7 @@ export default function CommentProfilesScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      <Text style={styles.title}>Comment Style Profiles</Text>
+      <Text style={styles.title} accessibilityRole="header">Comment Style Profiles</Text>
       <Text style={styles.subtitle}>
         Create profiles to control how the AI drafts review comments.
       </Text>
@@ -322,18 +340,24 @@ export default function CommentProfilesScreen() {
             <Pressable
               onPress={() => activateProfile(profile.id)}
               style={styles.profileActionButton}
+              accessibilityRole="button"
+              accessibilityLabel={`Activate ${profile.name} profile`}
             >
               <Text style={styles.profileActionText}>Activate</Text>
             </Pressable>
             <Pressable
               onPress={() => setEditingProfile(profile)}
               style={styles.profileActionButton}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${profile.name} profile`}
             >
               <Text style={styles.profileActionText}>Edit</Text>
             </Pressable>
             <Pressable
               onPress={() => deleteProfile(profile.id)}
               style={styles.profileActionButton}
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${profile.name} profile`}
             >
               <Text
                 style={[
@@ -360,6 +384,8 @@ export default function CommentProfilesScreen() {
             includeActionItems: true,
           })
         }
+        accessibilityRole="button"
+        accessibilityLabel="Create new profile"
       >
         <Text style={styles.newButtonText}>+ New Profile</Text>
       </Pressable>

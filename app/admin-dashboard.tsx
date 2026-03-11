@@ -195,7 +195,7 @@ export default function AdminDashboardScreen() {
   return (
     <DesktopContainer>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Admin Dashboard</Text>
+        <Text style={styles.title} accessibilityRole="header">Admin Dashboard</Text>
         <Text style={styles.subtitle}>Anonymized aggregate metrics only</Text>
 
         {loading && (
@@ -206,14 +206,14 @@ export default function AdminDashboardScreen() {
 
         {!loading && error && (
           <View style={styles.card}>
-            <Text style={styles.errorText}>{error}</Text>
+            <Text style={styles.errorText} accessibilityRole="alert" accessibilityLiveRegion="polite">{error}</Text>
           </View>
         )}
 
         {!loading && data && (
           <>
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Privacy</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Privacy</Text>
               <Text style={styles.metaText}>Mode: {data.privacy.mode}</Text>
               <Text style={styles.metaText}>
                 PII included: {data.privacy.piiIncluded ? 'yes' : 'no'}
@@ -224,7 +224,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Checklist Job Health</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Checklist Job Health</Text>
               <Text style={styles.metaText}>
                 Weekly scan (UTC cron): {data.checklistJob.cadence.weeklyScanCronUtc}
               </Text>
@@ -254,7 +254,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Users</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Users</Text>
               <View style={styles.statsRow}>
                 <StatCard label="Total" value={data.users.total} />
                 <StatCard label="Active 30d" value={data.users.active30d} />
@@ -263,7 +263,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Sessions</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Sessions</Text>
               <View style={styles.statsRow}>
                 <StatCard label="Total" value={data.sessions.total} />
                 <StatCard label="Completed" value={data.sessions.completedTotal} />
@@ -273,7 +273,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>AI (30d)</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">AI (30d)</Text>
               <View style={styles.statsRow}>
                 <StatCard label="Calls" value={data.ai.calls30d} />
                 <StatCard label="Input Tokens" value={data.ai.inputTokens30d} />
@@ -282,7 +282,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Checklist Staleness</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Checklist Staleness</Text>
               <View style={styles.statsRow}>
                 <StatCard label="Total" value={data.checklistStaleness.summary.total} />
                 <StatCard label="Fresh" value={data.checklistStaleness.summary.fresh} tone="good" />
@@ -323,6 +323,9 @@ export default function AdminDashboardScreen() {
                 style={[styles.publishButton, publishing && styles.publishButtonDisabled]}
                 onPress={handlePublishAll}
                 disabled={publishing}
+                accessibilityRole="button"
+                accessibilityLabel="Publish all checklists"
+                accessibilityState={{ disabled: publishing }}
               >
                 {publishing ? (
                   <ActivityIndicator size="small" color={colors.textPrimary} />
@@ -336,7 +339,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Quality</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Quality</Text>
               <View style={styles.statsRow}>
                 <StatCard label="Feedback Total" value={data.commentFeedback.total} />
                 <StatCard label="Accepted" value={data.commentFeedback.accepted} tone="good" />
@@ -350,7 +353,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>PR Tracker</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">PR Tracker</Text>
               <View style={styles.statsRow}>
                 <StatCard label="Total PRs" value={data.trackedPrs.total} />
                 <StatCard label="Active PRs" value={data.trackedPrs.active} />
@@ -358,7 +361,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>PR Acceptance (Self PRs)</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">PR Acceptance (Self PRs)</Text>
               <Text style={styles.metaText}>
                 High clean acceptance % = checklists are adding value
               </Text>
@@ -375,7 +378,7 @@ export default function AdminDashboardScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Review Outcomes (Others' PRs)</Text>
+              <Text style={styles.cardTitle} accessibilityRole="header">Review Outcomes (Others' PRs)</Text>
               <Text style={styles.metaText}>
                 % of reviewed PRs where changes were requested
               </Text>

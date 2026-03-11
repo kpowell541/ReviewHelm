@@ -24,7 +24,7 @@ export default function BookmarksScreen() {
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      <Text style={styles.title}>Bookmarks</Text>
+      <Text style={styles.title} accessibilityRole="header">Bookmarks</Text>
 
       {items.length === 0 && (
         <EmptyState message="No bookmarks yet. Bookmark items from any checklist to save them here." />
@@ -32,7 +32,7 @@ export default function BookmarksScreen() {
 
       {groups.map(([stackTitle, entries]) => (
         <View key={stackTitle} style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
             {stackTitle} ({entries.length})
           </Text>
           {entries.map(({ id, found }) => (

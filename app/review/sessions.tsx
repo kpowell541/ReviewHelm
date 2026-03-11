@@ -207,7 +207,7 @@ export default function ReviewSessionsScreen() {
       <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
         <View style={styles.header}>
           <StackLogo stackId={headerStackId ?? ''} fallbackIcon={headerFallbackIcon} size={32} style={{ marginRight: spacing.sm }} />
-          <Text style={styles.heading}>{headerTitle}</Text>
+          <Text style={styles.heading} accessibilityRole="header">{headerTitle}</Text>
         </View>
 
         <Pressable
@@ -216,6 +216,8 @@ export default function ReviewSessionsScreen() {
             styles.newButton,
             { opacity: pressed ? 0.85 : 1 },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Start a new session with an existing PR"
         >
           <Text style={styles.newButtonText}>Start a new session with an existing PR</Text>
         </Pressable>
@@ -232,13 +234,15 @@ export default function ReviewSessionsScreen() {
             styles.addPRButton,
             { opacity: pressed ? 0.85 : 1 },
           ]}
+          accessibilityRole="button"
+          accessibilityLabel="Add a new PR to review"
         >
           <Text style={styles.addPRButtonText}>Add a new PR to review</Text>
         </Pressable>
 
         {activeSessions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Active ({activeSessions.length})</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Active ({activeSessions.length})</Text>
             {activeSessions.map((session) => {
               const prTitle = getPRTitle(session.linkedPRId);
               return (
@@ -277,7 +281,7 @@ export default function ReviewSessionsScreen() {
 
         {completedSessions.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Completed ({completedSessions.length})</Text>
+            <Text style={styles.sectionTitle} accessibilityRole="header">Completed ({completedSessions.length})</Text>
             {completedSessions.map((session) => {
               const prTitle = getPRTitle(session.linkedPRId);
               return (

@@ -66,7 +66,7 @@ export default function SearchScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Search Checklists</Text>
+      <Text style={styles.title} accessibilityRole="header">Search Checklists</Text>
 
       <TextInput
         style={styles.input}
@@ -76,10 +76,15 @@ export default function SearchScreen() {
         onChangeText={setQuery}
         autoFocus
         returnKeyType="search"
+        accessibilityLabel="Search checklist items"
       />
 
       {query.trim().length >= 2 && (
-        <Text style={styles.resultCount}>
+        <Text
+          style={styles.resultCount}
+          accessibilityRole="summary"
+          accessibilityLiveRegion="polite"
+        >
           {filtered.length} result{filtered.length !== 1 ? 's' : ''}
           {filtered.length === 50 ? ' (showing first 50)' : ''}
         </Text>
@@ -91,7 +96,7 @@ export default function SearchScreen() {
 
       {grouped.map(([stackTitle, results]) => (
         <View key={stackTitle} style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle} accessibilityRole="header">
             {stackTitle} ({results.length})
           </Text>
           {results.map((r) => (

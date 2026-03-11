@@ -495,7 +495,7 @@ export function ChecklistScreen({ sessionId }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTopRow}>
-          <Text style={[styles.headerTitle, { flex: 1 }]} numberOfLines={1}>
+          <Text style={[styles.headerTitle, { flex: 1 }]} numberOfLines={1} accessibilityRole="header">
             {checklist.meta.title}
           </Text>
           <Pressable
@@ -504,6 +504,9 @@ export function ChecklistScreen({ sessionId }: Props) {
               setBulkMode((prev) => !prev);
               setBulkSelected(new Set());
             }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: bulkMode }}
+            accessibilityLabel={bulkMode ? 'Exit bulk mode' : 'Enter bulk mode'}
           >
             <Text style={[styles.bulkToggleText, bulkMode && styles.bulkToggleTextActive]}>
               {bulkMode ? 'Exit Bulk' : 'Bulk'}
@@ -533,6 +536,9 @@ export function ChecklistScreen({ sessionId }: Props) {
         <Pressable
           onPress={() => setSessionNotesCollapsed((prev) => !prev)}
           style={styles.notesHeader}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: !sessionNotesCollapsed }}
+          accessibilityLabel={`Session notes${hasSessionNotes ? ', has notes' : ''}`}
         >
           <Text style={styles.notesTitle}>
             Session Notes {hasSessionNotes ? '(has notes)' : ''}
@@ -549,6 +555,7 @@ export function ChecklistScreen({ sessionId }: Props) {
             placeholderTextColor={colors.textMuted}
             multiline
             textAlignVertical="top"
+            accessibilityLabel="Session notes"
           />
         )}
       </View>
@@ -560,6 +567,8 @@ export function ChecklistScreen({ sessionId }: Props) {
           onChangeText={setSearchQuery}
           placeholder="Search checklist items..."
           placeholderTextColor={colors.textMuted}
+          accessibilityLabel="Search checklist items"
+          accessibilityRole="search"
         />
         <View style={styles.severityChipRow}>
           {SEVERITY_ORDER.map((severity) => {
@@ -572,6 +581,9 @@ export function ChecklistScreen({ sessionId }: Props) {
                   styles.severityChip,
                   selected && styles.severityChipSelected,
                 ]}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: selected }}
+                accessibilityLabel={`${severityChipLabel(severity)} severity filter`}
               >
                 <Text
                   style={[
@@ -619,7 +631,12 @@ export function ChecklistScreen({ sessionId }: Props) {
             <View style={styles.securityBanner}>
               <View style={styles.securityBannerHeader}>
                 <Text style={styles.securityBannerTitle}>Security Reminder</Text>
-                <Pressable onPress={() => setSecurityBannerDismissed(true)} hitSlop={8}>
+                <Pressable
+                  onPress={() => setSecurityBannerDismissed(true)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss security reminder"
+                >
                   <Text style={styles.securityBannerDismiss}>x</Text>
                 </Pressable>
               </View>
@@ -642,9 +659,12 @@ export function ChecklistScreen({ sessionId }: Props) {
             <Pressable
               onPress={() => toggleSection(sectionEntry.section.id)}
               style={styles.sectionHeader}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: !isCollapsed }}
+              accessibilityLabel={`${sectionEntry.section.title}, ${progress.responded} of ${progress.total} reviewed`}
             >
               <Text style={styles.sectionChevron}>{isCollapsed ? '▶' : '▼'}</Text>
-              <Text style={styles.sectionTitle} numberOfLines={1}>
+              <Text style={styles.sectionTitle} numberOfLines={1} accessibilityRole="header">
                 {sectionEntry.section.title}
               </Text>
               <Text style={styles.sectionCount}>
@@ -659,6 +679,9 @@ export function ChecklistScreen({ sessionId }: Props) {
               <Pressable
                 style={styles.bulkCheckbox}
                 onPress={() => toggleBulkItem(item.id)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: bulkSelected.has(item.id) }}
+                accessibilityLabel={`Select ${item.text}`}
               >
                 <View style={[
                   styles.checkbox,
@@ -699,6 +722,8 @@ export function ChecklistScreen({ sessionId }: Props) {
                 styles.completeButton,
                 { opacity: pressed ? 0.85 : 1 },
               ]}
+              accessibilityRole="button"
+              accessibilityLabel={session.isComplete ? 'Re-complete session' : 'Complete session'}
             >
               <Text style={styles.completeButtonText}>
                 {session.isComplete ? 'Re-complete Session' : 'Complete Session'}
@@ -711,6 +736,8 @@ export function ChecklistScreen({ sessionId }: Props) {
                   styles.addSectionsButton,
                   { opacity: pressed ? 0.85 : 1 },
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={hasSkippedSections ? 'Add or remove sections' : 'Remove sections'}
               >
                 <Text style={styles.addSectionsButtonText}>
                   {hasSkippedSections ? 'Add / Remove sections' : 'Remove sections'}
@@ -754,6 +781,8 @@ export function ChecklistScreen({ sessionId }: Props) {
                   <Pressable
                     style={styles.modalSectionRow}
                     onPress={() => jumpToSection(index)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Jump to ${entry.section.title}, ${progress.responded} of ${progress.total} reviewed`}
                   >
                     <Text style={styles.modalSectionTitle} numberOfLines={1}>
                       {entry.section.title}
@@ -786,18 +815,24 @@ export function ChecklistScreen({ sessionId }: Props) {
           <Pressable
             style={styles.bulkActionButton}
             onPress={() => bulkSetVerdict('looks-good')}
+            accessibilityRole="button"
+            accessibilityLabel="Mark selected as looks good"
           >
             <Text style={styles.bulkActionText}>✓ Good</Text>
           </Pressable>
           <Pressable
             style={styles.bulkActionButton}
             onPress={() => bulkSetVerdict('na')}
+            accessibilityRole="button"
+            accessibilityLabel="Mark selected as not applicable"
           >
             <Text style={styles.bulkActionText}>— N/A</Text>
           </Pressable>
           <Pressable
             style={styles.bulkActionButton}
             onPress={() => bulkSetConfidence(5)}
+            accessibilityRole="button"
+            accessibilityLabel="Set selected confidence to 5"
           >
             <Text style={styles.bulkActionText}>5★</Text>
           </Pressable>
@@ -863,7 +898,13 @@ function SectionManagerModal({
             renderItem={({ item }) => {
               const isSelected = selected.has(item.id);
               return (
-                <Pressable style={styles.modalSectionRow} onPress={() => toggle(item.id)}>
+                <Pressable
+                  style={styles.modalSectionRow}
+                  onPress={() => toggle(item.id)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
+                  accessibilityLabel={`${item.title}, ${item.itemCount} items`}
+                >
                   <View style={[styles.sectionCheckbox, isSelected && styles.sectionCheckboxSelected]}>
                     {isSelected && <Text style={styles.sectionCheckmark}>✓</Text>}
                   </View>
@@ -879,12 +920,17 @@ function SectionManagerModal({
             <Pressable
               style={styles.cancelButton}
               onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
             <Pressable
               style={[styles.addAllSectionsButton, !hasChanges && { opacity: 0.4 }]}
               onPress={() => hasChanges && onSave([...selected])}
+              accessibilityRole="button"
+              accessibilityLabel={`Save ${selected.size} of ${sections.length} sections`}
+              accessibilityState={{ disabled: !hasChanges }}
             >
               <Text style={styles.addAllSectionsText}>
                 Save ({selected.size}/{sections.length})
