@@ -244,27 +244,37 @@ export default function SessionSummaryScreen() {
           <Text style={styles.sectionTitle}>
             Items Needing Attention ({needsAttentionItems.length})
           </Text>
-          {needsAttentionItems.map((item) => (
-            <Pressable
-              key={item.id}
-              style={styles.itemRow}
-              onPress={() =>
-                router.push(
-                  `/deep-dive/${encodeURIComponent(item.id)}?sessionId=${encodeURIComponent(sessionId)}`,
-                )
-              }
-            >
-              <View
-                style={[
-                  styles.sevDot,
-                  { backgroundColor: getSevColor(item.severity) },
-                ]}
-              />
-              <Text style={styles.itemText} numberOfLines={2}>
-                {item.text}
-              </Text>
-            </Pressable>
-          ))}
+          {needsAttentionItems.map((item) => {
+            const itemNotes = session?.itemResponses[item.id]?.notes;
+            return (
+              <Pressable
+                key={item.id}
+                style={styles.attentionItemRow}
+                onPress={() =>
+                  router.push(
+                    `/deep-dive/${encodeURIComponent(item.id)}?sessionId=${encodeURIComponent(sessionId)}`,
+                  )
+                }
+              >
+                <View style={styles.attentionItemHeader}>
+                  <View
+                    style={[
+                      styles.sevDot,
+                      { backgroundColor: getSevColor(item.severity) },
+                    ]}
+                  />
+                  <Text style={styles.itemText} numberOfLines={2}>
+                    {item.text}
+                  </Text>
+                </View>
+                {itemNotes ? (
+                  <Text style={styles.attentionItemNotes} numberOfLines={4}>
+                    {itemNotes}
+                  </Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
         </View>
       )}
 
@@ -354,6 +364,14 @@ export default function SessionSummaryScreen() {
           </Text>
         </Pressable>
       </View>
+
+      {/* Close Summary */}
+      <Pressable
+        style={styles.closeButton}
+        onPress={() => router.replace('/')}
+      >
+        <Text style={styles.closeButtonText}>Close Summary</Text>
+      </Pressable>
 
       <View style={{ height: spacing['4xl'] }} />
     </ScrollView>
@@ -584,5 +602,36 @@ const styles = StyleSheet.create({
   },
   exportButtonSecondaryText: {
     color: colors.textSecondary,
+  },
+  attentionItemRow: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  attentionItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  attentionItemNotes: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+    marginLeft: spacing.sm + 8,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+  closeButton: {
+    marginTop: spacing.xl,
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  closeButtonText: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    color: colors.textPrimary,
   },
 });
