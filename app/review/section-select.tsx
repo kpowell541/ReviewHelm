@@ -17,7 +17,7 @@ export default function SectionSelectScreen() {
   const router = useRouter();
   const saveTemplate = useTemplateStore((s) => s.saveTemplate);
   const saveRepoConfig = useRepoConfigStore((s) => s.saveRepoConfig);
-  const { stack, stacks, repo, prId } = useLocalSearchParams<{ stack?: string; stacks?: string; repo?: string; prId?: string }>();
+  const { stack, stacks, repo, prId, mode } = useLocalSearchParams<{ stack?: string; stacks?: string; repo?: string; prId?: string; mode?: string }>();
   const stackIds = useMemo(
     () => {
       if (stacks) return stacks.split(',') as StackId[];
@@ -86,6 +86,7 @@ export default function SectionSelectScreen() {
 
   const repoParam = repo ? `&repo=${encodeURIComponent(repo)}` : '';
   const prIdParam = prId ? `&prId=${encodeURIComponent(prId)}` : '';
+  const modeParam = mode ? `&mode=${encodeURIComponent(mode)}` : '';
 
   const handleContinue = () => {
     if (selected.size === 0) return;
@@ -95,7 +96,7 @@ export default function SectionSelectScreen() {
       ? `stack=${stackIds[0]}`
       : `stacks=${stackIds.join(',')}`;
     const sectionParam = isAllSelected ? '' : `&sections=${selectedArray.join(',')}`;
-    router.push(`/review/sessions?${stackParam}${sectionParam}${repoParam}${prIdParam}` as '/review/sessions');
+    router.push(`/review/sessions?${stackParam}${sectionParam}${repoParam}${prIdParam}${modeParam}` as '/review/sessions');
   };
 
   const totalSelected = stackSections.reduce((sum, ss) => {
