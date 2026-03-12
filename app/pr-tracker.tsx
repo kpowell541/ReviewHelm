@@ -681,7 +681,7 @@ export default function PRTrackerScreen() {
               </View>
             </View>
             {/* Re-review: shown when changes were ever needed */}
-            {pr.changesEverNeeded && (
+            {(pr.changesEverNeeded || pr.reviewOutcome === 'requested-changes') && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Re-review</Text>
                 <View style={styles.controlOptions}>
@@ -737,7 +737,7 @@ export default function PRTrackerScreen() {
           <View style={styles.controlsRow}>
             {/* Review round counter */}
             <View style={styles.controlGroup}>
-              <Text style={styles.controlLabel}>Round</Text>
+              <Text style={styles.controlLabel}>Number Reviews</Text>
               <View style={styles.stepperRow}>
                 <Pressable
                   style={styles.stepperBtn}
@@ -794,7 +794,7 @@ export default function PRTrackerScreen() {
                   <Text style={[
                     styles.radioLabel,
                     pr.changesEverNeeded && styles.radioLabelWarn,
-                  ]}>Requested</Text>
+                  ]}>Changes Requested</Text>
                 </Pressable>
               </View>
             </View>
