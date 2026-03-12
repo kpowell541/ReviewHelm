@@ -52,7 +52,17 @@ export type StackId =
   | 'mobile-testing'
   | 'react'
   | 'nodejs'
-  | 'protobuf';
+  | 'protobuf'
+  | 'accessibility'
+  | 'observability'
+  | 'microservices'
+  | 'websockets'
+  | 'ml-engineering'
+  | 'svelte'
+  | 'haskell'
+  | 'zig'
+  | 'api-versioning'
+  | 'compliance';
 
 export const SEVERITY_WEIGHTS: Record<Severity, number> = {
   blocker: 4,

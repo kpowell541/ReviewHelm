@@ -1,0 +1,502 @@
+{
+  "meta": {
+    "id": "websockets",
+    "mode": "review",
+    "title": "WebSockets",
+    "shortTitle": "WebSockets",
+    "description": "Review checklist for WebSocket implementations",
+    "icon": "🔗",
+    "totalItems": 26,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "websockets.connection-lifecycle",
+      "title": "Connection Lifecycle",
+      "items": [
+        {
+          "id": "websockets.connection-lifecycle.proper-handshake",
+          "text": "Is the WebSocket handshake properly validated with correct headers and protocols?",
+          "severity": "blocker",
+          "tags": ["security", "protocol"],
+          "baseContent": {
+            "whatItMeans": "The server validates the Upgrade request, checks the Origin header, and negotiates subprotocols correctly before upgrading the HTTP connection.",
+            "whyItMatters": "A poorly validated handshake can allow cross-site WebSocket hijacking (CSWSH) or connections from unauthorized origins.",
+            "howToVerify": "- Check that Origin header is validated against an allowlist\n- Verify subprotocol negotiation is handled\n- Ensure the server returns correct Sec-WebSocket-Accept header",
+            "exampleComment": "The Origin header isn't being checked during the WebSocket upgrade. This allows any website to open a WebSocket connection to our server.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "wss.on('connection', (ws, req) => {\n  // No origin validation\n  ws.on('message', handleMessage);\n});"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "wss.on('connection', (ws, req) => {\n  const origin = req.headers.origin;\n  if (!ALLOWED_ORIGINS.includes(origin)) {\n    ws.close(1008, 'Origin not allowed');\n    return;\n  }\n  ws.on('message', handleMessage);\n});"
+              }
+            ],
+            "keyTakeaway": "Always validate the Origin header and negotiate subprotocols during the WebSocket handshake.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.connection-lifecycle.graceful-close",
+          "text": "Are connections closed gracefully with appropriate close codes and reasons?",
+          "severity": "major",
+          "tags": ["reliability"],
+          "baseContent": {
+            "whatItMeans": "When either side terminates the connection, it sends a close frame with a standard status code (1000 for normal, 1001 for going away, etc.) and an optional reason string.",
+            "whyItMatters": "Abrupt disconnections without proper close frames leave the other side uncertain about the connection state, causing resource leaks and inconsistent behavior.",
+            "howToVerify": "- Check that close() is called with appropriate status codes\n- Verify the server handles close frames from clients\n- Ensure close reasons are logged for debugging",
+            "exampleComment": "The connection is terminated with `ws.terminate()` instead of `ws.close(1000)`. This doesn't send a close frame, so the client can't distinguish between a crash and an intentional shutdown.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "// Abrupt termination\nws.terminate();"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "// Graceful close with code and reason\nws.close(1000, 'Session ended');\n\n// Force terminate only after timeout\nsetTimeout(() => {\n  if (ws.readyState !== WebSocket.CLOSED) {\n    ws.terminate();\n  }\n}, 5000);"
+              }
+            ],
+            "keyTakeaway": "Use standard close codes for graceful shutdowns and reserve terminate() for unresponsive connections.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.connection-lifecycle.heartbeat-ping-pong",
+          "text": "Is a heartbeat/ping-pong mechanism implemented to detect stale connections?",
+          "severity": "major",
+          "tags": ["reliability"],
+          "baseContent": {
+            "whatItMeans": "The server periodically sends ping frames and expects pong responses, terminating connections that fail to respond within a timeout.",
+            "whyItMatters": "Without heartbeats, half-open connections (where one side has silently disconnected) consume server resources indefinitely and lead to phantom connections.",
+            "howToVerify": "- Check for ping/pong frame handling\n- Verify there's a timeout for unresponsive connections\n- Ensure the interval is appropriate (typically 30-60 seconds)",
+            "exampleComment": "There's no heartbeat mechanism. If a client silently disconnects (e.g., network drop), the server won't detect it until it tries to send a message.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "const HEARTBEAT_INTERVAL = 30000;\n\nfunction heartbeat() {\n  this.isAlive = true;\n}\n\nwss.on('connection', (ws) => {\n  ws.isAlive = true;\n  ws.on('pong', heartbeat);\n});\n\nsetInterval(() => {\n  wss.clients.forEach((ws) => {\n    if (!ws.isAlive) return ws.terminate();\n    ws.isAlive = false;\n    ws.ping();\n  });\n}, HEARTBEAT_INTERVAL);"
+              }
+            ],
+            "keyTakeaway": "Implement ping/pong heartbeats to detect and clean up stale connections.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.connection-lifecycle.connection-limits",
+          "text": "Are per-client and global connection limits enforced?",
+          "severity": "major",
+          "tags": ["scalability", "security"],
+          "baseContent": {
+            "whatItMeans": "The server limits the number of concurrent WebSocket connections per user/IP and globally to prevent resource exhaustion.",
+            "whyItMatters": "Without limits, a single client or attacker can open thousands of connections and exhaust server memory or file descriptors.",
+            "howToVerify": "- Check for per-IP or per-user connection counting\n- Verify there's a global maximum connections limit\n- Ensure excess connections are rejected with appropriate close codes",
+            "exampleComment": "There's no limit on connections per user. A single user could open hundreds of tabs and exhaust the server's connection pool.",
+            "codeExamples": [],
+            "keyTakeaway": "Enforce connection limits per client and globally to prevent resource exhaustion attacks.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.connection-lifecycle.cleanup-on-disconnect",
+          "text": "Are all resources properly cleaned up when a connection closes?",
+          "severity": "major",
+          "tags": ["reliability", "memory"],
+          "baseContent": {
+            "whatItMeans": "When a WebSocket connection closes (normally or abnormally), all associated resources — event listeners, timers, subscriptions, and in-memory state — are released.",
+            "whyItMatters": "Leaked event listeners and uncancelled timers cause memory leaks that degrade server performance over time.",
+            "howToVerify": "- Check the close/error handlers for cleanup logic\n- Verify subscriptions (e.g., pub/sub channels) are unsubscribed\n- Ensure timers and intervals are cleared",
+            "exampleComment": "The Redis subscription for this user's channel isn't being unsubscribed when the WebSocket closes. Over time, this will accumulate orphaned subscriptions.",
+            "codeExamples": [],
+            "keyTakeaway": "Always clean up subscriptions, timers, and state in the close handler.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "websockets.reconnection",
+      "title": "Reconnection & Resilience",
+      "items": [
+        {
+          "id": "websockets.reconnection.exponential-backoff",
+          "text": "Does the client use exponential backoff with jitter for reconnection attempts?",
+          "severity": "major",
+          "tags": ["reliability", "scalability"],
+          "baseContent": {
+            "whatItMeans": "When a connection drops, the client waits progressively longer between retries (e.g., 1s, 2s, 4s, 8s...) with random jitter added to each delay.",
+            "whyItMatters": "Without backoff, all disconnected clients reconnect simultaneously after a server restart (thundering herd), potentially crashing the server again.",
+            "howToVerify": "- Check that retry delays increase exponentially\n- Verify jitter is added to prevent synchronized retries\n- Ensure there's a maximum backoff cap (e.g., 30 seconds)\n- Verify a maximum retry count or total timeout exists",
+            "exampleComment": "The reconnection logic uses a fixed 1-second delay. After a server restart, all clients will reconnect at once. Use exponential backoff with jitter.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "function reconnect() {\n  setTimeout(() => new WebSocket(url), 1000);\n}"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "function reconnect(attempt = 0) {\n  const delay = Math.min(1000 * 2 ** attempt, 30000);\n  const jitter = delay * 0.5 * Math.random();\n  setTimeout(() => {\n    const ws = new WebSocket(url);\n    ws.onerror = () => reconnect(attempt + 1);\n  }, delay + jitter);\n}"
+              }
+            ],
+            "keyTakeaway": "Exponential backoff with jitter prevents thundering herd problems after outages.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.reconnection.message-queue-offline",
+          "text": "Are messages queued when the connection is down and replayed on reconnect?",
+          "severity": "minor",
+          "tags": ["reliability", "ux"],
+          "baseContent": {
+            "whatItMeans": "The client buffers outgoing messages during disconnection and sends them when the connection is re-established, preventing data loss.",
+            "whyItMatters": "Users may perform actions while briefly disconnected. Without queuing, those actions are silently lost.",
+            "howToVerify": "- Check for a message queue/buffer in the client\n- Verify queued messages are sent on reconnect\n- Ensure the queue has a maximum size to prevent unbounded memory use",
+            "exampleComment": "Messages sent while the socket is disconnected are silently dropped. Consider queuing them for replay on reconnect.",
+            "codeExamples": [],
+            "keyTakeaway": "Queue messages during disconnection to prevent silent data loss.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.reconnection.state-resync",
+          "text": "Is application state properly re-synchronized after reconnection?",
+          "severity": "major",
+          "tags": ["consistency"],
+          "baseContent": {
+            "whatItMeans": "After reconnecting, the client fetches any state updates it missed during the disconnection period rather than assuming its local state is current.",
+            "whyItMatters": "Messages received by the server while the client was disconnected are lost. Without re-sync, the client's view becomes stale and inconsistent.",
+            "howToVerify": "- Check that the client sends a 'last seen' timestamp or sequence number on reconnect\n- Verify the server sends missed updates or a full state snapshot\n- Ensure the re-sync doesn't create duplicate messages",
+            "exampleComment": "After reconnecting, the client doesn't request missed messages. If another user sent a chat message during the disconnect, it will never appear.",
+            "codeExamples": [],
+            "keyTakeaway": "Always re-sync state after reconnection using timestamps or sequence numbers.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.reconnection.connection-state-ui",
+          "text": "Is the connection status visible to the user with appropriate UI feedback?",
+          "severity": "minor",
+          "tags": ["ux"],
+          "baseContent": {
+            "whatItMeans": "The UI displays whether the WebSocket is connected, reconnecting, or disconnected, so users understand when their actions may not be delivered.",
+            "whyItMatters": "Without connection status indicators, users may type messages or perform actions that silently fail, leading to confusion and data loss.",
+            "howToVerify": "- Check for a connection status indicator in the UI\n- Verify the UI updates during reconnection attempts\n- Ensure error states are clearly communicated",
+            "exampleComment": "There's no visual indicator when the WebSocket disconnects. Users may not realize their messages aren't being sent.",
+            "codeExamples": [],
+            "keyTakeaway": "Show connection status so users know when actions may not be delivered.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.reconnection.session-resumption",
+          "text": "Can sessions be resumed after reconnect without losing context?",
+          "severity": "minor",
+          "tags": ["ux", "reliability"],
+          "baseContent": {
+            "whatItMeans": "The server associates reconnecting clients with their previous session via a session token or connection ID, preserving room memberships, subscriptions, and cursor positions.",
+            "whyItMatters": "Without session resumption, users lose their place in conversations, rooms, or collaborative documents every time the connection blips.",
+            "howToVerify": "- Check for a session/connection ID sent on reconnect\n- Verify the server restores subscriptions and room memberships\n- Ensure session tokens expire after a reasonable timeout",
+            "exampleComment": "The client creates a brand new session on each reconnect, losing all room subscriptions. Consider sending the previous session ID to resume.",
+            "codeExamples": [],
+            "keyTakeaway": "Use session tokens to resume context across reconnections.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "websockets.message-handling",
+      "title": "Message Handling & Protocol",
+      "items": [
+        {
+          "id": "websockets.message-handling.message-format-validation",
+          "text": "Are incoming messages validated against a defined schema before processing?",
+          "severity": "blocker",
+          "tags": ["security", "reliability"],
+          "baseContent": {
+            "whatItMeans": "Every incoming WebSocket message is parsed, validated against an expected schema (type field, required properties, value constraints), and rejected if malformed.",
+            "whyItMatters": "Processing unvalidated messages can lead to crashes, injection attacks, or corrupted application state.",
+            "howToVerify": "- Check that incoming messages are parsed with try/catch\n- Verify schema validation (e.g., zod, ajv, or manual checks)\n- Ensure invalid messages are rejected with an error response\n- Check for maximum message size limits",
+            "exampleComment": "Incoming messages are JSON.parsed but never validated against a schema. A malformed message with a missing `type` field would crash the handler.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "ws.on('message', (raw) => {\n  const msg = JSON.parse(raw);\n  handlers[msg.type](msg.payload); // No validation\n});"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "ws.on('message', (raw) => {\n  let msg;\n  try {\n    msg = messageSchema.parse(JSON.parse(raw));\n  } catch (e) {\n    ws.send(JSON.stringify({ error: 'Invalid message format' }));\n    return;\n  }\n  handlers[msg.type]?.(msg.payload);\n});"
+              }
+            ],
+            "keyTakeaway": "Validate every incoming message against a schema before processing.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.message-handling.message-size-limits",
+          "text": "Are maximum message size limits enforced to prevent memory exhaustion?",
+          "severity": "major",
+          "tags": ["security", "scalability"],
+          "baseContent": {
+            "whatItMeans": "The server configures a maximum payload size for WebSocket messages and rejects messages that exceed it.",
+            "whyItMatters": "Without size limits, a client can send a multi-gigabyte message that exhausts server memory and crashes the process.",
+            "howToVerify": "- Check the WebSocket server configuration for maxPayload/maxMessageSize\n- Verify the limit is appropriate for the use case\n- Ensure oversized messages are rejected with a close code",
+            "exampleComment": "There's no maxPayload configured on the WebSocket server. A client could send a 1GB message and crash the Node.js process.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "const wss = new WebSocket.Server({\n  port: 8080,\n  maxPayload: 64 * 1024, // 64KB limit\n});"
+              }
+            ],
+            "keyTakeaway": "Always set maxPayload to prevent memory exhaustion from oversized messages.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.message-handling.binary-vs-text",
+          "text": "Is the message type (text vs binary) used appropriately for the data being sent?",
+          "severity": "minor",
+          "tags": ["performance", "protocol"],
+          "baseContent": {
+            "whatItMeans": "Text frames are used for JSON/string data, while binary frames are used for binary data (images, protobuf, files) — not mixing the two.",
+            "whyItMatters": "Sending binary data as base64-encoded text wastes ~33% bandwidth. Sending text as binary requires unnecessary decoding on the receiver.",
+            "howToVerify": "- Check that JSON messages use text frames\n- Verify binary data (files, images) uses binary frames\n- Ensure the receiver handles both frame types correctly",
+            "exampleComment": "Binary file uploads are being base64-encoded and sent as text frames. Use binary frames to save ~33% bandwidth.",
+            "codeExamples": [],
+            "keyTakeaway": "Use text frames for JSON and binary frames for binary data.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.message-handling.idempotent-messages",
+          "text": "Are messages designed to be idempotent to handle duplicate delivery safely?",
+          "severity": "minor",
+          "tags": ["reliability"],
+          "baseContent": {
+            "whatItMeans": "Each message includes a unique ID, and the server/client can safely process the same message twice without side effects (e.g., double-charging, duplicate inserts).",
+            "whyItMatters": "Reconnection and retry logic can cause messages to be delivered more than once. Without idempotency, duplicates cause data corruption.",
+            "howToVerify": "- Check for message IDs or idempotency keys\n- Verify the server deduplicates by message ID\n- Ensure state mutations are idempotent",
+            "exampleComment": "The 'place-order' message has no idempotency key. If the client retries after a reconnect, the order could be placed twice.",
+            "codeExamples": [],
+            "keyTakeaway": "Include message IDs and implement server-side deduplication for critical operations.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.message-handling.rate-limiting",
+          "text": "Is message rate limiting implemented to prevent abuse?",
+          "severity": "major",
+          "tags": ["security", "scalability"],
+          "baseContent": {
+            "whatItMeans": "The server tracks the rate of incoming messages per connection and throttles or disconnects clients that exceed the limit.",
+            "whyItMatters": "Without rate limiting, a malicious or buggy client can flood the server with messages, degrading performance for all users.",
+            "howToVerify": "- Check for per-connection message counting\n- Verify there's a messages-per-second or messages-per-minute limit\n- Ensure the client receives feedback when throttled",
+            "exampleComment": "There's no rate limiting on incoming WebSocket messages. A client could send thousands of messages per second and overwhelm the server.",
+            "codeExamples": [],
+            "keyTakeaway": "Rate limit incoming messages to protect server resources from abuse.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.message-handling.error-responses",
+          "text": "Are errors communicated back to the client with structured error messages?",
+          "severity": "minor",
+          "tags": ["protocol", "ux"],
+          "baseContent": {
+            "whatItMeans": "When the server encounters an error processing a message, it sends a structured error response (with error code, message, and the original request ID) rather than silently failing.",
+            "whyItMatters": "Without error responses, clients can't distinguish between a message being processed successfully, being ignored, or causing an error.",
+            "howToVerify": "- Check that error responses include a type/code and human-readable message\n- Verify errors reference the original request ID for correlation\n- Ensure sensitive error details aren't leaked to clients",
+            "exampleComment": "When message processing fails, no error is sent back. The client has no way to know the action failed. Consider sending an error frame with the original message ID.",
+            "codeExamples": [],
+            "keyTakeaway": "Send structured error responses so clients can handle failures gracefully.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "websockets.security",
+      "title": "Security",
+      "items": [
+        {
+          "id": "websockets.security.authentication",
+          "text": "Is authentication performed before or during the WebSocket upgrade?",
+          "severity": "blocker",
+          "tags": ["security", "auth"],
+          "baseContent": {
+            "whatItMeans": "Users are authenticated via a token (in query param, cookie, or first message) before the server accepts the WebSocket connection, not after.",
+            "whyItMatters": "Unauthenticated WebSocket connections can access real-time data streams, send unauthorized messages, or consume server resources.",
+            "howToVerify": "- Check that authentication happens during the HTTP upgrade request or in the first message\n- Verify tokens are validated (not just present)\n- Ensure unauthenticated connections are immediately closed",
+            "exampleComment": "The WebSocket connection is accepted without any authentication. Anyone with the URL can connect and receive all real-time updates.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "server.on('upgrade', (req, socket, head) => {\n  const token = new URL(req.url, 'http://x').searchParams.get('token');\n  const user = verifyToken(token);\n  if (!user) {\n    socket.write('HTTP/1.1 401 Unauthorized\\r\\n\\r\\n');\n    socket.destroy();\n    return;\n  }\n  wss.handleUpgrade(req, socket, head, (ws) => {\n    ws.user = user;\n    wss.emit('connection', ws, req);\n  });\n});"
+              }
+            ],
+            "keyTakeaway": "Authenticate during the upgrade handshake, not after the connection is established.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.security.authorization-per-message",
+          "text": "Is authorization checked for each message action, not just at connection time?",
+          "severity": "blocker",
+          "tags": ["security", "auth"],
+          "baseContent": {
+            "whatItMeans": "Each incoming message is checked against the user's permissions (e.g., can they post to this channel? Can they modify this resource?) rather than relying solely on the initial connection auth.",
+            "whyItMatters": "Permissions can change during a long-lived connection. A user may lose access to a room or have their role downgraded while connected.",
+            "howToVerify": "- Check that message handlers verify permissions before processing\n- Verify role/permission changes are reflected in real-time\n- Ensure users can't send messages to channels they haven't joined",
+            "exampleComment": "Authorization is only checked at connection time. If a user's permissions are revoked, they can still send messages until they disconnect.",
+            "codeExamples": [],
+            "keyTakeaway": "Check authorization for every message action, not just at connection time.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.security.wss-encryption",
+          "text": "Is WSS (WebSocket Secure) used in production to encrypt traffic?",
+          "severity": "blocker",
+          "tags": ["security", "encryption"],
+          "baseContent": {
+            "whatItMeans": "Production WebSocket connections use the `wss://` protocol (WebSocket over TLS) rather than unencrypted `ws://`.",
+            "whyItMatters": "Unencrypted WebSocket traffic can be intercepted, modified, or sniffed by anyone on the network path, exposing authentication tokens and user data.",
+            "howToVerify": "- Check that production URLs use wss:// not ws://\n- Verify TLS certificates are valid\n- Ensure the server redirects or rejects ws:// connections in production",
+            "exampleComment": "The production WebSocket URL uses ws:// instead of wss://. All traffic, including auth tokens, is sent in plaintext.",
+            "codeExamples": [],
+            "keyTakeaway": "Always use WSS (TLS) in production to encrypt WebSocket traffic.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.security.input-sanitization",
+          "text": "Is user input from WebSocket messages sanitized before display or storage?",
+          "severity": "major",
+          "tags": ["security", "xss"],
+          "baseContent": {
+            "whatItMeans": "Message content received via WebSocket is sanitized before being rendered in HTML, stored in a database, or forwarded to other clients to prevent XSS and injection attacks.",
+            "whyItMatters": "WebSocket messages bypass traditional form-based input sanitization. If messages are rendered as HTML without escaping, it enables stored XSS attacks.",
+            "howToVerify": "- Check that message content is HTML-escaped before rendering\n- Verify parameterized queries are used for database storage\n- Ensure forwarded messages to other clients are sanitized",
+            "exampleComment": "Chat messages received via WebSocket are inserted directly into the DOM with innerHTML. This allows XSS attacks through message content.",
+            "codeExamples": [],
+            "keyTakeaway": "Sanitize WebSocket message content just like any other user input.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.security.token-rotation",
+          "text": "Are authentication tokens refreshed for long-lived connections?",
+          "severity": "minor",
+          "tags": ["security", "auth"],
+          "baseContent": {
+            "whatItMeans": "For long-lived WebSocket connections, the authentication token is periodically refreshed or re-validated, rather than trusting the initial token indefinitely.",
+            "whyItMatters": "Short-lived tokens that expire after the WebSocket is established leave the connection authenticated with an expired token, but not refreshing means a compromised token stays valid forever.",
+            "howToVerify": "- Check for periodic token refresh mechanisms over the WebSocket\n- Verify the server re-validates tokens at intervals\n- Ensure revoked tokens cause disconnection",
+            "exampleComment": "The JWT used during the handshake expires after 15 minutes, but the WebSocket connection stays open indefinitely. Consider implementing token refresh over the socket.",
+            "codeExamples": [],
+            "keyTakeaway": "Refresh or re-validate authentication tokens for long-lived connections.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "websockets.scaling",
+      "title": "Scaling & Performance",
+      "items": [
+        {
+          "id": "websockets.scaling.horizontal-scaling",
+          "text": "Is the WebSocket architecture designed for horizontal scaling across multiple servers?",
+          "severity": "major",
+          "tags": ["scalability", "architecture"],
+          "baseContent": {
+            "whatItMeans": "WebSocket connections are distributed across multiple server instances with a pub/sub backbone (Redis, NATS, etc.) to broadcast messages between instances.",
+            "whyItMatters": "A single server can handle ~10K-50K concurrent WebSocket connections. Beyond that, horizontal scaling with a message bus is required.",
+            "howToVerify": "- Check for a pub/sub layer (Redis Pub/Sub, NATS, Kafka) for cross-instance messaging\n- Verify sticky sessions or connection-aware load balancing is configured\n- Ensure state is stored in a shared data store, not in-process memory",
+            "exampleComment": "All connection state is stored in a local Map. When you add a second server instance, users on different servers won't be able to communicate.",
+            "codeExamples": [],
+            "keyTakeaway": "Use a pub/sub backbone for cross-instance communication when scaling horizontally.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.scaling.backpressure",
+          "text": "Is backpressure handled for slow consumers to prevent memory buildup?",
+          "severity": "major",
+          "tags": ["performance", "reliability"],
+          "baseContent": {
+            "whatItMeans": "When a client can't receive messages fast enough, the server detects the growing send buffer and takes action (dropping messages, pausing, or disconnecting) rather than buffering indefinitely.",
+            "whyItMatters": "Without backpressure handling, a slow client causes the server's send buffer to grow unbounded, eventually causing an out-of-memory crash.",
+            "howToVerify": "- Check for bufferedAmount monitoring on the server\n- Verify there's a maximum send buffer size or message drop policy\n- Ensure slow consumers are handled gracefully (warning, then disconnect)",
+            "exampleComment": "The server broadcasts to all clients without checking bufferedAmount. A slow client on a poor connection will cause the send buffer to grow indefinitely.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "function safeSend(ws, data) {\n  if (ws.bufferedAmount > MAX_BUFFER) {\n    logger.warn('Slow consumer, dropping message');\n    return;\n  }\n  ws.send(data);\n}"
+              }
+            ],
+            "keyTakeaway": "Monitor bufferedAmount and handle slow consumers to prevent memory exhaustion.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.scaling.connection-pooling",
+          "text": "Are connections organized into rooms/channels to avoid broadcasting to all clients?",
+          "severity": "minor",
+          "tags": ["scalability", "performance"],
+          "baseContent": {
+            "whatItMeans": "Connections are grouped into logical rooms or channels, and messages are only sent to relevant subscribers rather than broadcasting to every connected client.",
+            "whyItMatters": "Broadcasting to all connections is O(n) per message and wastes bandwidth for clients who don't need the update.",
+            "howToVerify": "- Check for room/channel abstractions in the server code\n- Verify messages are scoped to relevant subscribers\n- Ensure clients can subscribe and unsubscribe from channels",
+            "exampleComment": "Every message is broadcast to all 10,000 connected clients, even though it only affects users in one chat room. Consider using room-based subscriptions.",
+            "codeExamples": [],
+            "keyTakeaway": "Use rooms or channels to scope message delivery to interested clients only.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.scaling.load-balancer-config",
+          "text": "Is the load balancer configured for WebSocket-compatible routing?",
+          "severity": "major",
+          "tags": ["infrastructure", "scalability"],
+          "baseContent": {
+            "whatItMeans": "The load balancer supports HTTP Upgrade requests, uses sticky sessions or connection-aware routing, and has appropriate idle timeouts for long-lived connections.",
+            "whyItMatters": "Standard HTTP load balancers may not handle the Upgrade header correctly, or may time out idle WebSocket connections after 60 seconds.",
+            "howToVerify": "- Check that the load balancer supports WebSocket (HTTP Upgrade)\n- Verify idle timeout is set high enough (e.g., 300s+)\n- Ensure sticky sessions are configured if needed\n- Check for proxy_read_timeout / proxy_send_timeout in nginx",
+            "exampleComment": "The nginx proxy_read_timeout is the default 60s. Idle WebSocket connections will be terminated every minute, causing constant reconnections.",
+            "codeExamples": [],
+            "keyTakeaway": "Configure load balancers with WebSocket support and appropriate idle timeouts.",
+            "references": []
+          }
+        },
+        {
+          "id": "websockets.scaling.metrics-monitoring",
+          "text": "Are WebSocket-specific metrics collected (active connections, message rates, errors)?",
+          "severity": "minor",
+          "tags": ["observability"],
+          "baseContent": {
+            "whatItMeans": "The server exposes metrics for active connection count, messages sent/received per second, error rates, and connection durations.",
+            "whyItMatters": "Without WebSocket-specific metrics, it's impossible to detect degradation, capacity issues, or connection leaks before they cause outages.",
+            "howToVerify": "- Check for gauges/counters for active connections\n- Verify message throughput metrics are collected\n- Ensure error and reconnection rates are tracked\n- Check for alerting on connection count thresholds",
+            "exampleComment": "There are no metrics for WebSocket connections. We can't tell how many are active, or if the reconnection rate is spiking.",
+            "codeExamples": [],
+            "keyTakeaway": "Collect WebSocket-specific metrics for capacity planning and incident detection.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

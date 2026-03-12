@@ -1,0 +1,772 @@
+{
+  "meta": {
+    "id": "haskell",
+    "mode": "review",
+    "title": "Haskell",
+    "shortTitle": "Haskell",
+    "description": "Review checklist for Haskell projects",
+    "icon": "λ",
+    "totalItems": 28,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "haskell.type-safety",
+      "title": "Type Safety",
+      "items": [
+        {
+          "id": "haskell.type-safety.newtypes",
+          "text": "Are newtypes used to distinguish domain concepts that share the same underlying type?",
+          "severity": "major",
+          "tags": ["type-driven-design", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Newtype wrappers create zero-cost type distinctions that prevent mixing up values that have the same runtime representation (e.g., two different Text fields).",
+            "whyItMatters": "Without newtypes, it is easy to pass a UserId where an OrderId is expected. The compiler catches these mistakes at zero runtime cost when newtypes are used.",
+            "howToVerify": "- Look for functions with multiple parameters of the same base type (Text, Int, etc.)\n- Check if domain concepts like IDs, amounts, or names have their own newtypes\n- Verify that newtype constructors are not exported (use smart constructors instead)",
+            "exampleComment": "This function takes two Text arguments for userId and orderId. Wrap them in newtypes so the compiler catches argument-order mistakes.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "processOrder :: Text -> Text -> IO ()\nprocessOrder userId orderId = ..."
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "newtype UserId = UserId Text\nnewtype OrderId = OrderId Text\n\nprocessOrder :: UserId -> OrderId -> IO ()\nprocessOrder (UserId uid) (OrderId oid) = ..."
+              }
+            ],
+            "keyTakeaway": "Use newtypes to make illegal states unrepresentable. They cost nothing at runtime.",
+            "references": [
+              "https://wiki.haskell.org/Newtype"
+            ]
+          }
+        },
+        {
+          "id": "haskell.type-safety.phantom-types",
+          "text": "Are phantom types or GADTs used to encode invariants when appropriate?",
+          "severity": "minor",
+          "tags": ["type-driven-design", "advanced"],
+          "baseContent": {
+            "whatItMeans": "Phantom type parameters and GADTs encode state-machine transitions or validation status in the type system, making invalid state transitions a compile error.",
+            "whyItMatters": "Encoding invariants at the type level eliminates entire categories of runtime errors. A validated email that is typed differently from an unvalidated one cannot be confused.",
+            "howToVerify": "- Look for state machines or validation workflows that could benefit from phantom types\n- Check if the code uses runtime flags (isValidated :: Bool) where a type distinction would be safer\n- Verify that phantom type APIs are intuitive and well-documented",
+            "exampleComment": "This uses a Bool field to track whether the form is validated. Consider using a phantom type like `Form Validated` vs `Form Unvalidated` to make invalid submissions a type error.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "data Form = Form { fields :: [Field], isValidated :: Bool }\n\nsubmit :: Form -> IO Result\nsubmit form\n  | isValidated form = doSubmit form\n  | otherwise = error \"Form not validated\""
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "data Validated\ndata Unvalidated\n\nnewtype Form a = Form { fields :: [Field] }\n\nvalidate :: Form Unvalidated -> Either [Error] (Form Validated)\nsubmit :: Form Validated -> IO Result  -- cannot submit unvalidated"
+              }
+            ],
+            "keyTakeaway": "Encode invariants in types when the complexity is warranted. Make impossible states impossible.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.type-safety.partial-functions",
+          "text": "Are partial functions (head, tail, fromJust) avoided in favor of total alternatives?",
+          "severity": "blocker",
+          "tags": ["correctness", "safety"],
+          "baseContent": {
+            "whatItMeans": "Partial functions crash at runtime on certain inputs (head on empty list, fromJust on Nothing). Total alternatives like pattern matching or safe versions handle all cases.",
+            "whyItMatters": "Partial functions are the Haskell equivalent of null pointer exceptions. They compile fine but crash in production on edge cases.",
+            "howToVerify": "- Search for head, tail, init, last, fromJust, read, (!!) in the codebase\n- Check that pattern matching or safe alternatives are used instead\n- Look for -Wincomplete-patterns in the build configuration",
+            "exampleComment": "Using `head` on a potentially empty list will crash. Use pattern matching or `listToMaybe` to handle the empty case explicitly.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "getFirst :: [a] -> a\ngetFirst xs = head xs  -- crashes on []\n\ngetValue :: Map k v -> k -> v\ngetValue m k = fromJust (Map.lookup k m)  -- crashes on missing key"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "getFirst :: [a] -> Maybe a\ngetFirst [] = Nothing\ngetFirst (x:_) = Just x\n\ngetValue :: Map k v -> k -> Maybe v\ngetValue = Map.lookup"
+              }
+            ],
+            "keyTakeaway": "Ban partial functions. Use total alternatives and let the type system enforce completeness.",
+            "references": [
+              "https://wiki.haskell.org/Avoiding_partial_functions"
+            ]
+          }
+        },
+        {
+          "id": "haskell.type-safety.deriving-strategies",
+          "text": "Are deriving strategies (stock, newtype, anyclass, via) explicit?",
+          "severity": "nit",
+          "tags": ["clarity", "correctness"],
+          "baseContent": {
+            "whatItMeans": "The DerivingStrategies extension requires explicitly stating how each typeclass instance is derived, preventing ambiguity when multiple strategies could apply.",
+            "whyItMatters": "Without explicit strategies, GHC picks one based on heuristics that can change between versions or when new instances are added, causing surprising behavior changes.",
+            "howToVerify": "- Check that DerivingStrategies is enabled in the project\n- Look for deriving clauses without an explicit strategy keyword\n- Verify that newtype deriving uses 'deriving newtype' rather than plain 'deriving'",
+            "exampleComment": "This `deriving (ToJSON)` is ambiguous — GHC could use DeriveAnyClass or GeneralizedNewtypeDeriving. Add an explicit strategy: `deriving anyclass (ToJSON)`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "newtype UserId = UserId Int\n  deriving (Show, ToJSON)"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "newtype UserId = UserId Int\n  deriving stock (Show)\n  deriving newtype (ToJSON)"
+              }
+            ],
+            "keyTakeaway": "Use explicit deriving strategies to avoid ambiguity and surprises.",
+            "references": [
+              "https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/deriving_strategies.html"
+            ]
+          }
+        },
+        {
+          "id": "haskell.type-safety.type-signatures",
+          "text": "Do all top-level definitions have explicit type signatures?",
+          "severity": "major",
+          "tags": ["readability", "correctness"],
+          "baseContent": {
+            "whatItMeans": "While GHC can infer types, top-level definitions should have explicit type signatures that serve as documentation and catch unintended type changes.",
+            "whyItMatters": "Without type signatures, refactoring can silently change a function's type in ways that compile but are semantically wrong. Type signatures also serve as the primary documentation.",
+            "howToVerify": "- Check that all exported functions have type signatures\n- Verify that -Wmissing-signatures is enabled in the build\n- Look for top-level definitions without annotations",
+            "exampleComment": "This top-level function has no type signature. Add one for documentation and to catch unintended type changes during refactoring.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "processItems = map (\\item -> item { status = Done })"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "processItems :: [Item] -> [Item]\nprocessItems = map (\\item -> item { status = Done })"
+              }
+            ],
+            "keyTakeaway": "Always write type signatures for top-level definitions. They are documentation that the compiler checks.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.type-safety.exhaustive-patterns",
+          "text": "Are pattern matches exhaustive and do they avoid catch-all wildcards on sum types?",
+          "severity": "major",
+          "tags": ["correctness", "maintainability"],
+          "baseContent": {
+            "whatItMeans": "Pattern matching on sum types should explicitly handle every constructor. Catch-all wildcards (_) hide newly added constructors from the compiler's exhaustiveness check.",
+            "whyItMatters": "When a new constructor is added to a sum type, catch-all wildcards silently handle it with the default case instead of generating a compile error. This defeats the purpose of sum types.",
+            "howToVerify": "- Search for wildcard patterns on sum types\n- Check that -Wincomplete-patterns is enabled\n- Verify that new constructors will cause compile errors in all relevant match sites",
+            "exampleComment": "This catch-all wildcard on PaymentStatus means adding a new status (e.g., Refunded) will silently fall through. Match each constructor explicitly.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "handleStatus :: PaymentStatus -> Text\nhandleStatus Paid = \"Payment complete\"\nhandleStatus _ = \"Pending\"  -- hides new constructors"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "handleStatus :: PaymentStatus -> Text\nhandleStatus Paid = \"Payment complete\"\nhandleStatus Pending = \"Awaiting payment\"\nhandleStatus Failed = \"Payment failed\""
+              }
+            ],
+            "keyTakeaway": "Avoid catch-all wildcards on sum types. Explicit patterns make adding constructors a compile-time checked operation.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "haskell.monads-effects",
+      "title": "Monads & Effects",
+      "items": [
+        {
+          "id": "haskell.monads-effects.transformer-stack",
+          "text": "Is the monad transformer stack kept shallow and well-organized?",
+          "severity": "major",
+          "tags": ["design", "maintainability"],
+          "baseContent": {
+            "whatItMeans": "Monad transformer stacks (ReaderT config (ExceptT e (StateT s IO))) should be kept to 2-3 layers. Deep stacks require excessive lifting and become unreadable.",
+            "whyItMatters": "Deep transformer stacks cause O(n) performance overhead per bind, require manual lift calls, and make error messages incomprehensible.",
+            "howToVerify": "- Count the layers in the application monad stack\n- Check for excessive lift or liftIO calls\n- Verify that the stack is defined as a type alias for readability",
+            "exampleComment": "This 5-layer transformer stack is hard to work with. Consider using ReaderT + IO with an environment record, or an effect system like effectful.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "type App = ReaderT Config (ExceptT AppError (StateT Cache (WriterT [Log] IO)))\n\nfoo :: App ()\nfoo = do\n  cfg <- ask\n  lift $ lift $ modify (addEntry \"key\" \"val\")\n  lift $ lift $ lift $ tell [\"did thing\"]"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "data Env = Env { config :: Config, cache :: IORef Cache, logger :: Log -> IO () }\n\nnewtype App a = App { runApp :: ReaderT Env IO a }\n  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader Env)"
+              }
+            ],
+            "keyTakeaway": "Prefer ReaderT + IO with an environment record over deep transformer stacks.",
+            "references": [
+              "https://www.fpcomplete.com/blog/readert-design-pattern/"
+            ]
+          }
+        },
+        {
+          "id": "haskell.monads-effects.io-boundaries",
+          "text": "Is IO pushed to the edges, keeping core logic pure?",
+          "severity": "major",
+          "tags": ["design", "testability"],
+          "baseContent": {
+            "whatItMeans": "Business logic should be pure functions that take inputs and return outputs. IO operations (database, network, file system) should happen at the boundary and pass results to pure code.",
+            "whyItMatters": "Pure functions are easier to test (no mocking), easier to reason about (no hidden effects), and easier to compose. IO at the edges makes the architecture cleaner.",
+            "howToVerify": "- Check if core business logic functions are in IO unnecessarily\n- Look for functions that could take pure inputs instead of reading from the environment\n- Verify that IO is limited to the top-level composition layer",
+            "exampleComment": "This business logic function is in IO but only uses IO to read a config value. Pass the config value as a parameter to make the function pure and testable.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "calculateDiscount :: OrderId -> IO Double\ncalculateDiscount oid = do\n  order <- fetchOrder oid  -- IO\n  rate <- readIORef discountRate  -- IO\n  pure (orderTotal order * rate)  -- pure logic mixed with IO"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "calculateDiscount :: Double -> Order -> Double\ncalculateDiscount rate order = orderTotal order * rate  -- pure\n\n-- IO at the boundary\nmain = do\n  order <- fetchOrder oid\n  rate <- readIORef discountRate\n  let discount = calculateDiscount rate order"
+              }
+            ],
+            "keyTakeaway": "Push IO to the edges. Pure core, impure shell.",
+            "references": [
+              "https://blog.ploeh.dk/2017/02/02/dependency-rejection/"
+            ]
+          }
+        },
+        {
+          "id": "haskell.monads-effects.typeclass-constraints",
+          "text": "Are typeclass constraints used instead of concrete monads for flexibility?",
+          "severity": "minor",
+          "tags": ["design", "testability"],
+          "baseContent": {
+            "whatItMeans": "Functions should depend on typeclass constraints (MonadReader, MonadError) rather than concrete monad stacks, allowing different implementations for production and testing.",
+            "whyItMatters": "Concrete monad types lock functions to a specific stack. Typeclass constraints allow swapping the implementation (e.g., using Identity for tests, IO for production).",
+            "howToVerify": "- Check if functions use concrete App monad where typeclass constraints would suffice\n- Look for functions that only need MonadReader but are typed as the full App stack\n- Verify that test code can substitute lightweight monad implementations",
+            "exampleComment": "This function is typed as `App a` but only uses `ask`. Generalize to `MonadReader Config m => m a` so it can be tested without the full App stack.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "getDbUrl :: App String\ngetDbUrl = asks configDbUrl"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "getDbUrl :: MonadReader Config m => m String\ngetDbUrl = asks configDbUrl"
+              }
+            ],
+            "keyTakeaway": "Use typeclass constraints for flexibility. Test with simple monads, run with the real stack.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.monads-effects.resource-bracket",
+          "text": "Are resources acquired and released using bracket or ResourceT?",
+          "severity": "blocker",
+          "tags": ["resource-safety", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Resources (file handles, database connections, sockets) must be acquired and released using bracket, finally, or ResourceT to ensure cleanup happens even when exceptions occur.",
+            "whyItMatters": "Without bracket, exceptions between resource acquisition and release cause resource leaks. In long-running servers, this leads to file descriptor exhaustion or connection pool depletion.",
+            "howToVerify": "- Search for openFile, connect, acquire patterns without bracket\n- Check that database connections use a pool with proper cleanup\n- Verify that ResourceT or bracket is used for all resource acquisition",
+            "exampleComment": "This opens a file handle without bracket. If processFile throws, the handle leaks. Use `withFile` or `bracket` to ensure cleanup.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "readData :: FilePath -> IO Text\nreadData path = do\n  h <- openFile path ReadMode\n  content <- hGetContents h\n  hClose h  -- not reached if hGetContents throws\n  pure content"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "readData :: FilePath -> IO Text\nreadData path =\n  withFile path ReadMode $ \\h ->\n    T.hGetContents h"
+              }
+            ],
+            "keyTakeaway": "Always use bracket or withX functions for resource management. Manual acquire/release is a leak waiting to happen.",
+            "references": [
+              "https://hackage.haskell.org/package/base/docs/Control-Exception.html#v:bracket"
+            ]
+          }
+        },
+        {
+          "id": "haskell.monads-effects.exception-vs-either",
+          "text": "Are exceptions reserved for truly exceptional cases, with Either/ExceptT used for expected errors?",
+          "severity": "major",
+          "tags": ["error-handling", "design"],
+          "baseContent": {
+            "whatItMeans": "Expected errors (validation failures, not-found) should be modeled as Either/ExceptT in the return type. Runtime exceptions should be reserved for unexpected, unrecoverable failures.",
+            "whyItMatters": "Exceptions are invisible in the type signature, making it impossible to know what errors a function can produce without reading its implementation. Either makes errors explicit and composable.",
+            "howToVerify": "- Look for throwIO or throw for expected error conditions\n- Check if validation errors are thrown as exceptions instead of returned as Either\n- Verify that the error type hierarchy distinguishes recoverable from unrecoverable errors",
+            "exampleComment": "Throwing an exception for a missing user is not exceptional — it is an expected case. Return `Either UserNotFound User` instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "findUser :: UserId -> IO User\nfindUser uid = do\n  mUser <- queryDb uid\n  case mUser of\n    Nothing -> throwIO (UserNotFound uid)  -- expected case!\n    Just u -> pure u"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "findUser :: UserId -> IO (Either UserError User)\nfindUser uid = do\n  mUser <- queryDb uid\n  pure $ maybe (Left (UserNotFound uid)) Right mUser"
+              }
+            ],
+            "keyTakeaway": "Use Either for expected errors and exceptions for unexpected ones. Make the error model explicit in the types.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.monads-effects.avoid-unsafeperformio",
+          "text": "Is unsafePerformIO avoided or thoroughly justified?",
+          "severity": "blocker",
+          "tags": ["correctness", "purity"],
+          "baseContent": {
+            "whatItMeans": "unsafePerformIO breaks the purity guarantee by performing IO inside a pure function. It should only be used in very specific, well-documented cases (e.g., global mutable references for caches).",
+            "whyItMatters": "Misuse of unsafePerformIO can cause data races, violate referential transparency, and produce bugs that are nearly impossible to reproduce or debug.",
+            "howToVerify": "- Search for unsafePerformIO, unsafeInterleaveIO, and unsafeDupablePerformIO\n- Check that each usage has a comment explaining why it is safe\n- Verify that the result is used as a top-level constant, not inside a function body",
+            "exampleComment": "This unsafePerformIO in a function body is dangerous — the compiler may inline or float it, causing the IO action to execute multiple times or not at all. Use IORef or MVar instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "getValue :: String -> String\ngetValue key = unsafePerformIO $ do\n  readFile (\"/config/\" ++ key)  -- runs IO in \"pure\" code"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "getValue :: String -> IO String\ngetValue key = readFile (\"/config/\" ++ key)  -- honest about being IO"
+              }
+            ],
+            "keyTakeaway": "Avoid unsafePerformIO. If you think you need it, you probably need to restructure your code to be honest about effects.",
+            "references": [
+              "https://hackage.haskell.org/package/base/docs/System-IO-Unsafe.html"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "haskell.lazy-evaluation",
+      "title": "Lazy Evaluation",
+      "items": [
+        {
+          "id": "haskell.lazy-evaluation.space-leaks",
+          "text": "Are accumulators and folds strict to prevent space leaks?",
+          "severity": "blocker",
+          "tags": ["performance", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Lazy accumulators in folds build up large chains of unevaluated thunks that consume O(n) memory instead of O(1). Using foldl' (strict left fold) or bang patterns prevents this.",
+            "whyItMatters": "Space leaks are the most common Haskell performance issue. A lazy foldl on a million-element list can exhaust memory with thunks before producing any result.",
+            "howToVerify": "- Search for foldl (lazy) and check if foldl' (strict) should be used instead\n- Look for accumulating parameters without bang patterns\n- Check for Data.Map.Lazy vs Data.Map.Strict usage",
+            "exampleComment": "Using `foldl (+) 0` builds a chain of unevaluated additions. Use `foldl' (+) 0` from Data.List to force the accumulator at each step.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "import Data.List (foldl)\n\nsum' :: [Int] -> Int\nsum' = foldl (+) 0  -- builds thunk chain: ((((0+1)+2)+3)+4)"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "import Data.List (foldl')\n\nsum' :: [Int] -> Int\nsum' = foldl' (+) 0  -- evaluates at each step: 0, 1, 3, 6, 10"
+              }
+            ],
+            "keyTakeaway": "Use strict folds (foldl') and bang patterns on accumulators. Lazy accumulation is almost never what you want.",
+            "references": [
+              "https://wiki.haskell.org/Foldr_Foldl_Foldl'"
+            ]
+          }
+        },
+        {
+          "id": "haskell.lazy-evaluation.strict-data",
+          "text": "Are data type fields strict where laziness is not needed?",
+          "severity": "major",
+          "tags": ["performance", "space-leaks"],
+          "baseContent": {
+            "whatItMeans": "Record fields that will always be evaluated should use strict annotations (!) to prevent thunk accumulation. The StrictData extension makes all fields strict by default.",
+            "whyItMatters": "Lazy record fields accumulate thunks when the record is constructed but the field is not immediately needed. In long-lived data structures, this causes space leaks.",
+            "howToVerify": "- Check if StrictData is enabled for the project\n- Look for data types with lazy fields that are always evaluated eventually\n- Verify that intentionally lazy fields are marked with ~ (tilde) when StrictData is on",
+            "exampleComment": "These record fields are always evaluated when the record is used. Add bang patterns or enable StrictData to prevent thunk accumulation.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "data Stats = Stats\n  { count :: Int     -- lazy: might be a thunk\n  , total :: Double  -- lazy: might be a thunk\n  , label :: Text    -- lazy: might be a thunk\n  }"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "data Stats = Stats\n  { count :: !Int     -- strict: always evaluated\n  , total :: !Double  -- strict: always evaluated\n  , label :: !Text    -- strict: always evaluated\n  }"
+              }
+            ],
+            "keyTakeaway": "Default to strict fields. Use laziness intentionally, not accidentally.",
+            "references": [
+              "https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/strict.html"
+            ]
+          }
+        },
+        {
+          "id": "haskell.lazy-evaluation.bytestring-text",
+          "text": "Are strict ByteString and Text used instead of lazy String?",
+          "severity": "major",
+          "tags": ["performance", "idiom"],
+          "baseContent": {
+            "whatItMeans": "Haskell's String type is a linked list of characters, which is extremely memory-inefficient. Data.Text and Data.ByteString provide packed, cache-friendly representations.",
+            "whyItMatters": "String uses ~40 bytes per character (due to list cons cells). Text uses ~2 bytes per character. For any real data processing, String is prohibitively slow and memory-hungry.",
+            "howToVerify": "- Search for uses of String in data types and function signatures\n- Check that Data.Text is used for text processing and Data.ByteString for binary data\n- Verify that -XOverloadedStrings is enabled to avoid manual pack/unpack calls",
+            "exampleComment": "This function uses String for file processing. Switch to Data.Text (or Data.ByteString for binary) for a 10-20x memory improvement.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "processFile :: FilePath -> IO [String]\nprocessFile path = do\n  content <- readFile path  -- lazy String IO\n  pure (lines content)"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "import qualified Data.Text as T\nimport qualified Data.Text.IO as TIO\n\nprocessFile :: FilePath -> IO [T.Text]\nprocessFile path = do\n  content <- TIO.readFile path  -- strict Text IO\n  pure (T.lines content)"
+              }
+            ],
+            "keyTakeaway": "Never use String for data processing. Text and ByteString are the correct default choices.",
+            "references": [
+              "https://hackage.haskell.org/package/text"
+            ]
+          }
+        },
+        {
+          "id": "haskell.lazy-evaluation.deepseq-nf",
+          "text": "Is deepseq/NFData used to force full evaluation where needed?",
+          "severity": "minor",
+          "tags": ["performance", "debugging"],
+          "baseContent": {
+            "whatItMeans": "seq only evaluates to weak head normal form (WHNF), which may leave nested thunks. deepseq evaluates the entire structure, which is necessary for timing, benchmarking, and avoiding deferred work.",
+            "whyItMatters": "Using seq on a data structure only evaluates the outermost constructor. Nested fields can still contain thunks that shift work to unexpected places in the program.",
+            "howToVerify": "- Check that benchmarks use deepseq/force to fully evaluate results\n- Look for cases where seq is used but nested thunks could remain\n- Verify that NFData instances exist for types that need full evaluation",
+            "exampleComment": "This benchmark uses `seq` which only evaluates the outer constructor. Use `deepseq` or `force` to fully evaluate the result for accurate timing.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "benchmark :: [Int] -> IO ()\nbenchmark xs = do\n  let result = expensiveComputation xs\n  result `seq` pure ()  -- only evaluates outermost constructor"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "import Control.DeepSeq (force)\n\nbenchmark :: [Int] -> IO ()\nbenchmark xs = do\n  let result = force (expensiveComputation xs)  -- fully evaluated\n  pure ()"
+              }
+            ],
+            "keyTakeaway": "Use deepseq when you need full evaluation. seq only scratches the surface.",
+            "references": [
+              "https://hackage.haskell.org/package/deepseq"
+            ]
+          }
+        },
+        {
+          "id": "haskell.lazy-evaluation.streaming",
+          "text": "Is streaming used for processing large data instead of loading it all into memory?",
+          "severity": "major",
+          "tags": ["performance", "scalability"],
+          "baseContent": {
+            "whatItMeans": "Processing large files or datasets should use streaming libraries (conduit, streaming, pipes) that process data in constant memory rather than loading everything into a list.",
+            "whyItMatters": "Reading a large file into a list consumes memory proportional to the file size. Streaming processes data in constant memory, enabling processing of files larger than RAM.",
+            "howToVerify": "- Look for readFile calls on potentially large files\n- Check if lists are used as intermediate data structures for large datasets\n- Verify that streaming or chunked processing is used for IO-heavy operations",
+            "exampleComment": "This reads the entire CSV into memory as a list. Use conduit or streaming to process rows in constant memory.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "processCSV :: FilePath -> IO [Result]\nprocessCSV path = do\n  rows <- readAllRows path  -- entire file in memory\n  pure (map transform rows)"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "import Conduit\n\nprocessCSV :: FilePath -> IO [Result]\nprocessCSV path =\n  runConduitRes\n    $ sourceFile path\n    .| decodeCSV\n    .| mapC transform\n    .| sinkList"
+              }
+            ],
+            "keyTakeaway": "Use streaming for large data processing. Lists are not a scalable data pipeline.",
+            "references": [
+              "https://hackage.haskell.org/package/conduit"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "haskell.error-handling",
+      "title": "Error Handling",
+      "items": [
+        {
+          "id": "haskell.error-handling.custom-error-types",
+          "text": "Are error types defined as custom sum types rather than raw strings?",
+          "severity": "major",
+          "tags": ["type-safety", "error-handling"],
+          "baseContent": {
+            "whatItMeans": "Error conditions should be modeled as sum types with constructors for each case, not as String or Text messages. This enables exhaustive pattern matching on error cases.",
+            "whyItMatters": "String errors cannot be pattern-matched reliably and provide no type-level guidance about what can go wrong. Sum type errors make error handling exhaustive and compiler-checked.",
+            "howToVerify": "- Look for functions returning Either String or Either Text\n- Check if error types are defined as sum types with descriptive constructors\n- Verify that error types carry enough context for handling (not just a message)",
+            "exampleComment": "Using `Either String` makes it impossible to handle different error cases programmatically. Define a UserError sum type with constructors for each failure mode.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "createUser :: UserInput -> IO (Either String User)\ncreateUser input\n  | null (name input) = pure (Left \"Name is required\")\n  | emailTaken = pure (Left \"Email already exists\")"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "data UserError\n  = NameRequired\n  | EmailAlreadyExists Email\n  | InvalidEmail Text\n  deriving (Show)\n\ncreateUser :: UserInput -> IO (Either UserError User)"
+              }
+            ],
+            "keyTakeaway": "Model errors as sum types. Stringly-typed errors are not errors, they are surprises.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.error-handling.maybe-vs-either",
+          "text": "Is Either used instead of Maybe when the caller needs to know why something failed?",
+          "severity": "minor",
+          "tags": ["api-design", "error-handling"],
+          "baseContent": {
+            "whatItMeans": "Maybe signals presence or absence without explanation. Either provides a reason for failure. Functions should return Either when the caller needs to distinguish between failure modes.",
+            "whyItMatters": "Returning Maybe when there are multiple failure modes forces callers to guess what went wrong. Either communicates the cause and enables informed error handling.",
+            "howToVerify": "- Look for functions returning Maybe that have multiple failure modes\n- Check if callers of Maybe-returning functions need to know why they got Nothing\n- Verify that Either is used when different error cases require different handling",
+            "exampleComment": "This returns Nothing for both invalid input and database errors. Use Either with a sum type to distinguish the failure modes.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "findUser :: Text -> IO (Maybe User)\nfindUser email\n  | not (isValidEmail email) = pure Nothing  -- why Nothing?\n  | otherwise = queryDb email                 -- also returns Nothing"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "findUser :: Text -> IO (Either UserLookupError User)\nfindUser email\n  | not (isValidEmail email) = pure (Left (InvalidEmail email))\n  | otherwise = maybe (Left UserNotFound) Right <$> queryDb email"
+              }
+            ],
+            "keyTakeaway": "Use Maybe for simple presence/absence. Use Either when the caller needs to know why it failed.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.error-handling.error-context",
+          "text": "Do error values carry enough context for debugging?",
+          "severity": "minor",
+          "tags": ["debugging", "observability"],
+          "baseContent": {
+            "whatItMeans": "Error constructors should include relevant data (the input that failed, the constraint that was violated) so that logs and error messages are actionable without additional investigation.",
+            "whyItMatters": "An error like 'ValidationFailed' without context requires debugging to find which field failed and why. Including the field name and constraint in the error makes it immediately actionable.",
+            "howToVerify": "- Check that error constructors carry context (the failing value, field name, expected vs actual)\n- Look for error types with no data fields (just bare constructors)\n- Verify that Show instances for errors produce useful log messages",
+            "exampleComment": "The `InvalidAge` constructor carries no context. Include the actual value so the error message says 'InvalidAge: got -5, expected >= 0'.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "data ValidationError = InvalidAge | InvalidEmail | MissingField"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "data ValidationError\n  = InvalidAge { actual :: Int, minAge :: Int }\n  | InvalidEmail { provided :: Text, reason :: Text }\n  | MissingField { fieldName :: Text }"
+              }
+            ],
+            "keyTakeaway": "Include enough context in errors to debug without reproducing the issue.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.error-handling.async-exceptions",
+          "text": "Is async exception safety considered for critical sections?",
+          "severity": "major",
+          "tags": ["concurrency", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Async exceptions (throwTo, timeout, cancel) can arrive between any two instructions. Critical sections that must complete atomically need protection with mask or uninterruptibleMask.",
+            "whyItMatters": "Async exceptions can interrupt resource cleanup, leave data in an inconsistent state, or cause deadlocks when they arrive inside lock acquisition sequences.",
+            "howToVerify": "- Look for multi-step resource operations that are not bracketed\n- Check that bracket (which handles async exceptions) is used for resource management\n- Verify that critical sections with locks use mask where needed",
+            "exampleComment": "This lock acquire/release sequence is not async-exception-safe. An async exception between acquire and release will leak the lock. Use bracket or mask.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "withLock :: MVar () -> IO a -> IO a\nwithLock lock action = do\n  takeMVar lock       -- acquire\n  result <- action    -- async exception here leaks the lock\n  putMVar lock ()     -- release\n  pure result"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "withLock :: MVar () -> IO a -> IO a\nwithLock lock = bracket_ (takeMVar lock) (putMVar lock ())"
+              }
+            ],
+            "keyTakeaway": "Use bracket for resource management. It handles async exceptions correctly by design.",
+            "references": [
+              "https://www.fpcomplete.com/blog/2018/04/async-exception-handling-haskell/"
+            ]
+          }
+        },
+        {
+          "id": "haskell.error-handling.error-logging",
+          "text": "Are errors logged with structured context before being re-thrown or returned?",
+          "severity": "minor",
+          "tags": ["observability", "debugging"],
+          "baseContent": {
+            "whatItMeans": "When errors are caught, they should be logged with relevant context (request ID, input parameters, stack trace) before being re-thrown, wrapped, or returned to the caller.",
+            "whyItMatters": "Errors that propagate without logging are lost when caught at a higher level. Structured logging at the point of failure provides the most relevant context for debugging.",
+            "howToVerify": "- Check that catch/handle blocks log errors before re-throwing\n- Verify that log messages include structured data (not just the error message)\n- Look for silent error swallowing (catch without logging)",
+            "exampleComment": "This catch block re-throws without logging. Add structured logging with the request context before re-throwing so the error is traceable in production.",
+            "codeExamples": [],
+            "keyTakeaway": "Log errors with context at the point of failure. Silent catch-and-rethrow loses valuable debugging information.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "haskell.module-design",
+      "title": "Module Design",
+      "items": [
+        {
+          "id": "haskell.module-design.explicit-exports",
+          "text": "Do modules have explicit export lists?",
+          "severity": "major",
+          "tags": ["encapsulation", "api-design"],
+          "baseContent": {
+            "whatItMeans": "Modules should explicitly list what they export rather than implicitly exporting everything. This controls the public API and hides implementation details.",
+            "whyItMatters": "Without explicit exports, internal functions become part of the public API. Users depend on them, and refactoring internals becomes a breaking change.",
+            "howToVerify": "- Check that modules have explicit export lists: module Foo (Bar, baz) where\n- Look for modules without export lists (which export everything)\n- Verify that internal helper functions are not exported",
+            "exampleComment": "This module has no export list, exposing all internal helpers. Add an explicit export list to control the public API.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "module Database.User where  -- exports everything\n\ninternalHelper :: IO ()\nfindUser :: UserId -> IO (Maybe User)\ncreateUser :: UserInput -> IO User"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "module Database.User\n  ( findUser\n  , createUser\n  ) where\n\ninternalHelper :: IO ()  -- hidden\nfindUser :: UserId -> IO (Maybe User)\ncreateUser :: UserInput -> IO User"
+              }
+            ],
+            "keyTakeaway": "Always use explicit export lists. Control your public API surface.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.module-design.qualified-imports",
+          "text": "Are imports qualified or explicit to avoid name clashes?",
+          "severity": "minor",
+          "tags": ["readability", "maintainability"],
+          "baseContent": {
+            "whatItMeans": "Imports should be qualified (import qualified Data.Map as Map) or have explicit import lists (import Data.List (sort, nub)) to make it clear where each name comes from.",
+            "whyItMatters": "Unqualified wildcard imports make it hard to tell where a function comes from, cause name clashes, and make code fragile when dependencies add new exports.",
+            "howToVerify": "- Look for unqualified imports without explicit import lists\n- Check that commonly clashing modules (Data.Map, Data.Set, Data.Text) use qualified imports\n- Verify that the import style is consistent across the project",
+            "exampleComment": "This unqualified import of Data.Map brings `map`, `filter`, and `lookup` into scope, clashing with Prelude. Use `import qualified Data.Map as Map`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "import Data.Map\nimport Data.Text\nimport Data.ByteString\n\n-- Which 'map' is this? Which 'length'?"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "import qualified Data.Map.Strict as Map\nimport qualified Data.Text as T\nimport qualified Data.ByteString as BS\n\n-- Map.lookup, T.length, BS.readFile — clear provenance"
+              }
+            ],
+            "keyTakeaway": "Use qualified imports for container and string modules. Make name provenance obvious.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.module-design.internal-modules",
+          "text": "Are implementation details placed in .Internal modules?",
+          "severity": "nit",
+          "tags": ["api-design", "convention"],
+          "baseContent": {
+            "whatItMeans": "The Haskell convention is to place implementation details in Foo.Internal modules. These are accessible for testing and power users but signal that they are not part of the stable API.",
+            "whyItMatters": "Internal modules communicate API stability expectations. Users who depend on .Internal modules do so at their own risk, freeing library authors to refactor internals.",
+            "howToVerify": "- Check if implementation details are mixed into public-facing modules\n- Look for opportunities to move helpers to .Internal modules\n- Verify that .Internal modules are documented as unstable",
+            "exampleComment": "These internal parsing helpers are exported from the main module. Move them to Parser.Internal to signal that they are implementation details.",
+            "codeExamples": [],
+            "keyTakeaway": "Use .Internal modules for implementation details. They communicate stability guarantees.",
+            "references": []
+          }
+        },
+        {
+          "id": "haskell.module-design.orphan-instances",
+          "text": "Are orphan typeclass instances avoided?",
+          "severity": "major",
+          "tags": ["correctness", "maintainability"],
+          "baseContent": {
+            "whatItMeans": "An orphan instance is a typeclass instance defined in a module that owns neither the typeclass nor the type. Orphan instances cause coherence problems and unexpected behavior.",
+            "whyItMatters": "Orphan instances can silently conflict with instances defined elsewhere, causing unpredictable behavior depending on import order. They also break GHC's instance resolution assumptions.",
+            "howToVerify": "- Check for -Worphans warnings in the build output\n- Look for instances defined in modules that do not own either the class or the type\n- Verify that newtypes are used instead of orphan instances where appropriate",
+            "exampleComment": "This ToJSON instance for Data.Time.UTCTime is an orphan. Either use a newtype wrapper or move the instance to the module that defines the type.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "-- in MyApp.Instances (orphan!)\ninstance ToJSON UTCTime where\n  toJSON = String . T.pack . show"
+              },
+              {
+                "label": "Good",
+                "language": "haskell",
+                "code": "-- Use a newtype to own the instance\nnewtype ApiTime = ApiTime UTCTime\n\ninstance ToJSON ApiTime where\n  toJSON (ApiTime t) = String (T.pack (formatTime defaultTimeLocale \"%Y-%m-%dT%H:%M:%SZ\" t))"
+              }
+            ],
+            "keyTakeaway": "Avoid orphan instances. Use newtype wrappers to own the instance if you cannot modify the class or type modules.",
+            "references": [
+              "https://wiki.haskell.org/Orphan_instance"
+            ]
+          }
+        },
+        {
+          "id": "haskell.module-design.cabal-build",
+          "text": "Are language extensions and dependencies specified per-component in the cabal/package file?",
+          "severity": "minor",
+          "tags": ["build", "hygiene"],
+          "baseContent": {
+            "whatItMeans": "Language extensions and package dependencies should be listed in the cabal file per component (library, executable, test-suite) rather than enabled globally or via pragma in every file.",
+            "whyItMatters": "Per-file LANGUAGE pragmas scatter configuration across hundreds of files. Cabal-level configuration provides a single source of truth and ensures consistency.",
+            "howToVerify": "- Check that commonly used extensions are in default-extensions in the cabal file\n- Look for the same LANGUAGE pragma repeated across many files\n- Verify that test dependencies are not leaked into the library component",
+            "exampleComment": "OverloadedStrings appears as a LANGUAGE pragma in 80% of source files. Add it to default-extensions in the cabal file to avoid repetition.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "haskell",
+                "code": "-- Every file:\n{-# LANGUAGE OverloadedStrings #-}\n{-# LANGUAGE DeriveGeneric #-}\n{-# LANGUAGE DerivingStrategies #-}"
+              },
+              {
+                "label": "Good",
+                "language": "cabal",
+                "code": "library\n  default-extensions:\n    OverloadedStrings\n    DeriveGeneric\n    DerivingStrategies"
+              }
+            ],
+            "keyTakeaway": "Put common extensions in the cabal file. Reserve per-file pragmas for module-specific extensions.",
+            "references": [
+              "https://cabal.readthedocs.io/en/stable/cabal-package.html#pkg-field-default-extensions"
+            ]
+          }
+        },
+        {
+          "id": "haskell.module-design.prelude-choice",
+          "text": "Is the Prelude choice documented and consistent across the project?",
+          "severity": "nit",
+          "tags": ["convention", "consistency"],
+          "baseContent": {
+            "whatItMeans": "Many Haskell projects use an alternative Prelude (relude, rio, protolude) that provides safer defaults. The choice should be consistent and documented.",
+            "whyItMatters": "Mixing Prelude choices within a project causes confusion and import conflicts. A documented choice helps new contributors understand the project conventions.",
+            "howToVerify": "- Check if the project uses an alternative Prelude\n- Verify that the choice is configured in the cabal file (default-extensions: NoImplicitPrelude)\n- Look for inconsistent Prelude usage across modules",
+            "exampleComment": "The project uses relude in most modules but this file uses the default Prelude. Add the standard import for consistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Pick a Prelude and stick with it. Document the choice for new contributors.",
+            "references": [
+              "https://hackage.haskell.org/package/relude",
+              "https://hackage.haskell.org/package/rio"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

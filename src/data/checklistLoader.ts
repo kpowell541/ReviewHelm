@@ -50,6 +50,16 @@ import e2eTestingData from '../../assets/data/checklists/e2e-testing.json';
 import apiTestingData from '../../assets/data/checklists/api-testing.json';
 import performanceTestingData from '../../assets/data/checklists/performance-testing.json';
 import mobileTestingData from '../../assets/data/checklists/mobile-testing.json';
+import accessibilityData from '../../assets/data/checklists/accessibility.json';
+import observabilityData from '../../assets/data/checklists/observability.json';
+import microservicesData from '../../assets/data/checklists/microservices.json';
+import websocketsData from '../../assets/data/checklists/websockets.json';
+import mlEngineeringData from '../../assets/data/checklists/ml-engineering.json';
+import svelteData from '../../assets/data/checklists/svelte.json';
+import haskellData from '../../assets/data/checklists/haskell.json';
+import zigData from '../../assets/data/checklists/zig.json';
+import apiVersioningData from '../../assets/data/checklists/api-versioning.json';
+import complianceData from '../../assets/data/checklists/compliance.json';
 
 export const CHECKLIST_IDS = [
   'java-protobuf',
@@ -98,6 +108,16 @@ export const CHECKLIST_IDS = [
   'api-testing',
   'performance-testing',
   'mobile-testing',
+  'accessibility',
+  'observability',
+  'microservices',
+  'websockets',
+  'ml-engineering',
+  'svelte',
+  'haskell',
+  'zig',
+  'api-versioning',
+  'compliance',
   'polish-my-pr',
 ] as const;
 
@@ -153,6 +173,16 @@ const bundledChecklists: ChecklistMap = {
   'api-testing': apiTestingData as unknown as Checklist,
   'performance-testing': performanceTestingData as unknown as Checklist,
   'mobile-testing': mobileTestingData as unknown as Checklist,
+  accessibility: accessibilityData as unknown as Checklist,
+  observability: observabilityData as unknown as Checklist,
+  microservices: microservicesData as unknown as Checklist,
+  websockets: websocketsData as unknown as Checklist,
+  'ml-engineering': mlEngineeringData as unknown as Checklist,
+  svelte: svelteData as unknown as Checklist,
+  haskell: haskellData as unknown as Checklist,
+  zig: zigData as unknown as Checklist,
+  'api-versioning': apiVersioningData as unknown as Checklist,
+  compliance: complianceData as unknown as Checklist,
   'polish-my-pr': polishMyPrData as unknown as Checklist,
 };
 
@@ -280,6 +310,16 @@ export function getAllReviewChecklists(): Checklist[] {
     'api-testing',
     'performance-testing',
     'mobile-testing',
+    'accessibility',
+    'observability',
+    'microservices',
+    'websockets',
+    'ml-engineering',
+    'svelte',
+    'haskell',
+    'zig',
+    'api-versioning',
+    'compliance',
   ].map((id) => getChecklist(id));
 }
 
@@ -301,13 +341,14 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
     'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
     'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
     'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
-    'rest-api', 'graphql',
+    'rest-api', 'graphql', 'websockets', 'microservices', 'svelte', 'haskell',
+    'api-versioning', 'compliance',
   ],
   'security.authorization': [
     'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
     'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
     'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
-    'rest-api', 'graphql',
+    'rest-api', 'graphql', 'websockets', 'microservices', 'compliance',
   ],
   // Injection: relevant for anything that processes user input or queries
   'security.injection': [
@@ -315,6 +356,7 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
     'php', 'vue', 'angular', 'nextjs', 'django', 'spring-boot', 'elixir-phoenix',
     'scala', 'rust', 'rest-api', 'graphql', 'postgresql', 'sql-migrations',
     'nosql', 'shell', 'data-formats', 'typescript', 'cpp', 'c-lang', 'lua',
+    'websockets', 'microservices', 'svelte', 'haskell', 'zig',
   ],
   // Secrets: relevant for almost everything except pure config/styling
   'security.secrets': [
@@ -322,9 +364,9 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
     'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
     'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
     'rest-api', 'graphql', 'docker-k8s', 'cicd', 'terraform-hcl',
-    'react',
-    'nodejs',
-    'protobuf', 'shell', 'data-formats',
+    'react', 'nodejs', 'protobuf', 'shell', 'data-formats',
+    'microservices', 'websockets', 'ml-engineering', 'svelte', 'haskell', 'zig',
+    'compliance', 'observability',
   ],
   // Data protection: relevant for stacks that handle user data
   'security.data-protection': [
@@ -332,20 +374,22 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
     'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
     'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
     'rest-api', 'graphql', 'postgresql', 'sql-migrations', 'nosql',
+    'microservices', 'websockets', 'ml-engineering', 'compliance',
   ],
   // Input validation: relevant for code that processes input
   'security.input-validation': [
     'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
     'php', 'vue', 'angular', 'nextjs', 'django', 'spring-boot', 'elixir-phoenix',
     'scala', 'rust', 'rest-api', 'graphql', 'data-formats', 'typescript',
-    'cpp', 'c-lang',
+    'cpp', 'c-lang', 'websockets', 'microservices', 'svelte', 'haskell', 'zig',
+    'api-versioning',
   ],
   // Dependencies: relevant for stacks with package managers
   'security.dependencies': [
     'js-ts-react-node', 'python', 'ruby', 'go', 'java-protobuf', 'csharp-dotnet',
     'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
     'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
-    'cpp', 'package-bundler', 'r-lang',
+    'cpp', 'package-bundler', 'r-lang', 'svelte', 'haskell', 'zig',
   ],
   // Error handling: relevant for application code
   'security.error-handling': [
@@ -353,12 +397,13 @@ const SECURITY_RELEVANCE: Record<string, StackId[]> = {
     'kotlin-android', 'swift-objc', 'dart-flutter', 'php', 'vue', 'angular',
     'nextjs', 'django', 'spring-boot', 'elixir-phoenix', 'scala', 'rust',
     'rest-api', 'graphql', 'typescript', 'cpp', 'c-lang', 'lua',
+    'websockets', 'microservices', 'svelte', 'haskell', 'zig',
   ],
   // Infrastructure: relevant for infra/deployment stacks
   'security.infrastructure': [
     'js-ts-react-node', 'nextjs', 'django', 'spring-boot', 'elixir-phoenix',
     'docker-k8s', 'cicd', 'terraform-hcl', 'nodejs', 'rest-api',
-    'graphql',
+    'graphql', 'microservices', 'observability', 'websockets',
   ],
 };
 

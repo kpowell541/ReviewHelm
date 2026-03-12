@@ -1,0 +1,768 @@
+{
+  "meta": {
+    "id": "svelte",
+    "mode": "review",
+    "title": "Svelte & SvelteKit",
+    "shortTitle": "Svelte",
+    "description": "Review checklist for Svelte & SvelteKit projects",
+    "icon": "🔥",
+    "totalItems": 28,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "svelte.reactivity",
+      "title": "Reactivity",
+      "items": [
+        {
+          "id": "svelte.reactivity.reactive-declarations",
+          "text": "Are reactive declarations ($:) used instead of manual state synchronization?",
+          "severity": "major",
+          "tags": ["idiom", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Svelte's $: syntax automatically re-runs statements when their dependencies change. Using it instead of manual effect tracking ensures derived values stay in sync.",
+            "whyItMatters": "Manual state synchronization is error-prone and leads to stale values or missed updates. Reactive declarations guarantee consistency with less code.",
+            "howToVerify": "- Look for manually synchronized state that could be a $: declaration\n- Check for event handlers that update derived values imperatively\n- Verify that $: dependencies are actually reactive (not just constants)",
+            "exampleComment": "This `fullName` variable is updated in two separate event handlers. Use a reactive declaration `$: fullName = firstName + ' ' + lastName` to keep it automatically in sync.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  let firstName = '';\n  let lastName = '';\n  let fullName = '';\n\n  function updateFirst(e) {\n    firstName = e.target.value;\n    fullName = firstName + ' ' + lastName; // manual sync\n  }\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  let firstName = '';\n  let lastName = '';\n  $: fullName = firstName + ' ' + lastName; // auto-sync\n</script>"
+              }
+            ],
+            "keyTakeaway": "Use $: for derived state. Let the compiler handle synchronization.",
+            "references": [
+              "https://svelte.dev/docs/svelte-components#script-3-$-marks-a-statement-as-reactive"
+            ]
+          }
+        },
+        {
+          "id": "svelte.reactivity.array-mutation",
+          "text": "Are arrays and objects reassigned (not mutated) to trigger reactivity?",
+          "severity": "blocker",
+          "tags": ["correctness", "reactivity"],
+          "baseContent": {
+            "whatItMeans": "Svelte's reactivity is triggered by assignment, not mutation. Calling .push(), .splice(), or modifying object properties without reassignment will not trigger a re-render.",
+            "whyItMatters": "This is the most common Svelte bug. The UI will not update after mutations, leading to confusing state where the data has changed but the view has not.",
+            "howToVerify": "- Search for .push(), .splice(), .pop(), .sort() on reactive arrays\n- Look for direct object property mutations without reassignment\n- Verify that after mutation, the variable is reassigned (e.g., items = items)",
+            "exampleComment": "Using `items.push(newItem)` will not trigger a re-render. Use `items = [...items, newItem]` or follow the push with `items = items`.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  let items = [];\n  function addItem(item) {\n    items.push(item); // UI won't update!\n  }\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  let items = [];\n  function addItem(item) {\n    items = [...items, item]; // triggers reactivity\n  }\n</script>"
+              }
+            ],
+            "keyTakeaway": "Never mutate arrays or objects in place. Always reassign to trigger Svelte's reactivity.",
+            "references": [
+              "https://svelte.dev/docs/svelte-components#script-2-assignments-are-reactive"
+            ]
+          }
+        },
+        {
+          "id": "svelte.reactivity.reactive-side-effects",
+          "text": "Do reactive statements ($:) avoid expensive side effects?",
+          "severity": "major",
+          "tags": ["performance", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Reactive statements run every time their dependencies change. Putting expensive operations (API calls, heavy computations) directly in a $: block causes them to fire on every keystroke or minor state change.",
+            "whyItMatters": "Unbounded reactive side effects cause performance issues and unexpected behavior like duplicate API calls or race conditions.",
+            "howToVerify": "- Look for fetch calls, DOM manipulation, or heavy computations inside $: blocks\n- Check if reactive blocks need debouncing\n- Verify that expensive operations are guarded by conditions or moved to event handlers",
+            "exampleComment": "This $: block fires a fetch on every keystroke. Debounce the search query or move the fetch to an explicit submit handler.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  let query = '';\n  $: fetch(`/api/search?q=${query}`)\n    .then(r => r.json())\n    .then(data => results = data);\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  import { debounce } from './utils';\n  let query = '';\n  const search = debounce(async (q) => {\n    results = await fetch(`/api/search?q=${q}`).then(r => r.json());\n  }, 300);\n  $: search(query);\n</script>"
+              }
+            ],
+            "keyTakeaway": "Guard expensive reactive side effects with debouncing or conditions.",
+            "references": []
+          }
+        },
+        {
+          "id": "svelte.reactivity.tick-awareness",
+          "text": "Is tick() used when DOM updates are needed before the next operation?",
+          "severity": "minor",
+          "tags": ["correctness", "dom"],
+          "baseContent": {
+            "whatItMeans": "Svelte batches DOM updates. If you need to read the DOM after a state change (e.g., measuring element size, scrolling), you must await tick() to ensure the DOM reflects the latest state.",
+            "whyItMatters": "Reading the DOM before tick() resolves returns stale values, causing bugs like incorrect scroll positions, wrong element sizes, or animations starting from the wrong state.",
+            "howToVerify": "- Look for DOM reads (scrollHeight, getBoundingClientRect, focus) after state changes\n- Check that await tick() is called between the state change and the DOM read\n- Verify that the function is async if it uses await tick()",
+            "exampleComment": "This scrolls to the bottom after adding a message, but the DOM has not updated yet. Add `await tick()` between the push and the scroll to ensure the new element exists.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  function addMessage(msg) {\n    messages = [...messages, msg];\n    container.scrollTop = container.scrollHeight; // stale!\n  }\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  import { tick } from 'svelte';\n  async function addMessage(msg) {\n    messages = [...messages, msg];\n    await tick();\n    container.scrollTop = container.scrollHeight;\n  }\n</script>"
+              }
+            ],
+            "keyTakeaway": "Use await tick() before reading the DOM after a state change.",
+            "references": [
+              "https://svelte.dev/docs/svelte#tick"
+            ]
+          }
+        },
+        {
+          "id": "svelte.reactivity.store-auto-subscription",
+          "text": "Are store values accessed with $ prefix instead of manual subscribe/unsubscribe?",
+          "severity": "minor",
+          "tags": ["idiom", "memory-leaks"],
+          "baseContent": {
+            "whatItMeans": "Svelte's $storeName syntax automatically subscribes to a store and unsubscribes when the component is destroyed. Manual subscribe() calls require manual cleanup.",
+            "whyItMatters": "Forgetting to unsubscribe from a store causes memory leaks. The $ prefix handles this automatically and produces cleaner code.",
+            "howToVerify": "- Search for .subscribe() calls in components\n- Check that any manual subscriptions have matching unsubscribe in onDestroy\n- Verify that the $ prefix is used instead where possible",
+            "exampleComment": "This manual store.subscribe() needs cleanup in onDestroy. Use $store instead to get automatic subscription management.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  import { onDestroy } from 'svelte';\n  import { count } from './stores';\n  let value;\n  const unsub = count.subscribe(v => value = v);\n  onDestroy(unsub);\n</script>\n<p>{value}</p>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  import { count } from './stores';\n</script>\n<p>{$count}</p>"
+              }
+            ],
+            "keyTakeaway": "Use $store auto-subscriptions. Manual subscribe/unsubscribe is error-prone.",
+            "references": [
+              "https://svelte.dev/docs/svelte-components#script-4-prefix-stores-with-$-to-access-their-values"
+            ]
+          }
+        },
+        {
+          "id": "svelte.reactivity.unnecessary-reactivity",
+          "text": "Are constant values or one-time computations incorrectly marked as reactive?",
+          "severity": "nit",
+          "tags": ["performance", "clarity"],
+          "baseContent": {
+            "whatItMeans": "Values that never change after initialization should be plain const declarations, not reactive ($:) declarations. Marking them reactive adds unnecessary overhead.",
+            "whyItMatters": "Unnecessary reactive declarations add confusion about what is dynamic and waste (minor) computation tracking dependencies that never change.",
+            "howToVerify": "- Look for $: declarations whose dependencies are all constants or props that never change\n- Check for reactive blocks that only run once\n- Verify that the reactive dependency graph is meaningful",
+            "exampleComment": "This $: declaration depends only on a constant. Use a plain const instead since the value will never change.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  const TAX_RATE = 0.08;\n  $: taxLabel = `Tax (${TAX_RATE * 100}%)`;\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  const TAX_RATE = 0.08;\n  const taxLabel = `Tax (${TAX_RATE * 100}%)`;\n</script>"
+              }
+            ],
+            "keyTakeaway": "Reserve $: for values that actually depend on changing state.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "svelte.component-design",
+      "title": "Component Design",
+      "items": [
+        {
+          "id": "svelte.component-design.prop-types",
+          "text": "Are component props declared with explicit types and sensible defaults?",
+          "severity": "major",
+          "tags": ["type-safety", "api-design"],
+          "baseContent": {
+            "whatItMeans": "Component props should be declared with TypeScript types (in .svelte files using <script lang='ts'>) and should have default values where appropriate.",
+            "whyItMatters": "Untyped props make components hard to use correctly. Missing defaults cause runtime errors when optional props are not provided.",
+            "howToVerify": "- Check that exported props have TypeScript types\n- Verify that optional props have default values\n- Look for `export let` without type annotations",
+            "exampleComment": "These props are untyped and have no defaults. Add TypeScript types and set sensible defaults for optional props.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  export let title;\n  export let items;\n  export let maxVisible;\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script lang=\"ts\">\n  export let title: string;\n  export let items: Item[];\n  export let maxVisible: number = 10;\n</script>"
+              }
+            ],
+            "keyTakeaway": "Type your props and provide defaults. The component API is its contract with consumers.",
+            "references": []
+          }
+        },
+        {
+          "id": "svelte.component-design.event-forwarding",
+          "text": "Are DOM events forwarded or custom events dispatched where parent components need them?",
+          "severity": "minor",
+          "tags": ["composition", "api-design"],
+          "baseContent": {
+            "whatItMeans": "Svelte components can forward DOM events (on:click without a handler) or dispatch custom events using createEventDispatcher for parent components to listen to.",
+            "whyItMatters": "Without event forwarding, parent components cannot respond to user interactions on child components, breaking composition patterns.",
+            "howToVerify": "- Check if interactive child components forward relevant DOM events\n- Look for cases where parent components need to respond to child interactions\n- Verify that custom events carry appropriate detail payloads",
+            "exampleComment": "This Button component swallows the click event. Add `on:click` forwarding so parent components can handle clicks.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<!-- Button.svelte -->\n<button>{label}</button>\n<!-- parent cannot listen for clicks -->"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<!-- Button.svelte -->\n<button on:click>{label}</button>\n<!-- parent: <Button on:click={handleClick} /> -->"
+              }
+            ],
+            "keyTakeaway": "Forward DOM events and dispatch custom events to keep components composable.",
+            "references": [
+              "https://svelte.dev/docs/component-directives#on-eventname"
+            ]
+          }
+        },
+        {
+          "id": "svelte.component-design.slot-usage",
+          "text": "Are slots used for flexible content composition instead of prop-drilling markup?",
+          "severity": "minor",
+          "tags": ["composition", "flexibility"],
+          "baseContent": {
+            "whatItMeans": "Svelte slots allow parent components to inject content into children. This is more flexible than passing HTML strings or complex objects as props.",
+            "whyItMatters": "Prop-drilling markup (passing HTML as strings or complex render objects) is fragile, hard to style, and does not benefit from Svelte's compiler optimizations.",
+            "howToVerify": "- Look for props that accept HTML strings or complex render configurations\n- Check if named slots would provide a cleaner API\n- Verify that slot fallback content is provided where appropriate",
+            "exampleComment": "Passing the modal body as an HTML string prop is fragile. Use a default slot so the parent can pass any Svelte content.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<!-- Modal.svelte -->\n<script>\n  export let bodyHtml = '';\n</script>\n<div class=\"modal\">{@html bodyHtml}</div>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<!-- Modal.svelte -->\n<div class=\"modal\">\n  <slot>Default content</slot>\n</div>"
+              }
+            ],
+            "keyTakeaway": "Use slots for content injection. They are safer, more flexible, and more idiomatic than HTML props.",
+            "references": [
+              "https://svelte.dev/docs/special-elements#slot"
+            ]
+          }
+        },
+        {
+          "id": "svelte.component-design.component-size",
+          "text": "Is the component small and focused on a single responsibility?",
+          "severity": "minor",
+          "tags": ["maintainability", "readability"],
+          "baseContent": {
+            "whatItMeans": "Svelte components should be focused on a single concern. Large components with many responsibilities should be broken into smaller, composable pieces.",
+            "whyItMatters": "Large components are hard to test, hard to reuse, and hard to reason about. Svelte's compilation model means smaller components also produce more efficient update code.",
+            "howToVerify": "- Check if the component file exceeds 200-300 lines\n- Look for distinct UI sections that could be extracted into child components\n- Verify that the component does not mix unrelated state and logic",
+            "exampleComment": "This 500-line component handles form validation, data fetching, and rendering a table. Extract the table and form into separate components.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep components small and focused. Extract sub-components when a file grows beyond a few hundred lines.",
+            "references": []
+          }
+        },
+        {
+          "id": "svelte.component-design.action-usage",
+          "text": "Are Svelte actions used for reusable DOM behavior instead of duplicating onMount logic?",
+          "severity": "minor",
+          "tags": ["reusability", "idiom"],
+          "baseContent": {
+            "whatItMeans": "Svelte actions (use:action) encapsulate imperative DOM behavior (tooltips, click-outside, intersection observers) in a reusable function that can be applied to any element.",
+            "whyItMatters": "Without actions, DOM behavior logic gets duplicated across components via onMount/onDestroy. Actions are portable, testable, and handle cleanup automatically.",
+            "howToVerify": "- Look for duplicated onMount DOM setup logic across components\n- Check if imperative DOM behavior could be extracted into an action\n- Verify that actions return a destroy function for cleanup",
+            "exampleComment": "This click-outside detection logic is duplicated in three components. Extract it into a `use:clickOutside` action for reuse.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  import { onMount, onDestroy } from 'svelte';\n  let el;\n  function handleClick(e) {\n    if (el && !el.contains(e.target)) close();\n  }\n  onMount(() => document.addEventListener('click', handleClick));\n  onDestroy(() => document.removeEventListener('click', handleClick));\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<!-- clickOutside.js -->\n<!-- export function clickOutside(node, callback) { ... } -->\n<div use:clickOutside={close}>...</div>"
+              }
+            ],
+            "keyTakeaway": "Use Svelte actions to encapsulate reusable DOM behavior. They are the Svelte equivalent of React hooks for DOM effects.",
+            "references": [
+              "https://svelte.dev/docs/element-directives#use-action"
+            ]
+          }
+        },
+        {
+          "id": "svelte.component-design.accessibility",
+          "text": "Do interactive components include proper ARIA attributes and keyboard support?",
+          "severity": "major",
+          "tags": ["a11y", "ux"],
+          "baseContent": {
+            "whatItMeans": "Interactive components should be keyboard accessible, include appropriate ARIA roles and attributes, and follow WAI-ARIA patterns for their widget type.",
+            "whyItMatters": "Svelte has built-in accessibility warnings (a11y-*) but they do not catch everything. Custom interactive widgets need manual ARIA work to be usable by screen readers and keyboard users.",
+            "howToVerify": "- Check that custom interactive elements have role, aria-label, and keyboard handlers\n- Verify that Svelte a11y warnings are not suppressed without justification\n- Test with keyboard navigation (Tab, Enter, Escape)",
+            "exampleComment": "This custom dropdown uses div elements without ARIA roles. Add role='listbox', aria-expanded, and keyboard navigation to make it accessible.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<div on:click={toggle}>\n  {selected}\n  {#if open}\n    <div>{#each options as opt}<div on:click={() => select(opt)}>{opt}</div>{/each}</div>\n  {/if}\n</div>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<button aria-haspopup=\"listbox\" aria-expanded={open} on:click={toggle} on:keydown={handleKeydown}>\n  {selected}\n</button>\n{#if open}\n  <ul role=\"listbox\">\n    {#each options as opt}\n      <li role=\"option\" aria-selected={opt === selected} on:click={() => select(opt)}>{opt}</li>\n    {/each}\n  </ul>\n{/if}"
+              }
+            ],
+            "keyTakeaway": "Add ARIA roles and keyboard support to custom interactive components. The compiler warnings are a floor, not a ceiling.",
+            "references": [
+              "https://svelte.dev/docs/accessibility-warnings"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "svelte.stores",
+      "title": "Stores",
+      "items": [
+        {
+          "id": "svelte.stores.derived-stores",
+          "text": "Are derived stores used for computed values instead of manual subscriptions?",
+          "severity": "major",
+          "tags": ["idiom", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Svelte's derived() store creates a read-only store whose value is automatically computed from one or more source stores. It replaces manual subscription + computation patterns.",
+            "whyItMatters": "Manual subscriptions for derived values are verbose, error-prone (missing unsubscribe), and can get out of sync. Derived stores guarantee consistency.",
+            "howToVerify": "- Look for stores that subscribe to other stores and transform values\n- Check for writable stores that should be derived (their value is fully determined by other stores)\n- Verify that derived stores are read-only and not accidentally written to",
+            "exampleComment": "This filteredItems store manually subscribes to items and filter. Use `derived([items, filter], ...)` to keep it automatically in sync.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "export const items = writable([]);\nexport const filter = writable('');\nexport const filteredItems = writable([]);\n\n// manual sync — easy to forget or get wrong\nitems.subscribe(i => {\n  filteredItems.set(i.filter(item => item.includes(get(filter))));\n});"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "export const items = writable([]);\nexport const filter = writable('');\nexport const filteredItems = derived(\n  [items, filter],\n  ([$items, $filter]) => $items.filter(item => item.includes($filter))\n);"
+              }
+            ],
+            "keyTakeaway": "Use derived stores for computed values. They are consistent, efficient, and self-documenting.",
+            "references": [
+              "https://svelte.dev/docs/svelte-store#derived"
+            ]
+          }
+        },
+        {
+          "id": "svelte.stores.store-granularity",
+          "text": "Are stores granular enough to avoid unnecessary re-renders?",
+          "severity": "minor",
+          "tags": ["performance", "design"],
+          "baseContent": {
+            "whatItMeans": "A single monolithic store that holds all application state causes every subscriber to re-render when any property changes. Splitting state into focused stores limits re-renders.",
+            "whyItMatters": "Coarse-grained stores cause components to re-render even when the specific data they need has not changed, wasting CPU cycles and causing visual flicker.",
+            "howToVerify": "- Check if a single store holds unrelated pieces of state\n- Look for components that subscribe to a large store but only use one property\n- Verify that high-frequency updates (e.g., mouse position) are in separate stores from low-frequency state",
+            "exampleComment": "This single appStore holds user preferences, current route, and real-time notifications. Split into separate stores so preference changes do not re-render the notification badge.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep stores focused. Granular stores mean fewer unnecessary re-renders.",
+            "references": []
+          }
+        },
+        {
+          "id": "svelte.stores.store-initialization",
+          "text": "Are stores initialized with safe default values?",
+          "severity": "minor",
+          "tags": ["robustness", "ux"],
+          "baseContent": {
+            "whatItMeans": "Stores should be initialized with values that prevent null/undefined access errors during the initial render, before async data is loaded.",
+            "whyItMatters": "Components that subscribe to a store will render immediately with its initial value. If the initial value is null, template expressions like $store.name will throw.",
+            "howToVerify": "- Check that writable stores have meaningful initial values\n- Verify that components handle the loading state before async data arrives\n- Look for optional chaining or null checks in templates that use store values",
+            "exampleComment": "This store is initialized as `writable(null)` but the template accesses $user.name without a null check. Initialize with a safe default or add an {#if $user} guard.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<!-- stores.js -->\nexport const user = writable(null);\n\n<!-- Component.svelte -->\n<p>Hello, {$user.name}</p> <!-- crashes if null -->"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<!-- stores.js -->\nexport const user = writable(null);\n\n<!-- Component.svelte -->\n{#if $user}\n  <p>Hello, {$user.name}</p>\n{:else}\n  <p>Loading...</p>\n{/if}"
+              }
+            ],
+            "keyTakeaway": "Initialize stores with safe defaults and guard template access against null.",
+            "references": []
+          }
+        },
+        {
+          "id": "svelte.stores.custom-store-contract",
+          "text": "Do custom stores expose a minimal, well-defined API?",
+          "severity": "minor",
+          "tags": ["api-design", "encapsulation"],
+          "baseContent": {
+            "whatItMeans": "Custom stores should expose only the methods consumers need (subscribe, and specific actions) rather than exposing the raw set/update methods of the underlying writable.",
+            "whyItMatters": "Exposing set() and update() on a custom store breaks encapsulation. Any consumer can put the store in an invalid state, bypassing business logic.",
+            "howToVerify": "- Check that custom stores return only subscribe and domain-specific methods\n- Verify that internal writable set/update are not leaked\n- Look for stores that would benefit from encapsulation (e.g., stores with validation logic)",
+            "exampleComment": "This custom store exposes the raw `set` method. Return only `subscribe`, `increment`, and `decrement` to enforce the valid range constraint.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "function createCounter() {\n  const { subscribe, set, update } = writable(0);\n  return { subscribe, set, update,\n    increment: () => update(n => n + 1) };\n}"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "function createCounter(max = 100) {\n  const { subscribe, update } = writable(0);\n  return {\n    subscribe,\n    increment: () => update(n => Math.min(n + 1, max)),\n    decrement: () => update(n => Math.max(n - 1, 0)),\n    reset: () => update(() => 0),\n  };\n}"
+              }
+            ],
+            "keyTakeaway": "Encapsulate store internals. Expose subscribe and domain methods, not raw set/update.",
+            "references": [
+              "https://svelte.dev/docs/svelte-store#svelte-store-writable"
+            ]
+          }
+        },
+        {
+          "id": "svelte.stores.server-store-leak",
+          "text": "Are stores protected from leaking state between server-side requests?",
+          "severity": "blocker",
+          "tags": ["security", "ssr"],
+          "baseContent": {
+            "whatItMeans": "Module-level stores in SvelteKit are shared across all requests on the server. User-specific data in module-level stores can leak between users.",
+            "whyItMatters": "This is a security vulnerability. User A's data can appear for User B if stores are not scoped to the request lifecycle. It only manifests in production under concurrent load.",
+            "howToVerify": "- Check for module-level stores that hold user-specific data\n- Verify that user data is passed through SvelteKit's load functions and page data, not global stores\n- Confirm that any server-side stores are request-scoped (e.g., using context)",
+            "exampleComment": "This module-level `currentUser` store is shared between all server requests. Move user data to the load function's return value to scope it per-request.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "// stores.js — shared on server!\nexport const currentUser = writable(null);\n\n// +page.server.js\ncurrentUser.set(await getUser(cookies)); // leaks between users"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "// +page.server.js\nexport async function load({ cookies }) {\n  const user = await getUser(cookies);\n  return { user }; // scoped to this request\n}"
+              }
+            ],
+            "keyTakeaway": "Never put user-specific data in module-level stores on the server. Use load functions instead.",
+            "references": [
+              "https://kit.svelte.dev/docs/state-management"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "svelte.sveltekit-ssr",
+      "title": "SvelteKit SSR",
+      "items": [
+        {
+          "id": "svelte.sveltekit-ssr.load-function-errors",
+          "text": "Do load functions handle errors with proper HTTP status codes?",
+          "severity": "major",
+          "tags": ["error-handling", "ux"],
+          "baseContent": {
+            "whatItMeans": "SvelteKit load functions should use the error() helper to throw errors with appropriate HTTP status codes (404, 403, 500) so SvelteKit renders the correct error page.",
+            "whyItMatters": "Unhandled errors in load functions produce generic 500 errors. Proper error codes improve UX (showing a 404 page vs. a crash page) and help with debugging.",
+            "howToVerify": "- Check that load functions use SvelteKit's error() helper for expected errors\n- Verify that 404s are thrown for missing resources\n- Confirm that unexpected errors are logged before re-throwing",
+            "exampleComment": "This load function returns null when the post is not found. Throw error(404, 'Post not found') to render the proper error page.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "export async function load({ params }) {\n  const post = await getPost(params.id);\n  return { post }; // returns { post: null } for missing posts\n}"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "import { error } from '@sveltejs/kit';\n\nexport async function load({ params }) {\n  const post = await getPost(params.id);\n  if (!post) throw error(404, 'Post not found');\n  return { post };\n}"
+              }
+            ],
+            "keyTakeaway": "Use SvelteKit's error() helper in load functions. Return proper HTTP status codes for expected failure cases.",
+            "references": [
+              "https://kit.svelte.dev/docs/errors"
+            ]
+          }
+        },
+        {
+          "id": "svelte.sveltekit-ssr.data-serialization",
+          "text": "Is data returned from load functions serializable?",
+          "severity": "blocker",
+          "tags": ["correctness", "ssr"],
+          "baseContent": {
+            "whatItMeans": "Data returned from server load functions is serialized to JSON to be sent to the client. Non-serializable values (functions, class instances, Dates) will be lost or cause errors.",
+            "whyItMatters": "Non-serializable data causes hydration mismatches or silent data loss. The server renders correctly but the client receives undefined or corrupted values.",
+            "howToVerify": "- Check that load function return values are plain objects, arrays, strings, numbers, and booleans\n- Look for Date objects (convert to ISO strings), Map/Set, or class instances\n- Verify that functions are not included in returned data",
+            "exampleComment": "This load function returns a Date object which will be serialized to a string. Either convert it explicitly to an ISO string or use SvelteKit's devalue serialization.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "export async function load() {\n  return {\n    user: {\n      name: 'Alice',\n      createdAt: new Date(), // not JSON-serializable\n      greet: () => 'hello',  // functions are lost\n    }\n  };\n}"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "export async function load() {\n  return {\n    user: {\n      name: 'Alice',\n      createdAt: new Date().toISOString(),\n    }\n  };\n}"
+              }
+            ],
+            "keyTakeaway": "Keep load function return values JSON-serializable. Convert Dates to strings and strip functions.",
+            "references": [
+              "https://kit.svelte.dev/docs/load#streaming-with-promises"
+            ]
+          }
+        },
+        {
+          "id": "svelte.sveltekit-ssr.browser-api-guards",
+          "text": "Are browser-only APIs guarded against server-side execution?",
+          "severity": "blocker",
+          "tags": ["ssr", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Code that accesses window, document, localStorage, or other browser APIs must be guarded to only run in the browser, since SvelteKit renders components on the server first.",
+            "whyItMatters": "Accessing browser APIs during SSR throws ReferenceError and crashes the server-side render, producing a 500 error for the user.",
+            "howToVerify": "- Search for window, document, localStorage, sessionStorage in component scripts\n- Check that these are inside onMount, $app/environment browser checks, or if (browser) guards\n- Verify that third-party libraries that access the DOM are dynamically imported",
+            "exampleComment": "This localStorage access runs during SSR and will crash. Move it inside onMount or guard it with `if (browser)` from $app/environment.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  const theme = localStorage.getItem('theme') || 'light'; // crashes on server\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  import { onMount } from 'svelte';\n  let theme = 'light';\n  onMount(() => {\n    theme = localStorage.getItem('theme') || 'light';\n  });\n</script>"
+              }
+            ],
+            "keyTakeaway": "Guard browser APIs with onMount or browser checks. SSR means your component runs on the server first.",
+            "references": [
+              "https://kit.svelte.dev/docs/modules#$app-environment"
+            ]
+          }
+        },
+        {
+          "id": "svelte.sveltekit-ssr.form-actions",
+          "text": "Are form submissions using SvelteKit form actions for progressive enhancement?",
+          "severity": "minor",
+          "tags": ["progressive-enhancement", "ux"],
+          "baseContent": {
+            "whatItMeans": "SvelteKit form actions allow forms to work without JavaScript by using native HTML form submissions, then enhance them with use:enhance for a SPA-like experience.",
+            "whyItMatters": "Forms that rely entirely on JavaScript event handlers break when JS fails to load, is blocked, or is still hydrating. Form actions provide resilient baseline behavior.",
+            "howToVerify": "- Check that forms use method='POST' and action attributes\n- Look for use:enhance on forms for progressive enhancement\n- Verify that the corresponding +page.server.js has actions defined",
+            "exampleComment": "This form uses on:submit with fetch. Convert to a SvelteKit form action with use:enhance so it works even without JavaScript.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<form on:submit|preventDefault={handleSubmit}>\n  <input name=\"email\" />\n  <button>Subscribe</button>\n</form>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<form method=\"POST\" action=\"?/subscribe\" use:enhance>\n  <input name=\"email\" />\n  <button>Subscribe</button>\n</form>"
+              }
+            ],
+            "keyTakeaway": "Use SvelteKit form actions for progressive enhancement. Forms should work without JavaScript.",
+            "references": [
+              "https://kit.svelte.dev/docs/form-actions"
+            ]
+          }
+        },
+        {
+          "id": "svelte.sveltekit-ssr.page-data-waterfall",
+          "text": "Are parallel data fetches in load functions awaited concurrently?",
+          "severity": "major",
+          "tags": ["performance", "ssr"],
+          "baseContent": {
+            "whatItMeans": "When a load function needs data from multiple independent sources, the fetches should run in parallel (Promise.all) rather than sequentially (await one after another).",
+            "whyItMatters": "Sequential fetches in load functions add their latencies together, directly increasing time-to-first-byte. Two 200ms fetches take 400ms sequentially but 200ms in parallel.",
+            "howToVerify": "- Look for multiple sequential await statements in load functions\n- Check if the fetches are independent (second does not depend on first)\n- Verify that independent fetches use Promise.all or similar parallel patterns",
+            "exampleComment": "These two fetch calls are independent but run sequentially. Use Promise.all to run them in parallel and cut the load time in half.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "export async function load({ fetch }) {\n  const user = await fetch('/api/user').then(r => r.json());\n  const posts = await fetch('/api/posts').then(r => r.json()); // waits for user\n  return { user, posts };\n}"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "export async function load({ fetch }) {\n  const [user, posts] = await Promise.all([\n    fetch('/api/user').then(r => r.json()),\n    fetch('/api/posts').then(r => r.json()),\n  ]);\n  return { user, posts };\n}"
+              }
+            ],
+            "keyTakeaway": "Parallelize independent fetches in load functions. Sequential awaits are hidden waterfalls.",
+            "references": [
+              "https://kit.svelte.dev/docs/load"
+            ]
+          }
+        },
+        {
+          "id": "svelte.sveltekit-ssr.prerender-candidates",
+          "text": "Are static pages marked for prerendering?",
+          "severity": "nit",
+          "tags": ["performance", "deployment"],
+          "baseContent": {
+            "whatItMeans": "Pages that do not depend on request-time data (marketing pages, docs, blog posts) should be prerendered at build time using export const prerender = true.",
+            "whyItMatters": "Prerendered pages are served as static HTML, eliminating server compute costs and providing the fastest possible time-to-first-byte.",
+            "howToVerify": "- Identify pages that show the same content for all users\n- Check if these pages set export const prerender = true\n- Verify that prerendered pages do not depend on cookies, headers, or URL search params",
+            "exampleComment": "This about page shows the same content for all users. Add `export const prerender = true` to serve it as static HTML.",
+            "codeExamples": [],
+            "keyTakeaway": "Prerender static pages. Free performance gains for pages that do not vary per-request.",
+            "references": [
+              "https://kit.svelte.dev/docs/page-options#prerender"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "svelte.performance",
+      "title": "Performance",
+      "items": [
+        {
+          "id": "svelte.performance.keyed-each",
+          "text": "Are {#each} blocks keyed for lists that can reorder or change?",
+          "severity": "major",
+          "tags": ["correctness", "performance"],
+          "baseContent": {
+            "whatItMeans": "Svelte's {#each items as item (item.id)} syntax uses the key to track which DOM nodes correspond to which data items, enabling efficient updates when the list changes.",
+            "whyItMatters": "Without keys, Svelte updates list items by index, which causes incorrect state preservation when items are reordered, inserted, or deleted. Inputs retain values from the wrong item.",
+            "howToVerify": "- Check that {#each} blocks have a key expression (item.id) for dynamic lists\n- Look for lists that can be sorted, filtered, or have items added/removed\n- Verify that keys are unique and stable (not array indices)",
+            "exampleComment": "This {#each} block has no key. When items are reordered, input values will stay attached to DOM positions instead of moving with their data. Add `(item.id)` as a key.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "{#each items as item}\n  <TodoItem {item} />\n{/each}"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "{#each items as item (item.id)}\n  <TodoItem {item} />\n{/each}"
+              }
+            ],
+            "keyTakeaway": "Key your {#each} blocks with unique, stable identifiers. Unkeyed lists break on reorder.",
+            "references": [
+              "https://svelte.dev/docs/logic-blocks#each"
+            ]
+          }
+        },
+        {
+          "id": "svelte.performance.dynamic-imports",
+          "text": "Are large, non-critical components loaded with dynamic imports?",
+          "severity": "minor",
+          "tags": ["bundle-size", "loading"],
+          "baseContent": {
+            "whatItMeans": "Components that are not needed for the initial render (modals, charts, settings panels) should be dynamically imported to keep the initial bundle small.",
+            "whyItMatters": "Large upfront bundles slow initial page load. Dynamic imports enable code splitting, loading heavy components only when the user actually needs them.",
+            "howToVerify": "- Look for heavy components (charting libraries, rich text editors) imported statically\n- Check if components behind user interactions (modals, drawers) are code-split\n- Verify that SvelteKit's automatic route-level code splitting is not bypassed by shared imports",
+            "exampleComment": "This 200KB chart library is imported at the top level but only shown when the user clicks 'Show Analytics'. Use a dynamic import to lazy-load it.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  import HeavyChart from './HeavyChart.svelte'; // 200KB always loaded\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  let ChartComponent;\n  async function showChart() {\n    const mod = await import('./HeavyChart.svelte');\n    ChartComponent = mod.default;\n  }\n</script>\n{#if ChartComponent}\n  <svelte:component this={ChartComponent} />\n{/if}"
+              }
+            ],
+            "keyTakeaway": "Lazy-load heavy components. Only pay for what the user actually sees.",
+            "references": []
+          }
+        },
+        {
+          "id": "svelte.performance.transition-perf",
+          "text": "Are transitions and animations using CSS-based approaches rather than JavaScript ticking?",
+          "severity": "nit",
+          "tags": ["performance", "ux"],
+          "baseContent": {
+            "whatItMeans": "Svelte's built-in transitions (fade, slide, fly) use CSS transitions which run on the compositor thread. Custom JS-based animation loops block the main thread.",
+            "whyItMatters": "CSS transitions are GPU-accelerated and do not cause jank. JavaScript animation loops compete with other main-thread work and drop frames on slower devices.",
+            "howToVerify": "- Check for setInterval/requestAnimationFrame animation loops that could use CSS\n- Verify that Svelte's built-in transition functions are used where applicable\n- Look for animate:flip on keyed each blocks for FLIP animations",
+            "exampleComment": "This manual requestAnimationFrame loop for opacity fading can be replaced with Svelte's built-in `transition:fade` which uses CSS and is GPU-accelerated.",
+            "codeExamples": [],
+            "keyTakeaway": "Use Svelte's built-in CSS transitions. Reserve JS animations for complex sequences that CSS cannot express.",
+            "references": [
+              "https://svelte.dev/docs/svelte-transition"
+            ]
+          }
+        },
+        {
+          "id": "svelte.performance.reactive-chain-depth",
+          "text": "Are deeply chained reactive declarations avoided?",
+          "severity": "minor",
+          "tags": ["performance", "readability"],
+          "baseContent": {
+            "whatItMeans": "Long chains of $: declarations where A derives B, B derives C, C derives D create a cascade that is hard to follow and can cause multiple update cycles.",
+            "whyItMatters": "Deep reactive chains are hard to debug (which dependency triggered the update?), can cause subtle ordering bugs, and add unnecessary computation overhead.",
+            "howToVerify": "- Count the depth of reactive dependency chains\n- Check if intermediate reactive values can be collapsed into a single derivation\n- Verify that circular reactive dependencies do not exist",
+            "exampleComment": "This chain of four $: declarations can be collapsed. Compute `displayPrice` directly from `basePrice` and `taxRate` instead of going through intermediate reactive variables.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "svelte",
+                "code": "<script>\n  $: subtotal = price * quantity;\n  $: tax = subtotal * taxRate;\n  $: shipping = subtotal > 50 ? 0 : 5.99;\n  $: total = subtotal + tax + shipping;\n</script>"
+              },
+              {
+                "label": "Good",
+                "language": "svelte",
+                "code": "<script>\n  $: subtotal = price * quantity;\n  $: total = subtotal + (subtotal * taxRate) + (subtotal > 50 ? 0 : 5.99);\n</script>"
+              }
+            ],
+            "keyTakeaway": "Keep reactive chains shallow. Collapse intermediate derivations when possible.",
+            "references": []
+          }
+        },
+        {
+          "id": "svelte.performance.ssr-streaming",
+          "text": "Are non-critical data fetches streamed to avoid blocking page render?",
+          "severity": "minor",
+          "tags": ["ssr", "loading"],
+          "baseContent": {
+            "whatItMeans": "SvelteKit supports streaming by returning promises in load functions. The page shell renders immediately while slow data fetches resolve in the background.",
+            "whyItMatters": "Blocking on slow API calls delays the entire page render. Streaming lets users see the page layout with loading states while secondary data loads.",
+            "howToVerify": "- Check if load functions await all data before returning\n- Identify slow or non-critical data that could be streamed\n- Verify that streamed data has loading states in the template ({#await})",
+            "exampleComment": "The recommendations fetch takes 2 seconds but blocks the entire page. Return it as an unresolved promise to stream it and show the main content immediately.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "export async function load({ fetch }) {\n  const product = await fetch('/api/product').then(r => r.json());\n  const recs = await fetch('/api/recommendations').then(r => r.json()); // slow!\n  return { product, recs };\n}"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "export async function load({ fetch }) {\n  const product = await fetch('/api/product').then(r => r.json());\n  return {\n    product,\n    recs: fetch('/api/recommendations').then(r => r.json()), // streamed!\n  };\n}"
+              }
+            ],
+            "keyTakeaway": "Stream non-critical data. Show the page immediately and fill in slow content as it arrives.",
+            "references": [
+              "https://kit.svelte.dev/docs/load#streaming-with-promises"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

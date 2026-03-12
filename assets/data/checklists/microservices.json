@@ -1,0 +1,699 @@
+{
+  "meta": {
+    "id": "microservices",
+    "mode": "review",
+    "title": "Microservices",
+    "shortTitle": "Microservices",
+    "description": "Review checklist for Microservices projects",
+    "icon": "🔀",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "microservices.service-boundaries",
+      "title": "Service Boundaries",
+      "items": [
+        {
+          "id": "microservices.service-boundaries.bounded-context",
+          "text": "Does this service align with a single bounded context from the domain model?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service owns one cohesive area of the business domain (e.g., orders, payments, inventory) rather than mixing concerns from multiple domains.",
+            "whyItMatters": "Services that span multiple bounded contexts become entangled monoliths with unclear ownership. Changes in one domain force deployments of unrelated code.",
+            "howToVerify": "- Check that the service's entities and operations belong to a single domain\n- Look for imports or dependencies on other domains' models\n- Verify the team owning this service can deploy it independently",
+            "exampleComment": "This 'order service' also manages customer profiles and shipping rates. These are separate bounded contexts. Consider extracting them into dedicated services.",
+            "codeExamples": [],
+            "keyTakeaway": "One bounded context per service — if it serves two masters, it will eventually serve neither well.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.service-boundaries.data-ownership",
+          "text": "Does the service own its data and not share a database with other services?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each service has its own private data store. No other service reads from or writes to its database directly. All data access goes through the service's API.",
+            "whyItMatters": "Shared databases create tight coupling — schema changes in one service break others. Independent databases enable independent deployments and technology choices.",
+            "howToVerify": "- Check database connection strings — is this database shared with other services?\n- Look for direct database queries that bypass the owning service's API\n- Verify no foreign keys reference tables owned by other services",
+            "exampleComment": "This service reads directly from the user-service database. If user-service changes its schema, this service breaks. Use user-service's API instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Order service directly querying user database\nconst user = await userDb.query('SELECT * FROM users WHERE id = $1', [userId]);"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "// Order service calling user service API\nconst user = await userServiceClient.getUser(userId);"
+              }
+            ],
+            "keyTakeaway": "Each service owns its data — shared databases are shared coupling.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.service-boundaries.independent-deployment",
+          "text": "Can this service be deployed independently without coordinating with other services?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service can be built, tested, and deployed to production without requiring simultaneous deployments of other services.",
+            "whyItMatters": "Coordinated deployments are the opposite of microservice benefits. If you must deploy services together, you have a distributed monolith, not microservices.",
+            "howToVerify": "- Check if the PR requires changes in other services to work\n- Verify API changes are backward-compatible\n- Look for shared libraries that are versioned and released independently",
+            "exampleComment": "This change requires a simultaneous deployment of the notification service to work. Can we make the change backward-compatible so services can be deployed independently?",
+            "codeExamples": [],
+            "keyTakeaway": "If services must be deployed together, they aren't really independent services.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.service-boundaries.right-size",
+          "text": "Is the service the right size — not a nano-service and not a distributed monolith?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service is large enough to encapsulate a meaningful business capability but small enough for a single team to own, understand, and deploy independently.",
+            "whyItMatters": "Too-small services create network overhead and operational complexity. Too-large services lose the benefits of independent deployment. The right size balances these concerns.",
+            "howToVerify": "- Can one team fully own and understand this service?\n- Does the service do something meaningful on its own?\n- Would splitting it further just add network calls between tightly coupled pieces?",
+            "exampleComment": "This service only wraps a single database table with CRUD operations. It might be too granular — consider whether it should be part of a larger bounded context.",
+            "codeExamples": [],
+            "keyTakeaway": "Size services around business capabilities, not around entities or technical layers.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.service-boundaries.api-surface-minimal",
+          "text": "Is the service's public API surface minimal and focused?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service exposes only the endpoints that external consumers need. Internal implementation details are not leaked through the API.",
+            "whyItMatters": "A large API surface creates a large contract to maintain. Every public endpoint is a commitment that's hard to change without breaking consumers.",
+            "howToVerify": "- Check that new endpoints serve a clear consumer need\n- Look for internal-only operations that are unnecessarily exposed\n- Verify the API doesn't expose implementation details (database IDs, internal status codes)",
+            "exampleComment": "This endpoint exposes raw database column names in the response. Use a DTO to decouple the API shape from the internal schema.",
+            "codeExamples": [],
+            "keyTakeaway": "Expose what consumers need, not what's convenient to implement — every endpoint is a contract.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.service-boundaries.no-circular-deps",
+          "text": "Are there any circular dependencies between services?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Service A does not call Service B which in turn calls Service A, either directly or through a chain of intermediate services.",
+            "whyItMatters": "Circular dependencies create deadlocks, infinite loops, and make it impossible to determine deployment order. They indicate unclear service boundaries.",
+            "howToVerify": "- Map the service call graph for this change\n- Check for bidirectional synchronous calls between services\n- Look for cycles that go through message queues or events",
+            "exampleComment": "This creates a circular dependency: order-service calls payment-service, which calls back to order-service to update status. Use an event instead of a synchronous callback.",
+            "codeExamples": [],
+            "keyTakeaway": "Circular dependencies between services indicate boundaries need to be redrawn.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "microservices.api-contracts",
+      "title": "API Contracts",
+      "items": [
+        {
+          "id": "microservices.api-contracts.backward-compatible",
+          "text": "Are API changes backward-compatible with existing consumers?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "New fields can be added, but existing fields are not renamed, removed, or have their types changed. Existing consumers continue to work without modification.",
+            "whyItMatters": "Breaking API changes require coordinated deployments across all consumers. In a microservices environment, this negates the benefit of independent deployments.",
+            "howToVerify": "- Check for removed or renamed fields in request/response schemas\n- Verify new required fields have defaults for existing consumers\n- Look for changed field types (string to number, nullable to non-nullable)",
+            "exampleComment": "Renaming 'userName' to 'displayName' breaks all existing consumers. Add 'displayName' as a new field and deprecate 'userName' with a migration timeline.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Breaking: renamed field\ninterface UserResponse {\n  displayName: string; // was: userName\n}"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "// Non-breaking: added field, deprecated old\ninterface UserResponse {\n  /** @deprecated Use displayName instead */\n  userName: string;\n  displayName: string; // new field\n}"
+              }
+            ],
+            "keyTakeaway": "Add, don't rename or remove — backward compatibility enables independent deployments.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.api-contracts.versioning-strategy",
+          "text": "Is there a clear API versioning strategy for breaking changes?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When breaking changes are unavoidable, the service uses a versioning strategy (URL path, header, or content negotiation) to support old and new consumers simultaneously.",
+            "whyItMatters": "Without versioning, breaking changes force a big-bang migration of all consumers. Versioning allows gradual migration while maintaining backward compatibility.",
+            "howToVerify": "- Check if breaking changes introduce a new API version\n- Verify the old version is still supported with a deprecation timeline\n- Ensure the versioning strategy is consistent with other services",
+            "exampleComment": "This breaking change has no versioning. Consumers will break immediately. Introduce a v2 endpoint and keep v1 available for a migration period.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "// v1 maintained for backward compatibility\nrouter.get('/api/v1/users/:id', getUserV1);\n// v2 with breaking changes\nrouter.get('/api/v2/users/:id', getUserV2);"
+              }
+            ],
+            "keyTakeaway": "Version your APIs to allow gradual migration — never force a big-bang switch.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.api-contracts.schema-validation",
+          "text": "Are request and response payloads validated against a schema?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service validates incoming requests against a defined schema and produces responses that conform to a documented contract (OpenAPI, JSON Schema, protobuf).",
+            "whyItMatters": "Without schema validation, malformed requests cause cryptic errors deep in business logic. Schema-first development catches integration issues at the boundary.",
+            "howToVerify": "- Check for request validation middleware (Joi, Zod, class-validator)\n- Verify the OpenAPI spec is updated with new fields\n- Ensure response DTOs match the documented contract",
+            "exampleComment": "This new endpoint accepts a JSON body but has no validation. Malformed requests will cause 500 errors instead of 400s. Add schema validation.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "app.post('/orders', (req, res) => {\n  const { items, customerId } = req.body; // no validation\n  return createOrder(items, customerId);\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const CreateOrderSchema = z.object({\n  items: z.array(z.object({ productId: z.string(), quantity: z.number().int().positive() })),\n  customerId: z.string().uuid(),\n});\n\napp.post('/orders', (req, res) => {\n  const body = CreateOrderSchema.parse(req.body);\n  return createOrder(body.items, body.customerId);\n});"
+              }
+            ],
+            "keyTakeaway": "Validate at the boundary — reject bad data early with clear error messages.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.api-contracts.error-format",
+          "text": "Do API errors follow a consistent format with actionable messages?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Error responses use a consistent structure (error code, message, details) across all endpoints, with messages that help consumers understand and fix the issue.",
+            "whyItMatters": "Inconsistent error formats force consumers to write special handling per endpoint. Vague messages ('Something went wrong') make debugging integration issues painful.",
+            "howToVerify": "- Check error responses match the project's standard error format\n- Verify error messages are actionable and specific\n- Ensure internal errors don't leak stack traces or sensitive details",
+            "exampleComment": "This endpoint returns a plain string error while others return a structured error object. Use the standard error format for consistency.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "json",
+                "code": "{ \"error\": \"Something went wrong\" }"
+              },
+              {
+                "label": "Good",
+                "language": "json",
+                "code": "{\n  \"error\": {\n    \"code\": \"ORDER_ITEM_OUT_OF_STOCK\",\n    \"message\": \"Item 'SKU-123' is out of stock\",\n    \"details\": [{ \"field\": \"items[0].productId\", \"issue\": \"out_of_stock\" }]\n  }\n}"
+              }
+            ],
+            "keyTakeaway": "Consistent, specific error responses make API integration and debugging straightforward.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.api-contracts.idempotent-operations",
+          "text": "Are mutating operations idempotent where appropriate?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Operations that create or modify resources can be safely retried without causing duplicate effects. This is typically achieved with idempotency keys.",
+            "whyItMatters": "Network failures, timeouts, and retries are inevitable in distributed systems. Non-idempotent operations can cause duplicate orders, double charges, or data corruption.",
+            "howToVerify": "- Check POST endpoints for idempotency key support\n- Verify PUT operations are truly idempotent (same input = same result)\n- Look for operations that would cause damage if retried (payments, notifications)",
+            "exampleComment": "This payment endpoint has no idempotency key. If a timeout causes a retry, the customer gets charged twice. Add an idempotency key header.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "app.post('/payments', async (req, res) => {\n  const payment = await chargeCard(req.body);\n  return res.json(payment);\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.post('/payments', async (req, res) => {\n  const idempotencyKey = req.headers['idempotency-key'];\n  const existing = await findPaymentByKey(idempotencyKey);\n  if (existing) return res.json(existing);\n  const payment = await chargeCard(req.body, idempotencyKey);\n  return res.json(payment);\n});"
+              }
+            ],
+            "keyTakeaway": "In distributed systems, assume every request might be retried — make operations idempotent.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.api-contracts.pagination",
+          "text": "Do list endpoints support pagination with consistent patterns?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Endpoints returning collections support pagination (cursor-based or offset-based) with consistent parameter names and response metadata across all services.",
+            "whyItMatters": "Unbounded list endpoints return increasing amounts of data as the system grows, eventually causing timeouts, OOM errors, and poor client performance.",
+            "howToVerify": "- Check list endpoints for pagination parameters (limit, cursor/offset)\n- Verify a maximum page size is enforced server-side\n- Ensure response includes pagination metadata (nextCursor, hasMore, totalCount)",
+            "exampleComment": "This endpoint returns all orders without pagination. As the order table grows, this will cause timeouts. Add cursor-based pagination.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "app.get('/orders', async (req, res) => {\n  const orders = await db.orders.findAll();\n  return res.json(orders);\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.get('/orders', async (req, res) => {\n  const { cursor, limit = 20 } = req.query;\n  const orders = await db.orders.findMany({ cursor, take: Math.min(limit, 100) + 1 });\n  const hasMore = orders.length > limit;\n  return res.json({ data: orders.slice(0, limit), hasMore, nextCursor: hasMore ? orders[limit - 1].id : null });\n});"
+              }
+            ],
+            "keyTakeaway": "Always paginate list endpoints — unbounded queries don't scale.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "microservices.resilience",
+      "title": "Resilience",
+      "items": [
+        {
+          "id": "microservices.resilience.circuit-breaker",
+          "text": "Are circuit breakers implemented for calls to external services?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Calls to downstream services use a circuit breaker pattern that stops sending requests after a threshold of failures, allowing the downstream to recover.",
+            "whyItMatters": "Without circuit breakers, a failing downstream service causes cascading failures. Your service wastes resources on requests that will fail and may exhaust its own connection pool.",
+            "howToVerify": "- Check external HTTP/gRPC calls for circuit breaker wrappers\n- Verify the circuit breaker has appropriate thresholds and recovery timeout\n- Ensure the fallback behavior is defined (return cached data, return error, use default)",
+            "exampleComment": "This call to the recommendation service has no circuit breaker. If recommendations are down, every product page request will hang. Add a circuit breaker with a fallback.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const recommendations = await fetch('http://rec-service/recommend', {\n  body: JSON.stringify({ userId }),\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const recommendations = await circuitBreaker.fire(async () => {\n  return fetch('http://rec-service/recommend', { body: JSON.stringify({ userId }) });\n}, {\n  fallback: () => getDefaultRecommendations(),\n});"
+              }
+            ],
+            "keyTakeaway": "Circuit breakers prevent cascading failures — always wrap external service calls.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.resilience.retry-with-backoff",
+          "text": "Do retries use exponential backoff with jitter?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Failed requests are retried with exponentially increasing delays and random jitter, rather than immediate retries or fixed-interval retries.",
+            "whyItMatters": "Immediate retries or fixed-interval retries create a thundering herd — all clients retry at the same time, overwhelming the recovering service. Backoff with jitter spreads the load.",
+            "howToVerify": "- Check retry configurations for exponential backoff\n- Verify jitter is added to prevent synchronized retries\n- Ensure a maximum retry count is set to prevent infinite loops\n- Check that only transient errors (5xx, timeouts) trigger retries, not 4xx",
+            "exampleComment": "This retry uses a fixed 1-second delay. Under load, all retries will hit the service simultaneously. Use exponential backoff with jitter.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "async function fetchWithRetry(url: string, retries = 3) {\n  for (let i = 0; i < retries; i++) {\n    try { return await fetch(url); }\n    catch { await sleep(1000); }\n  }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "async function fetchWithRetry(url: string, retries = 3) {\n  for (let i = 0; i < retries; i++) {\n    try { return await fetch(url); }\n    catch (err) {\n      if (!isRetryable(err)) throw err;\n      const delay = Math.min(1000 * 2 ** i, 30000);\n      const jitter = delay * (0.5 + Math.random() * 0.5);\n      await sleep(jitter);\n    }\n  }\n}"
+              }
+            ],
+            "keyTakeaway": "Exponential backoff with jitter prevents thundering herds during recovery.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.resilience.timeouts",
+          "text": "Are timeouts set on all external calls (HTTP, database, message queue)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every outgoing network call has an explicit timeout configured. No call can hang indefinitely waiting for a response.",
+            "whyItMatters": "Without timeouts, a slow or unresponsive downstream can cause your service to exhaust its thread/connection pool, effectively taking down your service too.",
+            "howToVerify": "- Check HTTP client configurations for timeout settings\n- Verify database connection pool has query timeouts\n- Ensure message queue consumers have processing timeouts\n- Look for default timeout values that might be too high (e.g., 30 seconds)",
+            "exampleComment": "This HTTP call to the payment service has no timeout. If payment-service hangs, this request will hang forever, tying up a connection. Set a timeout of 5 seconds.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const response = await fetch('http://payment-svc/charge', {\n  method: 'POST',\n  body: JSON.stringify(payload),\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const controller = new AbortController();\nsetTimeout(() => controller.abort(), 5000);\nconst response = await fetch('http://payment-svc/charge', {\n  method: 'POST',\n  body: JSON.stringify(payload),\n  signal: controller.signal,\n});"
+              }
+            ],
+            "keyTakeaway": "Every external call needs a timeout — no request should hang indefinitely.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.resilience.graceful-degradation",
+          "text": "Does the service degrade gracefully when a dependency is unavailable?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When a non-critical dependency fails, the service continues to function with reduced capability rather than failing entirely.",
+            "whyItMatters": "Not all dependencies are equally important. A recommendation engine being down shouldn't prevent users from viewing products. Graceful degradation maintains core functionality.",
+            "howToVerify": "- Identify which dependencies are critical vs. optional\n- Check that optional dependency failures are handled with fallbacks\n- Verify the service returns partial data rather than a full error when non-critical services fail",
+            "exampleComment": "If the analytics service is down, the entire dashboard fails. Analytics is non-critical — return the dashboard with a 'analytics unavailable' message instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Classify dependencies as critical or optional — optional failures should degrade, not break.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.resilience.bulkhead-isolation",
+          "text": "Are resources isolated so one slow consumer can't exhaust shared pools?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service uses bulkhead isolation (separate connection pools, thread pools, or rate limits per downstream) to prevent a slow dependency from consuming all shared resources.",
+            "whyItMatters": "A single slow downstream can exhaust the shared connection pool, blocking requests to healthy downstreams. Bulkheads contain the blast radius.",
+            "howToVerify": "- Check if external service calls use dedicated connection pools\n- Verify thread pools are sized appropriately for concurrency limits\n- Look for rate limiting on outgoing calls to protect downstream services",
+            "exampleComment": "All external service calls share a single connection pool. If the payment service is slow, it will exhaust the pool and block calls to the user service. Use separate pools.",
+            "codeExamples": [],
+            "keyTakeaway": "Isolate resources per dependency so one slow service can't bring down everything.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.resilience.health-checks",
+          "text": "Does the service expose liveness and readiness health check endpoints?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service exposes /health/live (am I running?) and /health/ready (can I accept traffic?) endpoints for orchestrators like Kubernetes to use.",
+            "whyItMatters": "Without health checks, orchestrators can't detect unhealthy instances, leading to traffic being sent to broken pods. Proper checks enable automatic recovery.",
+            "howToVerify": "- Check for /health/live and /health/ready endpoints\n- Verify liveness checks are lightweight (no external calls)\n- Ensure readiness checks verify critical dependencies (database, cache)\n- Confirm health endpoints don't require authentication",
+            "exampleComment": "This service has no health check endpoints. Kubernetes can't detect when it's unhealthy. Add liveness and readiness probes.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.get('/health/live', (req, res) => res.json({ status: 'ok' }));\n\napp.get('/health/ready', async (req, res) => {\n  const dbHealthy = await checkDatabase();\n  const cacheHealthy = await checkRedis();\n  const ready = dbHealthy && cacheHealthy;\n  res.status(ready ? 200 : 503).json({ db: dbHealthy, cache: cacheHealthy });\n});"
+              }
+            ],
+            "keyTakeaway": "Liveness says 'I'm running'; readiness says 'I can handle traffic' — orchestrators need both.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "microservices.communication",
+      "title": "Communication",
+      "items": [
+        {
+          "id": "microservices.communication.sync-vs-async",
+          "text": "Is the right communication pattern used (sync for queries, async for commands)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Synchronous calls (HTTP, gRPC) are used when the caller needs an immediate response. Asynchronous messaging (events, queues) is used for fire-and-forget commands and decoupled workflows.",
+            "whyItMatters": "Synchronous calls for fire-and-forget operations create unnecessary coupling and latency. Async messaging for queries that need immediate responses adds complexity without benefit.",
+            "howToVerify": "- Check if the caller needs the response to continue — if yes, sync is appropriate\n- Look for synchronous calls that could be events (notifications, analytics, audit logging)\n- Verify async patterns are used for long-running operations",
+            "exampleComment": "This synchronously calls the email service and waits for the response. The caller doesn't use the response. Use an async event to decouple these services.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Synchronous call when async would be better\nawait emailService.sendWelcomeEmail(user.email);\nreturn res.json({ user });"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "// Async event — no need to wait\nawait eventBus.publish('user.created', { userId: user.id, email: user.email });\nreturn res.json({ user });"
+              }
+            ],
+            "keyTakeaway": "Use sync when you need the answer now, async when you just need the work done eventually.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.communication.event-schema",
+          "text": "Do published events have a documented schema and versioning?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Events published to message brokers have a documented schema, include a version field, and maintain backward compatibility when the schema evolves.",
+            "whyItMatters": "Without schema contracts, consumers break silently when producers change event shapes. Event versioning enables independent evolution of producers and consumers.",
+            "howToVerify": "- Check that events include a type and version field\n- Verify the event schema is documented or defined in code\n- Ensure schema changes are additive (new fields) not breaking (renamed/removed fields)",
+            "exampleComment": "This event has no version field. When the schema changes, consumers will break with no way to handle old vs. new formats. Add a version field.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "json",
+                "code": "{ \"userId\": \"123\", \"email\": \"user@example.com\" }"
+              },
+              {
+                "label": "Good",
+                "language": "json",
+                "code": "{\n  \"type\": \"user.created\",\n  \"version\": \"1.0\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"data\": { \"userId\": \"123\", \"email\": \"user@example.com\" }\n}"
+              }
+            ],
+            "keyTakeaway": "Events are contracts — version them and evolve them carefully.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.communication.dead-letter-queue",
+          "text": "Are failed messages routed to a dead-letter queue for investigation?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Messages that fail processing after exhausting retries are moved to a dead-letter queue (DLQ) rather than being silently dropped or blocking the main queue.",
+            "whyItMatters": "Without a DLQ, failed messages are either lost (data loss) or retried forever (blocking the queue). A DLQ preserves failed messages for debugging and reprocessing.",
+            "howToVerify": "- Check message queue configuration for dead-letter queue settings\n- Verify retry count is limited before messages go to DLQ\n- Ensure there's a process for monitoring and reprocessing DLQ messages",
+            "exampleComment": "This queue consumer has no dead-letter configuration. If a message fails repeatedly, it will block all other messages. Configure a DLQ after 3 retry attempts.",
+            "codeExamples": [],
+            "keyTakeaway": "Dead-letter queues prevent message loss and queue blocking — always configure them.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.communication.message-ordering",
+          "text": "Is message ordering handled correctly, or is the consumer order-independent?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Either the messaging system guarantees ordering (via partition keys) when the consumer requires it, or the consumer is designed to handle messages in any order.",
+            "whyItMatters": "Most message queues don't guarantee global ordering. Processing 'order.shipped' before 'order.created' causes errors unless the consumer handles out-of-order messages.",
+            "howToVerify": "- Determine if the consumer depends on message order\n- If yes, check that partition/routing keys ensure ordering for related messages\n- If no, verify the consumer handles out-of-order messages gracefully",
+            "exampleComment": "This consumer assumes events arrive in order, but our message broker doesn't guarantee that. Either use a partition key or make the consumer order-independent.",
+            "codeExamples": [],
+            "keyTakeaway": "Either guarantee ordering with partition keys or design consumers to handle any order.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.communication.service-discovery",
+          "text": "Are service URLs configured via service discovery or environment variables, not hardcoded?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Service URLs and connection strings are resolved via service discovery (DNS, Consul) or environment configuration, not hardcoded strings in the source code.",
+            "whyItMatters": "Hardcoded URLs break when services move, scale, or run in different environments. Service discovery enables dynamic routing and environment-specific configuration.",
+            "howToVerify": "- Search for hardcoded URLs (http://..., localhost:...) in the source\n- Verify service URLs come from environment variables or a discovery mechanism\n- Check that URLs aren't committed in config files",
+            "exampleComment": "This hardcodes the payment service URL as 'http://payment-svc:3000'. Use an environment variable so this works across environments.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const paymentUrl = 'http://payment-svc:3000';"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const paymentUrl = process.env.PAYMENT_SERVICE_URL;"
+              }
+            ],
+            "keyTakeaway": "Never hardcode service URLs — use environment variables or service discovery.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.communication.request-correlation",
+          "text": "Is a correlation ID propagated through the entire request chain?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "A unique request ID is generated at the edge and propagated through every service call (HTTP headers, message metadata) so all operations for a single user request can be correlated.",
+            "whyItMatters": "Without correlation IDs, tracing a single user request across multiple services requires guessing based on timestamps. Correlation IDs make distributed debugging possible.",
+            "howToVerify": "- Check that edge services generate a request/correlation ID\n- Verify the ID is forwarded in outgoing HTTP headers and message metadata\n- Ensure all log entries include the correlation ID",
+            "exampleComment": "This service generates a new request ID instead of propagating the one from the incoming request header. Propagate the upstream correlation ID to maintain traceability.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "app.use((req, res, next) => {\n  req.requestId = uuid(); // always generates new ID\n  next();\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.use((req, res, next) => {\n  req.requestId = req.headers['x-request-id'] || uuid();\n  res.setHeader('x-request-id', req.requestId);\n  next();\n});"
+              }
+            ],
+            "keyTakeaway": "Propagate correlation IDs from the edge through every service in the chain.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "microservices.data-consistency",
+      "title": "Data Consistency",
+      "items": [
+        {
+          "id": "microservices.data-consistency.eventual-consistency",
+          "text": "Is eventual consistency acceptable here, or is strong consistency required?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The design explicitly chooses between eventual consistency (data converges over time) and strong consistency (reads always return the latest write) based on the business requirement.",
+            "whyItMatters": "Assuming strong consistency in a distributed system leads to incorrect behavior. Assuming eventual consistency where it's not acceptable leads to data corruption. The choice must be deliberate.",
+            "howToVerify": "- Identify what consistency guarantee the business operation needs\n- Check if the implementation matches the requirement\n- Verify the UI communicates eventual consistency to users where appropriate",
+            "exampleComment": "This reads user balance immediately after a cross-service transfer and shows it to the user. With eventual consistency, the balance might not reflect the transfer yet. Is that acceptable?",
+            "codeExamples": [],
+            "keyTakeaway": "Choose consistency level deliberately based on business needs — don't assume either.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.data-consistency.saga-pattern",
+          "text": "Are multi-service transactions handled with a saga pattern and compensating actions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Operations spanning multiple services use the saga pattern — a sequence of local transactions with compensating actions to undo completed steps if a later step fails.",
+            "whyItMatters": "Distributed transactions (two-phase commit) don't work well across microservices. Sagas provide eventual consistency with clear rollback semantics for failures.",
+            "howToVerify": "- Identify operations that modify data in multiple services\n- Check that each step has a compensating action defined\n- Verify the saga handles partial failures (e.g., payment succeeds but inventory fails)\n- Look for idempotent compensating actions",
+            "exampleComment": "If the inventory reservation fails after payment is charged, there's no compensating action to refund the payment. Define a compensation step for each saga stage.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const createOrderSaga = [\n  { action: chargePayment, compensate: refundPayment },\n  { action: reserveInventory, compensate: releaseInventory },\n  { action: createShipment, compensate: cancelShipment },\n];"
+              }
+            ],
+            "keyTakeaway": "Every saga step needs a compensating action — partial failures must be reversible.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.data-consistency.outbox-pattern",
+          "text": "Are database writes and event publications made atomically (outbox pattern)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When a service writes to its database and publishes an event, both happen atomically using the transactional outbox pattern — the event is written to an outbox table in the same transaction, then published asynchronously.",
+            "whyItMatters": "Without atomic write + publish, you risk scenarios where the database is updated but the event is lost (or vice versa), causing data inconsistency between services.",
+            "howToVerify": "- Check if database writes and event publications happen in the same transaction\n- Look for the outbox pattern (events written to a table, then published by a relay)\n- Verify no events are published before the transaction commits",
+            "exampleComment": "The database write and event publish are separate operations. If the app crashes between them, the event is lost. Use the transactional outbox pattern.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "await db.orders.create(order);\nawait eventBus.publish('order.created', order); // crashes here = lost event"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "await db.$transaction(async (tx) => {\n  await tx.orders.create(order);\n  await tx.outbox.create({ type: 'order.created', payload: order });\n});\n// Outbox relay publishes events asynchronously"
+              }
+            ],
+            "keyTakeaway": "Use the transactional outbox pattern to ensure database writes and events are atomic.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.data-consistency.duplicate-handling",
+          "text": "Are event consumers idempotent to handle duplicate deliveries?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Event consumers can safely process the same event multiple times without causing incorrect state. This is achieved through deduplication checks or idempotent operations.",
+            "whyItMatters": "Message brokers guarantee at-least-once delivery, not exactly-once. Without idempotent consumers, duplicate deliveries cause double-counting, duplicate records, or corrupted state.",
+            "howToVerify": "- Check if consumers track processed event IDs for deduplication\n- Verify that reprocessing an event doesn't create duplicate records\n- Ensure operations are naturally idempotent (upsert) or explicitly deduplicated",
+            "exampleComment": "This consumer creates a new record for each event. If the message is delivered twice, you'll get duplicate records. Add deduplication using the event ID.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "consumer.on('order.created', async (event) => {\n  await db.invoices.create({ orderId: event.data.orderId });\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "consumer.on('order.created', async (event) => {\n  await db.invoices.upsert({\n    where: { eventId: event.id },\n    create: { orderId: event.data.orderId, eventId: event.id },\n    update: {},\n  });\n});"
+              }
+            ],
+            "keyTakeaway": "Assume every event will be delivered at least twice — make consumers idempotent.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.data-consistency.data-migration",
+          "text": "Are schema migrations backward-compatible to support rolling deployments?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Database schema changes work with both the old and new versions of the application code simultaneously, enabling zero-downtime rolling deployments.",
+            "whyItMatters": "During a rolling deployment, both old and new code versions run against the same database. Non-backward-compatible migrations cause errors for old instances.",
+            "howToVerify": "- Check if column renames or removals will break the currently running version\n- Verify new NOT NULL columns have defaults\n- Ensure migrations are split into expand/migrate/contract phases for breaking changes",
+            "exampleComment": "This migration renames the 'name' column to 'display_name'. During rolling deployment, old instances will crash looking for 'name'. Use a two-phase migration: add new column, then remove old.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "sql",
+                "code": "ALTER TABLE users RENAME COLUMN name TO display_name;"
+              },
+              {
+                "label": "Good",
+                "language": "sql",
+                "code": "-- Phase 1: Add new column (deploy with old + new code)\nALTER TABLE users ADD COLUMN display_name TEXT;\nUPDATE users SET display_name = name;\n-- Phase 2: Remove old column (after all instances updated)\n-- ALTER TABLE users DROP COLUMN name;"
+              }
+            ],
+            "keyTakeaway": "Migrations must work with both old and new code — use expand/migrate/contract for breaking changes.",
+            "references": []
+          }
+        },
+        {
+          "id": "microservices.data-consistency.cache-invalidation",
+          "text": "Is cache invalidation handled correctly to prevent serving stale data?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When data changes, caches are invalidated or updated appropriately. TTLs are set to balance freshness with performance, and stale data scenarios are considered.",
+            "whyItMatters": "Stale cache data causes incorrect behavior — showing outdated prices, wrong inventory counts, or revoked permissions still being granted. Cache invalidation bugs are notoriously hard to diagnose.",
+            "howToVerify": "- Check that data mutations invalidate related caches\n- Verify TTLs are appropriate for the data's volatility\n- Look for race conditions between cache writes and invalidations\n- Ensure distributed caches are invalidated consistently across instances",
+            "exampleComment": "This updates the database but doesn't invalidate the cache. Users will see stale data until the TTL expires. Add cache invalidation after the database write.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "await db.products.update(productId, { price: newPrice });\n// Cache still has old price for 1 hour"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "await db.products.update(productId, { price: newPrice });\nawait cache.invalidate(`product:${productId}`);"
+              }
+            ],
+            "keyTakeaway": "Mutate data and invalidate cache together — stale cache bugs are hard to find and easy to prevent.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

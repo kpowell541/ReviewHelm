@@ -45,6 +45,16 @@ import vueData from './data/vue.json';
 import nodejsData from './data/nodejs.json';
 import protobufData from './data/protobuf.json';
 import reactData from './data/react.json';
+import accessibilityData from './data/accessibility.json';
+import observabilityData from './data/observability.json';
+import microservicesData from './data/microservices.json';
+import websocketsData from './data/websockets.json';
+import mlEngineeringData from './data/ml-engineering.json';
+import svelteData from './data/svelte.json';
+import haskellData from './data/haskell.json';
+import zigData from './data/zig.json';
+import apiVersioningData from './data/api-versioning.json';
+import complianceData from './data/compliance.json';
 
 export type ChecklistMode = 'review' | 'polish';
 export type Severity = 'blocker' | 'major' | 'minor' | 'nit';
@@ -94,7 +104,17 @@ export type StackId =
   | 'terraform-hcl'
   | 'typescript'
   | 'unit-testing'
-  | 'vue';
+  | 'vue'
+  | 'accessibility'
+  | 'observability'
+  | 'microservices'
+  | 'websockets'
+  | 'ml-engineering'
+  | 'svelte'
+  | 'haskell'
+  | 'zig'
+  | 'api-versioning'
+  | 'compliance';
 
 export interface ChecklistItemShape {
   id: string;
@@ -177,6 +197,16 @@ const BUNDLED = {
   nodejs: nodejsData,
   protobuf: protobufData,
   react: reactData,
+  accessibility: accessibilityData,
+  observability: observabilityData,
+  microservices: microservicesData,
+  websockets: websocketsData,
+  'ml-engineering': mlEngineeringData,
+  svelte: svelteData,
+  haskell: haskellData,
+  zig: zigData,
+  'api-versioning': apiVersioningData,
+  compliance: complianceData,
 } as const satisfies Record<string, ChecklistShape>;
 
 export type ChecklistId = keyof typeof BUNDLED;

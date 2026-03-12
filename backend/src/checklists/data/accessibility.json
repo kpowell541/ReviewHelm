@@ -1,0 +1,737 @@
+{
+  "meta": {
+    "id": "accessibility",
+    "mode": "review",
+    "title": "Accessibility",
+    "shortTitle": "A11y",
+    "description": "Review checklist for Accessibility projects",
+    "icon": "♿",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "accessibility.semantic-html",
+      "title": "Semantic HTML",
+      "items": [
+        {
+          "id": "accessibility.semantic-html.heading-hierarchy",
+          "text": "Do headings follow a logical hierarchy (h1 > h2 > h3) without skipping levels?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The page uses heading elements in sequential order without gaps, providing a meaningful document outline for assistive technologies.",
+            "whyItMatters": "Screen reader users navigate pages by headings. Skipped levels (e.g., h1 to h3) break the implied structure and make navigation confusing.",
+            "howToVerify": "- Use a browser extension like HeadingsMap to visualize the heading tree\n- Check that no heading level is skipped\n- Verify there is exactly one h1 per page",
+            "exampleComment": "This section jumps from h2 to h4 — the h3 level is skipped. Screen reader users navigating by heading will find this structure confusing.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<h1>Dashboard</h1>\n<h3>Recent Activity</h3>\n<h4>Today</h4>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<h1>Dashboard</h1>\n<h2>Recent Activity</h2>\n<h3>Today</h3>"
+              }
+            ],
+            "keyTakeaway": "Headings are the primary navigation mechanism for screen reader users — keep the hierarchy intact.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.semantic-html.landmark-regions",
+          "text": "Are landmark regions (nav, main, aside, footer) used instead of generic divs?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The page structure uses HTML5 landmark elements so assistive technologies can identify and navigate to major page regions.",
+            "whyItMatters": "Landmarks let screen reader users jump directly to navigation, main content, or complementary sections without tabbing through everything.",
+            "howToVerify": "- Check that the page has a <main> element wrapping primary content\n- Verify navigation uses <nav> elements\n- Ensure there are no generic div wrappers where landmarks would be appropriate",
+            "exampleComment": "This navigation bar is wrapped in a <div>. Using <nav> instead gives screen reader users a landmark to jump to.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<div class=\"sidebar\">\n  <div class=\"nav-links\">...</div>\n</div>\n<div class=\"content\">...</div>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<nav aria-label=\"Main navigation\">\n  <ul>...</ul>\n</nav>\n<main>...</main>"
+              }
+            ],
+            "keyTakeaway": "Landmark elements provide a navigational skeleton that screen reader users rely on.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.semantic-html.button-vs-link",
+          "text": "Are interactive elements using the correct semantic element (button for actions, anchor for navigation)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Buttons trigger in-page actions, anchors navigate to a URL. Using the right element ensures correct keyboard behavior and screen reader announcements.",
+            "whyItMatters": "A div with an onClick handler has no keyboard support or role announcement by default. Using the wrong element forces workarounds and confuses users.",
+            "howToVerify": "- Search for div or span elements with onClick handlers\n- Verify buttons are used for in-page actions (modals, toggles, form submits)\n- Verify anchors are used for navigation with valid href attributes",
+            "exampleComment": "This <div onClick={handleDelete}> should be a <button>. Divs aren't focusable or announced as interactive by screen readers.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<div class=\"btn\" onclick=\"submitForm()\">Submit</div>\n<button onclick=\"window.location='/home'\">Go Home</button>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<button type=\"submit\">Submit</button>\n<a href=\"/home\">Go Home</a>"
+              }
+            ],
+            "keyTakeaway": "Use button for actions and anchor for navigation — never a div with a click handler.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.semantic-html.list-markup",
+          "text": "Are groups of related items marked up as lists (ul, ol, dl)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Related items like navigation links, feature lists, or menu options use proper list elements so assistive technologies can convey the grouping and count.",
+            "whyItMatters": "Screen readers announce list length (e.g., 'list, 5 items'), helping users decide whether to explore or skip. Divs with visual-only grouping lose this context.",
+            "howToVerify": "- Look for sets of visually similar items that are not wrapped in ul/ol\n- Check navigation menus for proper list markup\n- Verify definition lists are used for key-value pairs where appropriate",
+            "exampleComment": "These navigation links are rendered as sibling divs. Wrapping them in a <ul> lets screen readers announce the group and item count.",
+            "codeExamples": [],
+            "keyTakeaway": "Lists convey structure and count to assistive technologies — use them for grouped items.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.semantic-html.form-labels",
+          "text": "Does every form input have an associated label element or accessible name?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every input, select, and textarea has a visible <label> linked via for/id or wrapping, or at minimum an aria-label or aria-labelledby attribute.",
+            "whyItMatters": "Unlabeled inputs are announced as just 'edit text' by screen readers. Users cannot determine what information to enter, making the form unusable.",
+            "howToVerify": "- Check each form control for a <label> with a matching for attribute\n- Verify placeholder text is not the only label\n- Run an automated scan (axe, Lighthouse) for missing labels",
+            "exampleComment": "This email input relies on placeholder text as its only label. Placeholders disappear on focus and aren't reliably announced. Add a <label> element.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<input type=\"email\" placeholder=\"Email address\" />"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<label for=\"email\">Email address</label>\n<input id=\"email\" type=\"email\" />"
+              }
+            ],
+            "keyTakeaway": "Every form control needs a programmatically associated label — placeholders are not labels.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.semantic-html.table-structure",
+          "text": "Are data tables using proper th, caption, and scope attributes?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Data tables use <th> for headers with scope attributes, and optionally <caption> to describe the table's purpose.",
+            "whyItMatters": "Screen readers use table headers to announce cell context. Without proper markup, users hear raw data with no idea which column or row it belongs to.",
+            "howToVerify": "- Check that data tables use <th> elements for column and row headers\n- Verify scope='col' or scope='row' is set on th elements\n- Ensure layout tables are not used (use CSS grid/flexbox instead)",
+            "exampleComment": "This table uses <td> for all cells including headers. The first row should use <th scope='col'> so screen readers can associate data cells with their column.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<table>\n  <tr><td>Name</td><td>Role</td></tr>\n  <tr><td>Alice</td><td>Admin</td></tr>\n</table>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<table>\n  <caption>Team Members</caption>\n  <thead>\n    <tr><th scope=\"col\">Name</th><th scope=\"col\">Role</th></tr>\n  </thead>\n  <tbody>\n    <tr><td>Alice</td><td>Admin</td></tr>\n  </tbody>\n</table>"
+              }
+            ],
+            "keyTakeaway": "Proper table markup lets screen readers announce row and column context for each cell.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "accessibility.aria-patterns",
+      "title": "ARIA Patterns",
+      "items": [
+        {
+          "id": "accessibility.aria-patterns.no-aria-better-than-bad-aria",
+          "text": "Is ARIA only used when native HTML semantics are insufficient?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "ARIA attributes are a last resort — native HTML elements (button, nav, dialog) already provide the correct roles and behaviors.",
+            "whyItMatters": "Incorrect ARIA is worse than no ARIA. It overrides native semantics and creates a confusing experience. Native HTML elements are better supported and tested.",
+            "howToVerify": "- Look for role='button' on elements that could be <button>\n- Check for aria-label on elements that already have visible text labels\n- Verify ARIA roles match the element's actual behavior",
+            "exampleComment": "This <div role='button'> should just be a <button>. The native element gives you keyboard support and correct announcements for free.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<div role=\"button\" tabindex=\"0\" onclick=\"save()\">\n  Save\n</div>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<button onclick=\"save()\">Save</button>"
+              }
+            ],
+            "keyTakeaway": "The first rule of ARIA: don't use ARIA if a native HTML element will do the job.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.aria-patterns.live-regions",
+          "text": "Are dynamic content updates announced via aria-live regions?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Content that changes without a page reload (toasts, form errors, status updates) uses aria-live to notify screen readers of the change.",
+            "whyItMatters": "Screen readers only read content on initial load or focus. Without aria-live, dynamic updates like success messages or error alerts are completely invisible.",
+            "howToVerify": "- Identify all dynamic content areas (notifications, loading states, inline errors)\n- Verify they use aria-live='polite' or aria-live='assertive'\n- Check that the live region exists in the DOM before content is injected",
+            "exampleComment": "This toast notification appears visually but isn't announced by screen readers. Wrap it in an aria-live='polite' region.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<div class=\"toast\">Changes saved successfully</div>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<div aria-live=\"polite\" role=\"status\">\n  Changes saved successfully\n</div>"
+              }
+            ],
+            "keyTakeaway": "If content changes dynamically and users need to know, use an aria-live region.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.aria-patterns.expanded-state",
+          "text": "Do expandable elements use aria-expanded to communicate their state?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Buttons that toggle visibility of content (accordions, dropdowns, menus) use aria-expanded to indicate whether the content is currently shown or hidden.",
+            "whyItMatters": "Without aria-expanded, screen reader users cannot tell whether clicking a toggle will show or hide content, leading to disorientation.",
+            "howToVerify": "- Find all toggle/expand buttons in the PR\n- Verify they set aria-expanded='true' or 'false' based on state\n- Check that aria-controls points to the ID of the controlled element",
+            "exampleComment": "This dropdown toggle button doesn't use aria-expanded. Screen reader users can't tell whether the menu is open or closed.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<button onclick=\"toggleMenu()\">Menu</button>\n<div id=\"menu\" class=\"hidden\">...</div>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<button aria-expanded=\"false\" aria-controls=\"menu\" onclick=\"toggleMenu()\">\n  Menu\n</button>\n<div id=\"menu\" hidden>...</div>"
+              }
+            ],
+            "keyTakeaway": "Always pair toggle buttons with aria-expanded to communicate the current state.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.aria-patterns.dialog-modal",
+          "text": "Do modal dialogs use role='dialog' with aria-modal and proper focus management?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Modals are marked with role='dialog' and aria-modal='true', focus is trapped inside while open, and focus returns to the trigger element on close.",
+            "whyItMatters": "Without proper modal semantics, screen reader users can navigate behind the modal to obscured content. Without focus trapping, keyboard users can tab into invisible elements.",
+            "howToVerify": "- Open the modal and try tabbing — focus should cycle within the modal\n- Press Escape — the modal should close and focus should return to the trigger\n- Verify role='dialog' and aria-modal='true' are set\n- Check for an aria-labelledby pointing to the modal title",
+            "exampleComment": "This modal doesn't trap focus. A keyboard user can tab past the modal into the background page. Use a focus trap and add aria-modal='true'.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<div class=\"modal-overlay\">\n  <div class=\"modal\">\n    <h2>Confirm</h2>\n    <button>OK</button>\n  </div>\n</div>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<div role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"modal-title\">\n  <h2 id=\"modal-title\">Confirm</h2>\n  <button>OK</button>\n</div>"
+              }
+            ],
+            "keyTakeaway": "Modals must trap focus, announce themselves as dialogs, and return focus on close.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.aria-patterns.accessible-names",
+          "text": "Do icon-only buttons and image links have accessible names (aria-label or visually hidden text)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Interactive elements that rely solely on an icon for their visual label must have a text alternative via aria-label, aria-labelledby, or visually hidden text.",
+            "whyItMatters": "Screen readers announce icon-only buttons as just 'button' with no context. Users have no way to know what the button does.",
+            "howToVerify": "- Find all icon-only buttons and image links\n- Verify each has an aria-label or sr-only text\n- Check that the label describes the action, not the icon (e.g., 'Close' not 'X icon')",
+            "exampleComment": "This icon button is announced as just 'button' by screen readers. Add aria-label='Close dialog' to describe its purpose.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<button><svg><!-- X icon --></svg></button>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<button aria-label=\"Close dialog\">\n  <svg aria-hidden=\"true\"><!-- X icon --></svg>\n</button>"
+              }
+            ],
+            "keyTakeaway": "Every interactive element needs a text name — icons alone are invisible to screen readers.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.aria-patterns.aria-hidden-misuse",
+          "text": "Is aria-hidden='true' used correctly and not hiding focusable content?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "aria-hidden='true' removes elements from the accessibility tree. It must not be placed on elements that contain focusable children, as this creates invisible focus traps.",
+            "whyItMatters": "Hiding focusable content from the accessibility tree means screen reader users can still tab to it but hear nothing, creating a confusing dead zone.",
+            "howToVerify": "- Search for aria-hidden='true' in the diff\n- Verify none of those elements contain buttons, links, or inputs\n- Check that decorative icons use aria-hidden='true' appropriately",
+            "exampleComment": "This container has aria-hidden='true' but contains a focusable link. The link becomes an invisible focus trap for screen reader users.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<div aria-hidden=\"true\">\n  <a href=\"/settings\">Settings</a>\n</div>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<div aria-hidden=\"true\">\n  <svg><!-- decorative icon --></svg>\n</div>\n<a href=\"/settings\">Settings</a>"
+              }
+            ],
+            "keyTakeaway": "Never apply aria-hidden to containers with focusable children — it creates invisible focus traps.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "accessibility.keyboard-navigation",
+      "title": "Keyboard Navigation",
+      "items": [
+        {
+          "id": "accessibility.keyboard-navigation.tab-order",
+          "text": "Does the tab order follow a logical reading sequence?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Pressing Tab moves focus through interactive elements in an order that matches the visual layout and reading flow of the page.",
+            "whyItMatters": "A confusing tab order disorients keyboard users. If focus jumps unpredictably, users cannot build a mental model of the page.",
+            "howToVerify": "- Tab through the page and note the focus order\n- Verify it matches the visual layout (left-to-right, top-to-bottom for LTR languages)\n- Check for positive tabindex values that override natural order",
+            "exampleComment": "Focus jumps from the header directly to the footer, skipping the main content. Check for tabindex values that are overriding the natural DOM order.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<button tabindex=\"3\">Third</button>\n<button tabindex=\"1\">First</button>\n<button tabindex=\"2\">Second</button>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<button>First</button>\n<button>Second</button>\n<button>Third</button>"
+              }
+            ],
+            "keyTakeaway": "Avoid positive tabindex values — let the DOM order determine tab sequence.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.keyboard-navigation.focus-visible",
+          "text": "Is a visible focus indicator present on all interactive elements?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When an interactive element receives keyboard focus, it displays a clearly visible outline or ring so the user knows where they are on the page.",
+            "whyItMatters": "Without a focus indicator, keyboard users lose track of their position on the page. This is a WCAG 2.1 AA requirement (2.4.7 Focus Visible).",
+            "howToVerify": "- Tab through all interactive elements\n- Verify each shows a visible focus ring or outline\n- Check CSS for 'outline: none' or 'outline: 0' without a replacement style",
+            "exampleComment": "This button has outline: none with no replacement focus style. Keyboard users can't tell when it's focused. Add a :focus-visible style.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "css",
+                "code": "button:focus {\n  outline: none;\n}"
+              },
+              {
+                "label": "Good",
+                "language": "css",
+                "code": "button:focus-visible {\n  outline: 2px solid #4A90D9;\n  outline-offset: 2px;\n}"
+              }
+            ],
+            "keyTakeaway": "Never remove focus outlines without providing an equally visible replacement.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.keyboard-navigation.keyboard-only-operation",
+          "text": "Can all functionality be operated with a keyboard alone?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every action available via mouse (clicking, hovering, dragging) has a keyboard equivalent. No functionality is locked behind mouse-only interactions.",
+            "whyItMatters": "Users who cannot use a mouse (motor impairments, screen reader users) are completely blocked if an action requires mouse interaction.",
+            "howToVerify": "- Try completing all user flows using only the keyboard\n- Check that hover-triggered content (tooltips, menus) can also be triggered via focus or keyboard\n- Verify drag-and-drop has a keyboard alternative",
+            "exampleComment": "This drag-and-drop reorder only works with a mouse. Keyboard users need an alternative — consider up/down arrow keys with screen reader announcements.",
+            "codeExamples": [],
+            "keyTakeaway": "If you can't do it with a keyboard, some users can't do it at all.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.keyboard-navigation.skip-link",
+          "text": "Is a 'skip to main content' link provided?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "A hidden link at the top of the page becomes visible on focus and allows keyboard users to jump past repetitive navigation directly to the main content.",
+            "whyItMatters": "Without a skip link, keyboard users must tab through the entire navigation on every page load. This is tedious and time-consuming.",
+            "howToVerify": "- Press Tab on page load — a 'Skip to content' link should appear\n- Verify activating it moves focus to the <main> element\n- Check that the link is visually hidden until focused",
+            "exampleComment": "There's no skip link on this page. Keyboard users have to tab through 15 nav items to reach the main content on every page.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<a href=\"#main\" class=\"skip-link\">Skip to main content</a>\n<!-- navigation -->\n<main id=\"main\" tabindex=\"-1\">...</main>"
+              }
+            ],
+            "keyTakeaway": "A skip link saves keyboard users from tabbing through navigation repeatedly.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.keyboard-navigation.no-keyboard-traps",
+          "text": "Are there any keyboard traps where focus gets stuck?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "A keyboard trap occurs when a user tabs into a component and cannot tab out again. Focus should always be escapable except in intentional modal dialogs.",
+            "whyItMatters": "Keyboard traps completely block users from navigating the rest of the page. This is a critical WCAG failure (2.1.2 No Keyboard Trap).",
+            "howToVerify": "- Tab into every interactive component (custom widgets, embedded content, iframes)\n- Verify you can tab out in both directions\n- Check that modals can be closed with Escape",
+            "exampleComment": "Focus gets trapped inside this custom datepicker widget. Once a keyboard user tabs in, they can't tab out. Add keyboard handlers to allow exiting.",
+            "codeExamples": [],
+            "keyTakeaway": "Users must always be able to move focus away from any component using standard keyboard interactions.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.keyboard-navigation.custom-widget-keys",
+          "text": "Do custom interactive widgets support expected keyboard patterns (arrows, Enter, Escape)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Custom components like tabs, menus, and comboboxes implement the keyboard patterns defined in WAI-ARIA Authoring Practices (arrow keys to navigate, Enter to select, Escape to close).",
+            "whyItMatters": "Users expect consistent keyboard behavior based on the component's role. A tab panel that doesn't respond to arrow keys forces users to tab through every tab, breaking the expected interaction.",
+            "howToVerify": "- Reference the WAI-ARIA Authoring Practices for the component type\n- Test arrow key navigation within the widget\n- Verify Enter/Space activates and Escape dismisses where appropriate",
+            "exampleComment": "This custom tab component requires Tab to move between tabs instead of arrow keys. ARIA tab patterns expect left/right arrow key navigation.",
+            "codeExamples": [],
+            "keyTakeaway": "Custom widgets should follow WAI-ARIA Authoring Practices keyboard patterns for their role.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "accessibility.visual-design",
+      "title": "Visual Design",
+      "items": [
+        {
+          "id": "accessibility.visual-design.color-contrast",
+          "text": "Does text meet WCAG AA color contrast ratios (4.5:1 normal, 3:1 large)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Normal-sized text has at least a 4.5:1 contrast ratio against its background, and large text (18pt+ or 14pt bold+) has at least 3:1.",
+            "whyItMatters": "Insufficient contrast makes text unreadable for users with low vision, color blindness, or anyone using a screen in bright sunlight. This is one of the most common accessibility failures.",
+            "howToVerify": "- Use a contrast checker tool (WebAIM Contrast Checker, axe DevTools)\n- Test all text colors against their backgrounds\n- Pay special attention to gray text on white backgrounds and text over images",
+            "exampleComment": "This #999 text on #fff background has a contrast ratio of 2.85:1, well below the 4.5:1 minimum. Consider #767676 or darker.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "css",
+                "code": ".subtle-text {\n  color: #999999; /* 2.85:1 on white */\n}"
+              },
+              {
+                "label": "Good",
+                "language": "css",
+                "code": ".subtle-text {\n  color: #767676; /* 4.54:1 on white */\n}"
+              }
+            ],
+            "keyTakeaway": "4.5:1 for normal text, 3:1 for large text — no exceptions for AA compliance.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.visual-design.color-not-only-cue",
+          "text": "Is color NOT the only means of conveying information?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Information conveyed by color is also conveyed through text, icons, patterns, or other visual cues. Color-blind users must be able to understand the UI without color.",
+            "whyItMatters": "Approximately 8% of men and 0.5% of women have some form of color vision deficiency. Red/green status indicators alone exclude these users.",
+            "howToVerify": "- Check error states — are they indicated by more than just red text?\n- Check charts and graphs — do they use patterns or labels in addition to colors?\n- View the page in grayscale to verify information is still conveyed",
+            "exampleComment": "Required fields are indicated only by a red border. Color-blind users can't distinguish this. Add an asterisk or text label as well.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<input style=\"border-color: red\" />\n<span style=\"color: green\">Success</span>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<input style=\"border-color: red\" aria-invalid=\"true\" />\n<span class=\"error-icon\">⚠️ Error: This field is required</span>"
+              }
+            ],
+            "keyTakeaway": "Always supplement color with text, icons, or patterns to convey information.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.visual-design.text-resize",
+          "text": "Does the layout remain usable when text is resized to 200%?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When users zoom to 200% or increase their browser's default font size, text reflows correctly without being clipped, truncated, or overlapping other elements.",
+            "whyItMatters": "Low-vision users rely on text resizing. If text overflows containers or overlaps other content, the page becomes unusable. WCAG requires content to be usable at 200% zoom.",
+            "howToVerify": "- Zoom the browser to 200% and test all pages\n- Check that text is not clipped by overflow: hidden containers\n- Verify no horizontal scrolling is introduced\n- Ensure buttons and inputs grow to accommodate larger text",
+            "exampleComment": "At 200% zoom, the button text overflows the button container because it has a fixed height. Use min-height and padding instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "css",
+                "code": ".button {\n  height: 36px;\n  overflow: hidden;\n}"
+              },
+              {
+                "label": "Good",
+                "language": "css",
+                "code": ".button {\n  min-height: 36px;\n  padding: 8px 16px;\n}"
+              }
+            ],
+            "keyTakeaway": "Use relative units and flexible containers so content reflows cleanly at 200% zoom.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.visual-design.motion-preferences",
+          "text": "Are animations reduced or removed when prefers-reduced-motion is set?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The code checks the prefers-reduced-motion media query and disables or reduces animations for users who have enabled this OS-level preference.",
+            "whyItMatters": "Animations can cause vestibular disorders, motion sickness, and seizures in sensitive users. Respecting their preference is both an accessibility requirement and a safety concern.",
+            "howToVerify": "- Enable 'Reduce motion' in OS accessibility settings\n- Verify animations are minimized or replaced with instant transitions\n- Check CSS for @media (prefers-reduced-motion: reduce) rules",
+            "exampleComment": "This parallax scroll effect doesn't respect prefers-reduced-motion. Users with vestibular disorders may experience dizziness. Add a reduced-motion media query.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "css",
+                "code": ".animated {\n  transition: transform 0.3s ease;\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .animated {\n    transition: none;\n  }\n}"
+              }
+            ],
+            "keyTakeaway": "Always check prefers-reduced-motion and provide a reduced or no-animation alternative.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.visual-design.touch-target-size",
+          "text": "Are touch targets at least 44x44 CSS pixels?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Interactive elements like buttons and links have a minimum tap/click area of 44x44 CSS pixels, meeting WCAG 2.5.5 Target Size requirements.",
+            "whyItMatters": "Small touch targets are difficult to activate for users with motor impairments, tremors, or anyone using a touchscreen. This also improves usability for all users on mobile.",
+            "howToVerify": "- Inspect interactive elements and verify their clickable area is at least 44x44px\n- Check inline links in dense text for adequate spacing\n- Verify icon buttons have sufficient padding",
+            "exampleComment": "This icon button is 24x24 pixels. The clickable area should be at least 44x44px — add padding to increase the touch target.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "css",
+                "code": ".icon-btn {\n  width: 24px;\n  height: 24px;\n  padding: 0;\n}"
+              },
+              {
+                "label": "Good",
+                "language": "css",
+                "code": ".icon-btn {\n  width: 24px;\n  height: 24px;\n  padding: 10px; /* total: 44x44 */\n}"
+              }
+            ],
+            "keyTakeaway": "44x44 CSS pixels minimum for any interactive element — use padding if the icon is smaller.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.visual-design.content-reflow",
+          "text": "Does content reflow at 320px viewport width without horizontal scrolling?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "At a viewport width of 320 CSS pixels (equivalent to 400% zoom on a 1280px screen), all content reflows into a single column without requiring horizontal scrolling.",
+            "whyItMatters": "Users who zoom significantly or use narrow viewports need content to reflow. Horizontal scrolling combined with vertical scrolling makes content extremely difficult to read.",
+            "howToVerify": "- Set viewport width to 320px in DevTools\n- Verify no horizontal scroll bar appears\n- Check that all content is visible and readable\n- Ensure no text is cut off or overlapping",
+            "exampleComment": "This fixed-width table forces horizontal scrolling at 320px. Consider a responsive card layout or allow the table to stack vertically on narrow viewports.",
+            "codeExamples": [],
+            "keyTakeaway": "Content should reflow to a single column at 320px — no horizontal scrolling.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "accessibility.screen-readers",
+      "title": "Screen Readers",
+      "items": [
+        {
+          "id": "accessibility.screen-readers.alt-text",
+          "text": "Do meaningful images have descriptive alt text, and decorative images have empty alt?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Images that convey information have alt text describing their content or function. Decorative images use alt='' to be skipped by screen readers.",
+            "whyItMatters": "Missing alt text causes screen readers to announce the filename (e.g., 'IMG_2847.jpg'), which is useless. Decorative images without empty alt create noise.",
+            "howToVerify": "- Check every <img> for an alt attribute\n- Verify informative images have descriptive alt text\n- Verify decorative images have alt=''\n- Check SVG icons for aria-hidden='true' or role='img' with a title",
+            "exampleComment": "This product image has no alt text. Screen reader users will hear the filename instead of a description. Add alt='Blue running shoes, side view'.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<img src=\"product.jpg\" />\n<img src=\"divider.png\" alt=\"decorative line divider\" />"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<img src=\"product.jpg\" alt=\"Blue running shoes, side view\" />\n<img src=\"divider.png\" alt=\"\" />"
+              }
+            ],
+            "keyTakeaway": "Meaningful images need descriptive alt; decorative images need empty alt to be silent.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.screen-readers.page-title",
+          "text": "Does each page have a unique, descriptive title?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The document <title> element is unique for each page and describes the page's content or purpose, typically in the format 'Page Name - Site Name'.",
+            "whyItMatters": "The page title is the first thing announced when a screen reader loads a page. It also appears in browser tabs and bookmarks, helping users identify pages.",
+            "howToVerify": "- Check that the <title> element is set for each route\n- Verify it changes when navigating between pages in an SPA\n- Ensure the title describes the page content, not just the site name",
+            "exampleComment": "All pages share the same title 'MyApp'. Each page should have a descriptive title like 'Dashboard - MyApp' or 'Settings - MyApp'.",
+            "codeExamples": [],
+            "keyTakeaway": "Each page should have a unique, descriptive title that is announced on page load.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.screen-readers.language-attribute",
+          "text": "Is the lang attribute set on the html element?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The <html> element has a lang attribute specifying the page's primary language, and content in other languages uses lang attributes on their containing elements.",
+            "whyItMatters": "Screen readers use the lang attribute to select the correct speech synthesizer and pronunciation rules. Without it, content may be read in the wrong language.",
+            "howToVerify": "- Check the <html> tag for a lang attribute (e.g., lang='en')\n- Verify content in other languages has lang overrides\n- Ensure the lang value matches the actual content language",
+            "exampleComment": "The <html> element is missing a lang attribute. Screen readers may default to the wrong language pronunciation. Add lang='en' (or the appropriate language).",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<html>\n  <head>...</head>\n</html>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<html lang=\"en\">\n  <head>...</head>\n</html>"
+              }
+            ],
+            "keyTakeaway": "Set lang on <html> so screen readers use the correct pronunciation.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.screen-readers.error-announcements",
+          "text": "Are form validation errors announced to screen readers and associated with their fields?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When form validation fails, errors are programmatically associated with their input via aria-describedby, and focus moves to the first error or an error summary.",
+            "whyItMatters": "Sighted users see red error messages. Screen reader users need errors to be announced and linked to the correct field, or they won't know what's wrong.",
+            "howToVerify": "- Submit a form with invalid data\n- Verify errors are announced by screen readers\n- Check that each error uses aria-describedby linked to its input\n- Verify focus moves to the error summary or first invalid field",
+            "exampleComment": "This validation error appears visually below the input but isn't linked with aria-describedby. Screen reader users won't hear the error when focused on the field.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<input id=\"email\" type=\"email\" />\n<span class=\"error\">Invalid email address</span>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<input id=\"email\" type=\"email\" aria-invalid=\"true\" aria-describedby=\"email-error\" />\n<span id=\"email-error\" role=\"alert\">Invalid email address</span>"
+              }
+            ],
+            "keyTakeaway": "Link errors to inputs with aria-describedby and announce them with role='alert' or aria-live.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.screen-readers.reading-order",
+          "text": "Does the DOM order match the visual reading order?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The order of elements in the HTML source matches how they appear visually. CSS reordering (flexbox order, grid, absolute positioning) doesn't create a mismatch.",
+            "whyItMatters": "Screen readers follow DOM order, not visual order. If CSS reorders content, screen reader users experience the page in a different sequence than sighted users.",
+            "howToVerify": "- Compare the DOM order with the visual layout\n- Check for CSS order property usage in flexbox/grid\n- Verify absolutely positioned elements aren't creating reading order mismatches",
+            "exampleComment": "CSS flexbox order moves the sidebar before the main content visually, but the DOM has main content first. Screen readers will read main content first, creating a mismatch.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep DOM order consistent with visual order — avoid CSS reordering that breaks reading flow.",
+            "references": []
+          }
+        },
+        {
+          "id": "accessibility.screen-readers.status-updates",
+          "text": "Are loading states and progress updates communicated to screen readers?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When content is loading, screen readers are informed via aria-busy, role='status', or aria-live regions. Progress bars use role='progressbar' with aria-valuenow.",
+            "whyItMatters": "Sighted users see spinners and progress bars. Without announcements, screen reader users may think nothing is happening or that the page is broken.",
+            "howToVerify": "- Trigger loading states and listen with a screen reader\n- Check for aria-busy='true' on regions that are loading\n- Verify progress bars have role='progressbar' with value attributes\n- Check that completion is announced",
+            "exampleComment": "This spinner gives no screen reader feedback. Add an aria-live='polite' region with 'Loading...' text, and update it when loading completes.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "html",
+                "code": "<div class=\"spinner\"></div>"
+              },
+              {
+                "label": "Good",
+                "language": "html",
+                "code": "<div role=\"status\" aria-live=\"polite\">\n  <div class=\"spinner\" aria-hidden=\"true\"></div>\n  Loading results...\n</div>"
+              }
+            ],
+            "keyTakeaway": "Every visual loading indicator needs an equivalent announcement for screen readers.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}
