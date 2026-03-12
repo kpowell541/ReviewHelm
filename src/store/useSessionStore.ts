@@ -14,6 +14,7 @@ import { secureStoreAsyncStorage } from '../storage/secureStorage';
 
 interface SessionState {
   sessions: Record<string, Session>;
+  deletedSessionIds: string[];
   hasHydrated: boolean;
   setHasHydrated: (hydrated: boolean) => void;
 
@@ -36,6 +37,7 @@ interface SessionState {
   linkPR: (sessionId: string, prId: string | undefined) => void;
   updateSelectedSections: (sessionId: string, sections: string[] | undefined) => void;
   replaceSessions: (sessions: Record<string, Session>) => void;
+  clearDeletedSessionIds: () => void;
   getSession: (sessionId: string) => Session | undefined;
   getSessionsByMode: (mode: ChecklistMode, stackId?: StackId) => Session[];
   getRecentSessions: (limit: number) => Session[];
@@ -45,6 +47,7 @@ export const useSessionStore = create<SessionState>()(
   persist(
     (set, get) => ({
       sessions: {},
+      deletedSessionIds: [],
       hasHydrated: false,
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
 
@@ -127,7 +130,7 @@ export const useSessionStore = create<SessionState>()(
           return {
             sessions: {
               ...state.sessions,
-              [sessionId]: { ...session, title },
+              [sessionId]: { ...session, title, updatedAt: new Date().toISOString() },
             },
           };
         });
@@ -154,7 +157,10 @@ export const useSessionStore = create<SessionState>()(
       deleteSession: (sessionId) => {
         set((state) => {
           const { [sessionId]: _, ...rest } = state.sessions;
-          return { sessions: rest };
+          return {
+            sessions: rest,
+            deletedSessionIds: [...state.deletedSessionIds, sessionId],
+          };
         });
       },
 
@@ -193,6 +199,7 @@ export const useSessionStore = create<SessionState>()(
       },
 
       replaceSessions: (sessions) => set({ sessions }),
+      clearDeletedSessionIds: () => set({ deletedSessionIds: [] }),
 
       getSession: (sessionId) => {
         return get().sessions[sessionId];
