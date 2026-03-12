@@ -2033,7 +2033,7 @@ components:
           nullable: true
         acceptanceOutcome:
           type: string
-          enum: [accepted-clean, accepted-with-changes]
+          enum: [accepted-clean, accepted-with-changes, abandoned]
           nullable: true
         reviewOutcome:
           type: string
@@ -2125,6 +2125,16 @@ components:
         - api-testing
         - performance-testing
         - mobile-testing
+        - accessibility
+        - observability
+        - microservices
+        - websockets
+        - ml-engineering
+        - svelte
+        - haskell
+        - zig
+        - api-versioning
+        - compliance
 
     ChecklistMode:
       type: string
@@ -2144,7 +2154,7 @@ components:
 
     ClaudeModel:
       type: string
-      enum: [haiku, sonnet, opus]
+      enum: [sonnet, opus]
 
     TutorRole:
       type: string
@@ -2197,6 +2207,30 @@ components:
         activeCommentStyleProfileId:
           type: string
           nullable: true
+        monthlyBudgetUsd:
+          type: number
+        alertThresholds:
+          type: array
+          items:
+            type: number
+        hardStopAtBudget:
+          type: boolean
+        autoDowngradeNearBudget:
+          type: boolean
+        autoDowngradeThresholdPct:
+          type: number
+        cooldownSeconds:
+          type: number
+        bookmarks:
+          type: array
+          items:
+            type: string
+        templates:
+          type: object
+          additionalProperties: true
+        repoConfigs:
+          type: object
+          additionalProperties: true
       required:
         - aiModel
         - defaultSeverityFilter
@@ -2227,6 +2261,30 @@ components:
         activeCommentStyleProfileId:
           type: string
           nullable: true
+        monthlyBudgetUsd:
+          type: number
+        alertThresholds:
+          type: array
+          items:
+            type: number
+        hardStopAtBudget:
+          type: boolean
+        autoDowngradeNearBudget:
+          type: boolean
+        autoDowngradeThresholdPct:
+          type: number
+        cooldownSeconds:
+          type: number
+        bookmarks:
+          type: array
+          items:
+            type: string
+        templates:
+          type: object
+          additionalProperties: true
+        repoConfigs:
+          type: object
+          additionalProperties: true
       additionalProperties: false
 
     AnthropicKeyStatus:
@@ -2320,10 +2378,21 @@ components:
     CreateSessionRequest:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         mode:
           $ref: '#/components/schemas/ChecklistMode'
         stackId:
           $ref: '#/components/schemas/StackId'
+        stackIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/StackId'
+        selectedSections:
+          type: array
+          items:
+            type: string
         title:
           type: string
       required: [mode]
@@ -2375,6 +2444,14 @@ components:
           allOf:
             - $ref: '#/components/schemas/StackId'
           nullable: true
+        stackIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/StackId'
+        selectedSections:
+          type: array
+          items:
+            type: string
         title:
           type: string
         itemResponses:
@@ -2383,6 +2460,9 @@ components:
             $ref: '#/components/schemas/ItemResponse'
         sessionNotes:
           type: string
+        linkedPRId:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -3214,3 +3294,26 @@ components:
         lastAccessed:
           type: string
           format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SessionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Session'
+        nextCursor:
+          type: string
+          nullable: true
+      required: [items, nextCursor]
+
+    ConfidenceHistoriesResponse:
+      type: object
+      properties:
+        histories:
+          type: object
+          additionalProperties: true
+      required: [histories]

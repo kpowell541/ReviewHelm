@@ -10,6 +10,7 @@ import type {
   ConfidenceLevel,
   AiFeature,
 } from '../data/types';
+import type { ApiAiTutorResponse } from '../api/schema';
 
 const RESPONSE_CACHE_TTL_MS = 1000 * 60 * 60 * 6;
 
@@ -28,19 +29,6 @@ const INPUT_TOKEN_CAP_BY_ROLE: Record<TutorRole, number> = {
   'exercise-generator': 9000,
   'anti-bias-challenger': 8000,
 };
-
-interface TutorApiResponse {
-  content: string;
-  requestedModel: ClaudeModel;
-  resolvedModel: string;
-  autoDowngraded: boolean;
-  autoEscalated?: boolean;
-  cached: boolean;
-  inputTokens: number;
-  outputTokens: number;
-  costUsd: number;
-  cooldownRemainingMs: number;
-}
 
 interface AnthropicMessage {
   role: 'user' | 'assistant';
@@ -289,9 +277,9 @@ export async function sendTutorMessage(options: AiRequestOptions): Promise<AiRes
     inputTokenCount: null,
   });
 
-  let response: TutorApiResponse;
+  let response: ApiAiTutorResponse;
   try {
-    response = await api.post<TutorApiResponse>('/ai/tutor', {
+    response = await api.post<ApiAiTutorResponse>('/ai/tutor', {
       ...body,
     });
   } catch (err) {

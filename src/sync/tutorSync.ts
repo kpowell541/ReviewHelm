@@ -1,6 +1,7 @@
 import { api } from '../api/client';
 import { useTutorStore } from '../store/useTutorStore';
 import type { TutorConversation } from '../data/types';
+import type { ApiTutorConversation } from '../api/schema';
 import type { AdapterResult } from './types';
 
 export async function syncTutorConversations(): Promise<AdapterResult> {
@@ -9,12 +10,7 @@ export async function syncTutorConversations(): Promise<AdapterResult> {
   let pulled = 0;
 
   try {
-    const remote = await api.get<Array<{
-      itemId: string;
-      messages: unknown[];
-      lastAccessed: string;
-      updatedAt: string;
-    }>>('/tutor-conversations');
+    const remote = await api.get<ApiTutorConversation[]>('/tutor-conversations');
 
     const localConversations = useTutorStore.getState().conversations;
     const merged = { ...localConversations };
@@ -24,7 +20,7 @@ export async function syncTutorConversations(): Promise<AdapterResult> {
       if (!local || new Date(conv.lastAccessed) > new Date(local.lastAccessed)) {
         merged[conv.itemId] = {
           itemId: conv.itemId,
-          messages: conv.messages as TutorConversation['messages'],
+          messages: conv.messages as unknown as TutorConversation['messages'],
           lastAccessed: conv.lastAccessed,
         };
         pulled++;

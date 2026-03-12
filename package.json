@@ -9,6 +9,8 @@
     "web": "infisical run -- expo start --web",
     "start:local": "expo start",
     "typecheck": "tsc --noEmit",
+    "openapi:generate": "openapi-typescript docs/openapi.yaml -o src/api/generated.ts",
+    "openapi:check": "openapi-typescript docs/openapi.yaml -o /dev/stdout | diff - src/api/generated.ts",
     "test": "jest --runInBand",
     "test:ci": "jest --runInBand --coverage"
   },
@@ -50,6 +52,7 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
     "jest": "^30.3.0",
+    "openapi-typescript": "^7.13.0",
     "ts-jest": "^29.4.6",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
