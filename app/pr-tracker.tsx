@@ -464,6 +464,16 @@ export default function PRTrackerScreen() {
         >
           <Text style={styles.prActionBtnText}>...</Text>
         </Pressable>
+        {/* Status dot (separate from card body to avoid nested Pressable) */}
+        <Pressable
+          onPress={() => cycleStatus(pr)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Cycle status, currently ${PR_STATUS_LABELS[pr.status]}`}
+          style={[styles.statusDotWrap, { alignSelf: 'center' as const }]}
+        >
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+        </Pressable>
         {/* Title section */}
         <Pressable
           style={styles.prCardCenter}
@@ -473,15 +483,6 @@ export default function PRTrackerScreen() {
           accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
           accessibilityHint="Tap for actions, long press to delete"
         >
-          <Pressable
-            onPress={() => cycleStatus(pr)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={`Cycle status, currently ${PR_STATUS_LABELS[pr.status]}`}
-            style={styles.statusDotWrap}
-          >
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          </Pressable>
           <Text style={styles.prTitle}>
             {pr.title}
           </Text>
