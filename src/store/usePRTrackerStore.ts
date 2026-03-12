@@ -198,10 +198,11 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const pr = state.prs[id];
           if (!pr) return state;
           const now = new Date().toISOString();
-          const lastReviewedAt = pr.lastReviewedAt && isToday(pr.lastReviewedAt)
-            ? undefined
-            : now;
-          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt, updatedAt: now } } };
+          const wasReviewed = pr.lastReviewedAt && isToday(pr.lastReviewedAt);
+          const lastReviewedAt = wasReviewed ? undefined : now;
+          // Clear review outcome when un-reviewing
+          const reviewOutcome = wasReviewed ? undefined : pr.reviewOutcome;
+          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt, reviewOutcome, updatedAt: now } } };
         });
       },
 
