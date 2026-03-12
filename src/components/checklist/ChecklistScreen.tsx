@@ -132,7 +132,7 @@ export function ChecklistScreen({ sessionId }: Props) {
   const checklist = useMemo(() => {
     if (!sessionMode) return null;
     if (sessionMode === 'polish') {
-      if (sessionEffectiveIds.length === 0) return withCodeReviewMeta(getPolishChecklist());
+      if (sessionEffectiveIds.length === 0) return withCodeReviewMeta(getPolishChecklist(), true);
       // Merge domain checklists + polish checklist for self-reviews with a stack
       const domainChecklist = sessionEffectiveIds.length === 1
         ? filterSections(getChecklist(sessionEffectiveIds[0]), sessionSelectedSections)
@@ -149,7 +149,7 @@ export function ChecklistScreen({ sessionId }: Props) {
         },
         sections: [...domainChecklist.sections, ...polishChecklist.sections],
       };
-      return withCodeReviewMeta(merged);
+      return withCodeReviewMeta(merged, true);
     }
     if (sessionEffectiveIds.length === 0) return null;
     const base = sessionEffectiveIds.length === 1
@@ -265,8 +265,8 @@ export function ChecklistScreen({ sessionId }: Props) {
       ...prev,
       [sectionId]: !prev[sectionId],
     }));
-    // When collapsing, scroll to the section header to prevent blank space below
-    if (isCollapsing) {
+    // When expanding, scroll to the section header so it's visible at the top
+    if (!isCollapsing) {
       const sectionIndex = sections.findIndex((s) => s.section.id === sectionId);
       if (sectionIndex >= 0) {
         requestAnimationFrame(() => {
@@ -283,6 +283,7 @@ export function ChecklistScreen({ sessionId }: Props) {
         });
       }
     }
+    // When collapsing, don't scroll — onContentSizeChange handles blank space
   }, [collapsedSections, sections]);
 
   const handleSetVerdict = useCallback(
@@ -621,7 +622,7 @@ export function ChecklistScreen({ sessionId }: Props) {
             if (maxScroll >= 0 && scrollYRef.current > maxScroll) {
               (sectionListRef.current as any)?.scrollToOffset?.({
                 offset: Math.max(0, maxScroll),
-                animated: true,
+                animated: false,
               });
             }
           }

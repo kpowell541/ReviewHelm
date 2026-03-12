@@ -451,15 +451,6 @@ export default function PRTrackerScreen() {
 
     return (
       <View key={pr.id} style={styles.prCard}>
-        <Pressable
-          onPress={() => handleCardPress(pr)}
-          hitSlop={8}
-          style={styles.prActionBtn}
-          accessibilityRole="button"
-          accessibilityLabel={`Actions for ${pr.title}`}
-        >
-          <Text style={styles.prActionBtnText}>...</Text>
-        </Pressable>
         <View style={styles.prCardLeft}>
           <Pressable
             onPress={() => cycleStatus(pr)}
@@ -506,6 +497,15 @@ export default function PRTrackerScreen() {
               </Text>
             )}
           </View>
+        </Pressable>
+        <Pressable
+          onPress={() => handleCardPress(pr)}
+          hitSlop={8}
+          style={styles.prActionBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Actions for ${pr.title}`}
+        >
+          <Text style={styles.prActionBtnText}>...</Text>
         </Pressable>
         {/* Right side: radio buttons */}
         <View style={styles.prCardRight}>
@@ -977,15 +977,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden' as const,
   },
   prActionBtn: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
     width: 32,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.sm,
-    zIndex: 1,
+    alignSelf: 'flex-start',
   },
   prActionBtnText: {
     fontSize: fontSizes.lg,
