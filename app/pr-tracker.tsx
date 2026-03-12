@@ -454,306 +454,312 @@ export default function PRTrackerScreen() {
 
     return (
       <View key={pr.id} style={styles.prCard}>
-        <View style={styles.prCardLeft}>
+        {/* Top: title row */}
+        <View style={styles.prCardTop}>
           <Pressable
             onPress={() => cycleStatus(pr)}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel={`Cycle status, currently ${PR_STATUS_LABELS[pr.status]}`}
+            style={styles.statusDotWrap}
           >
             <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
           </Pressable>
+          <Pressable
+            style={styles.prCardCenter}
+            onPress={() => handleCardPress(pr)}
+            onLongPress={() => handleDelete(pr)}
+            accessibilityRole="button"
+            accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
+            accessibilityHint="Tap for actions, long press to delete"
+          >
+            <Text style={styles.prTitle}>
+              {pr.title}
+            </Text>
+            {subtitle && (
+              <Text style={styles.prSubtitle} numberOfLines={1}>
+                {subtitle}
+              </Text>
+            )}
+            <View style={styles.prBadges}>
+              <Text style={[styles.badge, { backgroundColor: statusColor + '25', color: statusColor }]}>
+                {displayStatus.label}
+              </Text>
+              {pr.size && (
+                <Text style={[styles.badge, styles.sizeBadge]}>
+                  {PR_SIZE_LABELS[pr.size]}
+                </Text>
+              )}
+              {pr.priority !== 'medium' && (
+                <Text style={[styles.badge, { backgroundColor: PRIORITY_COLORS[pr.priority] + '25', color: PRIORITY_COLORS[pr.priority] }]}>
+                  {PR_PRIORITY_LABELS[pr.priority]}
+                </Text>
+              )}
+              {pr.isEmergency && (
+                <Text style={[styles.badge, styles.emergencyBadge]}>
+                  HOTFIX
+                </Text>
+              )}
+            </View>
+          </Pressable>
+          <Pressable
+            onPress={() => handleCardPress(pr)}
+            hitSlop={8}
+            style={styles.prActionBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Actions for ${pr.title}`}
+          >
+            <Text style={styles.prActionBtnText}>...</Text>
+          </Pressable>
         </View>
-        <Pressable
-          style={styles.prCardCenter}
-          onPress={() => handleCardPress(pr)}
-          onLongPress={() => handleDelete(pr)}
-          accessibilityRole="button"
-          accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
-          accessibilityHint="Tap for actions, long press to delete"
-        >
-          <Text style={styles.prTitle} numberOfLines={1}>
-            {pr.title}
-          </Text>
-          {subtitle && (
-            <Text style={styles.prSubtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          )}
-          <View style={styles.prBadges}>
-            <Text style={[styles.badge, { backgroundColor: statusColor + '25', color: statusColor }]}>
-              {displayStatus.label}
-            </Text>
-            {pr.size && (
-              <Text style={[styles.badge, styles.sizeBadge]}>
-                {PR_SIZE_LABELS[pr.size]}
-              </Text>
-            )}
-            {pr.priority !== 'medium' && (
-              <Text style={[styles.badge, { backgroundColor: PRIORITY_COLORS[pr.priority] + '25', color: PRIORITY_COLORS[pr.priority] }]}>
-                {PR_PRIORITY_LABELS[pr.priority]}
-              </Text>
-            )}
-            {pr.isEmergency && (
-              <Text style={[styles.badge, styles.emergencyBadge]}>
-                HOTFIX
-              </Text>
-            )}
-          </View>
-        </Pressable>
-        <Pressable
-          onPress={() => handleCardPress(pr)}
-          hitSlop={8}
-          style={styles.prActionBtn}
-          accessibilityRole="button"
-          accessibilityLabel={`Actions for ${pr.title}`}
-        >
-          <Text style={styles.prActionBtnText}>...</Text>
-        </Pressable>
-        {/* Right side: radio buttons */}
-        <View style={styles.prCardRight}>
-          {/* Changes ever requested? (tracks review effectiveness) */}
-          <View style={styles.radioGroup}>
-            <Text style={styles.radioGroupLabel}>Changes?</Text>
-            <View style={styles.radioOptions}>
-              <Pressable
-                style={styles.radioItem}
-                hitSlop={12}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  setReviewOutcome(pr.id, 'requested-changes');
-                }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: pr.reviewOutcome === 'requested-changes' }}
-                accessibilityLabel="Changes requested"
-              >
-                <View style={[
-                  styles.radioCircle,
-                  pr.reviewOutcome === 'requested-changes' && styles.radioCircleWarn,
-                ]}>
-                  {pr.reviewOutcome === 'requested-changes' && <View style={[styles.radioDot, styles.radioDotWarn]} />}
-                </View>
-                <Text style={[
-                  styles.radioLabel,
-                  pr.reviewOutcome === 'requested-changes' && styles.radioLabelWarn,
-                ]}>Requested</Text>
-              </Pressable>
-              <Pressable
-                style={styles.radioItem}
-                hitSlop={12}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  setReviewOutcome(pr.id, 'no-changes-requested');
-                }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: pr.reviewOutcome === 'no-changes-requested' }}
-                accessibilityLabel="No changes requested"
-              >
-                <View style={[
-                  styles.radioCircle,
-                  pr.reviewOutcome === 'no-changes-requested' && styles.radioCircleGood,
-                ]}>
-                  {pr.reviewOutcome === 'no-changes-requested' && <View style={[styles.radioDot, styles.radioDotGood]} />}
-                </View>
-                <Text style={[
-                  styles.radioLabel,
-                  pr.reviewOutcome === 'no-changes-requested' && styles.radioLabelGood,
-                ]}>Not Requested</Text>
-              </Pressable>
-            </View>
-          </View>
-          {/* Reviewed: No / Yes — locked once in re-review mode */}
-          <View style={[styles.radioGroup, pr.changesEverNeeded && styles.radioGroupLocked]}>
-            <Text style={styles.radioGroupLabel}>Reviewed:</Text>
-            <View style={styles.radioOptions}>
-              <Pressable
-                style={styles.radioItem}
-                hitSlop={12}
-                disabled={!!pr.changesEverNeeded}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  if (isReviewedToday) {
-                    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                    markReviewed(pr.id);
-                  }
-                }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: !isReviewedToday, disabled: !!pr.changesEverNeeded }}
-                accessibilityLabel="Not reviewed today"
-              >
-                <View style={[
-                  styles.radioCircle,
-                  !isReviewedToday && styles.radioCircleDim,
-                ]}>
-                  {!isReviewedToday && <View style={[styles.radioDot, styles.radioDotDim]} />}
-                </View>
-                <Text style={[
-                  styles.radioLabel,
-                  !isReviewedToday && styles.radioLabelDim,
-                ]}>No</Text>
-              </Pressable>
-              <Pressable
-                style={styles.radioItem}
-                hitSlop={12}
-                disabled={!!pr.changesEverNeeded}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  if (!isReviewedToday) {
-                    if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                    markReviewed(pr.id);
-                  }
-                }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: isReviewedToday, disabled: !!pr.changesEverNeeded }}
-                accessibilityLabel="Reviewed today"
-              >
-                <View style={[
-                  styles.radioCircle,
-                  isReviewedToday && styles.radioCircleGood,
-                ]}>
-                  {isReviewedToday && <View style={[styles.radioDot, styles.radioDotGood]} />}
-                </View>
-                <Text style={[
-                  styles.radioLabel,
-                  isReviewedToday && styles.radioLabelGood,
-                ]}>Yes</Text>
-              </Pressable>
-            </View>
-          </View>
-          {/* Re-review: shown when changes were ever needed */}
-          {pr.changesEverNeeded && (
-            <View style={styles.radioGroup}>
-              <Text style={styles.radioGroupLabel}>Re-review:</Text>
-              <View style={styles.radioOptions}>
+        {/* Bottom: controls grid */}
+        <View style={styles.prCardBottom}>
+          {/* Row 1: Changes + Reviewed (+ Re-review if applicable) */}
+          <View style={styles.controlsRow}>
+            {/* Changes? */}
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlLabel}>Changes?</Text>
+              <View style={styles.controlOptions}>
                 <Pressable
                   style={styles.radioItem}
-                  hitSlop={12}
+                  hitSlop={8}
                   onPress={() => {
                     void Haptics.selectionAsync();
-                    if (pr.reReviewed) setReReviewed(pr.id, false);
+                    setReviewOutcome(pr.id, 'requested-changes');
                   }}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: !pr.reReviewed }}
-                  accessibilityLabel="Not re-reviewed"
+                  accessibilityState={{ selected: pr.reviewOutcome === 'requested-changes' }}
+                  accessibilityLabel="Changes requested"
                 >
                   <View style={[
                     styles.radioCircle,
-                    !pr.reReviewed && styles.radioCircleDim,
+                    pr.reviewOutcome === 'requested-changes' && styles.radioCircleWarn,
                   ]}>
-                    {!pr.reReviewed && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                    {pr.reviewOutcome === 'requested-changes' && <View style={[styles.radioDot, styles.radioDotWarn]} />}
                   </View>
                   <Text style={[
                     styles.radioLabel,
-                    !pr.reReviewed && styles.radioLabelDim,
+                    pr.reviewOutcome === 'requested-changes' && styles.radioLabelWarn,
+                  ]}>Yes</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={8}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    setReviewOutcome(pr.id, 'no-changes-requested');
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: pr.reviewOutcome === 'no-changes-requested' }}
+                  accessibilityLabel="No changes requested"
+                >
+                  <View style={[
+                    styles.radioCircle,
+                    pr.reviewOutcome === 'no-changes-requested' && styles.radioCircleGood,
+                  ]}>
+                    {pr.reviewOutcome === 'no-changes-requested' && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    pr.reviewOutcome === 'no-changes-requested' && styles.radioLabelGood,
+                  ]}>No</Text>
+                </Pressable>
+              </View>
+            </View>
+            {/* Reviewed */}
+            <View style={[styles.controlGroup, pr.changesEverNeeded && styles.radioGroupLocked]}>
+              <Text style={styles.controlLabel}>Reviewed</Text>
+              <View style={styles.controlOptions}>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={8}
+                  disabled={!!pr.changesEverNeeded}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    if (isReviewedToday) {
+                      if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      markReviewed(pr.id);
+                    }
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: !isReviewedToday, disabled: !!pr.changesEverNeeded }}
+                  accessibilityLabel="Not reviewed today"
+                >
+                  <View style={[
+                    styles.radioCircle,
+                    !isReviewedToday && styles.radioCircleDim,
+                  ]}>
+                    {!isReviewedToday && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    !isReviewedToday && styles.radioLabelDim,
                   ]}>No</Text>
                 </Pressable>
                 <Pressable
                   style={styles.radioItem}
-                  hitSlop={12}
+                  hitSlop={8}
+                  disabled={!!pr.changesEverNeeded}
                   onPress={() => {
                     void Haptics.selectionAsync();
-                    if (!pr.reReviewed) setReReviewed(pr.id, true);
+                    if (!isReviewedToday) {
+                      if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                      markReviewed(pr.id);
+                    }
                   }}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: !!pr.reReviewed }}
-                  accessibilityLabel="Re-reviewed after changes"
+                  accessibilityState={{ selected: isReviewedToday, disabled: !!pr.changesEverNeeded }}
+                  accessibilityLabel="Reviewed today"
                 >
                   <View style={[
                     styles.radioCircle,
-                    pr.reReviewed && styles.radioCircleGood,
+                    isReviewedToday && styles.radioCircleGood,
                   ]}>
-                    {pr.reReviewed && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                    {isReviewedToday && <View style={[styles.radioDot, styles.radioDotGood]} />}
                   </View>
                   <Text style={[
                     styles.radioLabel,
-                    pr.reReviewed && styles.radioLabelGood,
+                    isReviewedToday && styles.radioLabelGood,
                   ]}>Yes</Text>
                 </Pressable>
               </View>
             </View>
-          )}
-          {/* Changes were needed at some point (historical tracker) */}
-          <View style={styles.radioGroup}>
-            <Text style={styles.radioGroupLabel}>History:</Text>
-            <View style={styles.radioOptions}>
-              <Pressable
-                style={styles.radioItem}
-                hitSlop={12}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  setChangesEverNeeded(pr.id, !pr.changesEverNeeded);
-                }}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: !!pr.changesEverNeeded }}
-                accessibilityLabel="Changes were requested at some point"
-              >
-                <View style={[
-                  styles.checkbox,
-                  pr.changesEverNeeded && styles.checkboxCheckedWarn,
-                ]}>
-                  {pr.changesEverNeeded && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
+            {/* Re-review: shown when changes were ever needed */}
+            {pr.changesEverNeeded && (
+              <View style={styles.controlGroup}>
+                <Text style={styles.controlLabel}>Re-review</Text>
+                <View style={styles.controlOptions}>
+                  <Pressable
+                    style={styles.radioItem}
+                    hitSlop={8}
+                    onPress={() => {
+                      void Haptics.selectionAsync();
+                      if (pr.reReviewed) setReReviewed(pr.id, false);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: !pr.reReviewed }}
+                    accessibilityLabel="Not re-reviewed"
+                  >
+                    <View style={[
+                      styles.radioCircle,
+                      !pr.reReviewed && styles.radioCircleDim,
+                    ]}>
+                      {!pr.reReviewed && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                    </View>
+                    <Text style={[
+                      styles.radioLabel,
+                      !pr.reReviewed && styles.radioLabelDim,
+                    ]}>No</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.radioItem}
+                    hitSlop={8}
+                    onPress={() => {
+                      void Haptics.selectionAsync();
+                      if (!pr.reReviewed) setReReviewed(pr.id, true);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: !!pr.reReviewed }}
+                    accessibilityLabel="Re-reviewed after changes"
+                  >
+                    <View style={[
+                      styles.radioCircle,
+                      pr.reReviewed && styles.radioCircleGood,
+                    ]}>
+                      {pr.reReviewed && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                    </View>
+                    <Text style={[
+                      styles.radioLabel,
+                      pr.reReviewed && styles.radioLabelGood,
+                    ]}>Yes</Text>
+                  </Pressable>
                 </View>
-                <Text style={[
-                  styles.radioLabel,
-                  pr.changesEverNeeded && styles.radioLabelWarn,
-                ]}>Changes requested</Text>
-              </Pressable>
-            </View>
+              </View>
+            )}
           </View>
-          {/* Outcome: Accepted / Abandoned checkboxes */}
-          <View style={styles.radioGroup}>
-            <Text style={styles.radioGroupLabel}>Outcome:</Text>
-            <View style={styles.radioOptions}>
-              <Pressable
-                style={styles.radioItem}
-                hitSlop={12}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  markAccepted(pr.id, 'accepted-clean');
-                }}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: pr.acceptanceOutcome === 'accepted-clean' }}
-                accessibilityLabel="PR accepted"
-              >
-                <View style={[
-                  styles.checkbox,
-                  pr.acceptanceOutcome === 'accepted-clean' && styles.checkboxCheckedGood,
-                ]}>
-                  {pr.acceptanceOutcome === 'accepted-clean' && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </View>
-                <Text style={[
-                  styles.radioLabel,
-                  pr.acceptanceOutcome === 'accepted-clean' && styles.radioLabelGood,
-                ]}>Accepted</Text>
-              </Pressable>
-              <Pressable
-                style={styles.radioItem}
-                hitSlop={12}
-                onPress={() => {
-                  void Haptics.selectionAsync();
-                  markAccepted(pr.id, 'abandoned');
-                }}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: pr.acceptanceOutcome === 'abandoned' }}
-                accessibilityLabel="PR abandoned"
-              >
-                <View style={[
-                  styles.checkbox,
-                  pr.acceptanceOutcome === 'abandoned' && styles.checkboxCheckedMuted,
-                ]}>
-                  {pr.acceptanceOutcome === 'abandoned' && (
-                    <Text style={styles.checkmark}>✓</Text>
-                  )}
-                </View>
-                <Text style={[
-                  styles.radioLabel,
-                  pr.acceptanceOutcome === 'abandoned' && styles.radioLabelMuted,
-                ]}>Abandoned</Text>
-              </Pressable>
+          {/* Row 2: History checkbox + Outcome checkboxes */}
+          <View style={styles.controlsRow}>
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlLabel}>History</Text>
+              <View style={styles.controlOptions}>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={8}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    setChangesEverNeeded(pr.id, !pr.changesEverNeeded);
+                  }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: !!pr.changesEverNeeded }}
+                  accessibilityLabel="Changes were requested at some point"
+                >
+                  <View style={[
+                    styles.checkbox,
+                    pr.changesEverNeeded && styles.checkboxCheckedWarn,
+                  ]}>
+                    {pr.changesEverNeeded && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    pr.changesEverNeeded && styles.radioLabelWarn,
+                  ]}>Requested</Text>
+                </Pressable>
+              </View>
+            </View>
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlLabel}>Outcome</Text>
+              <View style={styles.controlOptions}>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={8}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    markAccepted(pr.id, 'accepted-clean');
+                  }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: pr.acceptanceOutcome === 'accepted-clean' }}
+                  accessibilityLabel="PR accepted"
+                >
+                  <View style={[
+                    styles.checkbox,
+                    pr.acceptanceOutcome === 'accepted-clean' && styles.checkboxCheckedGood,
+                  ]}>
+                    {pr.acceptanceOutcome === 'accepted-clean' && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    pr.acceptanceOutcome === 'accepted-clean' && styles.radioLabelGood,
+                  ]}>Accepted</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={8}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    markAccepted(pr.id, 'abandoned');
+                  }}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: pr.acceptanceOutcome === 'abandoned' }}
+                  accessibilityLabel="PR abandoned"
+                >
+                  <View style={[
+                    styles.checkbox,
+                    pr.acceptanceOutcome === 'abandoned' && styles.checkboxCheckedMuted,
+                  ]}>
+                    {pr.acceptanceOutcome === 'abandoned' && (
+                      <Text style={styles.checkmark}>✓</Text>
+                    )}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    pr.acceptanceOutcome === 'abandoned' && styles.radioLabelMuted,
+                  ]}>Abandoned</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         </View>
@@ -1055,13 +1061,19 @@ const styles = StyleSheet.create({
 
   // PR Card
   prCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
     overflow: 'hidden' as const,
+  },
+  prCardTop: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+  },
+  statusDotWrap: {
+    marginRight: spacing.sm,
+    paddingTop: 4,
   },
   prActionBtn: {
     width: 32,
@@ -1069,7 +1081,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.sm,
-    alignSelf: 'flex-start',
   },
   prActionBtnText: {
     fontSize: fontSizes.lg,
@@ -1077,7 +1088,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 20,
   },
-  prCardLeft: { marginRight: spacing.sm },
   statusDot: {
     width: 12,
     height: 12,
@@ -1117,29 +1127,37 @@ const styles = StyleSheet.create({
     color: colors.error,
   },
 
-  // Right-side radio buttons
-  prCardRight: {
-    marginLeft: spacing.sm,
-    gap: 6,
+  // Bottom controls
+  prCardBottom: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border + '40',
+    gap: spacing.sm,
   },
-  radioGroup: {
+  controlsRow: {
     flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.md,
+  },
+  controlGroup: {
     alignItems: 'center' as const,
-    gap: 6,
   },
-  radioGroupLocked: {
-    opacity: 0.5,
-  },
-  radioGroupLabel: {
-    fontSize: fontSizes.xs,
+  controlLabel: {
+    fontSize: 10,
     color: colors.textSecondary,
     fontWeight: '600' as const,
-    width: 62,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  radioOptions: {
+  controlOptions: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: spacing.sm,
+  },
+  radioGroupLocked: {
+    opacity: 0.5,
   },
   radioItem: {
     flexDirection: 'row' as const,
