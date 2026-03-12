@@ -51,8 +51,8 @@ export async function initDeviceId(): Promise<void> {
       cachedDeviceId = stored;
       return;
     }
-    const id = generateUUID();
-    await SecureStore.setItemAsync(id, id, {
+    const id = cachedDeviceId ?? generateUUID();
+    await SecureStore.setItemAsync(DEVICE_ID_KEY, id, {
       keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
     });
     cachedDeviceId = id;

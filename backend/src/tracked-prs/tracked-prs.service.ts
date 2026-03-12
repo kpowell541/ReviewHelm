@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
@@ -57,16 +57,25 @@ export class TrackedPRsService {
       createdAt: new Date(input.createdAt),
     };
 
-    const row = await this.prisma.trackedPR.upsert({
+    // Check ownership before upserting — reject if another user owns this ID
+    const existing = await this.prisma.trackedPR.findUnique({
       where: { id: input.id },
-      create: data,
-      update: {
-        ...data,
-        // Don't overwrite userId or id on update
-        id: undefined,
-        userId: undefined,
-      },
+      select: { userId: true },
     });
+    if (existing && existing.userId !== user.id) {
+      throw new ForbiddenException('PR belongs to another user');
+    }
+
+    const row = existing
+      ? await this.prisma.trackedPR.update({
+          where: { id: input.id },
+          data: {
+            ...data,
+            id: undefined,
+            userId: undefined,
+          },
+        })
+      : await this.prisma.trackedPR.create({ data });
 
     return this.toResponse(row);
   }
