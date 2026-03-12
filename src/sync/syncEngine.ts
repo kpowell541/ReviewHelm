@@ -99,6 +99,31 @@ async function pushSessions(): Promise<{ pushed: number; errors: string[] }> {
     }
   }
 
+  // Delete sessions that were removed locally
+  const deletedSessionIds = useSessionStore.getState().deletedSessionIds ?? [];
+  const successfulDeletes: string[] = [];
+  for (const deletedId of deletedSessionIds) {
+    try {
+      await api.delete(`/sessions/${deletedId}`);
+      successfulDeletes.push(deletedId);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) {
+        // Already gone remotely — treat as success
+        successfulDeletes.push(deletedId);
+      } else {
+        errors.push(`Delete session ${deletedId}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+  }
+  // Only clear tombstones for successfully deleted sessions
+  if (successfulDeletes.length > 0) {
+    useSessionStore.setState((state) => ({
+      deletedSessionIds: state.deletedSessionIds.filter(
+        (id) => !successfulDeletes.includes(id),
+      ),
+    }));
+  }
+
   return { pushed, errors };
 }
 
@@ -121,9 +146,14 @@ async function pullSessions(): Promise<{ pulled: number; errors: string[] }> {
       cursor = response.nextCursor;
     } while (cursor);
 
-    const localSessions = useSessionStore.getState().sessions;
+    const sessionState = useSessionStore.getState();
+    const localSessions = sessionState.sessions;
+    const deletedSessionIds = new Set(sessionState.deletedSessionIds ?? []);
 
     for (const remote of remoteSessions) {
+      // Don't resurrect sessions that were deleted locally
+      if (deletedSessionIds.has(remote.id)) continue;
+
       const local = localSessions[remote.id];
       if (!local || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
         // Remote is newer or doesn't exist locally — adopt it
@@ -269,11 +299,14 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
   try {
     // Pull remote PRs
     const remotePRs = await api.get<TrackedPR[]>('/tracked-prs');
-    const localPRs = usePRTrackerStore.getState().prs;
+    const prState = usePRTrackerStore.getState();
+    const localPRs = prState.prs;
+    const deletedPRIdSet = new Set(prState.deletedPRIds ?? []);
     const mergedPRs = { ...localPRs };
 
-    // Merge remote into local (last-write-wins)
+    // Merge remote into local (last-write-wins), skip locally-deleted PRs
     for (const remote of remotePRs) {
+      if (deletedPRIdSet.has(remote.id)) continue;
       const local = mergedPRs[remote.id];
       if (!local || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
         mergedPRs[remote.id] = remote;
@@ -320,17 +353,36 @@ async function syncTrackedPRs(): Promise<{ pushed: number; pulled: number; error
 
     // Delete remote PRs that were explicitly deleted locally
     const deletedPRIds = usePRTrackerStore.getState().deletedPRIds ?? [];
+    const successfulPRDeletes: string[] = [];
     for (const deletedId of deletedPRIds) {
       try {
         await api.delete(`/tracked-prs/${deletedId}`);
-      } catch {
-        // Ignore delete errors
+        successfulPRDeletes.push(deletedId);
+        delete mergedPRs[deletedId];
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) {
+          // Already gone remotely — treat as success
+          successfulPRDeletes.push(deletedId);
+          delete mergedPRs[deletedId];
+        } else {
+          errors.push(`Delete PR ${deletedId}: ${err instanceof Error ? err.message : String(err)}`);
+          // Keep in mergedPRs so it doesn't reappear, but don't clear tombstone
+          delete mergedPRs[deletedId];
+        }
       }
-      delete mergedPRs[deletedId];
     }
 
     usePRTrackerStore.getState().replacePRs(mergedPRs);
-    usePRTrackerStore.getState().clearDeletedPRIds();
+    // Only clear tombstones for successfully deleted PRs
+    if (successfulPRDeletes.length === deletedPRIds.length) {
+      usePRTrackerStore.getState().clearDeletedPRIds();
+    } else if (successfulPRDeletes.length > 0) {
+      usePRTrackerStore.setState((state) => ({
+        deletedPRIds: state.deletedPRIds.filter(
+          (id) => !successfulPRDeletes.includes(id),
+        ),
+      }));
+    }
   } catch (err: unknown) {
     errors.push(`Sync PRs: ${err instanceof Error ? err.message : String(err)}`);
   }
