@@ -437,6 +437,23 @@ export const PRIORITY_COLORS: Record<PRPriority, string> = {
   routine: colors.textMuted,
 };
 
+/** Derive a display label and color from the PR's full state */
+export function getPRDisplayStatus(pr: TrackedPR): { label: string; color: string } {
+  if (pr.acceptanceOutcome === 'abandoned') {
+    return { label: 'Abandoned', color: colors.textMuted };
+  }
+  if (pr.acceptanceOutcome === 'accepted-clean' || pr.acceptanceOutcome === 'accepted-with-changes') {
+    return { label: 'Accepted', color: colors.looksGood };
+  }
+  if (pr.reviewOutcome === 'requested-changes') {
+    return { label: 'Needs Changes', color: colors.needsAttention };
+  }
+  if (pr.reviewOutcome === 'no-changes-requested') {
+    return { label: 'Ready for Merge', color: colors.looksGood };
+  }
+  return { label: PR_STATUS_LABELS[pr.status], color: STATUS_COLORS[pr.status] };
+}
+
 // ============================================
 // Helpers
 // ============================================
