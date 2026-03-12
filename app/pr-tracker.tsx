@@ -525,7 +525,7 @@ export default function PRTrackerScreen() {
                 }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: pr.reviewOutcome === 'requested-changes' }}
-                accessibilityLabel="Changes needed"
+                accessibilityLabel="Changes requested"
               >
                 <View style={[
                   styles.radioCircle,
@@ -536,7 +536,7 @@ export default function PRTrackerScreen() {
                 <Text style={[
                   styles.radioLabel,
                   pr.reviewOutcome === 'requested-changes' && styles.radioLabelWarn,
-                ]}>Needed</Text>
+                ]}>Requested</Text>
               </Pressable>
               <Pressable
                 style={styles.radioItem}
@@ -547,7 +547,7 @@ export default function PRTrackerScreen() {
                 }}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: pr.reviewOutcome === 'no-changes-requested' }}
-                accessibilityLabel="No changes needed"
+                accessibilityLabel="No changes requested"
               >
                 <View style={[
                   styles.radioCircle,
@@ -558,7 +558,7 @@ export default function PRTrackerScreen() {
                 <Text style={[
                   styles.radioLabel,
                   pr.reviewOutcome === 'no-changes-requested' && styles.radioLabelGood,
-                ]}>Not Needed</Text>
+                ]}>Not Requested</Text>
               </Pressable>
             </View>
           </View>
@@ -685,7 +685,7 @@ export default function PRTrackerScreen() {
                 }}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: !!pr.changesEverNeeded }}
-                accessibilityLabel="Changes were needed at some point"
+                accessibilityLabel="Changes were requested at some point"
               >
                 <View style={[
                   styles.checkbox,
@@ -698,7 +698,7 @@ export default function PRTrackerScreen() {
                 <Text style={[
                   styles.radioLabel,
                   pr.changesEverNeeded && styles.radioLabelWarn,
-                ]}>Changes needed</Text>
+                ]}>Changes requested</Text>
               </Pressable>
             </View>
           </View>

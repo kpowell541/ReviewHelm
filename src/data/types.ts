@@ -361,7 +361,7 @@ export interface TrackedPR {
   reviewOutcome?: ReviewOutcome;
   /** Whether the PR was re-reviewed after changes were requested */
   reReviewed?: boolean;
-  /** Whether changes were ever needed at any point (historical tracker, auto-set, user can uncheck) */
+  /** Whether changes were ever requested at any point (historical tracker, auto-set, user can uncheck) */
   changesEverNeeded?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -457,13 +457,13 @@ export function getPRDisplayStatus(pr: TrackedPR): { label: string; color: strin
     }
     // Re-reviewed: derive from current review outcome
     if (pr.reviewOutcome === 'requested-changes') {
-      return { label: 'Needs Changes', color: colors.needsAttention };
+      return { label: 'Changes Requested', color: colors.needsAttention };
     }
     return { label: 'Ready for Merge', color: colors.looksGood };
   }
   // First review
   if (pr.reviewOutcome === 'requested-changes') {
-    return { label: 'Needs Changes', color: colors.needsAttention };
+    return { label: 'Changes Requested', color: colors.needsAttention };
   }
   if (pr.reviewOutcome === 'no-changes-requested') {
     return { label: 'Ready for Merge', color: colors.looksGood };
