@@ -5,7 +5,6 @@ import { randomUUID } from 'expo-crypto';
 import type { Severity, ClaudeModel } from '../data/types';
 
 const KEY_SLOT_PREFIX = 'reviewhelm-key-slot:';
-const USER_KEY_INDEX = 'reviewhelm-key-index:user';
 const ADMIN_KEY_INDEX = 'reviewhelm-key-index:admin';
 
 function tokenSlotKey(token: string): string {
@@ -53,11 +52,8 @@ async function loadTokenState(
 }
 
 interface PreferencesState {
-  apiKeyToken: string | null;
-  hasApiKey: boolean;
   adminApiKeyToken: string | null;
   hasAdminApiKey: boolean;
-  isApiKeyLoaded: boolean;
   hasHydrated: boolean;
   hasCompletedOnboarding: boolean;
   hasSeenTourForTier: string | null;
@@ -70,10 +66,6 @@ interface PreferencesState {
   themeMode: 'dark' | 'light' | 'system';
 
   setHasHydrated: (hydrated: boolean) => void;
-  loadApiKey: () => Promise<void>;
-  setApiKey: (key: string) => Promise<void>;
-  clearApiKey: () => Promise<void>;
-  resolveApiKey: () => Promise<string>;
 
   loadAdminApiKey: () => Promise<void>;
   setAdminApiKey: (key: string) => Promise<void>;
@@ -101,11 +93,8 @@ interface PreferencesState {
 export const usePreferencesStore = create<PreferencesState>()(
   persist(
     (set) => ({
-      apiKeyToken: null,
-      hasApiKey: false,
       adminApiKeyToken: null,
       hasAdminApiKey: false,
-      isApiKeyLoaded: false,
       hasHydrated: false,
       hasCompletedOnboarding: false,
       hasSeenTourForTier: null,
@@ -118,56 +107,6 @@ export const usePreferencesStore = create<PreferencesState>()(
       themeMode: 'dark' as const,
 
       setHasHydrated: (hydrated) => set({ hasHydrated: hydrated }),
-
-      loadApiKey: async () => {
-        try {
-          const [userState, adminState] = await Promise.all([
-            loadTokenState(USER_KEY_INDEX),
-            loadTokenState(ADMIN_KEY_INDEX),
-          ]);
-          set({
-            apiKeyToken: userState.token,
-            hasApiKey: userState.has,
-            adminApiKeyToken: adminState.token,
-            hasAdminApiKey: adminState.has,
-            isApiKeyLoaded: true,
-          });
-        } catch {
-          set({
-            apiKeyToken: null,
-            hasApiKey: false,
-            adminApiKeyToken: null,
-            hasAdminApiKey: false,
-            isApiKeyLoaded: true,
-          });
-        }
-      },
-
-      setApiKey: async (key) => {
-        const trimmed = key.trim();
-        if (!trimmed) {
-          await clearToken(USER_KEY_INDEX);
-          set({ apiKeyToken: null, hasApiKey: false });
-          return;
-        }
-        const token = await saveTokenizedKey(USER_KEY_INDEX, trimmed);
-        set({ apiKeyToken: token, hasApiKey: true });
-      },
-
-      clearApiKey: async () => {
-        await clearToken(USER_KEY_INDEX);
-        set({ apiKeyToken: null, hasApiKey: false });
-      },
-
-      resolveApiKey: async () => {
-        try {
-          return await resolveTokenizedKey(USER_KEY_INDEX);
-        } catch {
-          throw new Error(
-            'No Claude API key configured. Add one in Settings.',
-          );
-        }
-      },
 
       loadAdminApiKey: async () => {
         const adminState = await loadTokenState(ADMIN_KEY_INDEX);

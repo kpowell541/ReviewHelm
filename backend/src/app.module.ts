@@ -14,7 +14,6 @@ import { BudgetModule } from './common/budget/budget.module';
 import { BudgetGuard } from './common/budget/budget.guard';
 import { TierGuard } from './common/subscription/tier.guard';
 import { UsageModule } from './usage/usage.module';
-import { AdminSecurityModule } from './admin/security/admin-security.module';
 import { AuditModule } from './common/audit/audit.module';
 import { ChecklistsModule } from './checklists/checklists.module';
 import { SessionsModule } from './sessions/sessions.module';
@@ -67,7 +66,6 @@ import { RegionModule } from './region/region.module';
     RegionModule,
     BackupsModule,
     ExportsModule,
-    AdminSecurityModule,
     AdminChecklistsModule,
     AdminCiModule,
     AdminMaintenanceModule,

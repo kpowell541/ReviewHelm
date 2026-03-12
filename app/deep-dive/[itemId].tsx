@@ -56,8 +56,6 @@ export default function DeepDiveScreen() {
   const isBookmarked = useBookmarkStore((s) => s.isBookmarked(itemId));
   const toggleBookmark = useBookmarkStore((s) => s.toggleBookmark);
   const history = useConfidenceStore((s) => s.histories[itemId]);
-  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
-  const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
   const aiModel = usePreferencesStore((s) => s.aiModel);
   const recordUsage = useUsageStore((s) => s.recordUsage);
   const persistedMessages = useTutorStore(
@@ -93,9 +91,7 @@ export default function DeepDiveScreen() {
       setIsLoading(true);
 
       try {
-        const apiKey = await resolveApiKey();
         const response = await sendTutorMessage({
-          apiKey,
           model: aiModel,
           feature: 'deep-dive',
           role,
@@ -141,7 +137,6 @@ export default function DeepDiveScreen() {
       itemId,
       setConversationMessages,
       recordUsage,
-      resolveApiKey,
       decodedSessionId,
     ],
   );
@@ -417,40 +412,32 @@ export default function DeepDiveScreen() {
 
           {/* Chat Input */}
           <View style={styles.inputBar}>
-            {!hasApiKey ? (
-              <Text style={styles.noKeyText}>
-                Add your Claude API key in Settings to use the AI tutor
-              </Text>
-            ) : (
-              <>
-                <TextInput
-                  style={styles.chatInput}
-                  value={inputText}
-                  onChangeText={setInputText}
-                  placeholder="Ask a follow-up question..."
-                  placeholderTextColor={colors.textMuted}
-                  multiline
-                  maxLength={2000}
-                  editable={!isLoading}
-                  accessibilityLabel="Ask a follow-up question"
-                  accessibilityHint="Type your message to the AI tutor"
-                />
-                <Pressable
-                  style={[
-                    styles.sendButton,
-                    (!inputText.trim() || isLoading) &&
-                      styles.sendButtonDisabled,
-                  ]}
-                  onPress={() => sendMessage(inputText, activeRole)}
-                  disabled={!inputText.trim() || isLoading}
-                  accessibilityRole="button"
-                  accessibilityLabel="Send message"
-                  accessibilityState={{ disabled: !inputText.trim() || isLoading }}
-                >
-                  <Text style={styles.sendButtonText}>↑</Text>
-                </Pressable>
-              </>
-            )}
+            <TextInput
+              style={styles.chatInput}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask a follow-up question..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+              maxLength={2000}
+              editable={!isLoading}
+              accessibilityLabel="Ask a follow-up question"
+              accessibilityHint="Type your message to the AI tutor"
+            />
+            <Pressable
+              style={[
+                styles.sendButton,
+                (!inputText.trim() || isLoading) &&
+                  styles.sendButtonDisabled,
+              ]}
+              onPress={() => sendMessage(inputText, activeRole)}
+              disabled={!inputText.trim() || isLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Send message"
+              accessibilityState={{ disabled: !inputText.trim() || isLoading }}
+            >
+              <Text style={styles.sendButtonText}>↑</Text>
+            </Pressable>
           </View>
         </>
       )}

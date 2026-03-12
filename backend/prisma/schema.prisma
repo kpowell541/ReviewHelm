@@ -39,11 +39,6 @@ enum AiFeature {
   comment_drafter
 }
 
-enum KeySource {
-  byok
-  platform
-}
-
 enum DiffSource {
   pasted
   uploaded
@@ -87,7 +82,6 @@ model User {
   updatedAt            DateTime         @updatedAt
 
   preference     Preference?
-  providerKeys   ProviderKey[]
   sessions       Session[]
   trackedPRs     TrackedPR[]
   usageDays      UsageDay[]
@@ -180,28 +174,6 @@ model CommentFeedback {
 
   @@index([userId, createdAt])
   @@index([userId, outcome, model, createdAt])
-}
-
-model ProviderKey {
-  id                String   @id @default(uuid())
-  userId            String
-  provider          String
-  keySource         KeySource @default(byok)
-  kekVersion        Int       @default(1)
-  kmsKeyId          String?
-  tokenHint         String?
-  encryptedDek      String
-  ciphertext        String
-  iv                String
-  authTag           String
-  lastRotatedAt     DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, provider])
-  @@index([userId])
 }
 
 model AuditEvent {

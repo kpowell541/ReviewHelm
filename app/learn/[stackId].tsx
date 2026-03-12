@@ -28,8 +28,6 @@ import { colors, spacing, fontSizes, radius } from '../../src/theme';
 export default function LearnSessionScreen() {
   const { stackId } = useLocalSearchParams<{ stackId: string }>();
   const router = useRouter();
-  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
-  const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
   const aiModel = usePreferencesStore((s) => s.aiModel);
   const recordUsage = useUsageStore((s) => s.recordUsage);
 
@@ -72,9 +70,7 @@ export default function LearnSessionScreen() {
     setMessages(updatedMessages);
 
     try {
-      const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
-        apiKey,
         model: aiModel,
         feature: 'learn',
         itemId: found.item.id,
@@ -107,7 +103,7 @@ export default function LearnSessionScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [found, currentGap, messages, aiModel, recordUsage, resolveApiKey]);
+  }, [found, currentGap, messages, aiModel, recordUsage]);
 
   const startLesson = useCallback(async () => {
     if (!found) return;
@@ -213,50 +209,30 @@ export default function LearnSessionScreen() {
       {/* Not started state */}
       {!started && (
         <View style={styles.startSection}>
-          {!hasApiKey ? (
-            <View style={styles.noKeyCard}>
-              <Text style={styles.noKeyText}>
-                Add your Claude API key in Settings to use AI-powered learning.
-              </Text>
-              <Pressable
-                style={styles.settingsLink}
-                onPress={() => router.push('/settings')}
-                accessibilityRole="link"
-                accessibilityLabel="Go to Settings"
-              >
-                <Text style={styles.settingsLinkText}>
-                  Go to Settings
-                </Text>
-              </Pressable>
-            </View>
-          ) : (
-            <>
-              <Pressable
-                style={styles.startButton}
-                onPress={startLesson}
-                accessibilityRole="button"
-                accessibilityLabel={`Start learning with ${CLAUDE_MODEL_LABELS[aiModel]}`}
-              >
-                <Text style={styles.startButtonText}>
-                  💡 Start Learning with {CLAUDE_MODEL_LABELS[aiModel]}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={styles.deepDiveLink}
-                onPress={() =>
-                  router.push(
-                    `/deep-dive/${encodeURIComponent(currentGap!.itemId)}`,
-                  )
-                }
-                accessibilityRole="link"
-                accessibilityLabel="View base content instead"
-              >
-                <Text style={styles.deepDiveLinkText}>
-                  📖 View base content instead
-                </Text>
-              </Pressable>
-            </>
-          )}
+          <Pressable
+            style={styles.startButton}
+            onPress={startLesson}
+            accessibilityRole="button"
+            accessibilityLabel={`Start learning with ${CLAUDE_MODEL_LABELS[aiModel]}`}
+          >
+            <Text style={styles.startButtonText}>
+              💡 Start Learning with {CLAUDE_MODEL_LABELS[aiModel]}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={styles.deepDiveLink}
+            onPress={() =>
+              router.push(
+                `/deep-dive/${encodeURIComponent(currentGap!.itemId)}`,
+              )
+            }
+            accessibilityRole="link"
+            accessibilityLabel="View base content instead"
+          >
+            <Text style={styles.deepDiveLinkText}>
+              📖 View base content instead
+            </Text>
+          </Pressable>
         </View>
       )}
 

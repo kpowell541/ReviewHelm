@@ -51,12 +51,6 @@ const EnvSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(10),
 
-  KEY_ENCRYPTION_PROVIDER: z.enum(['local', 'aws_kms']).default('local'),
-  KEY_ENCRYPTION_VERSION: z.coerce.number().int().min(1).default(1),
-  KEY_ENCRYPTION_MASTER_KEY: z.string().min(32),
-  KEY_ENCRYPTION_MASTER_KEYS_JSON: z.string().optional().default(''),
-  AWS_REGION: z.string().optional().default('us-east-1'),
-  AWS_KMS_KEY_ID: z.string().optional().default(''),
 
   STRIPE_SECRET_KEY: z.string().optional().default(''),
   STRIPE_WEBHOOK_SECRET: z.string().optional().default(''),

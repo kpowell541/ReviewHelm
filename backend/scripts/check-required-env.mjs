@@ -11,7 +11,6 @@ const required = [
   'DIRECT_URL',
   'UPSTASH_REDIS_REST_URL',
   'UPSTASH_REDIS_REST_TOKEN',
-  'KEY_ENCRYPTION_MASTER_KEY',
 ];
 
 const missing = required.filter((key) => {
@@ -24,11 +23,6 @@ if (missing.length > 0) {
   for (const key of missing) {
     console.error(`- ${key}`);
   }
-  process.exit(1);
-}
-
-if ((process.env.KEY_ENCRYPTION_MASTER_KEY || '').length < 32) {
-  console.error('KEY_ENCRYPTION_MASTER_KEY must be at least 32 characters.');
   process.exit(1);
 }
 
