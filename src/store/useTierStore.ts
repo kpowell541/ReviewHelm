@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { Platform } from 'react-native';
+import * as Linking from 'expo-linking';
 import { persistStorage } from '../storage/secureStorage';
 import { api } from '../api/client';
 
@@ -95,7 +97,7 @@ export const useTierStore = create<TierState>()(
       },
 
       startCheckout: async (plan, options) => {
-        const baseUrl = window?.location?.origin ?? 'reviewhelm://';
+        const baseUrl = getBaseUrl();
         const result = await api.post<{ url: string }>('/subscription/subscribe', {
           plan,
           trial: options?.trial,
@@ -108,7 +110,7 @@ export const useTierStore = create<TierState>()(
       },
 
       startTopUp: async (amountUsd) => {
-        const baseUrl = window?.location?.origin ?? 'reviewhelm://';
+        const baseUrl = getBaseUrl();
         const result = await api.post<{ url: string }>('/subscription/credits/topup', {
           amountUsd,
           successUrl: `${baseUrl}/plans?topup=success`,
@@ -120,7 +122,7 @@ export const useTierStore = create<TierState>()(
       },
 
       openPortal: async () => {
-        const baseUrl = window?.location?.origin ?? 'reviewhelm://';
+        const baseUrl = getBaseUrl();
         const result = await api.post<{ url: string }>('/subscription/portal', {
           returnUrl: `${baseUrl}/settings`,
         }, {
@@ -158,8 +160,18 @@ export function hasAccess(
   return TIER_RANK[effectiveTier] >= TIER_RANK[requiredTier];
 }
 
+function getBaseUrl(): string {
+  if (Platform.OS === 'web') {
+    try {
+      return window.location.origin;
+    } catch {
+      return 'https://reviewhelm.app';
+    }
+  }
+  return Linking.createURL('/').replace(/\/$/, '');
+}
+
 function generateIdempotencyKey(): string {
-  const random = Math.random().toString(36).slice(2, 18);
-  const timestamp = Date.now().toString(36);
-  return `rh_${timestamp}_${random}`;
+  const random = crypto.randomUUID();
+  return `rh_${random}`;
 }
