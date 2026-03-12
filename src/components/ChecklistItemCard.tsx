@@ -19,35 +19,37 @@ export function ChecklistItemCard({
   onRemove,
 }: ChecklistItemCardProps) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        { opacity: pressed ? 0.85 : 1 },
-      ]}
-    >
+    <View style={styles.card}>
       <View style={styles.row}>
-        <View
-          style={[
-            styles.severityDot,
-            { backgroundColor: SEVERITY_COLORS[severity] },
+        <Pressable
+          onPress={onPress}
+          style={({ pressed }) => [
+            styles.cardBody,
+            { opacity: pressed ? 0.85 : 1 },
           ]}
-        />
-        <View style={styles.textArea}>
-          <Text style={styles.itemText} numberOfLines={2}>
-            {text}
-          </Text>
-          <Text style={styles.meta}>
-            {sectionTitle} · {severity}
-          </Text>
-        </View>
+        >
+          <View
+            style={[
+              styles.severityDot,
+              { backgroundColor: SEVERITY_COLORS[severity] },
+            ]}
+          />
+          <View style={styles.textArea}>
+            <Text style={styles.itemText} numberOfLines={2}>
+              {text}
+            </Text>
+            <Text style={styles.meta}>
+              {sectionTitle} · {severity}
+            </Text>
+          </View>
+        </Pressable>
         {onRemove && (
           <Pressable onPress={onRemove} hitSlop={12}>
             <Text style={styles.removeText}>-</Text>
           </Pressable>
         )}
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -59,6 +61,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardBody: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },

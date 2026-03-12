@@ -401,21 +401,24 @@ export default function PRTrackerScreen() {
           todaysPlan.prs.map((pr) => {
             const priColor = PRIORITY_COLORS[pr.priority];
             return (
-              <Pressable
-                key={pr.id}
-                style={styles.planRow}
-                onPress={() => handleStartReview(pr)}
-              >
-                <View style={[styles.planPriorityDot, { backgroundColor: priColor }]} />
-                <Text style={styles.planPRTitle} numberOfLines={1}>{pr.title}</Text>
-                <View style={styles.planBadges}>
-                  {pr.size && (
-                    <Text style={[styles.planBadge, styles.sizeBadge]}>{PR_SIZE_LABELS[pr.size]}</Text>
-                  )}
-                  <Text style={[styles.planBadge, { backgroundColor: priColor + '25', color: priColor }]}>
-                    {PR_PRIORITY_LABELS[pr.priority]}
-                  </Text>
-                </View>
+              <View key={pr.id} style={styles.planRow}>
+                <Pressable
+                  style={styles.planRowBody}
+                  onPress={() => handleStartReview(pr)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Start review for ${pr.title}`}
+                >
+                  <View style={[styles.planPriorityDot, { backgroundColor: priColor }]} />
+                  <Text style={styles.planPRTitle} numberOfLines={1}>{pr.title}</Text>
+                  <View style={styles.planBadges}>
+                    {pr.size && (
+                      <Text style={[styles.planBadge, styles.sizeBadge]}>{PR_SIZE_LABELS[pr.size]}</Text>
+                    )}
+                    <Text style={[styles.planBadge, { backgroundColor: priColor + '25', color: priColor }]}>
+                      {PR_PRIORITY_LABELS[pr.priority]}
+                    </Text>
+                  </View>
+                </Pressable>
                 <Pressable
                   style={[styles.planReviewBtn, pr.lastReviewedAt && isToday(pr.lastReviewedAt) && styles.planReviewBtnActive]}
                   onPress={() => handleMarkReviewed(pr)}
@@ -428,7 +431,7 @@ export default function PRTrackerScreen() {
                     {pr.lastReviewedAt && isToday(pr.lastReviewedAt) ? '✓' : '○'}
                   </Text>
                 </Pressable>
-              </Pressable>
+              </View>
             );
           })
         )}
@@ -447,20 +450,9 @@ export default function PRTrackerScreen() {
     const isReviewedToday = !!(pr.lastReviewedAt && isToday(pr.lastReviewedAt));
 
     return (
-      <Pressable
-        key={pr.id}
-        style={styles.prCard}
-        onPress={() => handleCardPress(pr)}
-        onLongPress={() => handleDelete(pr)}
-        accessibilityRole="button"
-        accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${PR_STATUS_LABELS[pr.status]}`}
-        accessibilityHint="Tap for actions, or use the actions button"
-      >
+      <View key={pr.id} style={styles.prCard}>
         <Pressable
-          onPress={(e) => {
-            e.stopPropagation();
-            handleCardPress(pr);
-          }}
+          onPress={() => handleCardPress(pr)}
           hitSlop={8}
           style={styles.prActionBtn}
           accessibilityRole="button"
@@ -478,7 +470,14 @@ export default function PRTrackerScreen() {
             <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
           </Pressable>
         </View>
-        <View style={styles.prCardCenter}>
+        <Pressable
+          style={styles.prCardCenter}
+          onPress={() => handleCardPress(pr)}
+          onLongPress={() => handleDelete(pr)}
+          accessibilityRole="button"
+          accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${PR_STATUS_LABELS[pr.status]}`}
+          accessibilityHint="Tap for actions, long press to delete"
+        >
           <Text style={styles.prTitle} numberOfLines={1}>
             {pr.title}
           </Text>
@@ -507,9 +506,9 @@ export default function PRTrackerScreen() {
               </Text>
             )}
           </View>
-        </View>
-        {/* Right side: radio buttons — wrapped in Pressable to catch stray taps */}
-        <Pressable style={styles.prCardRight} onPress={(e) => e.stopPropagation()}>
+        </Pressable>
+        {/* Right side: radio buttons */}
+        <View style={styles.prCardRight}>
           {/* Changes: Needed / Not Needed */}
           <View style={styles.radioGroup}>
             <Text style={styles.radioGroupLabel}>Changes:</Text>
@@ -517,8 +516,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
-                onPress={(e) => {
-                  e.stopPropagation();
+                onPress={() => {
                   void Haptics.selectionAsync();
                   setReviewOutcome(pr.id, 'requested-changes');
                 }}
@@ -540,8 +538,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
-                onPress={(e) => {
-                  e.stopPropagation();
+                onPress={() => {
                   void Haptics.selectionAsync();
                   setReviewOutcome(pr.id, 'no-changes-requested');
                 }}
@@ -569,8 +566,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
-                onPress={(e) => {
-                  e.stopPropagation();
+                onPress={() => {
                   void Haptics.selectionAsync();
                   if (isReviewedToday) {
                     if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -595,8 +591,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
-                onPress={(e) => {
-                  e.stopPropagation();
+                onPress={() => {
                   void Haptics.selectionAsync();
                   if (!isReviewedToday) {
                     if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -627,8 +622,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
-                onPress={(e) => {
-                  e.stopPropagation();
+                onPress={() => {
                   void Haptics.selectionAsync();
                   markAccepted(pr.id, 'accepted-clean');
                 }}
@@ -652,8 +646,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
-                onPress={(e) => {
-                  e.stopPropagation();
+                onPress={() => {
                   void Haptics.selectionAsync();
                   markAccepted(pr.id, 'abandoned');
                 }}
@@ -676,8 +669,8 @@ export default function PRTrackerScreen() {
               </Pressable>
             </View>
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     );
   };
 
@@ -891,6 +884,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border + '40',
+  },
+  planRowBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   planPriorityDot: {
     width: 8,
