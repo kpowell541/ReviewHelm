@@ -121,6 +121,7 @@ Use this checklist before opening the app beyond a single-user test.
 - [x] AI cost guardrails are implemented (BudgetGuard, auto-downgrade Opus to Sonnet, hard stop).
 - [ ] AI cost guardrails are validated against real usage patterns.
 - [ ] Capacity plan exists for next user milestone (10, 50, 100 users).
+- [ ] Multi-device sync conflict strategy is reviewed for broader rollout; decide whether the current merge heuristics are sufficient or whether sessions/PRs need an operation-log or CRDT-based model before launch expansion.
 
 ## 9. Release Process Controls (Before Broader Rollout)
 
