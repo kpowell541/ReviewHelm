@@ -357,10 +357,12 @@ export interface TrackedPR {
   notes?: string;
   /** For author PRs: whether it was accepted clean or with changes requested */
   acceptanceOutcome?: AcceptanceOutcome;
-  /** Whether changes were ever requested on this PR (tracks review effectiveness) */
+  /** Current review outcome — reflects the latest review/re-review finding */
   reviewOutcome?: ReviewOutcome;
   /** Whether the PR was re-reviewed after changes were requested */
   reReviewed?: boolean;
+  /** Whether changes were ever needed at any point (historical tracker, auto-set, user can uncheck) */
+  changesEverNeeded?: boolean;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
@@ -441,16 +443,26 @@ export const PRIORITY_COLORS: Record<PRPriority, string> = {
 
 /** Derive a display label and color from the PR's full state */
 export function getPRDisplayStatus(pr: TrackedPR): { label: string; color: string } {
+  // Finalized states
   if (pr.acceptanceOutcome === 'abandoned') {
     return { label: 'Abandoned', color: colors.textMuted };
   }
   if (pr.acceptanceOutcome === 'accepted-clean' || pr.acceptanceOutcome === 'accepted-with-changes') {
     return { label: 'Accepted', color: colors.looksGood };
   }
-  if (pr.reviewOutcome === 'requested-changes') {
-    if (pr.reReviewed) {
-      return { label: 'Ready for Merge', color: colors.looksGood };
+  // Re-review mode: changes were needed at some point
+  if (pr.changesEverNeeded) {
+    if (!pr.reReviewed) {
+      return { label: 'Needs Review', color: colors.warning };
     }
+    // Re-reviewed: derive from current review outcome
+    if (pr.reviewOutcome === 'requested-changes') {
+      return { label: 'Needs Changes', color: colors.needsAttention };
+    }
+    return { label: 'Ready for Merge', color: colors.looksGood };
+  }
+  // First review
+  if (pr.reviewOutcome === 'requested-changes') {
     return { label: 'Needs Changes', color: colors.needsAttention };
   }
   if (pr.reviewOutcome === 'no-changes-requested') {
