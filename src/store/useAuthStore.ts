@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../auth/supabase';
 import { clearLocalUserData } from '../auth/clearLocalUserData';
+import { resetAuthRefreshCooldown } from '../api/client';
 
 const AUTH_REDIRECT_URI = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI?.trim() ?? '';
 type AuthSubscription = { unsubscribe: () => void };
@@ -152,6 +153,13 @@ export const useAuthStore = create<AuthState>()((set, get) => {
           password,
         });
         if (error) throw error;
+        resetAuthRefreshCooldown();
+        console.log('[Auth] signIn success', {
+          hasSession: !!data.session,
+          expiresAt: data.session?.expires_at,
+          expiresIn: data.session?.expires_in,
+          hasAccessToken: !!data.session?.access_token,
+        });
         set({
           session: data.session,
           user: data.user,
@@ -261,12 +269,24 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     getAccessToken: async () => {
       const { session } = get();
-      if (!session) return null;
+      if (!session) {
+        console.warn('[Auth] getAccessToken: no session');
+        return null;
+      }
 
       // Check if token is expired (with 60s buffer)
       const expiresAt = session.expires_at ?? 0;
-      if (Date.now() / 1000 > expiresAt - 60) {
+      const nowSec = Date.now() / 1000;
+      if (nowSec > expiresAt - 60) {
+        console.warn('[Auth] getAccessToken: token expired or expiring', {
+          expiresAt,
+          nowSec: Math.round(nowSec),
+          expiresIn: Math.round(expiresAt - nowSec),
+        });
         const refreshed = await refreshSessionSingleFlight();
+        if (!refreshed) {
+          console.warn('[Auth] getAccessToken: refresh failed, no token');
+        }
         return refreshed?.access_token ?? null;
       }
 

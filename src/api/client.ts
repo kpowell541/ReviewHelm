@@ -12,6 +12,11 @@ const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 const AUTH_REFRESH_COOLDOWN_MS = 30_000;
 let lastAuthRefreshFailure = 0;
 
+/** Reset the cooldown (e.g. after a fresh sign-in). */
+export function resetAuthRefreshCooldown(): void {
+  lastAuthRefreshFailure = 0;
+}
+
 function getBaseUrl(): string {
   return `${API_BASE_URL}${API_BASE_PATH}`;
 }
