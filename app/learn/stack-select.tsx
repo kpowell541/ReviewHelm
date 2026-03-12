@@ -12,7 +12,7 @@ export default function LearnStackSelectScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.heading} accessibilityRole="header">
-        Choose a stack to study your weak areas
+        Choose a stack to study, then finish with a confidence check-in
       </Text>
 
       {STACKS.map((stack) => {

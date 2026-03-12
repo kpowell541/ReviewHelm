@@ -251,7 +251,7 @@ export default function HomeScreen() {
 
           <ModeCard
             title="Learn"
-            subtitle="Study your weak areas with AI tutor"
+            subtitle="Study weak areas and track real improvement"
             icon="📚"
             color={colors.learnMode}
             onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
