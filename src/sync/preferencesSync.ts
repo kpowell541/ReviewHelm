@@ -7,6 +7,7 @@ import { useRepoConfigStore } from '../store/useRepoConfigStore';
 import { useConfidenceStore } from '../store/useConfidenceStore';
 import type { ApiPreferences, ApiUsageSummary, ApiConfidenceHistories } from '../api/schema';
 import type { AdapterResult } from './types';
+import { mergeConfidenceHistory } from '../utils/confidenceHistory';
 
 export async function syncPreferences(): Promise<AdapterResult> {
   const errors: string[] = [];
@@ -78,18 +79,18 @@ export async function syncConfidence(): Promise<AdapterResult> {
       const rem = remoteHistories[itemId];
 
       if (local && !rem) {
-        merged[itemId] = local;
+        merged[itemId] = mergeConfidenceHistory(local, undefined) ?? local;
       } else if (!local && rem) {
-        merged[itemId] = rem;
+        merged[itemId] = mergeConfidenceHistory(undefined, rem) ?? rem;
         pulled++;
       } else if (local && rem) {
         const localCount = local.ratings?.length ?? 0;
-        const remoteCount = rem.ratings?.length ?? 0;
-        if (remoteCount > localCount) {
-          merged[itemId] = rem;
-          pulled++;
-        } else {
-          merged[itemId] = local;
+        const mergedHistory = mergeConfidenceHistory(local, rem);
+        if (mergedHistory) {
+          merged[itemId] = mergedHistory;
+          if ((mergedHistory.ratings?.length ?? 0) > localCount) {
+            pulled++;
+          }
         }
       }
     }
