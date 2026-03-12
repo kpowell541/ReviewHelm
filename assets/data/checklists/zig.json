@@ -1,0 +1,739 @@
+{
+  "meta": {
+    "id": "zig",
+    "mode": "review",
+    "title": "Zig",
+    "shortTitle": "Zig",
+    "description": "Review checklist for Zig projects",
+    "icon": "⚡",
+    "totalItems": 26,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "zig.memory-safety",
+      "title": "Memory Safety",
+      "items": [
+        {
+          "id": "zig.memory-safety.allocator-choice",
+          "text": "Is the correct allocator chosen for each allocation context?",
+          "severity": "major",
+          "tags": ["memory", "performance"],
+          "baseContent": {
+            "whatItMeans": "Zig provides multiple allocators (GeneralPurposeAllocator, ArenaAllocator, FixedBufferAllocator, page_allocator, etc.), each suited for different use cases. Choosing the wrong allocator can cause performance issues or memory leaks.",
+            "whyItMatters": "Using a general-purpose allocator where an arena would suffice wastes cycles on individual frees. Using a fixed-buffer allocator for unbounded input risks out-of-memory panics.",
+            "howToVerify": "- Identify each allocator in the diff\n- Check whether the allocation lifetime matches the allocator's model\n- Confirm arena allocators are freed as a batch when appropriate",
+            "exampleComment": "This function builds a temporary AST that's discarded after processing. An ArenaAllocator would let you free everything in one call instead of tracking individual allocations.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "// Using GPA for short-lived, batch allocations\nvar gpa = std.heap.GeneralPurposeAllocator(.{}){};\nconst allocator = gpa.allocator();\nconst nodes = try buildAst(allocator, source);\nfor (nodes) |node| allocator.destroy(node);"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "// Arena for batch allocations freed together\nvar arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);\ndefer arena.deinit();\nconst nodes = try buildAst(arena.allocator(), source);"
+              }
+            ],
+            "keyTakeaway": "Match allocator lifetime semantics to the allocation pattern. Use arenas for batch-and-discard workloads.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Choosing-an-Allocator"
+            ]
+          }
+        },
+        {
+          "id": "zig.memory-safety.defer-cleanup",
+          "text": "Are all allocated resources cleaned up using defer or errdefer?",
+          "severity": "blocker",
+          "tags": ["memory", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Zig has no garbage collector or RAII destructors. The defer keyword runs cleanup code when the scope exits, and errdefer runs only when the function returns an error.",
+            "whyItMatters": "Missing defer/errdefer leads to resource leaks (memory, file handles, sockets). These are especially dangerous in long-running server processes.",
+            "howToVerify": "- For every allocator.alloc/create call, verify a matching defer allocator.free/destroy exists\n- For errdefer, check that partial initialization is rolled back on error paths",
+            "exampleComment": "The buffer allocated on line 42 is never freed if the subsequent parsing step returns an error. Add an errdefer to free it.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const buf = try allocator.alloc(u8, 1024);\nconst result = try parse(buf); // if this fails, buf leaks\nreturn result;"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const buf = try allocator.alloc(u8, 1024);\nerrdefer allocator.free(buf);\nconst result = try parse(buf);\nreturn result;"
+              }
+            ],
+            "keyTakeaway": "Every allocation should have a corresponding defer or errdefer immediately after it.",
+            "references": [
+              "https://ziglang.org/documentation/master/#defer"
+            ]
+          }
+        },
+        {
+          "id": "zig.memory-safety.slice-bounds",
+          "text": "Are slice operations checked for out-of-bounds access?",
+          "severity": "blocker",
+          "tags": ["safety", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Zig slices have runtime bounds checking in safe builds but not in ReleaseFast. Code that indexes slices without validation can cause undefined behavior in optimized builds.",
+            "whyItMatters": "Out-of-bounds access in release mode leads to memory corruption, security vulnerabilities, and hard-to-diagnose crashes.",
+            "howToVerify": "- Check slice indexing with runtime-determined indices\n- Verify bounds are validated before indexing in hot paths\n- Look for uses of @ptrCast that bypass slice safety",
+            "exampleComment": "This index comes from user input but is used directly to subscript the buffer. Validate it against buf.len first.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn getItem(buf: []const u8, index: usize) u8 {\n    return buf[index]; // UB in ReleaseFast if index >= buf.len\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn getItem(buf: []const u8, index: usize) ?u8 {\n    if (index >= buf.len) return null;\n    return buf[index];\n}"
+              }
+            ],
+            "keyTakeaway": "Never trust external indices. Validate bounds explicitly, especially for code that runs in ReleaseFast.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Slices"
+            ]
+          }
+        },
+        {
+          "id": "zig.memory-safety.sentinel-slices",
+          "text": "Are sentinel-terminated slices used correctly when interfacing with C strings?",
+          "severity": "major",
+          "tags": ["interop", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Zig distinguishes between []u8 (a plain slice) and [:0]u8 (a zero-sentinel-terminated slice). C functions expect null-terminated strings, so passing a plain slice causes undefined behavior.",
+            "whyItMatters": "Passing a non-sentinel slice to a C function that expects a null-terminated string reads past the buffer until it finds a zero byte, causing crashes or data leaks.",
+            "howToVerify": "- Check that strings passed to C functions are [:0]const u8 or use std.mem.sliceTo\n- Verify allocSentinel is used instead of alloc when the result goes to C",
+            "exampleComment": "This slice is passed to printf but it's a []const u8, not [:0]const u8. Use allocSentinel or std.fmt.bufPrintZ to ensure null termination.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const name: []const u8 = getName();\n_ = c.printf(name.ptr); // not null-terminated!"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const name: [:0]const u8 = try allocator.dupeZ(u8, getName());\ndefer allocator.free(name);\n_ = c.printf(name.ptr);"
+              }
+            ],
+            "keyTakeaway": "Use sentinel-terminated slices ([:0]u8) whenever strings cross the Zig-C boundary.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Sentinel-Terminated-Slices"
+            ]
+          }
+        },
+        {
+          "id": "zig.memory-safety.dangling-pointers",
+          "text": "Are there dangling pointers from returning references to stack or freed memory?",
+          "severity": "blocker",
+          "tags": ["safety", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Returning a pointer to a local variable or using a pointer after the backing memory has been freed results in a dangling pointer. Zig does not prevent this at compile time in all cases.",
+            "whyItMatters": "Dangling pointers cause use-after-free vulnerabilities and undefined behavior. They are among the most dangerous memory safety bugs.",
+            "howToVerify": "- Check functions that return pointers or slices — ensure the backing memory outlives the caller's use\n- Look for pointers stored in structs that outlive the allocator scope",
+            "exampleComment": "This function returns a slice pointing into a local array. Once the function returns, that memory is invalid. Allocate on the heap or accept a caller-provided buffer.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn makeGreeting() []const u8 {\n    var buf: [64]u8 = undefined;\n    const greeting = std.fmt.bufPrint(&buf, \"hello\", .{}) catch unreachable;\n    return greeting; // dangling — buf is on the stack\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn makeGreeting(allocator: std.mem.Allocator) ![]const u8 {\n    return try std.fmt.allocPrint(allocator, \"hello\", .{});\n}"
+              }
+            ],
+            "keyTakeaway": "Never return pointers or slices to stack-local memory. Use allocator-backed memory for data that outlives the current scope.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Pointers"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "zig.comptime",
+      "title": "Comptime",
+      "items": [
+        {
+          "id": "zig.comptime.unnecessary-comptime",
+          "text": "Is comptime used only where compile-time evaluation is genuinely needed?",
+          "severity": "minor",
+          "tags": ["idiom", "readability"],
+          "baseContent": {
+            "whatItMeans": "Zig's comptime keyword forces evaluation at compile time. Overusing it makes code harder to read and can increase compile times without benefit when the compiler would already optimize the expression.",
+            "whyItMatters": "Gratuitous comptime annotations clutter function signatures and mislead readers into thinking the value must be known at compile time when it doesn't need to be.",
+            "howToVerify": "- For each comptime parameter, ask: does this function genuinely need the value at compile time (e.g., for type construction or branching on types)?\n- If the value could be a runtime parameter without changing behavior, comptime is unnecessary",
+            "exampleComment": "The 'multiplier' parameter doesn't need to be comptime — this is just arithmetic. Making it runtime gives callers more flexibility.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn scale(comptime multiplier: u32, value: u32) u32 {\n    return value * multiplier; // comptime not needed here\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn scale(multiplier: u32, value: u32) u32 {\n    return value * multiplier;\n}"
+              }
+            ],
+            "keyTakeaway": "Reserve comptime for type-level computation, generic instantiation, and compile-time branching.",
+            "references": [
+              "https://ziglang.org/documentation/master/#comptime"
+            ]
+          }
+        },
+        {
+          "id": "zig.comptime.type-functions",
+          "text": "Do comptime type functions return well-documented, predictable types?",
+          "severity": "major",
+          "tags": ["design", "readability"],
+          "baseContent": {
+            "whatItMeans": "Zig uses comptime functions that return types to achieve generics. These functions should clearly communicate what type they produce and under what conditions.",
+            "whyItMatters": "Opaque or complex type functions make downstream code hard to understand and debug. Clear naming and documentation help maintainers reason about the generated types.",
+            "howToVerify": "- Check that type-returning functions have descriptive names\n- Verify the returned struct/union is documented or has meaningful field names\n- Ensure error cases in type construction produce clear @compileError messages",
+            "exampleComment": "This type function returns an anonymous struct. Consider giving it a named type or adding a doc comment explaining the shape.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn make(comptime T: type) type {\n    return struct { v: T, n: ?*@This() };\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "/// A singly-linked list node holding a value of type T.\nfn LinkedListNode(comptime T: type) type {\n    return struct {\n        const Self = @This();\n        value: T,\n        next: ?*Self,\n    };\n}"
+              }
+            ],
+            "keyTakeaway": "Name type functions clearly and document the shape of returned types.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Generic-Data-Structures"
+            ]
+          }
+        },
+        {
+          "id": "zig.comptime.inline-loops",
+          "text": "Are inline for/while loops used appropriately without excessive code bloat?",
+          "severity": "minor",
+          "tags": ["performance", "binary-size"],
+          "baseContent": {
+            "whatItMeans": "inline for and inline while unroll loops at compile time, generating separate code for each iteration. This is necessary when iterating over comptime slices of types but wasteful for large runtime ranges.",
+            "whyItMatters": "Excessive unrolling bloats the binary, increases instruction-cache pressure, and can actually slow down execution compared to a regular loop.",
+            "howToVerify": "- Check that inline loops iterate over comptime-known, small collections (usually type tuples or small arrays)\n- Flag inline loops over large ranges or runtime-determined bounds",
+            "exampleComment": "This inline for iterates over 256 entries. That generates 256 copies of the loop body. A regular for loop would be more appropriate here.",
+            "codeExamples": [],
+            "keyTakeaway": "Use inline loops for type-level iteration over small tuples. Prefer regular loops for anything with more than a handful of iterations.",
+            "references": [
+              "https://ziglang.org/documentation/master/#inline-for"
+            ]
+          }
+        },
+        {
+          "id": "zig.comptime.compile-errors",
+          "text": "Do generic functions produce clear @compileError messages for invalid type parameters?",
+          "severity": "minor",
+          "tags": ["dx", "correctness"],
+          "baseContent": {
+            "whatItMeans": "When a comptime function receives a type that doesn't meet its requirements, a custom @compileError provides a clear message instead of a cryptic internal error.",
+            "whyItMatters": "Without explicit compile errors, users of generic functions see confusing error traces deep inside the implementation rather than a clear message about what went wrong.",
+            "howToVerify": "- Check that comptime type-checking uses @compileError with descriptive messages\n- Verify constraints are checked early in the function, not after partial computation",
+            "exampleComment": "If T doesn't implement the 'format' method, the user gets an opaque error inside the serializer. Add a @compileError at the top explaining the constraint.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn serialize(comptime T: type, value: T) []const u8 {\n    return value.format(); // cryptic error if T has no format()\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn serialize(comptime T: type, value: T) []const u8 {\n    if (!@hasDecl(T, \"format\")) {\n        @compileError(\"serialize requires T to have a format() method\");\n    }\n    return value.format();\n}"
+              }
+            ],
+            "keyTakeaway": "Use @compileError to give callers actionable feedback when type constraints are not met.",
+            "references": [
+              "https://ziglang.org/documentation/master/#compileError"
+            ]
+          }
+        },
+        {
+          "id": "zig.comptime.comptime-blocks",
+          "text": "Are comptime blocks used to precompute lookup tables instead of computing them at runtime?",
+          "severity": "nit",
+          "tags": ["performance", "idiom"],
+          "baseContent": {
+            "whatItMeans": "Zig allows arbitrary computation at compile time using comptime blocks. Static lookup tables, hash maps, and constant arrays can be computed once at build time.",
+            "whyItMatters": "Precomputing tables eliminates runtime initialization costs and startup latency. It also guarantees the table is correct before the program runs.",
+            "howToVerify": "- Look for runtime initialization of constant data that could be computed at comptime\n- Check for lazy-init patterns (static var + if null) that could be replaced with comptime constants",
+            "exampleComment": "This CRC table is computed on first call using a static variable. Since the algorithm is deterministic, compute it at comptime instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "var crc_table: ?[256]u32 = null;\nfn getCrcTable() [256]u32 {\n    if (crc_table) |t| return t;\n    crc_table = computeCrcTable();\n    return crc_table.?;\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const crc_table: [256]u32 = comptime computeCrcTable();"
+              }
+            ],
+            "keyTakeaway": "If a value is deterministic and needed at runtime, compute it at comptime.",
+            "references": [
+              "https://ziglang.org/documentation/master/#comptime-Expressions"
+            ]
+          }
+        },
+        {
+          "id": "zig.comptime.anytype-overuse",
+          "text": "Is anytype used judiciously, or would explicit type parameters be clearer?",
+          "severity": "minor",
+          "tags": ["readability", "idiom"],
+          "baseContent": {
+            "whatItMeans": "anytype is Zig's duck-typing mechanism — it accepts any type that structurally satisfies the function body. Explicit comptime T: type parameters are more self-documenting.",
+            "whyItMatters": "anytype hides the constraints on the parameter. When a function's requirements are non-trivial, explicit type parameters with @compileError checks communicate intent better.",
+            "howToVerify": "- Check if anytype parameters have non-obvious structural requirements\n- If the function only works with specific traits, an explicit type parameter with a compile-time check is preferable",
+            "exampleComment": "This function requires the argument to have .items and .len fields, but anytype doesn't communicate that. Consider using comptime T: type with a trait check.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn process(container: anytype) void {\n    for (container.items) |item| { _ = item; }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn process(comptime T: type, container: T) void {\n    comptime if (!@hasField(T, \"items\"))\n        @compileError(\"process requires a container with an 'items' field\");\n    for (container.items) |item| { _ = item; }\n}"
+              }
+            ],
+            "keyTakeaway": "Use anytype for simple, obvious cases. Prefer explicit type parameters when constraints are non-trivial.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Functions"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "zig.error-handling",
+      "title": "Error Handling",
+      "items": [
+        {
+          "id": "zig.error-handling.error-unions",
+          "text": "Are error unions used instead of sentinel values or panics for recoverable errors?",
+          "severity": "major",
+          "tags": ["correctness", "idiom"],
+          "baseContent": {
+            "whatItMeans": "Zig's error union (ErrorType!ValueType) is the idiomatic way to represent operations that can fail. Using sentinel values (like -1) or unreachable panics for recoverable errors is an anti-pattern.",
+            "whyItMatters": "Error unions force callers to handle the error case. Sentinel values are easy to forget, and panics crash the program for conditions that could be handled gracefully.",
+            "howToVerify": "- Look for functions returning optional or sentinel values where an error union would be more descriptive\n- Flag uses of unreachable or @panic for recoverable conditions",
+            "exampleComment": "Returning null when the file doesn't exist loses the reason for failure. Return an error union so callers can distinguish 'file not found' from 'permission denied'.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn readConfig() ?Config {\n    const file = std.fs.cwd().openFile(\"config.json\", .{}) catch return null;\n    // caller doesn't know WHY it failed\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn readConfig() !Config {\n    const file = try std.fs.cwd().openFile(\"config.json\", .{});\n    defer file.close();\n    // error propagates with specific cause\n}"
+              }
+            ],
+            "keyTakeaway": "Use error unions for recoverable failures. Reserve optionals for genuinely optional values, not error conditions.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Errors"
+            ]
+          }
+        },
+        {
+          "id": "zig.error-handling.error-set-narrowing",
+          "text": "Are error sets narrowed to only the errors the function can actually produce?",
+          "severity": "minor",
+          "tags": ["design", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Zig allows functions to declare specific error sets rather than using the catch-all anyerror. Narrowing error sets tells callers exactly what can go wrong.",
+            "whyItMatters": "Using anyerror or overly broad error sets forces callers to handle impossible error cases. Narrow error sets enable exhaustive switch handling.",
+            "howToVerify": "- Check if functions declare specific error sets or rely on inferred/anyerror\n- Verify that callers can exhaustively switch on the returned error set",
+            "exampleComment": "This function only opens files and parses JSON, but it returns anyerror. Narrow it to the specific errors from openFile and jsonParse.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn loadData() anyerror!Data {\n    const file = try std.fs.cwd().openFile(\"data.bin\", .{});\n    return try parseData(file);\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const LoadError = error{ FileNotFound, AccessDenied, InvalidData };\nfn loadData() LoadError!Data {\n    const file = std.fs.cwd().openFile(\"data.bin\", .{}) catch |e| switch (e) {\n        error.FileNotFound => return error.FileNotFound,\n        error.AccessDenied => return error.AccessDenied,\n        else => return error.InvalidData,\n    };\n    return try parseData(file);\n}"
+              }
+            ],
+            "keyTakeaway": "Declare explicit error sets to communicate precisely which failures are possible.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Error-Set-Type"
+            ]
+          }
+        },
+        {
+          "id": "zig.error-handling.try-catch-balance",
+          "text": "Is try used appropriately, or should some errors be caught and handled locally?",
+          "severity": "minor",
+          "tags": ["design", "correctness"],
+          "baseContent": {
+            "whatItMeans": "try propagates errors to the caller. Sometimes it's better to catch and handle errors locally — for retries, fallbacks, or default values.",
+            "whyItMatters": "Blindly propagating every error pushes error-handling burden to callers and can cause upper layers to deal with low-level errors they shouldn't know about.",
+            "howToVerify": "- For each try, ask: should this error be handled here instead of propagated?\n- Look for patterns where a catch with a fallback would be more appropriate",
+            "exampleComment": "If the cache file is missing, falling back to a fresh computation is more user-friendly than propagating FileNotFound to the caller.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn getData() !Data {\n    return try loadFromCache(); // caller sees cache errors\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn getData() !Data {\n    return loadFromCache() catch {\n        return try computeData(); // fallback on cache miss\n    };\n}"
+              }
+            ],
+            "keyTakeaway": "Propagate errors you can't handle. Catch errors you can recover from locally.",
+            "references": [
+              "https://ziglang.org/documentation/master/#try"
+            ]
+          }
+        },
+        {
+          "id": "zig.error-handling.unreachable-safety",
+          "text": "Is unreachable used only for truly impossible states, not as a shortcut?",
+          "severity": "blocker",
+          "tags": ["safety", "correctness"],
+          "baseContent": {
+            "whatItMeans": "unreachable tells the compiler a code path cannot be reached. In safe builds it panics; in release builds it's undefined behavior. Using it for 'unlikely' cases is dangerous.",
+            "whyItMatters": "If an 'unreachable' path is actually reached in a release build, the program has undefined behavior — anything from silent corruption to security exploits.",
+            "howToVerify": "- For each unreachable, verify the condition is logically impossible, not just unlikely\n- Check for unreachable in catch/else branches where the error is theoretically possible",
+            "exampleComment": "This catch unreachable assumes the allocation never fails, but with a FixedBufferAllocator it absolutely can. Handle the OutOfMemory error.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const result = allocator.alloc(u8, size) catch unreachable;\n// dangerous if allocator can actually fail"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const result = allocator.alloc(u8, size) catch |e| {\n    std.log.err(\"allocation failed: {}\", .{e});\n    return e;\n};"
+              }
+            ],
+            "keyTakeaway": "unreachable is a safety assertion, not an error-handling strategy. Use it only for provably impossible states.",
+            "references": [
+              "https://ziglang.org/documentation/master/#unreachable"
+            ]
+          }
+        },
+        {
+          "id": "zig.error-handling.error-payload",
+          "text": "Are error payloads and return traces preserved rather than discarded?",
+          "severity": "minor",
+          "tags": ["debugging", "observability"],
+          "baseContent": {
+            "whatItMeans": "Zig's error return traces help diagnose where errors originated. Discarding error payloads with catch {} or _ makes debugging harder.",
+            "whyItMatters": "When errors are silently swallowed, bugs become invisible. Preserving error information through logging or propagation keeps the system debuggable.",
+            "howToVerify": "- Look for catch {} or catch |_| {} patterns that discard errors silently\n- Verify important error paths at least log the error before discarding",
+            "exampleComment": "This catch block silently ignores the error. At minimum, log it so failures are visible in production diagnostics.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "sendMetrics(data) catch {}; // silently swallowed"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "sendMetrics(data) catch |e| {\n    std.log.warn(\"metrics send failed: {}\", .{e});\n};"
+              }
+            ],
+            "keyTakeaway": "Never silently discard errors. Log them if you can't propagate them.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Error-Return-Traces"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "zig.c-interop",
+      "title": "C Interop",
+      "items": [
+        {
+          "id": "zig.c-interop.extern-struct-layout",
+          "text": "Do extern structs match the expected C struct layout exactly?",
+          "severity": "blocker",
+          "tags": ["interop", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Zig's default struct layout is allowed to reorder and pad fields. extern struct enforces C ABI layout, which is required when passing structs to/from C code.",
+            "whyItMatters": "Using a regular struct where extern struct is needed silently corrupts data at the FFI boundary. Fields may be read from wrong offsets.",
+            "howToVerify": "- Check that structs passed to C functions are declared as extern struct\n- Verify field types match the C header (e.g., c_int vs i32, c_long vs i64)\n- Confirm padding and alignment match the C definition",
+            "exampleComment": "This struct is passed to a C function but isn't declared as extern. Zig may reorder the fields, causing data corruption at the boundary.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const Point = struct { // Zig may reorder fields\n    x: f64,\n    y: f64,\n    color: u8,\n};"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const Point = extern struct { // C-compatible layout guaranteed\n    x: f64,\n    y: f64,\n    color: u8,\n};"
+              }
+            ],
+            "keyTakeaway": "Always use extern struct for types that cross the C ABI boundary.",
+            "references": [
+              "https://ziglang.org/documentation/master/#extern-struct"
+            ]
+          }
+        },
+        {
+          "id": "zig.c-interop.c-pointer-safety",
+          "text": "Are C pointers validated before being dereferenced in Zig code?",
+          "severity": "major",
+          "tags": ["safety", "interop"],
+          "baseContent": {
+            "whatItMeans": "C functions can return null pointers or invalid pointers. Zig's [*c] pointer type allows null. Dereferencing without checking causes undefined behavior.",
+            "whyItMatters": "Null pointer dereferences in Zig are safety-checked in debug mode but undefined behavior in release mode. C interop is a primary source of null pointers.",
+            "howToVerify": "- Check that [*c] pointers from C are tested against null before use\n- Verify the pointer is converted to a Zig optional pointer type for proper null handling",
+            "exampleComment": "The return value of c_malloc is a [*c]u8 which can be null. Convert to an optional and handle the null case.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const ptr = c.malloc(size);\nptr[0] = 42; // UB if malloc returned null"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const ptr: ?[*]u8 = c.malloc(size);\nif (ptr) |valid_ptr| {\n    valid_ptr[0] = 42;\n} else {\n    return error.OutOfMemory;\n}"
+              }
+            ],
+            "keyTakeaway": "Treat all C pointers as potentially null. Convert to Zig optionals and check before use.",
+            "references": [
+              "https://ziglang.org/documentation/master/#C-Pointers"
+            ]
+          }
+        },
+        {
+          "id": "zig.c-interop.calling-convention",
+          "text": "Are exported functions using the correct calling convention (callconv(.C))?",
+          "severity": "major",
+          "tags": ["interop", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Functions exposed to C code must use the C calling convention. Zig's default calling convention differs from C's and will cause stack corruption if mismatched.",
+            "whyItMatters": "Calling convention mismatches lead to corrupted arguments, wrong return values, and stack smashing — all silent and extremely hard to debug.",
+            "howToVerify": "- Check that export fn declarations use callconv(.C) or are marked as export\n- Verify callback function pointers passed to C also specify the C calling convention",
+            "exampleComment": "This callback is passed to a C function but doesn't specify callconv(.C). Add it to prevent stack corruption.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn myCallback(data: ?*anyopaque) void { // Zig calling convention\n    // ...\n}\nc.register_callback(myCallback);"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn myCallback(data: ?*anyopaque) callconv(.C) void {\n    // ...\n}\nc.register_callback(myCallback);"
+              }
+            ],
+            "keyTakeaway": "Always specify callconv(.C) for functions called from C code.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Functions"
+            ]
+          }
+        },
+        {
+          "id": "zig.c-interop.translate-c-review",
+          "text": "Has @cImport/@cInclude generated code been reviewed for correctness?",
+          "severity": "minor",
+          "tags": ["interop", "correctness"],
+          "baseContent": {
+            "whatItMeans": "Zig's @cImport automatically translates C headers to Zig declarations. The translation isn't perfect — macros, bitfields, and complex preprocessor logic can produce incorrect or missing bindings.",
+            "whyItMatters": "Silently incorrect translations cause subtle runtime bugs. Macros that look like functions may not be translated at all, leading to missing symbols.",
+            "howToVerify": "- Compare @cImport output with the original C header for complex types\n- Check that C macros used as constants are available (they may need manual definition)\n- Verify bitfield structs are correctly represented",
+            "exampleComment": "The FLAG_MASK macro isn't available through @cImport because it uses a complex preprocessor expression. Define it manually as a Zig constant.",
+            "codeExamples": [],
+            "keyTakeaway": "Don't blindly trust @cImport for complex headers. Verify critical bindings manually.",
+            "references": [
+              "https://ziglang.org/documentation/master/#cImport"
+            ]
+          }
+        },
+        {
+          "id": "zig.c-interop.memory-ownership",
+          "text": "Is memory ownership clear at the Zig-C boundary — who allocates, who frees?",
+          "severity": "major",
+          "tags": ["memory", "interop"],
+          "baseContent": {
+            "whatItMeans": "When passing memory between Zig and C, ownership must be explicit. C-allocated memory must be freed with the C allocator (e.g., c.free), and Zig-allocated memory with the Zig allocator.",
+            "whyItMatters": "Freeing memory with the wrong allocator corrupts the heap. Unclear ownership leads to double-frees or leaks.",
+            "howToVerify": "- For each allocation that crosses the boundary, trace who allocates and who frees\n- Verify C-allocated memory is freed with c.free, not Zig's allocator\n- Check documentation or comments clarifying ownership transfer",
+            "exampleComment": "This string is allocated by the C library (strdup). It must be freed with c.free, not allocator.free. Add a comment documenting the ownership.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const name = c.get_name(); // C-allocated\ndefer allocator.free(name); // wrong allocator!"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const name = c.get_name(); // C-allocated\ndefer c.free(name); // freed with matching allocator"
+              }
+            ],
+            "keyTakeaway": "Always free memory with the same allocator that created it. Document ownership transfers at FFI boundaries.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Memory"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "zig.idioms",
+      "title": "Idioms",
+      "items": [
+        {
+          "id": "zig.idioms.optional-handling",
+          "text": "Are optionals unwrapped safely using if/orelse instead of .? force-unwrap?",
+          "severity": "major",
+          "tags": ["safety", "idiom"],
+          "baseContent": {
+            "whatItMeans": "Zig optionals (?T) should be unwrapped with if (opt) |val| or orelse for safe handling. The .? operator panics on null in debug mode and is undefined behavior in release.",
+            "whyItMatters": "Force-unwrapping with .? is equivalent to an assertion that the value is non-null. If that assumption is wrong, the program crashes or behaves unpredictably.",
+            "howToVerify": "- Search for .? in the diff\n- For each use, verify the value is guaranteed to be non-null by prior logic\n- If there's any doubt, suggest if/orelse instead",
+            "exampleComment": "This .? will crash if the map doesn't contain the key. Use orelse to provide a default or return an error.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const value = map.get(key).?; // panics if key not found"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const value = map.get(key) orelse return error.KeyNotFound;"
+              }
+            ],
+            "keyTakeaway": "Use .? only when nullability has been ruled out by prior checks. Prefer orelse for safe defaults.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Optionals"
+            ]
+          }
+        },
+        {
+          "id": "zig.idioms.tagged-unions",
+          "text": "Are tagged unions used instead of separate type + value fields?",
+          "severity": "minor",
+          "tags": ["design", "idiom"],
+          "baseContent": {
+            "whatItMeans": "Zig's tagged unions combine a tag and payload into one type, enforced by the compiler. Using separate fields for 'kind' and 'value' loses this safety.",
+            "whyItMatters": "Separate kind/value fields can get out of sync. Tagged unions make invalid states unrepresentable and enable exhaustive switch checking.",
+            "howToVerify": "- Look for structs with an enum 'kind'/'type' field alongside a union or variant payload\n- Suggest converting to a tagged union where the pattern appears",
+            "exampleComment": "The 'kind' field and 'data' union can be combined into a tagged union, letting the compiler enforce that you handle all variants.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const Token = struct {\n    kind: enum { number, string, eof },\n    num_value: f64,\n    str_value: []const u8,\n};"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const Token = union(enum) {\n    number: f64,\n    string: []const u8,\n    eof,\n};"
+              }
+            ],
+            "keyTakeaway": "Use tagged unions to make invalid states unrepresentable.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Tagged-union"
+            ]
+          }
+        },
+        {
+          "id": "zig.idioms.string-handling",
+          "text": "Are strings handled as slices ([]const u8) rather than pointer arithmetic?",
+          "severity": "minor",
+          "tags": ["idiom", "safety"],
+          "baseContent": {
+            "whatItMeans": "Zig represents strings as byte slices with a length, not null-terminated char pointers. Using pointer arithmetic instead of slice operations bypasses bounds checking.",
+            "whyItMatters": "Slice operations are bounds-checked and ergonomic. Raw pointer arithmetic is error-prone and loses length information.",
+            "howToVerify": "- Look for [*]const u8 pointer types where []const u8 would work\n- Check for manual length tracking that a slice would handle automatically",
+            "exampleComment": "This function takes a [*]const u8 and a separate length. Use a []const u8 slice instead — it bundles the pointer and length together.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "fn process(ptr: [*]const u8, len: usize) void {\n    var i: usize = 0;\n    while (i < len) : (i += 1) { _ = ptr[i]; }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "fn process(data: []const u8) void {\n    for (data) |byte| { _ = byte; }\n}"
+              }
+            ],
+            "keyTakeaway": "Use []const u8 slices for string data. Reserve raw pointers for C interop.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Slices"
+            ]
+          }
+        },
+        {
+          "id": "zig.idioms.test-organization",
+          "text": "Are tests colocated with the code they test using Zig's built-in test blocks?",
+          "severity": "nit",
+          "tags": ["testing", "idiom"],
+          "baseContent": {
+            "whatItMeans": "Zig supports inline test blocks that live alongside the code they test. This is idiomatic and ensures tests are updated when the code changes.",
+            "whyItMatters": "Colocated tests are easier to maintain and more likely to be updated when the implementation changes. Separate test files can drift out of sync.",
+            "howToVerify": "- Check that new functions or modules include corresponding test blocks\n- Verify tests use std.testing assertions, not ad-hoc checks",
+            "exampleComment": "This new function has no test block. Add a test immediately below it to verify the basic behavior.",
+            "codeExamples": [],
+            "keyTakeaway": "Add test blocks alongside new functions. Use std.testing for assertions.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Zig-Test"
+            ]
+          }
+        },
+        {
+          "id": "zig.idioms.naming-conventions",
+          "text": "Does the code follow Zig naming conventions (camelCase functions, PascalCase types)?",
+          "severity": "nit",
+          "tags": ["style", "readability"],
+          "baseContent": {
+            "whatItMeans": "Zig's standard library and community follow consistent naming: camelCase for functions and variables, PascalCase for types and namespaces, SCREAMING_SNAKE for compile-time constants.",
+            "whyItMatters": "Consistent naming makes code instantly recognizable and reduces cognitive load. Deviating from conventions makes code feel foreign to Zig developers.",
+            "howToVerify": "- Check that functions use camelCase\n- Verify types and structs use PascalCase\n- Confirm constants use SCREAMING_SNAKE_CASE",
+            "exampleComment": "The function name 'ParseJSON' uses PascalCase, which in Zig convention means a type. Rename to 'parseJson' to follow the standard.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "zig",
+                "code": "const MAX_SIZE = 1024;\nfn ParseJSON(input: []const u8) json_value {\n    // PascalCase function, snake_case type\n}"
+              },
+              {
+                "label": "Good",
+                "language": "zig",
+                "code": "const max_size = 1024; // or MAX_SIZE for a true constant\nfn parseJson(input: []const u8) JsonValue {\n    // camelCase function, PascalCase type\n}"
+              }
+            ],
+            "keyTakeaway": "Follow Zig conventions: camelCase for functions, PascalCase for types, SCREAMING_SNAKE for constants.",
+            "references": [
+              "https://ziglang.org/documentation/master/#Naming-Style"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

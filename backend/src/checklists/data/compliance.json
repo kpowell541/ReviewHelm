@@ -1,0 +1,511 @@
+{
+  "meta": {
+    "id": "compliance",
+    "mode": "review",
+    "title": "Compliance",
+    "shortTitle": "Compliance",
+    "description": "Review checklist for regulatory compliance (GDPR, HIPAA, PCI-DSS)",
+    "icon": "📋",
+    "totalItems": 30,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "compliance.data-privacy",
+      "title": "Data Privacy & GDPR",
+      "items": [
+        {
+          "id": "compliance.data-privacy.lawful-basis",
+          "text": "Is there a documented lawful basis for collecting and processing this personal data?",
+          "severity": "blocker",
+          "tags": ["gdpr", "legal"],
+          "baseContent": {
+            "whatItMeans": "Every piece of personal data collected has a clear legal justification — consent, contract, legitimate interest, etc. — documented and linked to the feature.",
+            "whyItMatters": "Under GDPR, processing personal data without a lawful basis is illegal and can result in fines up to 4% of annual global revenue.",
+            "howToVerify": "- Check if the feature collects any personal data (names, emails, IPs, device IDs)\n- Verify the data processing is documented in the privacy register\n- Ensure consent flows exist if relying on consent as the basis",
+            "exampleComment": "This new analytics event includes the user's IP address, but I don't see it documented in our data processing register. What's the lawful basis for collecting it?",
+            "codeExamples": [],
+            "keyTakeaway": "Every piece of personal data needs a documented lawful basis before collection.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-privacy.data-minimization",
+          "text": "Is only the minimum necessary personal data collected for the stated purpose?",
+          "severity": "major",
+          "tags": ["gdpr", "privacy"],
+          "baseContent": {
+            "whatItMeans": "The feature collects only the data strictly needed to fulfill its purpose — no 'nice to have' fields, no collecting data 'just in case'.",
+            "whyItMatters": "Data minimization is a core GDPR principle. Collecting unnecessary data increases breach exposure and regulatory risk.",
+            "howToVerify": "- Review each data field collected and justify its necessity\n- Check for optional fields that aren't actually used\n- Verify analytics events don't capture more than needed",
+            "exampleComment": "The signup form collects date of birth, but the app doesn't use age for anything. Remove it to comply with data minimization principles.",
+            "codeExamples": [],
+            "keyTakeaway": "Collect only what you need — every extra field is extra liability.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-privacy.right-to-deletion",
+          "text": "Can users request deletion of their data and is it fully removed from all systems?",
+          "severity": "blocker",
+          "tags": ["gdpr", "privacy"],
+          "baseContent": {
+            "whatItMeans": "Users can request account/data deletion, and the system removes their data from primary databases, backups (within a reasonable timeframe), logs, caches, and third-party integrations.",
+            "whyItMatters": "The GDPR right to erasure (Article 17) requires complete data deletion upon request. Partial deletion fails compliance audits.",
+            "howToVerify": "- Check for a data deletion endpoint/flow\n- Verify deletion cascades to all related tables and services\n- Ensure backups have a retention policy that eventually removes deleted data\n- Check third-party integrations (analytics, CRM) for deletion propagation",
+            "exampleComment": "The delete account endpoint removes the user row but leaves their messages, file uploads, and analytics data intact. All personal data needs to be included in the deletion cascade.",
+            "codeExamples": [],
+            "keyTakeaway": "Data deletion must cascade across all systems, not just the primary database.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-privacy.data-export",
+          "text": "Can users export their personal data in a machine-readable format?",
+          "severity": "major",
+          "tags": ["gdpr", "privacy"],
+          "baseContent": {
+            "whatItMeans": "Users can request a copy of all personal data the system holds about them, delivered in a standard machine-readable format (JSON, CSV).",
+            "whyItMatters": "The GDPR right to data portability (Article 20) requires providing personal data in a structured, commonly used format.",
+            "howToVerify": "- Check for a data export endpoint or feature\n- Verify the export includes all personal data categories\n- Ensure the format is machine-readable (JSON, CSV, not PDF)\n- Check that the export is rate-limited to prevent abuse",
+            "exampleComment": "The data export only includes profile data but omits activity history and uploaded files. All personal data categories need to be included.",
+            "codeExamples": [],
+            "keyTakeaway": "Data export must cover all personal data in a machine-readable format.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-privacy.consent-management",
+          "text": "Is user consent collected, recorded, and revocable for optional data processing?",
+          "severity": "major",
+          "tags": ["gdpr", "consent"],
+          "baseContent": {
+            "whatItMeans": "When consent is the lawful basis, it's freely given, specific, informed, and unambiguous. Consent records include what was consented to, when, and how. Users can revoke consent at any time.",
+            "whyItMatters": "Pre-checked boxes, bundled consent, or inability to withdraw consent invalidates it under GDPR, making the processing unlawful.",
+            "howToVerify": "- Check that consent checkboxes are not pre-checked\n- Verify consent is granular (separate for different purposes)\n- Ensure consent timestamps and versions are recorded\n- Check that users can revoke consent and processing stops accordingly",
+            "exampleComment": "The marketing checkbox is pre-checked during signup. Under GDPR, consent must be opt-in, not opt-out.",
+            "codeExamples": [],
+            "keyTakeaway": "Consent must be freely given, specific, and easily revocable.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-privacy.cross-border-transfers",
+          "text": "Are cross-border data transfers compliant with applicable regulations?",
+          "severity": "major",
+          "tags": ["gdpr", "international"],
+          "baseContent": {
+            "whatItMeans": "Personal data transferred outside the EU/EEA is protected by adequate safeguards — Standard Contractual Clauses, adequacy decisions, or Binding Corporate Rules.",
+            "whyItMatters": "Post-Schrems II, transferring EU personal data to countries without adequate protections (including the US without proper frameworks) can result in enforcement action.",
+            "howToVerify": "- Check where third-party services store/process data\n- Verify Standard Contractual Clauses are in place for non-adequate countries\n- Ensure the Data Protection Impact Assessment covers cross-border flows\n- Check if US-based services rely on the EU-US Data Privacy Framework",
+            "exampleComment": "This new analytics service stores data in US servers. Do we have Standard Contractual Clauses in place? Check with legal before enabling.",
+            "codeExamples": [],
+            "keyTakeaway": "Cross-border data transfers need legal safeguards like Standard Contractual Clauses.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "compliance.health-data",
+      "title": "Health Data & HIPAA",
+      "items": [
+        {
+          "id": "compliance.health-data.phi-identification",
+          "text": "Is Protected Health Information (PHI) properly identified and classified in the codebase?",
+          "severity": "blocker",
+          "tags": ["hipaa", "phi"],
+          "baseContent": {
+            "whatItMeans": "All 18 HIPAA identifiers (names, dates, SSNs, medical record numbers, etc.) are identified in the data model and marked as PHI with appropriate handling requirements.",
+            "whyItMatters": "Misclassifying PHI as regular data means it won't receive required protections (encryption, access controls, audit logging), creating HIPAA violations.",
+            "howToVerify": "- Review data models for any of the 18 HIPAA identifiers\n- Check that PHI fields are documented and classified\n- Verify PHI handling follows the designated security controls\n- Ensure de-identification follows Safe Harbor or Expert Determination methods",
+            "exampleComment": "The patient notes field contains free-text that could include PHI but isn't classified as such. It needs PHI-level encryption and access controls.",
+            "codeExamples": [],
+            "keyTakeaway": "Properly classify all PHI to ensure it receives required HIPAA protections.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.health-data.encryption-at-rest-transit",
+          "text": "Is PHI encrypted both at rest and in transit?",
+          "severity": "blocker",
+          "tags": ["hipaa", "encryption"],
+          "baseContent": {
+            "whatItMeans": "PHI is encrypted using strong algorithms (AES-256 at rest, TLS 1.2+ in transit) and encryption keys are managed separately from the data.",
+            "whyItMatters": "HIPAA's Security Rule requires technical safeguards for PHI. Unencrypted PHI in a breach triggers mandatory notification requirements.",
+            "howToVerify": "- Check database/storage encryption configuration\n- Verify TLS 1.2+ is enforced for all API communication\n- Ensure encryption keys are stored in a key management service, not in code\n- Check that backups are also encrypted",
+            "exampleComment": "The database column storing diagnosis codes uses plaintext. PHI must be encrypted at rest — use column-level encryption or enable transparent data encryption.",
+            "codeExamples": [],
+            "keyTakeaway": "Encrypt PHI at rest (AES-256) and in transit (TLS 1.2+) with proper key management.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.health-data.access-controls",
+          "text": "Is access to PHI restricted by role with the minimum necessary standard?",
+          "severity": "blocker",
+          "tags": ["hipaa", "access-control"],
+          "baseContent": {
+            "whatItMeans": "Only authorized users with a legitimate need can access PHI, enforced through role-based access controls (RBAC) that follow the minimum necessary standard.",
+            "whyItMatters": "HIPAA requires that workforce members only access the minimum PHI needed for their job function. Broad access increases breach risk and violates the standard.",
+            "howToVerify": "- Check that PHI endpoints require specific roles/permissions\n- Verify the minimum necessary principle is applied (not all staff see all records)\n- Ensure admin access to PHI is limited and justified\n- Check for break-glass emergency access procedures",
+            "exampleComment": "Any authenticated user can access the /patients endpoint. PHI access should be restricted to users with the 'clinical' role.",
+            "codeExamples": [],
+            "keyTakeaway": "Restrict PHI access to authorized roles following the minimum necessary standard.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.health-data.baa-third-parties",
+          "text": "Are Business Associate Agreements in place with all third parties handling PHI?",
+          "severity": "blocker",
+          "tags": ["hipaa", "legal"],
+          "baseContent": {
+            "whatItMeans": "Every vendor, cloud provider, or service that stores, processes, or transmits PHI on your behalf has a signed Business Associate Agreement (BAA).",
+            "whyItMatters": "Sharing PHI with a vendor without a BAA is a direct HIPAA violation, regardless of whether a breach occurs.",
+            "howToVerify": "- List all services that handle PHI (cloud, databases, email, analytics)\n- Verify each has a signed BAA on file\n- Check that new integrations go through a BAA review process\n- Ensure BAAs are renewed and up to date",
+            "exampleComment": "This PR integrates a new email service for appointment reminders. Does the vendor have a signed BAA? PHI in emails requires one.",
+            "codeExamples": [],
+            "keyTakeaway": "Every third party handling PHI needs a signed Business Associate Agreement.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.health-data.de-identification",
+          "text": "Is PHI properly de-identified when used for analytics, testing, or research?",
+          "severity": "major",
+          "tags": ["hipaa", "privacy"],
+          "baseContent": {
+            "whatItMeans": "When PHI is used for non-treatment purposes (analytics, testing, ML training), it's de-identified by removing all 18 HIPAA identifiers (Safe Harbor) or via Expert Determination.",
+            "whyItMatters": "Using real PHI in test environments or analytics without de-identification creates unnecessary breach exposure and violates HIPAA's minimum necessary principle.",
+            "howToVerify": "- Check that test/staging environments don't use real PHI\n- Verify analytics pipelines de-identify before processing\n- Ensure de-identification follows Safe Harbor (remove all 18 identifiers) or Expert Determination\n- Check that re-identification risk is assessed",
+            "exampleComment": "The staging seed script uses a dump of production patient data. Use synthetic data or properly de-identify before loading into non-production environments.",
+            "codeExamples": [],
+            "keyTakeaway": "De-identify PHI before using it in analytics, testing, or non-treatment contexts.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.health-data.breach-notification",
+          "text": "Is there a breach notification process that meets HIPAA's 60-day requirement?",
+          "severity": "major",
+          "tags": ["hipaa", "incident-response"],
+          "baseContent": {
+            "whatItMeans": "The system has a documented breach notification process that can notify affected individuals within 60 days, HHS if 500+ records are affected, and media if required.",
+            "whyItMatters": "HIPAA requires breach notification within 60 days of discovery. Not having a process means you can't comply when a breach occurs.",
+            "howToVerify": "- Check for a documented breach notification procedure\n- Verify contact templates and notification channels exist\n- Ensure breach detection mechanisms are in place (anomaly detection, access logs)\n- Check that the process includes HHS reporting for large breaches",
+            "exampleComment": "The error handling silently catches and ignores unauthorized PHI access. This needs to trigger an alert for the security team to assess potential breach.",
+            "codeExamples": [],
+            "keyTakeaway": "Have a tested breach notification process ready before you need it.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "compliance.payment-security",
+      "title": "Payment Security & PCI-DSS",
+      "items": [
+        {
+          "id": "compliance.payment-security.no-raw-card-storage",
+          "text": "Are raw credit card numbers never stored, logged, or transmitted through your systems?",
+          "severity": "blocker",
+          "tags": ["pci-dss", "payment"],
+          "baseContent": {
+            "whatItMeans": "Full card numbers (PANs) are never stored in your database, written to log files, or sent through your backend. Instead, a PCI-compliant payment processor (Stripe, Braintree) handles all card data.",
+            "whyItMatters": "Storing or transmitting raw card numbers brings your entire system into PCI-DSS scope, requiring annual audits costing $50K-$200K+ and months of compliance work.",
+            "howToVerify": "- Search codebase for card number patterns (16-digit strings, card_number fields)\n- Check log statements for card data leakage\n- Verify payment forms use processor-hosted fields (Stripe Elements, Braintree Drop-in)\n- Ensure API endpoints never receive raw card numbers",
+            "exampleComment": "The payment form sends the full card number to our backend API. Use Stripe Elements or PaymentIntents so card data goes directly to Stripe, keeping our systems out of PCI scope.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "javascript",
+                "code": "// Card number passes through our server\napp.post('/pay', (req, res) => {\n  const { cardNumber, cvv, expiry } = req.body;\n  stripe.charges.create({ source: cardNumber });\n});"
+              },
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "// Card data goes directly to Stripe\napp.post('/pay', (req, res) => {\n  const { paymentMethodId } = req.body; // Token, not card\n  stripe.paymentIntents.create({\n    payment_method: paymentMethodId,\n    amount: 1000,\n    currency: 'usd',\n    confirm: true,\n  });\n});"
+              }
+            ],
+            "keyTakeaway": "Use tokenized payment methods — never let raw card data touch your servers.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.payment-security.tokenization",
+          "text": "Are payment credentials tokenized using a PCI-compliant processor?",
+          "severity": "blocker",
+          "tags": ["pci-dss", "payment"],
+          "baseContent": {
+            "whatItMeans": "Payment card data is collected and tokenized by a PCI Level 1 certified processor. Your system only stores and transmits tokens (e.g., Stripe's pm_xxx or tok_xxx).",
+            "whyItMatters": "Tokenization keeps card data out of your environment entirely, reducing PCI scope to the simplest level (SAQ A) and dramatically reducing compliance costs.",
+            "howToVerify": "- Verify payment forms use processor-hosted fields\n- Check that only tokens are stored in the database\n- Ensure the processor is PCI Level 1 certified\n- Verify tokens can't be reverse-engineered to card numbers",
+            "exampleComment": "The database stores the last 4 digits and expiry separately. While not full card numbers, combine these with the payment token for display purposes instead of storing them independently.",
+            "codeExamples": [],
+            "keyTakeaway": "Let your payment processor handle card data and only store tokens.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.payment-security.secure-communication",
+          "text": "Are all payment-related communications encrypted with TLS 1.2+?",
+          "severity": "blocker",
+          "tags": ["pci-dss", "encryption"],
+          "baseContent": {
+            "whatItMeans": "All HTTP communication involving payment data uses TLS 1.2 or higher. Older protocols (TLS 1.0, 1.1, SSL) are disabled.",
+            "whyItMatters": "PCI-DSS requirement 4.1 mandates strong cryptography for cardholder data in transit. TLS 1.0 and 1.1 have known vulnerabilities.",
+            "howToVerify": "- Check TLS configuration on payment-related endpoints\n- Verify TLS 1.0 and 1.1 are disabled\n- Ensure certificate validation is not disabled in payment API clients\n- Run an SSL Labs test on payment endpoints",
+            "exampleComment": "The payment webhook endpoint accepts TLS 1.0 connections. Disable TLS 1.0 and 1.1 to meet PCI-DSS requirements.",
+            "codeExamples": [],
+            "keyTakeaway": "Enforce TLS 1.2+ for all payment-related communications.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.payment-security.webhook-verification",
+          "text": "Are payment webhooks verified using the processor's signature validation?",
+          "severity": "major",
+          "tags": ["pci-dss", "security"],
+          "baseContent": {
+            "whatItMeans": "Incoming webhooks from payment processors are verified using the provider's signature mechanism (e.g., Stripe's webhook signing secret) before processing.",
+            "whyItMatters": "Without signature verification, an attacker can forge webhook events to grant unauthorized access, mark fraudulent payments as successful, or trigger refunds.",
+            "howToVerify": "- Check that the webhook endpoint validates the signature header\n- Verify the signing secret is stored securely (not hardcoded)\n- Ensure unverified webhooks are rejected with a 400 status\n- Check that webhook processing is idempotent",
+            "exampleComment": "The Stripe webhook handler doesn't verify the webhook signature. An attacker could POST fake 'payment_intent.succeeded' events to grant access without paying.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "javascript",
+                "code": "app.post('/webhook', (req, res) => {\n  const sig = req.headers['stripe-signature'];\n  try {\n    const event = stripe.webhooks.constructEvent(\n      req.body, sig, process.env.STRIPE_WEBHOOK_SECRET\n    );\n    handleEvent(event);\n    res.json({ received: true });\n  } catch (err) {\n    res.status(400).send(`Webhook Error: ${err.message}`);\n  }\n});"
+              }
+            ],
+            "keyTakeaway": "Always verify payment webhook signatures to prevent forged events.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.payment-security.no-sensitive-logs",
+          "text": "Are payment-related logs free of sensitive cardholder data?",
+          "severity": "major",
+          "tags": ["pci-dss", "logging"],
+          "baseContent": {
+            "whatItMeans": "Log statements in payment flows don't capture card numbers, CVVs, expiration dates, or full account numbers. At most, masked values (last 4 digits) appear in logs.",
+            "whyItMatters": "PCI-DSS requirement 3.4 prohibits storing sensitive authentication data after authorization. Log files are a common source of accidental card data exposure.",
+            "howToVerify": "- Search log statements in payment-related code for card data\n- Check that request/response logging masks sensitive fields\n- Verify error logging doesn't dump full request bodies\n- Ensure log aggregation services are PCI-compliant if they receive payment logs",
+            "exampleComment": "The error handler logs the full request body, which includes the card expiry date from Stripe's response. Mask or omit sensitive fields before logging.",
+            "codeExamples": [],
+            "keyTakeaway": "Scrub all cardholder data from logs — even in error handlers.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.payment-security.regular-testing",
+          "text": "Are payment flows included in regular security testing and vulnerability scans?",
+          "severity": "minor",
+          "tags": ["pci-dss", "testing"],
+          "baseContent": {
+            "whatItMeans": "Payment-related endpoints and flows are included in quarterly vulnerability scans, annual penetration tests, and automated security testing.",
+            "whyItMatters": "PCI-DSS requirements 11.2 and 11.3 mandate regular vulnerability scanning and penetration testing of cardholder data environments.",
+            "howToVerify": "- Check that payment endpoints are included in security scan scope\n- Verify quarterly ASV scans are scheduled\n- Ensure penetration test reports cover payment flows\n- Check for automated security tests in CI/CD for payment code",
+            "exampleComment": "The payment module isn't included in our quarterly vulnerability scan scope. PCI-DSS requires it — add the payment endpoints to the scan target list.",
+            "codeExamples": [],
+            "keyTakeaway": "Include payment flows in regular security testing as required by PCI-DSS.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "compliance.audit-logging",
+      "title": "Audit Logging",
+      "items": [
+        {
+          "id": "compliance.audit-logging.comprehensive-audit-trail",
+          "text": "Are all access and modifications to sensitive data recorded in an immutable audit log?",
+          "severity": "blocker",
+          "tags": ["audit", "compliance"],
+          "baseContent": {
+            "whatItMeans": "Every read, create, update, and delete of sensitive/regulated data is logged with who, what, when, and where (IP/service). Audit logs are append-only and tamper-resistant.",
+            "whyItMatters": "Audit trails are required by GDPR (Article 30), HIPAA (45 CFR 164.312), SOC 2, and PCI-DSS. Without them, you can't prove compliance or investigate incidents.",
+            "howToVerify": "- Check that CRUD operations on sensitive data trigger audit log entries\n- Verify logs include user ID, action, timestamp, and affected resource\n- Ensure audit logs are stored separately from application logs\n- Check that logs are append-only (no updates or deletes)",
+            "exampleComment": "Admin users can modify patient records but there's no audit log. Every access and change to regulated data must be logged for compliance.",
+            "codeExamples": [],
+            "keyTakeaway": "Log all access and changes to sensitive data in an immutable audit trail.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.audit-logging.log-integrity",
+          "text": "Are audit logs protected against tampering and unauthorized access?",
+          "severity": "major",
+          "tags": ["audit", "security"],
+          "baseContent": {
+            "whatItMeans": "Audit logs are stored in a separate system with restricted write access, integrity verification (checksums/signing), and protection against deletion — even by administrators.",
+            "whyItMatters": "If audit logs can be modified or deleted, they can't serve as evidence in compliance audits or breach investigations.",
+            "howToVerify": "- Check that audit logs are stored in a separate, append-only store\n- Verify only the audit service can write to audit logs\n- Ensure administrators can't delete or modify audit entries\n- Check for integrity verification mechanisms (hashing, signing)",
+            "exampleComment": "Audit logs are stored in the same database as application data, and any admin can delete rows. Move them to an append-only log store.",
+            "codeExamples": [],
+            "keyTakeaway": "Store audit logs in a tamper-resistant, append-only system separate from application data.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.audit-logging.retention-policy",
+          "text": "Do audit logs have a retention policy that meets regulatory requirements?",
+          "severity": "major",
+          "tags": ["audit", "compliance"],
+          "baseContent": {
+            "whatItMeans": "Audit logs are retained for the minimum period required by applicable regulations (HIPAA: 6 years, SOC 2: 1 year, PCI-DSS: 1 year) and purged after.",
+            "whyItMatters": "Insufficient retention means you can't produce logs during an audit. Excessive retention increases storage costs and breach exposure.",
+            "howToVerify": "- Check the audit log retention configuration\n- Verify the retention period meets all applicable regulations\n- Ensure there's an automated purge process for expired logs\n- Check that legal hold can pause purging when required",
+            "exampleComment": "Audit logs are only retained for 30 days. HIPAA requires 6-year retention and PCI-DSS requires at least 1 year. Update the retention policy.",
+            "codeExamples": [],
+            "keyTakeaway": "Set retention to the maximum period required across all applicable regulations.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.audit-logging.no-pii-in-logs",
+          "text": "Are audit logs free of unnecessary PII while still being useful for investigations?",
+          "severity": "major",
+          "tags": ["privacy", "logging"],
+          "baseContent": {
+            "whatItMeans": "Audit logs record enough information to identify who did what (user ID, resource ID, action) without logging the actual sensitive data content (the patient's diagnosis, the card number).",
+            "whyItMatters": "Logging sensitive data in audit trails creates a second copy that must also be protected, deleted on request, and secured — doubling your compliance burden.",
+            "howToVerify": "- Check that audit log entries use resource IDs, not data values\n- Verify that before/after values for sensitive fields are masked\n- Ensure log entries don't include request bodies containing PII\n- Check that log search queries don't expose sensitive data",
+            "exampleComment": "The audit log records the full patient diagnosis in the 'oldValue' field. Log the record ID and field name, not the actual medical data.",
+            "codeExamples": [],
+            "keyTakeaway": "Log identifiers and actions, not the actual sensitive data values.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.audit-logging.access-monitoring",
+          "text": "Are unusual access patterns detected and alerted on?",
+          "severity": "minor",
+          "tags": ["security", "monitoring"],
+          "baseContent": {
+            "whatItMeans": "The system detects anomalous access patterns (bulk data exports, after-hours access, accessing records outside normal scope) and alerts the security team.",
+            "whyItMatters": "Insider threats and compromised accounts often show detectable patterns before a full breach. Early detection limits damage.",
+            "howToVerify": "- Check for alerting rules on unusual access patterns\n- Verify bulk data access triggers alerts\n- Ensure failed access attempts are tracked and alerted\n- Check for after-hours or geographic anomaly detection",
+            "exampleComment": "A single user can export all patient records without triggering any alert. Add monitoring for bulk data access patterns.",
+            "codeExamples": [],
+            "keyTakeaway": "Monitor for unusual access patterns to catch threats early.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.audit-logging.audit-log-querying",
+          "text": "Can compliance teams search and export audit logs for regulatory inquiries?",
+          "severity": "minor",
+          "tags": ["audit", "operations"],
+          "baseContent": {
+            "whatItMeans": "Audit logs are searchable by user, resource, time range, and action type, and can be exported in standard formats for compliance reporting.",
+            "whyItMatters": "During a regulatory inquiry or breach investigation, the ability to quickly search and export relevant audit records is critical for timely response.",
+            "howToVerify": "- Check for audit log search/query functionality\n- Verify logs can be filtered by user, resource, date range, action\n- Ensure export in standard formats (CSV, JSON) is available\n- Check that query performance is acceptable for large log volumes",
+            "exampleComment": "There's no way to search audit logs by user or date range. Compliance will need this for HIPAA audit responses.",
+            "codeExamples": [],
+            "keyTakeaway": "Make audit logs searchable and exportable for compliance teams.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "compliance.data-retention",
+      "title": "Data Retention & Lifecycle",
+      "items": [
+        {
+          "id": "compliance.data-retention.retention-schedules",
+          "text": "Are data retention schedules defined and automated for each data category?",
+          "severity": "major",
+          "tags": ["compliance", "data-management"],
+          "baseContent": {
+            "whatItMeans": "Each category of data (user accounts, transactions, logs, analytics) has a defined retention period, and automated processes purge data that exceeds it.",
+            "whyItMatters": "GDPR's storage limitation principle requires data not be kept longer than necessary. Manual purging is unreliable and audit-risky.",
+            "howToVerify": "- Check for documented retention schedules per data category\n- Verify automated purge jobs exist and are running\n- Ensure retention periods align with regulatory requirements\n- Check that purge jobs handle edge cases (legal holds, active disputes)",
+            "exampleComment": "User analytics events are stored indefinitely. Define a retention period (e.g., 2 years) and implement automated purging.",
+            "codeExamples": [],
+            "keyTakeaway": "Define and automate retention schedules — don't keep data longer than needed.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-retention.backup-compliance",
+          "text": "Do backup and disaster recovery processes comply with data retention and deletion requirements?",
+          "severity": "major",
+          "tags": ["compliance", "backup"],
+          "baseContent": {
+            "whatItMeans": "Backups have a defined retention period, are encrypted, and data deletion requests are eventually reflected in backups (either by backup expiry or selective removal).",
+            "whyItMatters": "If a user requests data deletion but their data persists in backups indefinitely, you haven't fully complied with the erasure request.",
+            "howToVerify": "- Check backup retention periods (ideally ≤ 30 days for regular backups)\n- Verify backups are encrypted at rest\n- Ensure deletion requests note that backup copies expire within the retention window\n- Check that restore procedures don't re-introduce deleted data",
+            "exampleComment": "Backups are retained for 1 year. If a user requests deletion, their data will exist in backups for up to a year. Consider reducing backup retention or implementing selective restore.",
+            "codeExamples": [],
+            "keyTakeaway": "Align backup retention with data deletion obligations.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-retention.data-classification",
+          "text": "Is data classified by sensitivity level with appropriate handling for each tier?",
+          "severity": "major",
+          "tags": ["compliance", "data-management"],
+          "baseContent": {
+            "whatItMeans": "Data is categorized into tiers (public, internal, confidential, restricted/regulated) and each tier has defined handling requirements for storage, access, and transmission.",
+            "whyItMatters": "Without classification, all data gets the same treatment — either over-securing non-sensitive data (wasting resources) or under-securing sensitive data (creating risk).",
+            "howToVerify": "- Check for a data classification policy or schema\n- Verify database fields/tables are tagged with classification levels\n- Ensure handling requirements differ by classification\n- Check that new features go through data classification review",
+            "exampleComment": "This new table stores both public product descriptions and confidential pricing agreements in the same table with the same access controls. Separate or classify them.",
+            "codeExamples": [],
+            "keyTakeaway": "Classify data by sensitivity and apply proportionate security controls.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-retention.anonymization",
+          "text": "Is data properly anonymized when retained beyond the active use period?",
+          "severity": "minor",
+          "tags": ["privacy", "data-management"],
+          "baseContent": {
+            "whatItMeans": "When data needs to be retained for analytics or research beyond its active lifecycle, personal identifiers are removed or replaced so it can't be linked back to individuals.",
+            "whyItMatters": "Properly anonymized data falls outside GDPR scope, allowing legitimate analytics without privacy risk. Pseudonymized data still counts as personal data.",
+            "howToVerify": "- Check that long-term analytics data has identifiers removed\n- Verify anonymization is irreversible (not just pseudonymization)\n- Ensure k-anonymity or differential privacy is applied where needed\n- Check that anonymized datasets can't be re-identified via quasi-identifiers",
+            "exampleComment": "The analytics table replaces user IDs with a hash, but includes exact timestamps and postal codes. This combination could re-identify users. Apply k-anonymity or remove quasi-identifiers.",
+            "codeExamples": [],
+            "keyTakeaway": "True anonymization removes re-identification risk — pseudonymization alone isn't enough.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-retention.third-party-data-lifecycle",
+          "text": "Is data shared with third parties subject to the same retention and deletion requirements?",
+          "severity": "major",
+          "tags": ["compliance", "third-party"],
+          "baseContent": {
+            "whatItMeans": "When personal data is shared with third-party services (analytics, CRM, email), deletion requests and retention policies are propagated to those services.",
+            "whyItMatters": "Data deletion isn't complete if copies persist in third-party systems. Data Processing Agreements should mandate this, and your system should automate it.",
+            "howToVerify": "- List all third parties that receive personal data\n- Check that deletion flows include third-party API calls\n- Verify Data Processing Agreements mandate deletion compliance\n- Ensure retention periods are communicated to third parties",
+            "exampleComment": "When a user deletes their account, their data is removed from our database but remains in Segment, Mixpanel, and Intercom. Propagate the deletion to all third-party services.",
+            "codeExamples": [],
+            "keyTakeaway": "Propagate data deletion to all third parties that hold copies.",
+            "references": []
+          }
+        },
+        {
+          "id": "compliance.data-retention.privacy-impact-assessment",
+          "text": "Has a Data Protection Impact Assessment been conducted for high-risk processing?",
+          "severity": "minor",
+          "tags": ["gdpr", "compliance"],
+          "baseContent": {
+            "whatItMeans": "For features involving high-risk processing (profiling, large-scale monitoring, sensitive data), a DPIA has been completed documenting the processing, necessity, risks, and mitigations.",
+            "whyItMatters": "GDPR Article 35 requires DPIAs for high-risk processing. Not conducting one when required is itself a compliance violation.",
+            "howToVerify": "- Assess whether the feature involves high-risk processing\n- Check if a DPIA is required (new profiling, biometrics, systematic monitoring)\n- Verify the DPIA is documented and includes risk mitigations\n- Ensure the DPO was consulted",
+            "exampleComment": "This feature uses ML to profile user behavior for fraud detection. This is high-risk processing under GDPR — a DPIA is required before launch.",
+            "codeExamples": [],
+            "keyTakeaway": "Conduct a DPIA before launching features that involve high-risk personal data processing.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

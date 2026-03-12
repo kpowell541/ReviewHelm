@@ -1,0 +1,587 @@
+{
+  "meta": {
+    "id": "api-versioning",
+    "mode": "review",
+    "title": "API Versioning & Evolution",
+    "shortTitle": "API Versioning",
+    "description": "Review checklist for API Versioning & Evolution projects",
+    "icon": "🏷️",
+    "totalItems": 26,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "api-versioning.breaking-changes",
+      "title": "Breaking Changes",
+      "items": [
+        {
+          "id": "api-versioning.breaking-changes.field-removal",
+          "text": "Are existing fields being removed or renamed without a deprecation period?",
+          "severity": "blocker",
+          "tags": ["compatibility", "contract"],
+          "baseContent": {
+            "whatItMeans": "Removing or renaming a field in an API response is a breaking change. Existing clients that depend on that field will break immediately upon deployment.",
+            "whyItMatters": "Consumers cannot update their integrations instantly. Removing fields without warning causes runtime errors in production for downstream services and mobile apps that haven't updated.",
+            "howToVerify": "- Compare the API schema diff for removed or renamed fields\n- Check if a deprecation notice was added before removal\n- Verify the field isn't referenced in active client SDKs",
+            "exampleComment": "The 'username' field is being removed from the /users response. This will break all clients that reference it. Deprecate it first and add a sunset timeline.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "json",
+                "code": "// v1 response: { \"username\": \"alice\", \"email\": \"...\" }\n// v2 response: { \"email\": \"...\" }  ← username removed without warning"
+              },
+              {
+                "label": "Good",
+                "language": "json",
+                "code": "// v2 response keeps both during deprecation period:\n{ \"username\": \"alice\", \"displayName\": \"alice\", \"email\": \"...\" }\n// with header: Deprecation: username; sunset=2025-06-01"
+              }
+            ],
+            "keyTakeaway": "Never remove fields without a deprecation period. Add the replacement alongside the old field first.",
+            "references": [
+              "https://tools.ietf.org/html/rfc8594"
+            ]
+          }
+        },
+        {
+          "id": "api-versioning.breaking-changes.type-change",
+          "text": "Are field types being changed in a way that breaks existing parsers?",
+          "severity": "blocker",
+          "tags": ["compatibility", "contract"],
+          "baseContent": {
+            "whatItMeans": "Changing a field's type (e.g., string to integer, object to array) is a breaking change even if the field name stays the same. Clients with typed schemas will fail to deserialize.",
+            "whyItMatters": "Type changes cause deserialization failures, type errors, and data corruption in statically-typed clients. Even dynamically-typed clients may break if they perform type-specific operations.",
+            "howToVerify": "- Check schema diffs for type changes on existing fields\n- Verify backward compatibility by testing with the previous client SDK\n- Look for changes from singular to array or vice versa",
+            "exampleComment": "Changing 'tags' from a comma-separated string to an array of strings will break every client that does string splitting. Add a new field 'tagList' instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "json",
+                "code": "// Before: { \"tags\": \"bug,urgent\" }\n// After:  { \"tags\": [\"bug\", \"urgent\"] }  ← type changed"
+              },
+              {
+                "label": "Good",
+                "language": "json",
+                "code": "// Keep old field, add new one:\n{ \"tags\": \"bug,urgent\", \"tagList\": [\"bug\", \"urgent\"] }"
+              }
+            ],
+            "keyTakeaway": "Never change a field's type in-place. Add a new field with the desired type and deprecate the old one.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.breaking-changes.required-params",
+          "text": "Are new required parameters being added to existing endpoints?",
+          "severity": "major",
+          "tags": ["compatibility", "contract"],
+          "baseContent": {
+            "whatItMeans": "Adding a required parameter to an existing endpoint forces all clients to update their requests. Clients that don't include the new parameter will receive 400 errors.",
+            "whyItMatters": "Existing integrations stop working immediately. This is especially harmful for mobile apps where users may not update for weeks or months.",
+            "howToVerify": "- Check for new required fields in request schemas\n- Verify new parameters have sensible defaults that preserve existing behavior\n- Look for validation changes that reject previously valid requests",
+            "exampleComment": "The new 'region' parameter is required, but existing clients don't send it. Make it optional with a default value that preserves current behavior.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// New required param breaks existing clients\napp.post('/search', (req, res) => {\n  const { query, region } = req.body; // region now required\n  if (!region) return res.status(400).json({ error: 'region required' });\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.post('/search', (req, res) => {\n  const { query, region = 'us-east-1' } = req.body; // default preserves behavior\n});"
+              }
+            ],
+            "keyTakeaway": "New parameters on existing endpoints must be optional with backward-compatible defaults.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.breaking-changes.url-structure",
+          "text": "Are endpoint URLs or HTTP methods being changed without redirects?",
+          "severity": "major",
+          "tags": ["compatibility", "routing"],
+          "baseContent": {
+            "whatItMeans": "Changing an endpoint's URL path or HTTP method is a breaking change. Clients hardcode these into their request logic.",
+            "whyItMatters": "URL changes cause 404 errors for all existing clients. Without redirects, there's no graceful migration path.",
+            "howToVerify": "- Check for renamed or moved routes in the diff\n- Verify 301/308 redirects are set up from old paths to new ones\n- Confirm the old endpoint continues to work during the transition period",
+            "exampleComment": "The endpoint moved from /api/users to /api/v2/accounts. Add a 308 redirect from the old path so existing clients continue to work.",
+            "codeExamples": [],
+            "keyTakeaway": "When moving endpoints, keep the old URL working with a permanent redirect to the new location.",
+            "references": [
+              "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/308"
+            ]
+          }
+        },
+        {
+          "id": "api-versioning.breaking-changes.error-format",
+          "text": "Are error response formats being changed in a way that breaks client error handling?",
+          "severity": "minor",
+          "tags": ["compatibility", "dx"],
+          "baseContent": {
+            "whatItMeans": "Changing the structure of error responses (field names, nesting, error codes) breaks client-side error handling logic that parses these responses.",
+            "whyItMatters": "Clients often build retry logic, user-facing messages, and error tracking around specific error response formats. Changing them silently degrades error handling.",
+            "howToVerify": "- Compare error response schemas before and after the change\n- Check if error codes or machine-readable identifiers are preserved\n- Verify client SDKs can still parse the new error format",
+            "exampleComment": "The error response changed from { error: string } to { errors: Error[] }. Clients parsing the 'error' field will get undefined. Keep both formats during migration.",
+            "codeExamples": [],
+            "keyTakeaway": "Error response formats are part of the API contract. Evolve them with the same care as success responses.",
+            "references": [
+              "https://tools.ietf.org/html/rfc7807"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-versioning.deprecation",
+      "title": "Deprecation",
+      "items": [
+        {
+          "id": "api-versioning.deprecation.sunset-header",
+          "text": "Do deprecated endpoints include Sunset and Deprecation headers?",
+          "severity": "major",
+          "tags": ["standards", "communication"],
+          "baseContent": {
+            "whatItMeans": "RFC 8594 defines the Sunset header to communicate when an endpoint will be removed. The Deprecation header signals that an endpoint is deprecated but still functional.",
+            "whyItMatters": "Without machine-readable deprecation signals, clients have no automated way to detect they're using soon-to-be-removed endpoints. Headers enable tooling to flag these proactively.",
+            "howToVerify": "- Check that deprecated endpoints set the Deprecation header with a date\n- Verify the Sunset header is set with the removal date\n- Confirm the dates are in IMF-fixdate format (RFC 7231)",
+            "exampleComment": "This endpoint is marked as deprecated in the docs but doesn't send Sunset or Deprecation headers. Add them so API clients and monitoring tools can detect the deprecation.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Only a comment, no machine-readable signal\n// @deprecated - use /v2/users instead\napp.get('/v1/users', handler);"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.get('/v1/users', (req, res) => {\n  res.set('Deprecation', 'true');\n  res.set('Sunset', 'Sat, 01 Jun 2025 00:00:00 GMT');\n  res.set('Link', '</v2/users>; rel=\"successor-version\"');\n  handler(req, res);\n});"
+              }
+            ],
+            "keyTakeaway": "Use Sunset and Deprecation headers to give clients machine-readable deprecation notices.",
+            "references": [
+              "https://tools.ietf.org/html/rfc8594",
+              "https://tools.ietf.org/html/rfc8594#section-3"
+            ]
+          }
+        },
+        {
+          "id": "api-versioning.deprecation.timeline",
+          "text": "Is there a reasonable deprecation timeline before removal?",
+          "severity": "major",
+          "tags": ["process", "communication"],
+          "baseContent": {
+            "whatItMeans": "A deprecation timeline defines how long deprecated features remain available before removal. It gives consumers time to migrate.",
+            "whyItMatters": "Too-short timelines force emergency migrations. Too-long timelines create maintenance burden. The timeline should match consumer update cycles (e.g., mobile apps need longer than web apps).",
+            "howToVerify": "- Check that the deprecation announcement includes a removal date\n- Verify the timeline is at least one release cycle (typically 3-6 months)\n- Confirm migration documentation exists before the deprecation is announced",
+            "exampleComment": "This endpoint is deprecated with a 2-week sunset. Given that mobile clients may take weeks to update, extend the timeline to at least 90 days.",
+            "codeExamples": [],
+            "keyTakeaway": "Set deprecation timelines based on your slowest consumer's update cycle. 90 days is a common minimum.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.deprecation.usage-monitoring",
+          "text": "Is usage of deprecated endpoints being tracked to inform removal decisions?",
+          "severity": "minor",
+          "tags": ["observability", "process"],
+          "baseContent": {
+            "whatItMeans": "Before removing a deprecated endpoint, you should know how many clients still use it and how often. Usage metrics inform whether it's safe to proceed with removal.",
+            "whyItMatters": "Removing an endpoint that still receives significant traffic causes widespread outages. Monitoring lets you reach out to remaining consumers before the sunset date.",
+            "howToVerify": "- Check that deprecated endpoints have usage logging or metrics\n- Verify dashboards or alerts exist for deprecated endpoint traffic\n- Confirm there's a process for contacting active consumers",
+            "exampleComment": "This deprecated endpoint is being removed, but there's no logging to track remaining usage. Add metrics before proceeding with removal.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Just removing the route\n// app.get('/v1/legacy', handler);  ← deleted"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "app.get('/v1/legacy', (req, res) => {\n  metrics.increment('deprecated.v1_legacy.requests', {\n    client: req.headers['x-client-id']\n  });\n  handler(req, res);\n});"
+              }
+            ],
+            "keyTakeaway": "Track deprecated endpoint usage. Don't remove endpoints that still have active consumers without outreach.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.deprecation.replacement-docs",
+          "text": "Does the deprecation notice point to the replacement endpoint or migration guide?",
+          "severity": "minor",
+          "tags": ["dx", "communication"],
+          "baseContent": {
+            "whatItMeans": "A deprecation notice should tell consumers not just that something is going away, but what to use instead. The Link header with rel=successor-version is the standard approach.",
+            "whyItMatters": "Without clear migration instructions, consumers either ignore the deprecation or waste time figuring out the replacement. This increases support burden and delays migration.",
+            "howToVerify": "- Check that deprecated endpoints include a Link header pointing to the replacement\n- Verify API documentation includes migration instructions\n- Confirm changelogs reference the deprecation and replacement",
+            "exampleComment": "The deprecation notice says 'use the new endpoint' but doesn't specify which one. Add a Link header with the successor URL and update the API docs.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "json",
+                "code": "{ \"warning\": \"This endpoint is deprecated\" }"
+              },
+              {
+                "label": "Good",
+                "language": "json",
+                "code": "{ \"warning\": \"This endpoint is deprecated. Use /v2/users instead. See https://docs.example.com/migration/v1-to-v2\" }"
+              }
+            ],
+            "keyTakeaway": "Every deprecation notice must include a pointer to the replacement and migration instructions.",
+            "references": [
+              "https://tools.ietf.org/html/rfc8288"
+            ]
+          }
+        },
+        {
+          "id": "api-versioning.deprecation.sdk-alignment",
+          "text": "Are client SDKs updated to reflect deprecations before the API changes ship?",
+          "severity": "minor",
+          "tags": ["dx", "process"],
+          "baseContent": {
+            "whatItMeans": "When an API endpoint is deprecated, official client SDKs should mark the corresponding methods as deprecated and provide alternatives. This gives IDE users instant feedback.",
+            "whyItMatters": "SDK users won't check API changelogs. Compiler/IDE deprecation warnings are the most effective way to reach them before the sunset date.",
+            "howToVerify": "- Check that SDK methods for deprecated endpoints are marked with @deprecated annotations\n- Verify the SDK version with deprecation warnings is published before the API sunset\n- Confirm the SDK's changelog mentions the deprecation",
+            "exampleComment": "The /v1/search endpoint is deprecated in the API, but the SDK's search() method has no deprecation annotation. Add @deprecated with a migration note.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "class ApiClient {\n  search(query: string) { /* still points to v1 */ }\n}"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "class ApiClient {\n  /** @deprecated Use searchV2() instead. Will be removed 2025-06-01. */\n  search(query: string) { /* v1 */ }\n  searchV2(query: string, options: SearchOptions) { /* v2 */ }\n}"
+              }
+            ],
+            "keyTakeaway": "Ship SDK deprecation warnings before the API sunset so developers get IDE-level feedback.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-versioning.migration",
+      "title": "Migration",
+      "items": [
+        {
+          "id": "api-versioning.migration.version-strategy",
+          "text": "Is the versioning strategy (URL path, header, query param) consistent across all endpoints?",
+          "severity": "major",
+          "tags": ["design", "consistency"],
+          "baseContent": {
+            "whatItMeans": "APIs can be versioned via URL path (/v1/), custom header (X-API-Version), Accept header (application/vnd.api.v1+json), or query parameter (?version=1). Mixing strategies creates confusion.",
+            "whyItMatters": "Inconsistent versioning means clients need different logic for different endpoints. It also makes it harder to build middleware, documentation, and routing.",
+            "howToVerify": "- Check that all endpoints use the same versioning mechanism\n- Verify new endpoints follow the established pattern\n- Confirm versioning documentation is accurate",
+            "exampleComment": "Most endpoints use URL-path versioning (/v2/), but this new endpoint uses a header. Align with the existing strategy for consistency.",
+            "codeExamples": [],
+            "keyTakeaway": "Pick one versioning strategy and use it everywhere. URL-path versioning is the most common and discoverable.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.migration.parallel-versions",
+          "text": "Can old and new API versions run simultaneously during migration?",
+          "severity": "major",
+          "tags": ["operations", "reliability"],
+          "baseContent": {
+            "whatItMeans": "During migration, both API versions should be available so consumers can switch at their own pace. This requires the infrastructure to route to the correct handler based on version.",
+            "whyItMatters": "If old and new versions can't coexist, migration becomes a big-bang cutover with high risk of outages. Parallel operation enables gradual, low-risk migration.",
+            "howToVerify": "- Verify both old and new endpoint versions are deployed simultaneously\n- Check that database schema changes are backward-compatible with both versions\n- Confirm shared resources (caches, queues) work with both versions",
+            "exampleComment": "The v2 migration changes the database schema in a way that breaks v1 queries. Add a backward-compatible view or adapter so v1 continues to work during migration.",
+            "codeExamples": [],
+            "keyTakeaway": "Design migrations so both API versions can operate simultaneously against the same data store.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.migration.data-transformation",
+          "text": "Are response transformations between versions handled by a dedicated layer?",
+          "severity": "minor",
+          "tags": ["design", "maintainability"],
+          "baseContent": {
+            "whatItMeans": "When multiple API versions return different shapes of the same data, transformation logic should live in a dedicated mapping layer rather than being scattered across handlers.",
+            "whyItMatters": "Inline transformations in each handler lead to duplicated, inconsistent logic. A centralized transformation layer is easier to test and maintain.",
+            "howToVerify": "- Check if version-specific response shaping is isolated in middleware or mapper functions\n- Look for duplicated transformation logic across version-specific handlers\n- Verify transformations are unit-tested",
+            "exampleComment": "Both v1 and v2 handlers query the same service but manually shape the response differently. Extract a shared mapper so the transformation logic is in one place.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Transformation duplicated in each handler\napp.get('/v1/users/:id', async (req, res) => {\n  const user = await userService.find(req.params.id);\n  res.json({ username: user.name, mail: user.email });\n});\napp.get('/v2/users/:id', async (req, res) => {\n  const user = await userService.find(req.params.id);\n  res.json({ displayName: user.name, email: user.email });\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const mappers = {\n  v1: (user) => ({ username: user.name, mail: user.email }),\n  v2: (user) => ({ displayName: user.name, email: user.email }),\n};\napp.get('/:version/users/:id', async (req, res) => {\n  const user = await userService.find(req.params.id);\n  res.json(mappers[req.params.version](user));\n});"
+              }
+            ],
+            "keyTakeaway": "Centralize version-specific response transformations in a dedicated mapper layer.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.migration.migration-testing",
+          "text": "Are there automated tests verifying both API versions produce correct responses?",
+          "severity": "major",
+          "tags": ["testing", "reliability"],
+          "baseContent": {
+            "whatItMeans": "During the migration period, both old and new API versions must produce correct responses. Automated contract tests verify this without manual testing.",
+            "whyItMatters": "Without automated tests for both versions, regressions in the old version go undetected. This is especially dangerous because the old version receives less attention during migration.",
+            "howToVerify": "- Check for contract tests covering both v1 and v2 endpoints\n- Verify test suites run against both versions in CI\n- Look for snapshot tests or schema validation for response shapes",
+            "exampleComment": "The test suite only covers v2 endpoints. Add contract tests for v1 to catch regressions during the migration period.",
+            "codeExamples": [],
+            "keyTakeaway": "Maintain automated tests for all supported API versions throughout the migration period.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.migration.client-migration-guide",
+          "text": "Is there a step-by-step migration guide for consumers upgrading between versions?",
+          "severity": "minor",
+          "tags": ["dx", "documentation"],
+          "baseContent": {
+            "whatItMeans": "A migration guide documents every change between versions with before/after examples, making it straightforward for consumers to update their integrations.",
+            "whyItMatters": "Without a clear guide, consumers reverse-engineer changes from trial and error, increasing support requests and slowing migration.",
+            "howToVerify": "- Check that a migration guide exists for each major version bump\n- Verify it includes field mapping tables (old name → new name)\n- Confirm code examples show before and after for common operations",
+            "exampleComment": "The v1→v2 migration changes 12 field names and 3 endpoint URLs, but there's no migration guide. Create one with a mapping table and example requests.",
+            "codeExamples": [],
+            "keyTakeaway": "Publish a detailed migration guide with before/after examples for every breaking version change.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.migration.rollback-plan",
+          "text": "Is there a rollback plan if the new version causes unexpected issues?",
+          "severity": "major",
+          "tags": ["operations", "reliability"],
+          "baseContent": {
+            "whatItMeans": "A rollback plan defines how to revert to the previous API version if the new version causes problems. This includes database compatibility, feature flags, and routing changes.",
+            "whyItMatters": "Without a rollback plan, a broken new version leads to extended outages. Having a tested rollback procedure reduces mean time to recovery.",
+            "howToVerify": "- Check that the deployment plan includes rollback steps\n- Verify database migrations are reversible\n- Confirm feature flags or routing rules can redirect traffic back to the old version",
+            "exampleComment": "The v2 deployment includes an irreversible database migration. This means we can't roll back if v2 has issues. Consider making the migration additive-only.",
+            "codeExamples": [],
+            "keyTakeaway": "Always have a tested rollback plan. Prefer additive database changes that are compatible with both versions.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-versioning.compatibility",
+      "title": "Compatibility",
+      "items": [
+        {
+          "id": "api-versioning.compatibility.additive-changes",
+          "text": "Are changes additive-only (new fields, new endpoints) rather than modifying existing ones?",
+          "severity": "major",
+          "tags": ["design", "compatibility"],
+          "baseContent": {
+            "whatItMeans": "Additive changes — adding new fields, endpoints, or optional parameters — are backward-compatible by definition. Modifying or removing existing elements is not.",
+            "whyItMatters": "Additive-only evolution eliminates the need for version bumps for most changes, reducing migration burden for consumers.",
+            "howToVerify": "- Check that existing fields are unchanged in the schema diff\n- Verify new fields have sensible defaults and are optional\n- Confirm no existing behavior is altered by the additions",
+            "exampleComment": "Instead of changing the 'status' field to include new values, add a 'detailedStatus' field. Existing clients can ignore it while new clients benefit from the richer data.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "json",
+                "code": "// Modifying existing field's possible values\n{ \"status\": \"processing_payment\" }  // was: \"processing\""
+              },
+              {
+                "label": "Good",
+                "language": "json",
+                "code": "// Additive: keep old field, add new one\n{ \"status\": \"processing\", \"statusDetail\": \"processing_payment\" }"
+              }
+            ],
+            "keyTakeaway": "Prefer additive changes over modifications. Add new fields rather than changing existing ones.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.compatibility.forward-compat",
+          "text": "Are clients expected to ignore unknown fields (forward compatibility)?",
+          "severity": "minor",
+          "tags": ["design", "robustness"],
+          "baseContent": {
+            "whatItMeans": "Forward compatibility means clients should tolerate unknown fields in responses rather than failing. This lets the server add fields without breaking older clients.",
+            "whyItMatters": "If clients have strict parsing that rejects unknown fields, every server-side addition becomes a breaking change. Tolerant readers enable safe API evolution.",
+            "howToVerify": "- Check client SDK deserialization settings for strict vs. lenient parsing\n- Verify API documentation states that clients must ignore unknown fields\n- Look for JSON schema settings like additionalProperties: false that enforce strict parsing",
+            "exampleComment": "The API documentation should state that clients must ignore unknown fields. This enables adding fields without version bumps.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Strict parsing rejects unknown fields\nconst schema = z.object({ name: z.string() }).strict();"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "// Passthrough allows unknown fields for forward compatibility\nconst schema = z.object({ name: z.string() }).passthrough();"
+              }
+            ],
+            "keyTakeaway": "Design clients to ignore unknown fields. Document this as a contract requirement.",
+            "references": [
+              "https://en.wikipedia.org/wiki/Robustness_principle"
+            ]
+          }
+        },
+        {
+          "id": "api-versioning.compatibility.enum-evolution",
+          "text": "Can enum/status values be extended without breaking existing clients?",
+          "severity": "major",
+          "tags": ["design", "compatibility"],
+          "baseContent": {
+            "whatItMeans": "Adding new values to an enum (e.g., order statuses) can break clients that do exhaustive matching. Clients should handle unknown values gracefully.",
+            "whyItMatters": "If a client's switch/case on a status field doesn't have a default branch, a new status value causes runtime errors. This makes enum extension a hidden breaking change.",
+            "howToVerify": "- Check that API documentation warns clients to handle unknown enum values\n- Verify client SDKs include a default/fallback for enum parsing\n- Look for changes that add new enum values and assess client impact",
+            "exampleComment": "Adding the 'on_hold' status will break clients that exhaustively match statuses without a default case. Document that new statuses may be added at any time.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "// Exhaustive match with no fallback\nswitch (order.status) {\n  case 'pending': handle(); break;\n  case 'shipped': handle(); break;\n  // new 'on_hold' status causes error\n}"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "switch (order.status) {\n  case 'pending': handle(); break;\n  case 'shipped': handle(); break;\n  default: handleUnknown(order.status); break;\n}"
+              }
+            ],
+            "keyTakeaway": "Document that enums are open (new values may appear) and ensure clients have default handlers.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.compatibility.pagination-stability",
+          "text": "Does pagination remain stable across versions with consistent cursor/offset behavior?",
+          "severity": "minor",
+          "tags": ["compatibility", "dx"],
+          "baseContent": {
+            "whatItMeans": "Pagination cursors or offset-based pagination should work consistently across API versions. Changing pagination semantics breaks long-running data syncs.",
+            "whyItMatters": "Clients that paginate through large datasets rely on stable cursor behavior. Changing how cursors work mid-pagination causes missed or duplicated records.",
+            "howToVerify": "- Check that pagination parameters (page, limit, cursor, after) have the same semantics\n- Verify cursor formats are backward-compatible\n- Confirm total counts and page metadata are consistent",
+            "exampleComment": "The v2 endpoint uses cursor-based pagination, but v1 used offset-based. Clients migrating mid-sync will lose their position. Support both during the transition.",
+            "codeExamples": [],
+            "keyTakeaway": "Keep pagination semantics stable across versions. If changing strategies, support both during migration.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.compatibility.content-negotiation",
+          "text": "Does the API support content negotiation for format evolution?",
+          "severity": "nit",
+          "tags": ["standards", "design"],
+          "baseContent": {
+            "whatItMeans": "Content negotiation via Accept and Content-Type headers lets clients request specific response formats. This enables adding new formats (e.g., JSON→Protobuf) without breaking existing clients.",
+            "whyItMatters": "Without content negotiation, format changes require new endpoints or version bumps. Proper negotiation enables transparent format evolution.",
+            "howToVerify": "- Check that the API respects Accept headers\n- Verify unsupported Accept types return 406 Not Acceptable\n- Confirm the default content type is documented",
+            "exampleComment": "The API returns JSON regardless of the Accept header. Respecting content negotiation now future-proofs the API for format additions like Protobuf or MessagePack.",
+            "codeExamples": [],
+            "keyTakeaway": "Support content negotiation to enable transparent format evolution without versioning changes.",
+            "references": [
+              "https://developer.mozilla.org/en-US/docs/Web/HTTP/Content_negotiation"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "api-versioning.documentation",
+      "title": "Documentation",
+      "items": [
+        {
+          "id": "api-versioning.documentation.changelog",
+          "text": "Is there a comprehensive changelog documenting all changes between versions?",
+          "severity": "major",
+          "tags": ["documentation", "communication"],
+          "baseContent": {
+            "whatItMeans": "A changelog lists all additions, changes, deprecations, and removals between API versions. It should be machine-parseable (e.g., following Keep a Changelog format) and published with each release.",
+            "whyItMatters": "Without a changelog, consumers can't efficiently assess the impact of upgrading. They resort to diffing documentation or trial-and-error testing.",
+            "howToVerify": "- Check that a changelog exists and covers the current release\n- Verify it categorizes changes (added, changed, deprecated, removed)\n- Confirm breaking changes are clearly highlighted",
+            "exampleComment": "This version bump adds 3 new endpoints and deprecates 2, but the changelog only mentions the new endpoints. Document the deprecations as well.",
+            "codeExamples": [],
+            "keyTakeaway": "Maintain a detailed changelog for every version. Categorize and highlight breaking changes.",
+            "references": [
+              "https://keepachangelog.com/"
+            ]
+          }
+        },
+        {
+          "id": "api-versioning.documentation.openapi-spec",
+          "text": "Is the OpenAPI/Swagger specification updated to reflect version changes?",
+          "severity": "major",
+          "tags": ["documentation", "standards"],
+          "baseContent": {
+            "whatItMeans": "The OpenAPI specification is the single source of truth for the API contract. It must be updated atomically with code changes to stay accurate.",
+            "whyItMatters": "Stale specs cause incorrect SDK generation, misleading documentation, and broken contract tests. The spec and implementation should always match.",
+            "howToVerify": "- Check that the OpenAPI spec diff matches the code changes\n- Verify new fields/endpoints are documented in the spec\n- Confirm deprecated endpoints are marked with deprecated: true in the spec",
+            "exampleComment": "The new 'metadata' field was added to the handler response, but the OpenAPI spec still shows the old schema. Update the spec to include the new field.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "yaml",
+                "code": "# Spec doesn't match implementation\nUser:\n  properties:\n    name:\n      type: string\n    # missing: email field that's actually returned"
+              },
+              {
+                "label": "Good",
+                "language": "yaml",
+                "code": "User:\n  properties:\n    name:\n      type: string\n    email:\n      type: string\n      description: Added in v2.1"
+              }
+            ],
+            "keyTakeaway": "Update the OpenAPI spec in the same PR as the code change. Treat spec drift as a bug.",
+            "references": [
+              "https://swagger.io/specification/"
+            ]
+          }
+        },
+        {
+          "id": "api-versioning.documentation.version-matrix",
+          "text": "Is there a clear matrix showing which features are available in which versions?",
+          "severity": "minor",
+          "tags": ["documentation", "dx"],
+          "baseContent": {
+            "whatItMeans": "A version matrix is a table showing which endpoints, fields, and features exist in each supported API version. It helps consumers understand what's available at a glance.",
+            "whyItMatters": "When multiple versions are active, consumers need a quick reference to see which version has the features they need. Without a matrix, they have to read multiple changelogs.",
+            "howToVerify": "- Check that the API documentation includes a version comparison matrix\n- Verify it's updated when features are added or deprecated\n- Confirm it clearly indicates which versions are supported vs. sunset",
+            "exampleComment": "With v1, v2, and v3 all active, consumers have no quick way to compare feature availability. Add a version matrix to the documentation landing page.",
+            "codeExamples": [],
+            "keyTakeaway": "Maintain a version matrix when multiple API versions are simultaneously supported.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.documentation.deprecation-visibility",
+          "text": "Are deprecations prominently visible in API documentation, not buried in footnotes?",
+          "severity": "minor",
+          "tags": ["documentation", "dx"],
+          "baseContent": {
+            "whatItMeans": "Deprecated endpoints and fields should be clearly marked in the API documentation with visual indicators (strikethrough, warning banners) and sunset dates.",
+            "whyItMatters": "If deprecation notices are buried in changelogs or footnotes, developers integrating with the API won't notice them until the endpoint is removed.",
+            "howToVerify": "- Check that deprecated endpoints have visual deprecation markers in docs\n- Verify deprecated fields are annotated in schema documentation\n- Confirm the sunset date is visible on the endpoint's documentation page",
+            "exampleComment": "The /v1/search endpoint is deprecated but its documentation page has no warning banner. Add a prominent deprecation notice with the sunset date and migration link.",
+            "codeExamples": [],
+            "keyTakeaway": "Make deprecations impossible to miss in documentation. Use banners, not footnotes.",
+            "references": []
+          }
+        },
+        {
+          "id": "api-versioning.documentation.semver-compliance",
+          "text": "Does the version numbering follow semantic versioning rules?",
+          "severity": "nit",
+          "tags": ["standards", "process"],
+          "baseContent": {
+            "whatItMeans": "Semantic versioning (MAJOR.MINOR.PATCH) communicates the nature of changes: MAJOR for breaking changes, MINOR for backward-compatible additions, PATCH for bug fixes.",
+            "whyItMatters": "Consistent versioning lets consumers automate update decisions. If a MINOR version contains breaking changes, automated dependency updates can cause production outages.",
+            "howToVerify": "- Verify MAJOR is bumped for breaking changes\n- Confirm MINOR is bumped for new features (backward-compatible)\n- Check that PATCH is used only for bug fixes\n- Look for breaking changes in MINOR or PATCH bumps",
+            "exampleComment": "This release removes a field (breaking change) but only bumps the MINOR version. This should be a MAJOR version bump per semantic versioning rules.",
+            "codeExamples": [],
+            "keyTakeaway": "Follow semantic versioning strictly. Breaking changes always require a MAJOR version bump.",
+            "references": [
+              "https://semver.org/"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

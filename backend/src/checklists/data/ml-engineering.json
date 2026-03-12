@@ -1,0 +1,648 @@
+{
+  "meta": {
+    "id": "ml-engineering",
+    "mode": "review",
+    "title": "ML Engineering",
+    "shortTitle": "ML Eng",
+    "description": "Review checklist for ML Engineering projects",
+    "icon": "🧠",
+    "totalItems": 32,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "ml-engineering.data-pipelines",
+      "title": "Data Pipelines",
+      "items": [
+        {
+          "id": "ml-engineering.data-pipelines.schema-validation",
+          "text": "Are input data schemas validated before ingestion?",
+          "severity": "blocker",
+          "tags": ["data-quality", "reliability"],
+          "baseContent": {
+            "whatItMeans": "Every data pipeline should enforce schema contracts (column names, types, nullability) on incoming data before any transformation or model training begins.",
+            "whyItMatters": "Silent schema changes in upstream data sources are one of the most common causes of model degradation. A missing column or type change can produce garbage predictions without any error.",
+            "howToVerify": "- Check that the pipeline validates schemas at the entry point\n- Look for assertions on column presence, data types, and value ranges\n- Confirm that schema violations raise loud errors rather than silently dropping rows",
+            "exampleComment": "This pipeline reads the CSV directly into the training step. Add a schema validation step (e.g., with Pandera or Great Expectations) before feature extraction.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "df = pd.read_csv(\"events.csv\")\nfeatures = extract_features(df)  # no validation"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "import pandera as pa\n\nschema = pa.DataFrameSchema({\n    \"user_id\": pa.Column(int, nullable=False),\n    \"event_type\": pa.Column(str, pa.Check.isin([\"click\", \"view\", \"purchase\"])),\n    \"timestamp\": pa.Column(pa.DateTime),\n})\n\ndf = pd.read_csv(\"events.csv\")\nschema.validate(df)\nfeatures = extract_features(df)"
+              }
+            ],
+            "keyTakeaway": "Validate data schemas at pipeline boundaries. Fail fast on unexpected data rather than training on garbage.",
+            "references": [
+              "https://pandera.readthedocs.io/",
+              "https://greatexpectations.io/"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.data-pipelines.train-serve-skew",
+          "text": "Is the same feature transformation code used in both training and serving?",
+          "severity": "blocker",
+          "tags": ["correctness", "skew"],
+          "baseContent": {
+            "whatItMeans": "Training/serving skew occurs when the feature engineering code differs between the training pipeline and the serving path, causing the model to see different input distributions at inference time.",
+            "whyItMatters": "Even subtle differences in preprocessing (e.g., different normalization, tokenization, or imputation logic) can silently degrade model accuracy in production without triggering any error.",
+            "howToVerify": "- Check if feature transformations are defined once and shared between training and serving\n- Look for duplicated preprocessing logic in separate training and serving codebases\n- Verify that serialized transformers (scalers, encoders) from training are loaded at serving time",
+            "exampleComment": "The serving endpoint re-implements the normalization inline instead of loading the fitted scaler from training. This will cause train/serve skew if the mean or std changes.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "# training.py\nscaler = StandardScaler().fit(X_train)\nX_scaled = scaler.transform(X_train)\n\n# serving.py — reimplements normalization\nX_scaled = (X - 0.5) / 0.3  # hardcoded values"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "# training.py\nscaler = StandardScaler().fit(X_train)\njoblib.dump(scaler, \"scaler.pkl\")\n\n# serving.py — reuses the same scaler\nscaler = joblib.load(\"scaler.pkl\")\nX_scaled = scaler.transform(X)"
+              }
+            ],
+            "keyTakeaway": "Define feature transformations once and share them between training and serving to eliminate skew.",
+            "references": [
+              "https://developers.google.com/machine-learning/guides/rules-of-ml#training-serving_skew"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.data-pipelines.data-leakage",
+          "text": "Is there any data leakage between training, validation, and test sets?",
+          "severity": "blocker",
+          "tags": ["correctness", "evaluation"],
+          "baseContent": {
+            "whatItMeans": "Data leakage happens when information from the validation or test set bleeds into the training process, giving an artificially inflated evaluation metric.",
+            "whyItMatters": "A model with data leakage will appear to perform well in offline evaluation but fail in production because it memorized information it should not have had access to.",
+            "howToVerify": "- Check that train/val/test splits happen before any preprocessing or feature engineering\n- Verify that scalers and encoders are fit only on training data\n- Look for temporal leakage in time-series data where future information leaks into past samples",
+            "exampleComment": "The StandardScaler is fit on the full dataset before splitting. Fit it only on X_train, then transform X_val and X_test separately.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "scaler = StandardScaler().fit(X)  # fit on ALL data\nX_scaled = scaler.transform(X)\nX_train, X_test = train_test_split(X_scaled)"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "X_train, X_test = train_test_split(X)\nscaler = StandardScaler().fit(X_train)  # fit on train ONLY\nX_train = scaler.transform(X_train)\nX_test = scaler.transform(X_test)"
+              }
+            ],
+            "keyTakeaway": "Always split before preprocessing. Fit transformers on training data only.",
+            "references": [
+              "https://scikit-learn.org/stable/common_pitfalls.html#data-leakage"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.data-pipelines.null-handling",
+          "text": "Are null and missing values handled explicitly in the pipeline?",
+          "severity": "major",
+          "tags": ["data-quality", "robustness"],
+          "baseContent": {
+            "whatItMeans": "The pipeline should have explicit strategies for dealing with missing values rather than silently dropping rows or letting NaNs propagate through calculations.",
+            "whyItMatters": "Unhandled nulls can cause silent NaN propagation in numeric computations, biased models from dropped rows, or runtime errors in production serving.",
+            "howToVerify": "- Check for explicit null handling (imputation, sentinel values, or documented dropping)\n- Look for .dropna() calls without justification\n- Verify that the serving path handles nulls the same way as training",
+            "exampleComment": "This pipeline calls dropna() without logging how many rows are dropped. Add explicit imputation or at least log the null rate so drift can be monitored.",
+            "codeExamples": [],
+            "keyTakeaway": "Handle missing values explicitly and consistently between training and serving.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.data-pipelines.pipeline-idempotency",
+          "text": "Is the data pipeline idempotent when re-run on the same inputs?",
+          "severity": "major",
+          "tags": ["reliability", "reproducibility"],
+          "baseContent": {
+            "whatItMeans": "Running the pipeline twice on the same input data should produce the same output without duplicating records or corrupting state.",
+            "whyItMatters": "Non-idempotent pipelines cause duplicate data, inflated metrics, and inconsistent training datasets when retried after failures.",
+            "howToVerify": "- Check for upsert logic or deduplication in write steps\n- Look for unique constraints or partition overwriting in the output sink\n- Verify that pipeline reruns do not append duplicate rows",
+            "exampleComment": "The pipeline appends to the output table on every run. Use MERGE/upsert or overwrite the partition to make this idempotent.",
+            "codeExamples": [],
+            "keyTakeaway": "Design pipelines to be safely re-runnable. Use upserts or partition overwrites instead of blind appends.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ml-engineering.model-code",
+      "title": "Model Code",
+      "items": [
+        {
+          "id": "ml-engineering.model-code.random-seed",
+          "text": "Are random seeds set for reproducibility?",
+          "severity": "major",
+          "tags": ["reproducibility"],
+          "baseContent": {
+            "whatItMeans": "Random seeds should be fixed in all sources of randomness (NumPy, Python random, framework-specific seeds) so that experiments can be exactly reproduced.",
+            "whyItMatters": "Without fixed seeds, you cannot reproduce a result to verify it, debug it, or compare it fairly against another experiment.",
+            "howToVerify": "- Check for seed-setting calls at the top of training scripts\n- Verify seeds are set for all libraries (numpy, random, torch/tf)\n- Confirm that data loading order is also deterministic",
+            "exampleComment": "This training script does not set random seeds. Add seed initialization for numpy, random, and the framework to ensure reproducibility.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "model = RandomForestClassifier()\nmodel.fit(X_train, y_train)"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "import random\nimport numpy as np\n\nSEED = 42\nrandom.seed(SEED)\nnp.random.seed(SEED)\n\nmodel = RandomForestClassifier(random_state=SEED)\nmodel.fit(X_train, y_train)"
+              }
+            ],
+            "keyTakeaway": "Set seeds everywhere. Reproducible experiments are the foundation of reliable ML engineering.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.model-code.hardcoded-hyperparams",
+          "text": "Are hyperparameters configurable rather than hardcoded?",
+          "severity": "minor",
+          "tags": ["maintainability", "experimentation"],
+          "baseContent": {
+            "whatItMeans": "Hyperparameters like learning rate, batch size, and layer sizes should be passed via configuration rather than buried in code.",
+            "whyItMatters": "Hardcoded hyperparameters make it difficult to run experiments, compare configurations, and track what changed between model versions.",
+            "howToVerify": "- Look for magic numbers in model definitions and training loops\n- Check that hyperparameters are loaded from config files, CLI args, or experiment tracking tools\n- Verify that the experiment tracker logs the actual hyperparameter values used",
+            "exampleComment": "The learning rate 0.001 and batch size 32 are hardcoded in the training loop. Move these to a config file or argparse so they can be varied across experiments.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "optimizer = Adam(lr=0.001)\ntrain_loader = DataLoader(dataset, batch_size=32)"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "config = load_config(\"experiment.yaml\")\noptimizer = Adam(lr=config.learning_rate)\ntrain_loader = DataLoader(dataset, batch_size=config.batch_size)"
+              }
+            ],
+            "keyTakeaway": "Externalize hyperparameters so experiments are configurable and reproducible.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.model-code.gradient-clipping",
+          "text": "Is gradient clipping applied to prevent exploding gradients?",
+          "severity": "minor",
+          "tags": ["training-stability"],
+          "baseContent": {
+            "whatItMeans": "Gradient clipping caps the magnitude of gradients during backpropagation to prevent them from growing uncontrollably large.",
+            "whyItMatters": "Exploding gradients cause NaN losses, diverging training runs, and wasted compute. This is especially common in RNNs and deep transformers.",
+            "howToVerify": "- Check for gradient clipping in the training loop\n- Look for torch.nn.utils.clip_grad_norm_ or tf.clip_by_global_norm\n- Verify the clipping threshold is reasonable (typically 1.0-5.0)",
+            "exampleComment": "This training loop has no gradient clipping. Add clip_grad_norm_ to prevent exploding gradients, especially since this is a transformer model.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "loss.backward()\noptimizer.step()"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "loss.backward()\ntorch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\noptimizer.step()"
+              }
+            ],
+            "keyTakeaway": "Clip gradients to keep training stable, especially for deep or recurrent architectures.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.model-code.numerical-stability",
+          "text": "Are numerical operations guarded against overflow and underflow?",
+          "severity": "major",
+          "tags": ["correctness", "stability"],
+          "baseContent": {
+            "whatItMeans": "Operations like log, exp, and division should include epsilon guards or use numerically stable library functions to prevent inf/NaN values.",
+            "whyItMatters": "Numerical instability produces NaN losses that are hard to debug. It often appears only on certain data distributions, making it a production landmine.",
+            "howToVerify": "- Look for raw log() or exp() calls without clamping\n- Check for division operations without epsilon in the denominator\n- Verify that loss functions use numerically stable implementations (e.g., log_softmax instead of log(softmax))",
+            "exampleComment": "Using log(softmax(x)) is numerically unstable. Replace with F.log_softmax(x) or F.cross_entropy which fuses the operations for stability.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "probs = torch.softmax(logits, dim=-1)\nloss = -torch.log(probs[target])"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "loss = F.cross_entropy(logits, target)  # numerically stable"
+              }
+            ],
+            "keyTakeaway": "Use numerically stable library functions. Never compute log(softmax(x)) in two steps.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.model-code.model-serialization",
+          "text": "Is the model serialized in a portable, versioned format?",
+          "severity": "major",
+          "tags": ["deployment", "reproducibility"],
+          "baseContent": {
+            "whatItMeans": "Trained models should be saved in a format that can be loaded independently of the training code version, with clear versioning metadata.",
+            "whyItMatters": "Pickle-based serialization is fragile and breaks when code is refactored. Without versioning, you cannot roll back to a previous model or audit what was deployed.",
+            "howToVerify": "- Check the serialization format (ONNX, SavedModel, TorchScript are preferred over raw pickle)\n- Verify that model artifacts include version metadata\n- Confirm that the model can be loaded without the training codebase",
+            "exampleComment": "Saving the model with pickle ties it to the exact class definition. Consider using ONNX or TorchScript for portability, and include a version tag in the artifact.",
+            "codeExamples": [],
+            "keyTakeaway": "Serialize models in portable formats with version metadata for safe deployment and rollback.",
+            "references": [
+              "https://onnx.ai/",
+              "https://pytorch.org/docs/stable/jit.html"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.model-code.eval-mode",
+          "text": "Is the model set to evaluation mode during inference?",
+          "severity": "blocker",
+          "tags": ["correctness", "inference"],
+          "baseContent": {
+            "whatItMeans": "Frameworks like PyTorch use different behavior for layers like Dropout and BatchNorm during training vs. inference. The model must be set to eval mode before serving predictions.",
+            "whyItMatters": "Forgetting model.eval() means dropout is still active during inference, producing non-deterministic and degraded predictions in production.",
+            "howToVerify": "- Check that model.eval() is called before inference\n- Look for torch.no_grad() context manager around inference code\n- Verify that batch normalization layers use running statistics, not batch statistics",
+            "exampleComment": "The serving function does not call model.eval(). This means dropout layers are still active, producing noisy predictions.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "python",
+                "code": "model = load_model(\"checkpoint.pt\")\nprediction = model(input_tensor)  # still in train mode"
+              },
+              {
+                "label": "Good",
+                "language": "python",
+                "code": "model = load_model(\"checkpoint.pt\")\nmodel.eval()\nwith torch.no_grad():\n    prediction = model(input_tensor)"
+              }
+            ],
+            "keyTakeaway": "Always call model.eval() and use torch.no_grad() for inference.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ml-engineering.experiment-tracking",
+      "title": "Experiment Tracking",
+      "items": [
+        {
+          "id": "ml-engineering.experiment-tracking.metric-logging",
+          "text": "Are all relevant metrics logged during training?",
+          "severity": "major",
+          "tags": ["observability", "experimentation"],
+          "baseContent": {
+            "whatItMeans": "Training runs should log loss curves, evaluation metrics, learning rate schedules, and other diagnostic information to an experiment tracker.",
+            "whyItMatters": "Without logged metrics, you cannot compare experiments, diagnose training issues, or justify model selection decisions to stakeholders.",
+            "howToVerify": "- Check that training and validation loss are logged at each epoch\n- Verify that business-relevant metrics (precision, recall, AUC) are logged\n- Confirm that metrics are sent to a tracking tool (MLflow, W&B, etc.) not just printed to stdout",
+            "exampleComment": "The training loop only prints loss to stdout. Log metrics to MLflow or W&B so they are persisted and comparable across runs.",
+            "codeExamples": [],
+            "keyTakeaway": "Log metrics to a persistent experiment tracker. Print statements are not experiment tracking.",
+            "references": [
+              "https://mlflow.org/",
+              "https://wandb.ai/"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.experiment-tracking.artifact-versioning",
+          "text": "Are model artifacts and datasets versioned together?",
+          "severity": "major",
+          "tags": ["reproducibility", "traceability"],
+          "baseContent": {
+            "whatItMeans": "Each trained model should be linked to the exact dataset version, code commit, and hyperparameters that produced it.",
+            "whyItMatters": "Without artifact-dataset linking, you cannot reproduce a result, audit a deployed model, or trace a prediction back to its training data.",
+            "howToVerify": "- Check that the experiment tracker logs the dataset version or hash\n- Verify that the git commit hash is recorded with each run\n- Confirm that model artifacts are stored in a registry (MLflow Model Registry, S3 with versioning)",
+            "exampleComment": "This run does not record the dataset version. Add the dataset hash or DVC version to the experiment metadata.",
+            "codeExamples": [],
+            "keyTakeaway": "Link every model to its exact dataset, code, and config. Full lineage enables auditing and reproduction.",
+            "references": [
+              "https://dvc.org/"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.experiment-tracking.baseline-comparison",
+          "text": "Is every experiment compared against a documented baseline?",
+          "severity": "minor",
+          "tags": ["evaluation", "rigor"],
+          "baseContent": {
+            "whatItMeans": "New model iterations should always be compared against a known baseline, whether that is the current production model, a simple heuristic, or a previous experiment.",
+            "whyItMatters": "Without a baseline, you cannot tell whether a new model is actually better. A 90% accuracy means nothing if a simple rule achieves 89%.",
+            "howToVerify": "- Check that the PR or experiment report includes baseline metrics\n- Verify that the comparison uses the same test set and evaluation protocol\n- Look for statistical significance tests or confidence intervals for close results",
+            "exampleComment": "The experiment report shows 0.85 F1 but does not compare against the current production model. Add baseline metrics to demonstrate improvement.",
+            "codeExamples": [],
+            "keyTakeaway": "Always compare against a baseline. Absolute metrics without context are meaningless.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.experiment-tracking.experiment-naming",
+          "text": "Do experiments follow a consistent naming convention?",
+          "severity": "nit",
+          "tags": ["organization"],
+          "baseContent": {
+            "whatItMeans": "Experiment runs should be named with a consistent pattern that encodes the key variables (model type, dataset, date) for easy filtering and search.",
+            "whyItMatters": "Inconsistent naming makes it hard to find and compare experiments, especially as the number of runs grows into the hundreds.",
+            "howToVerify": "- Check that experiment names follow a team convention\n- Verify that names encode enough information to distinguish runs\n- Look for auto-generated names that have been left as defaults",
+            "exampleComment": "This run is named 'test_run_3'. Use a descriptive name like 'resnet50-imagenet-lr0.01-20240115' that encodes the model, dataset, and key hyperparameters.",
+            "codeExamples": [],
+            "keyTakeaway": "Use descriptive, consistent experiment names. Your future self will thank you.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.experiment-tracking.negative-results",
+          "text": "Are failed experiments documented with reasons for failure?",
+          "severity": "nit",
+          "tags": ["documentation", "learning"],
+          "baseContent": {
+            "whatItMeans": "Experiments that did not improve metrics should be logged with notes explaining what was tried and why it did not work.",
+            "whyItMatters": "Undocumented failures lead to repeated work. Teams waste time re-running experiments that have already been shown to fail.",
+            "howToVerify": "- Check that the experiment tracker contains notes on runs with poor results\n- Verify that the PR description explains what approaches were tried and rejected\n- Look for a shared experiment log or knowledge base",
+            "exampleComment": "Good practice to log why this approach did not improve metrics. Add a note to the experiment run so the team does not revisit this dead end.",
+            "codeExamples": [],
+            "keyTakeaway": "Document negative results. Knowing what does not work is as valuable as knowing what does.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ml-engineering.feature-stores",
+      "title": "Feature Stores",
+      "items": [
+        {
+          "id": "ml-engineering.feature-stores.point-in-time",
+          "text": "Does the feature retrieval use point-in-time correct joins?",
+          "severity": "blocker",
+          "tags": ["correctness", "leakage"],
+          "baseContent": {
+            "whatItMeans": "When joining features for training, the join must respect temporal ordering so that each training example only sees feature values that were available at prediction time.",
+            "whyItMatters": "Without point-in-time correctness, future feature values leak into past training examples, giving unrealistically good offline metrics that do not hold in production.",
+            "howToVerify": "- Check that feature joins use timestamp-aware logic (as-of joins)\n- Verify that the feature store API enforces point-in-time semantics\n- Look for naive SQL joins on entity ID without a timestamp condition",
+            "exampleComment": "This join fetches the latest feature value regardless of the event timestamp. Use an as-of join to get the feature value that was current at the time of each event.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "sql",
+                "code": "SELECT e.*, f.feature_value\nFROM events e\nJOIN features f ON e.user_id = f.user_id\n-- gets the latest value, not the value at event time"
+              },
+              {
+                "label": "Good",
+                "language": "sql",
+                "code": "SELECT e.*, f.feature_value\nFROM events e\nJOIN features f ON e.user_id = f.user_id\n  AND f.timestamp <= e.timestamp\nQUALIFY ROW_NUMBER() OVER (\n  PARTITION BY e.event_id ORDER BY f.timestamp DESC\n) = 1"
+              }
+            ],
+            "keyTakeaway": "Always use point-in-time correct joins. Temporal leakage is the most dangerous kind of data leakage.",
+            "references": [
+              "https://feast.dev/"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.feature-stores.feature-documentation",
+          "text": "Are features documented with descriptions, owners, and data sources?",
+          "severity": "minor",
+          "tags": ["documentation", "discoverability"],
+          "baseContent": {
+            "whatItMeans": "Each feature in the store should have a human-readable description, a designated owner, and a clear lineage back to its raw data source.",
+            "whyItMatters": "Undocumented features become tribal knowledge. New team members cannot discover or trust features they do not understand, leading to duplicated work.",
+            "howToVerify": "- Check that feature definitions include description fields\n- Verify that an owner or team is assigned to each feature group\n- Look for lineage metadata linking features to source tables",
+            "exampleComment": "This feature 'user_v3_agg' has no description. Add a human-readable description and document the aggregation window and source table.",
+            "codeExamples": [],
+            "keyTakeaway": "Document features with descriptions, owners, and lineage. Features are shared assets that outlive their creators.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.feature-stores.online-offline-consistency",
+          "text": "Are online and offline feature stores consistent?",
+          "severity": "major",
+          "tags": ["consistency", "skew"],
+          "baseContent": {
+            "whatItMeans": "The offline store (used for training) and online store (used for serving) should produce the same feature values for the same entity and timestamp.",
+            "whyItMatters": "Inconsistency between online and offline stores is a form of training/serving skew that degrades model performance in production without any code change.",
+            "howToVerify": "- Check that feature materialization populates both online and offline stores from the same source\n- Look for separate pipelines that could drift\n- Verify that consistency checks or integration tests compare online vs. offline values",
+            "exampleComment": "The online store is populated by a separate pipeline with different aggregation logic. Unify the pipelines or add consistency validation between stores.",
+            "codeExamples": [],
+            "keyTakeaway": "Unify online and offline feature pipelines. Separate pipelines are a ticking skew bomb.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.feature-stores.feature-freshness",
+          "text": "Is feature freshness monitored and appropriate for the use case?",
+          "severity": "minor",
+          "tags": ["monitoring", "staleness"],
+          "baseContent": {
+            "whatItMeans": "Features should be updated frequently enough for the model's needs, and staleness should be monitored with alerts when features fall behind their expected refresh cadence.",
+            "whyItMatters": "Stale features silently degrade model predictions. A fraud model using 24-hour-old transaction counts will miss real-time fraud patterns.",
+            "howToVerify": "- Check that feature pipelines have SLAs for freshness\n- Verify that monitoring alerts fire when features are stale\n- Confirm that the refresh cadence matches the model's latency requirements",
+            "exampleComment": "This real-time fraud model uses features that are only refreshed daily. Either increase the refresh frequency or add a freshness check that falls back to a safe default.",
+            "codeExamples": [],
+            "keyTakeaway": "Monitor feature freshness. Stale features are a silent model killer.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.feature-stores.feature-reuse",
+          "text": "Are features designed for reuse across multiple models?",
+          "severity": "nit",
+          "tags": ["design", "efficiency"],
+          "baseContent": {
+            "whatItMeans": "Feature engineering should produce general-purpose features that can be shared across models, rather than tightly coupling features to a single model.",
+            "whyItMatters": "Reusable features reduce duplicated computation, ensure consistency across models, and accelerate development of new models.",
+            "howToVerify": "- Check that features are named generically (not model-specific)\n- Verify that feature definitions are in a shared registry rather than inline in training code\n- Look for opportunities to extract common features from model-specific code",
+            "exampleComment": "This 'churn_model_user_activity_30d' feature is the same as the one used in the recommendation model. Rename it to 'user_activity_30d' and register it in the shared feature store.",
+            "codeExamples": [],
+            "keyTakeaway": "Design features for the entity, not the model. Reusable features compound in value.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ml-engineering.deployment",
+      "title": "Deployment",
+      "items": [
+        {
+          "id": "ml-engineering.deployment.shadow-mode",
+          "text": "Is the new model deployed in shadow mode before serving live traffic?",
+          "severity": "major",
+          "tags": ["safety", "rollout"],
+          "baseContent": {
+            "whatItMeans": "Shadow mode means the new model runs alongside the current production model, receiving the same inputs and logging predictions, but its outputs are not served to users.",
+            "whyItMatters": "Shadow deployment catches performance issues, latency regressions, and unexpected prediction distributions before they affect real users.",
+            "howToVerify": "- Check the deployment plan for a shadow or canary phase\n- Verify that shadow predictions are logged for comparison\n- Confirm that there is a go/no-go checklist before promoting to live traffic",
+            "exampleComment": "This PR deploys the new model directly to 100% of traffic. Add a shadow deployment phase to compare predictions against the current model before switching over.",
+            "codeExamples": [],
+            "keyTakeaway": "Deploy new models in shadow mode first. Measure before you serve.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.deployment.rollback-plan",
+          "text": "Is there a documented rollback plan to the previous model version?",
+          "severity": "major",
+          "tags": ["safety", "operations"],
+          "baseContent": {
+            "whatItMeans": "The deployment should include a clear, tested plan to revert to the previous model version if the new model causes issues in production.",
+            "whyItMatters": "Without a rollback plan, a bad model deployment can cause extended outages. ML model issues are often subtle and may not be caught by standard health checks.",
+            "howToVerify": "- Check that the previous model version is preserved and loadable\n- Verify that the rollback procedure is documented and has been tested\n- Confirm that rollback can be done without a code deploy (e.g., config change or model registry update)",
+            "exampleComment": "The deployment doc does not mention rollback. Document how to revert to the previous model version and verify the procedure works in staging.",
+            "codeExamples": [],
+            "keyTakeaway": "Always have a tested rollback plan. The best deployment safety net is a fast revert.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.deployment.latency-budget",
+          "text": "Does the model meet the latency budget for its serving context?",
+          "severity": "major",
+          "tags": ["performance", "sla"],
+          "baseContent": {
+            "whatItMeans": "The model inference time (including preprocessing) must fit within the overall latency budget of the serving application, typically measured at p50, p95, and p99.",
+            "whyItMatters": "A model that is too slow for its serving context will cause timeouts, degraded user experience, or force the application to fall back to a simpler heuristic.",
+            "howToVerify": "- Check that inference latency has been benchmarked on production-like hardware\n- Verify that p99 latency fits within the application's SLA\n- Look for batch size and hardware requirements in the deployment plan",
+            "exampleComment": "The model takes 200ms per inference but the API has a 100ms SLA. Profile the model to find optimization opportunities (quantization, pruning, distillation).",
+            "codeExamples": [],
+            "keyTakeaway": "Benchmark inference latency on production hardware. A model that misses its latency budget is not deployable.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.deployment.ab-test-setup",
+          "text": "Is the A/B test properly configured with correct randomization?",
+          "severity": "major",
+          "tags": ["experimentation", "correctness"],
+          "baseContent": {
+            "whatItMeans": "A/B tests should use proper randomization at the correct unit (e.g., user-level, not request-level) with pre-registered success metrics and a sample size calculation.",
+            "whyItMatters": "Incorrect randomization (e.g., request-level instead of user-level) causes data leakage between variants. Missing sample size calculations lead to underpowered tests or premature conclusions.",
+            "howToVerify": "- Check that randomization is at the user level (or appropriate unit)\n- Verify that success metrics are defined before the test starts\n- Confirm that sample size and duration calculations are documented",
+            "exampleComment": "This A/B test randomizes at the request level, so the same user can see both variants. Randomize at the user level to avoid contamination between groups.",
+            "codeExamples": [],
+            "keyTakeaway": "Randomize at the right unit and pre-register metrics. Poorly run A/B tests produce misleading results.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.deployment.resource-requirements",
+          "text": "Are GPU/CPU/memory requirements specified for the serving infrastructure?",
+          "severity": "minor",
+          "tags": ["infrastructure", "cost"],
+          "baseContent": {
+            "whatItMeans": "The deployment should specify the hardware requirements (GPU type, CPU cores, memory) needed to serve the model at the expected throughput.",
+            "whyItMatters": "Under-provisioned infrastructure causes latency spikes and OOM errors. Over-provisioned infrastructure wastes money. Both are avoidable with proper resource planning.",
+            "howToVerify": "- Check that the deployment config specifies resource requests and limits\n- Verify that memory requirements account for model size plus inference overhead\n- Confirm that GPU requirements match the model's compute needs",
+            "exampleComment": "The deployment does not specify memory limits. This 2GB model will need at least 4GB of memory when accounting for inference overhead. Add resource requests to the deployment config.",
+            "codeExamples": [],
+            "keyTakeaway": "Specify resource requirements. Right-sizing infrastructure saves money and prevents outages.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "ml-engineering.monitoring",
+      "title": "Monitoring",
+      "items": [
+        {
+          "id": "ml-engineering.monitoring.prediction-distribution",
+          "text": "Is the prediction distribution monitored for drift?",
+          "severity": "major",
+          "tags": ["drift", "observability"],
+          "baseContent": {
+            "whatItMeans": "The distribution of model predictions (scores, classes) should be monitored over time to detect shifts that indicate model degradation or data drift.",
+            "whyItMatters": "Prediction drift is often the earliest signal that something has changed in the input data or the model is stale. Catching it early prevents extended periods of poor predictions.",
+            "howToVerify": "- Check that prediction distributions are logged and visualized\n- Verify that statistical drift tests (KS test, PSI) are configured\n- Confirm that alerts fire when drift exceeds thresholds",
+            "exampleComment": "The serving endpoint logs predictions but does not monitor their distribution. Add a drift detection check (e.g., PSI) that alerts when the prediction distribution shifts significantly.",
+            "codeExamples": [],
+            "keyTakeaway": "Monitor prediction distributions. Drift detection is your early warning system.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.monitoring.input-drift",
+          "text": "Are input feature distributions monitored for drift?",
+          "severity": "major",
+          "tags": ["drift", "data-quality"],
+          "baseContent": {
+            "whatItMeans": "The distribution of input features at serving time should be compared against the training distribution to detect data drift before it degrades predictions.",
+            "whyItMatters": "Input drift precedes prediction drift. Monitoring inputs lets you act before the model's predictions degrade, rather than waiting for downstream metric drops.",
+            "howToVerify": "- Check that feature statistics (mean, variance, cardinality) are logged during serving\n- Verify that these are compared against training-time statistics\n- Confirm that alerts fire on significant distribution shifts",
+            "exampleComment": "Feature distributions are not monitored in serving. Add statistical checks comparing serving-time feature distributions against training baselines.",
+            "codeExamples": [],
+            "keyTakeaway": "Monitor input features for drift. Catching upstream data changes early prevents downstream model failures.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.monitoring.ground-truth-feedback",
+          "text": "Is there a pipeline to collect ground truth labels for monitoring?",
+          "severity": "minor",
+          "tags": ["evaluation", "feedback-loop"],
+          "baseContent": {
+            "whatItMeans": "A feedback loop should collect actual outcomes (ground truth) and compare them against model predictions to compute real-world accuracy metrics.",
+            "whyItMatters": "Without ground truth feedback, you can only monitor proxy metrics. The model could be making confidently wrong predictions that only surface when users complain.",
+            "howToVerify": "- Check that there is a mechanism to collect labels after predictions are made\n- Verify that ground truth is joined back to predictions for accuracy computation\n- Confirm that real-world metrics are tracked on a dashboard",
+            "exampleComment": "The model serves predictions but there is no pipeline to compare against actual outcomes. Set up a ground truth collection pipeline to compute real-world accuracy.",
+            "codeExamples": [],
+            "keyTakeaway": "Close the feedback loop. Ground truth labels are the only way to measure real-world model performance.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.monitoring.error-rate-alerts",
+          "text": "Are error rate and timeout alerts configured for the serving endpoint?",
+          "severity": "major",
+          "tags": ["reliability", "alerting"],
+          "baseContent": {
+            "whatItMeans": "The model serving endpoint should have alerts on error rates (5xx responses, inference failures) and latency timeouts to catch operational issues quickly.",
+            "whyItMatters": "ML serving failures are often silent. A model returning fallback predictions due to errors may not trigger standard application monitoring.",
+            "howToVerify": "- Check that error rate thresholds are configured in the monitoring system\n- Verify that timeout alerts match the application's SLA\n- Confirm that alerts page the right on-call team",
+            "exampleComment": "The serving endpoint has no alerting configured. Add error rate and p99 latency alerts so the ML team is paged when the model is unhealthy.",
+            "codeExamples": [],
+            "keyTakeaway": "Alert on error rates and latency. Standard application monitoring is not enough for ML serving.",
+            "references": []
+          }
+        },
+        {
+          "id": "ml-engineering.monitoring.fairness-metrics",
+          "text": "Are fairness metrics monitored across demographic groups?",
+          "severity": "minor",
+          "tags": ["fairness", "ethics"],
+          "baseContent": {
+            "whatItMeans": "Model performance should be disaggregated across relevant demographic or sensitive groups to detect disparate impact or performance disparities.",
+            "whyItMatters": "Aggregate metrics can hide significant performance gaps between groups. A model with 95% overall accuracy might have 70% accuracy for a minority group.",
+            "howToVerify": "- Check that evaluation metrics are broken down by relevant groups\n- Verify that fairness metrics (demographic parity, equalized odds) are computed\n- Confirm that disparities trigger review processes, not just alerts",
+            "exampleComment": "The evaluation report only shows aggregate accuracy. Break down metrics by the relevant demographic groups to ensure the model performs fairly across all users.",
+            "codeExamples": [],
+            "keyTakeaway": "Disaggregate metrics across groups. Fairness cannot be assessed from aggregate numbers alone.",
+            "references": [
+              "https://fairlearn.org/"
+            ]
+          }
+        },
+        {
+          "id": "ml-engineering.monitoring.model-staleness",
+          "text": "Is there an alert for when the model has not been retrained within its expected cadence?",
+          "severity": "minor",
+          "tags": ["staleness", "operations"],
+          "baseContent": {
+            "whatItMeans": "Models should be retrained on a regular cadence appropriate to the domain. An alert should fire if retraining has not occurred within the expected window.",
+            "whyItMatters": "Stale models silently degrade as the world changes. Without a staleness alert, a broken retraining pipeline can go unnoticed for weeks.",
+            "howToVerify": "- Check that the model metadata includes a training timestamp\n- Verify that an alert fires if the model age exceeds the retraining SLA\n- Confirm that the retraining pipeline has health monitoring",
+            "exampleComment": "This model was last trained 90 days ago but the team's SLA is biweekly retraining. Add a staleness alert that fires when the model age exceeds 14 days.",
+            "codeExamples": [],
+            "keyTakeaway": "Alert on model staleness. A broken retraining pipeline should not go unnoticed.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}

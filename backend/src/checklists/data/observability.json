@@ -1,0 +1,620 @@
+{
+  "meta": {
+    "id": "observability",
+    "mode": "review",
+    "title": "Observability",
+    "shortTitle": "Observability",
+    "description": "Review checklist for Observability projects",
+    "icon": "🔭",
+    "totalItems": 28,
+    "version": "1.0.0"
+  },
+  "sections": [
+    {
+      "id": "observability.structured-logging",
+      "title": "Structured Logging",
+      "items": [
+        {
+          "id": "observability.structured-logging.json-format",
+          "text": "Are logs emitted in a structured format (JSON) rather than free-text strings?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Log entries are structured key-value JSON objects rather than concatenated strings, making them parseable by log aggregation tools.",
+            "whyItMatters": "Free-text logs require fragile regex parsing in tools like Elasticsearch or CloudWatch. Structured logs enable filtering, aggregation, and alerting on specific fields.",
+            "howToVerify": "- Check logger configuration for JSON formatters\n- Verify log statements use structured fields instead of string interpolation\n- Ensure the log output includes standard fields (timestamp, level, message, service)",
+            "exampleComment": "This log uses string interpolation which makes it impossible to filter by userId in our log aggregation tool. Use structured fields instead.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "logger.info(`User ${userId} performed ${action} on ${resource}`);"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "logger.info('user action performed', {\n  userId,\n  action,\n  resource,\n});"
+              }
+            ],
+            "keyTakeaway": "Structured logs are searchable, filterable, and aggregatable — free-text logs are not.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.structured-logging.log-levels",
+          "text": "Are log levels used correctly (error for failures, warn for degraded, info for events, debug for diagnostics)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each log statement uses the appropriate severity level: error for failures needing attention, warn for degraded but functional states, info for significant events, debug for development diagnostics.",
+            "whyItMatters": "Incorrect log levels cause alert fatigue (too many errors) or missed incidents (errors logged as warnings). Production typically filters to info and above.",
+            "howToVerify": "- Check that caught-and-handled exceptions use warn, not error\n- Verify error level is reserved for actionable failures\n- Ensure debug-level logs don't contain PII that could leak in debug mode",
+            "exampleComment": "This logs every cache miss as an error. Cache misses are expected behavior — use info or debug level instead. Reserve error for actual failures.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "logger.error('Cache miss for key: ' + key);\nlogger.info('Database connection failed', { error });"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "logger.debug('cache miss', { key });\nlogger.error('database connection failed', { error: error.message, host });"
+              }
+            ],
+            "keyTakeaway": "Reserve error for actionable failures — misused levels cause alert fatigue or missed incidents.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.structured-logging.no-sensitive-data",
+          "text": "Are logs free of sensitive data (passwords, tokens, PII)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Log statements do not include passwords, API keys, session tokens, credit card numbers, or other personally identifiable information.",
+            "whyItMatters": "Logs are often stored in systems with broader access than production databases. Sensitive data in logs creates compliance violations (GDPR, PCI-DSS) and security risks.",
+            "howToVerify": "- Search log statements for fields like password, token, secret, ssn, creditCard\n- Check that request/response logging redacts sensitive headers (Authorization, Cookie)\n- Verify error logs don't dump full request bodies that may contain PII",
+            "exampleComment": "This logs the full request body which may contain the user's password. Redact sensitive fields before logging, or log only specific safe fields.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "logger.info('login attempt', { body: req.body });\n// logs: { email: '...', password: 'hunter2' }"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "logger.info('login attempt', { email: req.body.email });"
+              }
+            ],
+            "keyTakeaway": "Never log secrets or PII — logs are accessible to many people and systems.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.structured-logging.correlation-ids",
+          "text": "Do logs include correlation/request IDs for tracing requests across services?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every log entry includes a correlation ID (request ID, trace ID) that ties together all log entries for a single user request across multiple services.",
+            "whyItMatters": "Without correlation IDs, debugging a single request in a distributed system requires guessing which log lines belong together based on timestamps and content.",
+            "howToVerify": "- Check that middleware injects a requestId or traceId into the logging context\n- Verify the correlation ID is propagated to downstream service calls\n- Search for log statements that might bypass the shared context",
+            "exampleComment": "These log entries don't include a request ID. When debugging production issues, we won't be able to trace a single request across services.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "logger.info('processing order', { orderId });"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "logger.info('processing order', {\n  orderId,\n  requestId: ctx.requestId,\n  traceId: ctx.traceId,\n});"
+              }
+            ],
+            "keyTakeaway": "Correlation IDs are essential for tracing a single request through distributed systems.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.structured-logging.context-richness",
+          "text": "Do log entries include sufficient context to understand what happened without reading code?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Log messages include enough contextual fields (who, what, where, result) that an on-call engineer can understand the event without referring to source code.",
+            "whyItMatters": "During an incident at 3 AM, engineers need logs that tell the full story. A log that says 'failed' with no context forces engineers to dig through code under pressure.",
+            "howToVerify": "- Read each log statement and ask: could an on-call engineer understand this without context?\n- Check that error logs include the operation that failed and relevant identifiers\n- Verify success and failure paths both have adequate logging",
+            "exampleComment": "This error log says 'operation failed' but doesn't include which operation, which resource, or the error details. Add context fields so on-call can diagnose without reading code.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "logger.error('operation failed');"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "logger.error('payment processing failed', {\n  orderId,\n  paymentProvider: 'stripe',\n  amount,\n  error: error.message,\n  retryable: error.retryable,\n});"
+              }
+            ],
+            "keyTakeaway": "Logs should tell the full story — an on-call engineer shouldn't need source code to understand what happened.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "observability.metrics",
+      "title": "Metrics",
+      "items": [
+        {
+          "id": "observability.metrics.red-method",
+          "text": "Are the RED metrics (Rate, Errors, Duration) captured for every service endpoint?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every service endpoint tracks request rate (throughput), error rate (failures), and duration (latency) as core metrics for monitoring service health.",
+            "whyItMatters": "The RED method provides the minimum metrics needed to detect service degradation. Without these, issues can go unnoticed until users report them.",
+            "howToVerify": "- Check that HTTP middleware or interceptors collect request count, error count, and latency\n- Verify metrics are broken down by endpoint, method, and status code\n- Ensure histogram buckets for latency are appropriate for the service's SLA",
+            "exampleComment": "This new endpoint doesn't have latency metrics. Our standard middleware should handle this — verify it's applied to this route.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "// Prometheus histogram for request duration\nconst httpDuration = new Histogram({\n  name: 'http_request_duration_seconds',\n  help: 'Duration of HTTP requests in seconds',\n  labelNames: ['method', 'route', 'status_code'],\n  buckets: [0.01, 0.05, 0.1, 0.5, 1, 5],\n});"
+              }
+            ],
+            "keyTakeaway": "Rate, Errors, and Duration are the minimum metrics for monitoring any service endpoint.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.metrics.naming-conventions",
+          "text": "Do metric names follow a consistent naming convention with units?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Metric names use a consistent pattern (e.g., namespace_subsystem_name_unit) and include the unit of measurement in the name (seconds, bytes, total).",
+            "whyItMatters": "Inconsistent naming makes metrics hard to discover and query. Without units, engineers must guess whether duration is in seconds or milliseconds.",
+            "howToVerify": "- Check metric names follow the project's naming convention\n- Verify units are included in the name (e.g., _seconds, _bytes, _total)\n- Ensure counters end with _total and use base units (seconds, not milliseconds)",
+            "exampleComment": "This metric is named 'request_latency' without units. Rename to 'http_request_duration_seconds' to follow Prometheus conventions.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const latency = new Histogram({ name: 'request_latency' });\nconst errors = new Counter({ name: 'num_errors' });"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const latency = new Histogram({ name: 'http_request_duration_seconds' });\nconst errors = new Counter({ name: 'http_requests_errors_total' });"
+              }
+            ],
+            "keyTakeaway": "Include units in metric names and follow a consistent naming convention.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.metrics.cardinality-limits",
+          "text": "Are metric labels bounded to prevent cardinality explosion?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Metric labels use bounded values (HTTP methods, status code classes, known routes) rather than unbounded values (user IDs, request IDs, email addresses).",
+            "whyItMatters": "Each unique label combination creates a new time series. Unbounded labels (like user IDs) can create millions of series, crashing your metrics backend and causing massive storage costs.",
+            "howToVerify": "- Check all metric label values for unbounded cardinality\n- Verify URL paths are normalized (e.g., /users/:id, not /users/12345)\n- Ensure error messages are categorized, not used as raw label values",
+            "exampleComment": "This metric uses the full URL path as a label, including user IDs. This will create a unique time series per user, causing cardinality explosion. Normalize to /users/:id.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "httpDuration.observe({ route: req.url }, elapsed);\n// Creates: /users/123, /users/456, /users/789, ..."
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "httpDuration.observe({ route: req.routePattern }, elapsed);\n// Creates: /users/:id (single series)"
+              }
+            ],
+            "keyTakeaway": "Unbounded label values will crash your metrics system — always use bounded, normalized values.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.metrics.histogram-vs-counter",
+          "text": "Are histograms used for latency rather than averages or gauges?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Latency and duration metrics use histograms (or summaries) to capture the full distribution, rather than tracking only averages or last-seen values.",
+            "whyItMatters": "Averages hide tail latency. A service with 100ms average latency might have a p99 of 5 seconds, affecting 1% of users. Histograms let you compute percentiles.",
+            "howToVerify": "- Check that latency metrics use Histogram type, not Gauge or averaged Counter\n- Verify histogram buckets cover the expected latency range\n- Ensure percentile queries (p50, p95, p99) work correctly",
+            "exampleComment": "This tracks average request duration as a gauge. Use a histogram instead so we can compute p95 and p99 latency for SLO tracking.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const avgLatency = new Gauge({ name: 'avg_request_duration' });\navgLatency.set(totalDuration / requestCount);"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const latency = new Histogram({\n  name: 'http_request_duration_seconds',\n  buckets: [0.01, 0.05, 0.1, 0.5, 1, 5],\n});\nlatency.observe(elapsed);"
+              }
+            ],
+            "keyTakeaway": "Histograms capture the full distribution — averages and gauges hide tail latency problems.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.metrics.business-metrics",
+          "text": "Are business-relevant metrics tracked alongside technical metrics?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The service tracks metrics that reflect business outcomes (orders processed, payments completed, users signed up) in addition to infrastructure metrics.",
+            "whyItMatters": "Technical metrics tell you the system is healthy; business metrics tell you the system is working correctly. A service can be technically healthy while producing wrong results.",
+            "howToVerify": "- Identify the core business actions of the service\n- Check that each has at least a counter (total attempts, successes, failures)\n- Verify business metrics are distinct from HTTP-level metrics",
+            "exampleComment": "We track HTTP request metrics but not order completion rate. If orders fail silently (returning 200 with an error body), our HTTP metrics won't catch it.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const ordersProcessed = new Counter({\n  name: 'orders_processed_total',\n  help: 'Total orders processed',\n  labelNames: ['status', 'payment_method'],\n});\nordersProcessed.inc({ status: 'completed', payment_method: 'stripe' });"
+              }
+            ],
+            "keyTakeaway": "Track business outcomes, not just infrastructure health — a healthy server can still produce wrong results.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.metrics.sli-alignment",
+          "text": "Do metrics align with defined SLIs/SLOs for the service?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The metrics collected can be used to compute the service's Service Level Indicators (SLIs) and track progress toward Service Level Objectives (SLOs).",
+            "whyItMatters": "If your SLO is 99.9% of requests under 500ms, but you don't have a histogram with a 500ms bucket, you can't measure your SLO compliance.",
+            "howToVerify": "- Review the service's defined SLOs\n- Verify histogram buckets include the SLO thresholds\n- Check that error classification matches the SLO definition (e.g., 5xx only vs all errors)",
+            "exampleComment": "Our SLO targets p99 under 200ms, but the histogram buckets jump from 100ms to 500ms. Add a 200ms bucket so we can accurately track our SLO.",
+            "codeExamples": [],
+            "keyTakeaway": "Metrics must be designed to answer SLO questions — align histogram buckets and error definitions with your SLOs.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "observability.distributed-tracing",
+      "title": "Distributed Tracing",
+      "items": [
+        {
+          "id": "observability.distributed-tracing.context-propagation",
+          "text": "Is trace context propagated across all service boundaries (HTTP, gRPC, message queues)?",
+          "severity": "blocker",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "W3C Trace Context headers (traceparent, tracestate) or equivalent are propagated in all outgoing requests, including HTTP calls, gRPC calls, and message queue publications.",
+            "whyItMatters": "Broken propagation creates disconnected traces. If service A calls service B but doesn't forward the trace context, the traces appear as separate unrelated operations.",
+            "howToVerify": "- Check that HTTP clients inject trace context headers\n- Verify message queue producers include trace context in message metadata\n- Test end-to-end: does a single trace span the full request lifecycle?",
+            "exampleComment": "This HTTP client call to the payment service doesn't propagate trace context. The payment service trace will be disconnected from the parent trace.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const response = await fetch('https://payment-svc/charge', {\n  method: 'POST',\n  body: JSON.stringify(payload),\n});"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const response = await fetch('https://payment-svc/charge', {\n  method: 'POST',\n  body: JSON.stringify(payload),\n  headers: propagation.inject({}, defaultTextMapSetter),\n});"
+              }
+            ],
+            "keyTakeaway": "Trace context must be propagated across every service boundary or the distributed trace breaks.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.distributed-tracing.span-naming",
+          "text": "Are spans named descriptively with consistent conventions?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Span names follow a consistent pattern (e.g., 'HTTP GET /users', 'db.query users', 'queue.publish orders') that makes them easy to identify and group in tracing UIs.",
+            "whyItMatters": "Poorly named spans make traces unreadable. Spans named 'operation' or 'execute' provide no context when debugging latency in a trace waterfall.",
+            "howToVerify": "- Check span names for descriptive, consistent naming\n- Verify they include the operation type and target\n- Ensure span names don't include unbounded values (user IDs, query parameters)",
+            "exampleComment": "This span is named 'execute'. Rename it to something descriptive like 'db.query.find_user_by_email' so it's meaningful in trace views.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "tracer.startSpan('execute');\ntracer.startSpan(`query-${userId}`);"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "tracer.startSpan('db.query find_user_by_email');\ntracer.startSpan('http.client POST /payments/charge');"
+              }
+            ],
+            "keyTakeaway": "Span names should be descriptive and bounded — they're the labels in your trace waterfall.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.distributed-tracing.error-recording",
+          "text": "Are errors and exceptions recorded on spans with appropriate status codes?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "When an operation fails, the span is marked with an error status and the exception details are recorded as span events or attributes.",
+            "whyItMatters": "Without error recording on spans, failed operations appear successful in the tracing UI. Engineers can't filter for error traces or see where failures occurred.",
+            "howToVerify": "- Check that catch blocks record the exception on the active span\n- Verify span status is set to ERROR when operations fail\n- Ensure error details (message, type) are captured without sensitive data",
+            "exampleComment": "This catch block logs the error but doesn't record it on the span. The trace will show this operation as successful. Use span.recordException() and span.setStatus().",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "try {\n  await processOrder(order);\n} catch (error) {\n  logger.error('order failed', { error });\n  throw error;\n}"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "try {\n  await processOrder(order);\n} catch (error) {\n  span.recordException(error);\n  span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });\n  logger.error('order failed', { error, traceId: span.spanContext().traceId });\n  throw error;\n}"
+              }
+            ],
+            "keyTakeaway": "Always record exceptions on spans — otherwise failed operations appear successful in traces.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.distributed-tracing.span-attributes",
+          "text": "Do spans include relevant attributes for debugging (IDs, parameters, results)?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Spans include contextual attributes like entity IDs, operation parameters, and result metadata that help engineers understand the operation's context during debugging.",
+            "whyItMatters": "A span that says 'db.query' with no attributes forces engineers to correlate with logs. Rich attributes make traces self-contained for debugging.",
+            "howToVerify": "- Check that spans include relevant business identifiers (orderId, userId)\n- Verify database spans include the table/collection name\n- Ensure no sensitive data is included in span attributes",
+            "exampleComment": "This database span doesn't include the table name or query type. Add attributes like db.table and db.operation so we can identify slow queries in traces.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "span.setAttributes({\n  'db.system': 'postgresql',\n  'db.operation': 'SELECT',\n  'db.table': 'orders',\n  'app.order_id': orderId,\n  'app.result_count': results.length,\n});"
+              }
+            ],
+            "keyTakeaway": "Rich span attributes make traces self-contained for debugging — no need to cross-reference logs.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.distributed-tracing.sampling-strategy",
+          "text": "Is a sampling strategy configured to balance cost and visibility?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The tracing configuration uses a sampling strategy (head-based, tail-based, or adaptive) to control the volume of traces collected, balancing observability with storage costs.",
+            "whyItMatters": "Collecting 100% of traces at scale is prohibitively expensive. But sampling too aggressively means missing rare error traces. A good strategy captures errors and a representative sample of normal traffic.",
+            "howToVerify": "- Check the tracing SDK configuration for sampling settings\n- Verify error traces are always sampled (not dropped)\n- Ensure the sampling rate is appropriate for the service's traffic volume",
+            "exampleComment": "This service has no sampling configuration, meaning it will collect 100% of traces. At our traffic volume, this will overwhelm the tracing backend. Configure a sampling strategy.",
+            "codeExamples": [
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const sampler = new ParentBasedSampler({\n  root: new TraceIdRatioBasedSampler(0.1), // 10% of traces\n  remoteParentSampled: new AlwaysOnSampler(),\n  remoteParentNotSampled: new AlwaysOffSampler(),\n});"
+              }
+            ],
+            "keyTakeaway": "Configure sampling to capture all errors and a representative sample — 100% collection doesn't scale.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.distributed-tracing.spans-ended",
+          "text": "Are all spans properly ended, including in error paths?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Every span that is started is also ended (span.end()), including when exceptions occur. Unfinished spans leak memory and create incomplete traces.",
+            "whyItMatters": "Spans that are never ended consume memory indefinitely, create incomplete traces in the UI, and can distort latency metrics. This is especially common in error paths.",
+            "howToVerify": "- Check that span.end() is called in finally blocks\n- Look for early returns that bypass span.end()\n- Verify async operations end their spans after the async work completes, not before",
+            "exampleComment": "This span is started but not ended in the catch block. If an error occurs, the span leaks. Move span.end() to a finally block.",
+            "codeExamples": [
+              {
+                "label": "Bad",
+                "language": "typescript",
+                "code": "const span = tracer.startSpan('process');\ntry {\n  await process();\n  span.end();\n} catch (error) {\n  throw error; // span never ended!\n}"
+              },
+              {
+                "label": "Good",
+                "language": "typescript",
+                "code": "const span = tracer.startSpan('process');\ntry {\n  await process();\n} catch (error) {\n  span.recordException(error);\n  throw error;\n} finally {\n  span.end();\n}"
+              }
+            ],
+            "keyTakeaway": "Always end spans in a finally block to prevent leaks in error paths.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "observability.alerting",
+      "title": "Alerting",
+      "items": [
+        {
+          "id": "observability.alerting.actionable-alerts",
+          "text": "Does every alert have a clear action the on-call engineer should take?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each alert includes a description of what's wrong, why it matters, and what the on-call engineer should do. Alerts that require no action should not page anyone.",
+            "whyItMatters": "Non-actionable alerts cause alert fatigue. Engineers learn to ignore alerts, and real incidents get missed. Every page should require and describe a specific human action.",
+            "howToVerify": "- Check alert definitions for a runbook link or action description\n- Verify the alert describes the symptom, not just the metric name\n- Ensure informational alerts use low-priority channels (Slack), not paging",
+            "exampleComment": "This alert fires when CPU exceeds 80% but doesn't say what to do. Is this expected during batch jobs? Add a runbook link and clarify whether this requires action.",
+            "codeExamples": [],
+            "keyTakeaway": "Every paging alert must answer: what's wrong, why it matters, and what should I do right now?",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.alerting.symptom-based",
+          "text": "Are alerts based on symptoms (user impact) rather than causes (resource utilization)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Alerts fire based on user-facing symptoms (high error rate, slow response times) rather than internal causes (high CPU, queue depth) that may or may not indicate a problem.",
+            "whyItMatters": "Cause-based alerts generate false positives (CPU spike during deploy is normal) and miss real issues (low CPU but all requests returning errors). Symptom-based alerts catch actual user impact.",
+            "howToVerify": "- Check if alerts measure user-facing metrics (error rate, latency SLO)\n- Verify cause-based alerts (CPU, memory) are low-priority or informational\n- Ensure alerts don't fire for transient spikes that auto-resolve",
+            "exampleComment": "This alert fires on memory usage > 80%. Is this actually causing user impact? Consider alerting on error rate or latency instead, and using memory as a diagnostic metric.",
+            "codeExamples": [],
+            "keyTakeaway": "Alert on symptoms (errors, latency) not causes (CPU, memory) — causes are for diagnosis, not paging.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.alerting.threshold-tuning",
+          "text": "Are alert thresholds based on data, not guesses, with appropriate burn rate windows?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Alert thresholds are derived from historical baseline data and use appropriate time windows to avoid false positives from brief spikes.",
+            "whyItMatters": "Thresholds set too low cause constant paging; too high means missing real incidents. Short windows fire on brief spikes; long windows delay detection.",
+            "howToVerify": "- Check that thresholds are justified by historical data or SLO math\n- Verify alerts use appropriate evaluation windows (e.g., 5-minute average, not instant)\n- Ensure burn-rate alerts are used for SLO-based alerting",
+            "exampleComment": "This alert fires if any single request exceeds 1 second. Individual slow requests are normal. Use a threshold like 'p95 latency > 1s over 5 minutes' instead.",
+            "codeExamples": [],
+            "keyTakeaway": "Base thresholds on historical data and SLO math — guessed thresholds cause alert fatigue.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.alerting.runbook-links",
+          "text": "Do alerts link to up-to-date runbooks or dashboards?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each alert definition includes a link to a runbook documenting investigation and remediation steps, and a link to the relevant monitoring dashboard.",
+            "whyItMatters": "At 3 AM, an on-call engineer receiving an alert they've never seen needs a runbook to guide their response. Without one, MTTR increases dramatically.",
+            "howToVerify": "- Check each alert definition for a runbook_url or dashboard_url annotation\n- Verify the linked runbook is current and accurate\n- Ensure the dashboard shows the metrics relevant to the alert",
+            "exampleComment": "This new alert has no runbook link. Add a runbook URL so on-call engineers know how to investigate and remediate when this fires.",
+            "codeExamples": [],
+            "keyTakeaway": "Every alert needs a runbook — on-call engineers should never have to start from scratch.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.alerting.deduplication",
+          "text": "Are alerts deduplicated to prevent notification storms?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Alert rules are configured with deduplication, grouping, and inhibition to prevent multiple alerts from firing for the same underlying issue.",
+            "whyItMatters": "A single database outage can trigger alerts from every service that depends on it. Without deduplication, the on-call engineer gets 50 pages instead of 1.",
+            "howToVerify": "- Check alerting tool configuration for grouping rules\n- Verify inhibition rules suppress downstream alerts when upstream fires\n- Test that a single failure doesn't generate multiple independent alerts",
+            "exampleComment": "If the database goes down, this will fire a separate alert for each of our 12 services. Configure alert inhibition so the database alert suppresses the downstream service alerts.",
+            "codeExamples": [],
+            "keyTakeaway": "Group and deduplicate alerts to prevent notification storms during cascading failures.",
+            "references": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "observability.dashboards",
+      "title": "Dashboards",
+      "items": [
+        {
+          "id": "observability.dashboards.four-golden-signals",
+          "text": "Does the service dashboard show the four golden signals (latency, traffic, errors, saturation)?",
+          "severity": "major",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The primary service dashboard shows latency distributions, request rate, error rate, and resource saturation (CPU, memory, connections) in a single view.",
+            "whyItMatters": "The four golden signals provide a complete health picture at a glance. Missing any one of them means on-call engineers have to hunt through multiple dashboards during incidents.",
+            "howToVerify": "- Open the service dashboard and check for latency, traffic, errors, and saturation panels\n- Verify latency shows percentiles, not just averages\n- Ensure error rate is shown as a percentage, not just absolute counts",
+            "exampleComment": "This service dashboard shows latency and errors but not traffic or saturation. Add request rate and resource utilization panels for a complete health overview.",
+            "codeExamples": [],
+            "keyTakeaway": "Every service dashboard should show the four golden signals in a single view.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.dashboards.meaningful-titles",
+          "text": "Do dashboard panels have descriptive titles and units?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Each panel has a title that describes what's being measured and includes the unit of measurement (e.g., 'Request Latency (p95, seconds)' not just 'Latency').",
+            "whyItMatters": "Ambiguous panel titles waste time during incidents. 'Latency' could mean p50, p99, or average. Clear titles prevent misinterpretation under pressure.",
+            "howToVerify": "- Read each panel title — does it describe the metric, aggregation, and unit?\n- Check that time-series legends are meaningful\n- Verify panels have descriptions or tooltips for additional context",
+            "exampleComment": "This panel is titled 'Errors' — is this error count, error rate, or error percentage? Rename to 'Error Rate (5xx responses / total, %)' for clarity.",
+            "codeExamples": [],
+            "keyTakeaway": "Panel titles should include what's measured, how it's aggregated, and the unit.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.dashboards.time-range-consistency",
+          "text": "Do dashboard panels use consistent time ranges and refresh intervals?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "All panels on a dashboard share the same time range and refresh interval, and the default time range is appropriate for the dashboard's purpose.",
+            "whyItMatters": "Panels with different time ranges create a misleading picture. A latency spike in one panel might not align with the error panel if they show different windows.",
+            "howToVerify": "- Check that all panels use the dashboard's time range variable\n- Verify the default time range makes sense (e.g., 1 hour for incident response, 24 hours for trends)\n- Ensure auto-refresh is enabled at an appropriate interval",
+            "exampleComment": "Panel 3 is hardcoded to a 24-hour window while the rest use the dashboard time picker. Change it to use the shared time range variable.",
+            "codeExamples": [],
+            "keyTakeaway": "All panels should use the same time range to avoid misleading correlations.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.dashboards.drill-down-links",
+          "text": "Do dashboards support drill-down from overview to detail?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "High-level overview dashboards link to detailed dashboards for specific services, endpoints, or infrastructure components. Clicking an anomaly takes you deeper.",
+            "whyItMatters": "During incidents, engineers need to move from 'something is wrong' to 'here's the specific problem' quickly. Drill-down links reduce the time to diagnosis.",
+            "howToVerify": "- Check overview panels for clickable links to detailed dashboards\n- Verify drill-down preserves the selected time range\n- Ensure detailed dashboards exist for each service shown in the overview",
+            "exampleComment": "This service overview shows error rates per service but doesn't link to individual service dashboards. Add drill-down links so engineers can quickly investigate specific services.",
+            "codeExamples": [],
+            "keyTakeaway": "Overview dashboards should link to detailed views — reduce clicks to diagnosis.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.dashboards.slo-tracking",
+          "text": "Is there a panel showing SLO compliance and remaining error budget?",
+          "severity": "minor",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "The dashboard includes a panel showing current SLO compliance percentage and remaining error budget for the reporting period.",
+            "whyItMatters": "Without SLO visibility, teams can't balance feature velocity against reliability. Error budget panels make reliability trade-offs visible and data-driven.",
+            "howToVerify": "- Check for an SLO compliance panel showing current performance vs target\n- Verify error budget burn rate is visible\n- Ensure the SLO period (30 days rolling, calendar month) is clear",
+            "exampleComment": "This dashboard has detailed metrics but no SLO tracking. Add a panel showing our 99.9% availability SLO compliance and remaining error budget.",
+            "codeExamples": [],
+            "keyTakeaway": "Make SLO compliance and error budget visible on the primary service dashboard.",
+            "references": []
+          }
+        },
+        {
+          "id": "observability.dashboards.deployment-markers",
+          "text": "Are deployment events annotated on dashboard timelines?",
+          "severity": "nit",
+          "tags": [],
+          "baseContent": {
+            "whatItMeans": "Deployment timestamps are overlaid on dashboard graphs as vertical markers, making it easy to correlate changes in metrics with code deployments.",
+            "whyItMatters": "The most common cause of production issues is a recent deployment. Without deployment markers, engineers waste time checking deploy logs to correlate metric changes.",
+            "howToVerify": "- Check dashboard configuration for annotation sources\n- Verify deployment events appear as markers on time-series panels\n- Ensure markers include the deployment version or commit SHA",
+            "exampleComment": "This dashboard doesn't show deployment markers. Add annotations from our CI/CD system so we can quickly correlate metric changes with deployments.",
+            "codeExamples": [],
+            "keyTakeaway": "Deployment markers on dashboards instantly answer 'did someone deploy recently?' during incidents.",
+            "references": []
+          }
+        }
+      ]
+    }
+  ]
+}
