@@ -9,6 +9,8 @@ const DEFAULT_GET_RETRIES = 1;
 const RETRY_DELAY_MS = 200;
 const MAX_REQUEST_BODY_BYTES = 1_048_576;
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+const AUTH_REFRESH_COOLDOWN_MS = 30_000;
+let lastAuthRefreshFailure = 0;
 
 function getBaseUrl(): string {
   return `${API_BASE_URL}${API_BASE_PATH}`;
@@ -145,8 +147,12 @@ export async function apiRequest<T>(
           window.location.replace('/region-unavailable');
         }
 
-        // On 401, attempt a single token refresh and retry
+        // On 401, attempt a single token refresh and retry (with cooldown
+        // to prevent cascade when Supabase rate-limits the refresh token)
         if (response.status === 401 && !options.public && attempt < maxAttempts - 1) {
+          if (Date.now() - lastAuthRefreshFailure < AUTH_REFRESH_COOLDOWN_MS) {
+            throw new ApiError('Auth refresh recently failed', 401, 'AUTH_REFRESH_COOLDOWN');
+          }
           const refreshed = await useAuthStore.getState().refreshSession();
           if (refreshed) {
             const newToken = await useAuthStore.getState().getAccessToken();
@@ -155,6 +161,7 @@ export async function apiRequest<T>(
             }
             continue;
           }
+          lastAuthRefreshFailure = Date.now();
         }
 
         if (RETRYABLE_STATUS_CODES.includes(response.status) && attempt < maxAttempts - 1) {
