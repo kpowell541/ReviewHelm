@@ -172,44 +172,6 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
-  /me/api-keys/anthropic:
-    get:
-      tags: [Keys]
-      summary: Get Anthropic key status for current user
-      responses:
-        '200':
-          description: Anthropic key status
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnthropicKeyStatus'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-    put:
-      tags: [Keys]
-      summary: Upsert encrypted Anthropic key for current user
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnthropicKeyUpsertRequest'
-      responses:
-        '204':
-          description: Key saved
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-    delete:
-      tags: [Keys]
-      summary: Delete Anthropic key for current user
-      responses:
-        '204':
-          description: Key deleted
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-
   /checklists:
     get:
       tags: [Checklists]
@@ -1167,69 +1129,6 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
-
-  /admin/security/key-rotation-status:
-    get:
-      tags: [Admin]
-      summary: Check key rotation health and overdue keys
-      responses:
-        '200':
-          description: Key rotation status
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  currentKekVersion:
-                    type: integer
-                  rotationPolicyDays:
-                    type: integer
-                  totalKeys:
-                    type: integer
-                  staleVersionCount:
-                    type: integer
-                  overdueRotationCount:
-                    type: integer
-                  healthy:
-                    type: boolean
-                  overdueKeyIds:
-                    type: array
-                    items:
-                      type: string
-                required:
-                  - currentKekVersion
-                  - rotationPolicyDays
-                  - totalKeys
-                  - staleVersionCount
-                  - overdueRotationCount
-                  - healthy
-                  - overdueKeyIds
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-
-  /admin/security/rotate-provider-keys:
-    post:
-      tags: [Admin]
-      summary: Re-encrypt stored provider keys with the current KEK version
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RotateProviderKeysRequest'
-      responses:
-        '200':
-          description: Rotation summary
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RotateProviderKeysResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
 
   /admin/checklists/publish:
     post:
@@ -2287,36 +2186,6 @@ components:
           additionalProperties: true
       additionalProperties: false
 
-    AnthropicKeyStatus:
-      type: object
-      properties:
-        configured:
-          type: boolean
-        tokenHint:
-          type: string
-          nullable: true
-        updatedAt:
-          type: string
-          format: date-time
-          nullable: true
-        keySource:
-          type: string
-          enum: [byok, platform]
-          nullable: true
-        keyVersion:
-          type: integer
-          nullable: true
-      required: [configured]
-
-    AnthropicKeyUpsertRequest:
-      type: object
-      properties:
-        apiKey:
-          type: string
-          minLength: 10
-      required: [apiKey]
-      additionalProperties: false
-
     ChecklistListItem:
       type: object
       properties:
@@ -3262,30 +3131,6 @@ components:
             type: string
       required: [version, byId]
       additionalProperties: false
-
-    RotateProviderKeysRequest:
-      type: object
-      properties:
-        provider:
-          type: string
-        dryRun:
-          type: boolean
-          default: false
-      additionalProperties: false
-
-    RotateProviderKeysResponse:
-      type: object
-      properties:
-        currentVersion:
-          type: integer
-        scanned:
-          type: integer
-        rotated:
-          type: integer
-        failed:
-          type: integer
-        willRotate:
-          type: integer
 
     TutorConversation:
       type: object

@@ -27,7 +27,6 @@
     "prisma:studio": "infisical run -- prisma studio"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "^3.1002.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",

@@ -238,86 +238,6 @@ export interface paths {
         };
         trace?: never;
     };
-    "/me/api-keys/anthropic": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Anthropic key status for current user */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Anthropic key status */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["AnthropicKeyStatus"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
-        /** Upsert encrypted Anthropic key for current user */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["AnthropicKeyUpsertRequest"];
-                };
-            };
-            responses: {
-                /** @description Key saved */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                400: components["responses"]["ValidationError"];
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
-        post?: never;
-        /** Delete Anthropic key for current user */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Key deleted */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["UnauthorizedError"];
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/checklists": {
         parameters: {
             query?: never;
@@ -1989,94 +1909,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/security/key-rotation-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Check key rotation health and overdue keys */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Key rotation status */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            currentKekVersion: number;
-                            rotationPolicyDays: number;
-                            totalKeys: number;
-                            staleVersionCount: number;
-                            overdueRotationCount: number;
-                            healthy: boolean;
-                            overdueKeyIds: string[];
-                        };
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/security/rotate-provider-keys": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Re-encrypt stored provider keys with the current KEK version */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["RotateProviderKeysRequest"];
-                };
-            };
-            responses: {
-                /** @description Rotation summary */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RotateProviderKeysResponse"];
-                    };
-                };
-                401: components["responses"]["UnauthorizedError"];
-                403: components["responses"]["ForbiddenError"];
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/admin/checklists/publish": {
         parameters: {
             query?: never;
@@ -3147,18 +2979,6 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        AnthropicKeyStatus: {
-            configured: boolean;
-            tokenHint?: string | null;
-            /** Format: date-time */
-            updatedAt?: string | null;
-            /** @enum {string|null} */
-            keySource?: "byok" | "platform" | null;
-            keyVersion?: number | null;
-        };
-        AnthropicKeyUpsertRequest: {
-            apiKey: string;
-        };
         ChecklistListItem: {
             id: string;
             mode: components["schemas"]["ChecklistMode"];
@@ -3571,18 +3391,6 @@ export interface components {
             byId: {
                 [key: string]: string;
             };
-        };
-        RotateProviderKeysRequest: {
-            provider?: string;
-            /** @default false */
-            dryRun: boolean;
-        };
-        RotateProviderKeysResponse: {
-            currentVersion?: number;
-            scanned?: number;
-            rotated?: number;
-            failed?: number;
-            willRotate?: number;
         };
         TutorConversation: {
             itemId: string;

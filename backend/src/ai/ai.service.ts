@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { KeyCryptoService } from '../common/crypto/key-crypto.service';
 import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
 import type { AppEnv } from '../config/env.schema';
@@ -46,7 +45,6 @@ export class AiService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly keyCrypto: KeyCryptoService,
     private readonly redis: RedisService,
     private readonly usageService: UsageService,
     private readonly diffsService: DiffsService,
@@ -66,7 +64,7 @@ export class AiService {
     budgetMeta?: AiBudgetMeta,
   ) {
     const user = await upsertUserFromAuth(this.prisma, authUser);
-    const apiKey = await this.resolveApiKey(user.id, authUser);
+    const apiKey = this.resolveApiKey();
 
     const fallbackModel = this.defaultModelForFeature(dto.feature);
     const requestedModel = budgetMeta?.requestedModel ?? dto.model ?? fallbackModel;
@@ -456,59 +454,10 @@ export class AiService {
     );
   }
 
-  /**
-   * Resolve the Anthropic API key to use:
-   * - Admin users: try their stored BYOK first, fall back to platform key
-   * - All other users: use the shared platform key
-   */
-  private async resolveApiKey(
-    userId: string,
-    authUser: AuthenticatedUser,
-  ): Promise<string> {
-    const isAdmin = Boolean(authUser.isAdmin) || this.tierService.isAdminEmail(authUser.email);
-
-    // Admin users can use their own BYOK key
-    if (isAdmin) {
-      const key = await this.prisma.providerKey.findUnique({
-        where: { userId_provider: { userId, provider: 'anthropic' } },
-      });
-      if (key) {
-        try {
-          const decrypted = await this.keyCrypto.decryptSecret({
-            keyProvider: key.kmsKeyId ? 'aws_kms' : 'local',
-            keyVersion: key.kekVersion,
-            kmsKeyId: key.kmsKeyId,
-            encryptedDek: key.encryptedDek,
-            ciphertext: key.ciphertext,
-            iv: key.iv,
-            authTag: key.authTag,
-          });
-          const trimmed = decrypted.trim();
-          if (trimmed) return trimmed;
-        } catch (err) {
-          // User key decryption failed — fall through to platform key.
-          // Log for debugging but don't block the request.
-          console.warn(
-            JSON.stringify({
-              level: 'warn',
-              type: 'ai_service',
-              event: 'user_key_decryption_failed',
-              userId,
-              error: err instanceof Error ? err.message : String(err),
-              at: new Date().toISOString(),
-            }),
-          );
-        }
-      }
-    }
-
-    // Use shared platform key
+  private resolveApiKey(): string {
     if (this.platformKey) {
       return this.platformKey;
     }
-
-    throw new BadRequestException(
-      'No API key available. Please contact support.',
-    );
+    throw new BadRequestException('No API key available. Please contact support.');
   }
 }

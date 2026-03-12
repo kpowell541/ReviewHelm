@@ -26,8 +26,6 @@ import { ErrorBoundary } from '../src/components/ErrorBoundary';
 export default function RootLayout() {
   const router = useRouter();
   const preferencesHydrated = usePreferencesStore((s) => s.hasHydrated);
-  const loadApiKey = usePreferencesStore((s) => s.loadApiKey);
-  const isApiKeyLoaded = usePreferencesStore((s) => s.isApiKeyLoaded);
 
   const sessionsHydrated = useSessionStore((s) => s.hasHydrated);
   const confidenceHydrated = useConfidenceStore((s) => s.hasHydrated);
@@ -71,9 +69,8 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    void loadApiKey();
     void initAuth();
-  }, [loadApiKey, initAuth]);
+  }, [initAuth]);
 
   useEffect(() => {
     initDeviceId().catch(() => {});
@@ -126,7 +123,6 @@ export default function RootLayout() {
     prTrackerHydrated &&
     repoConfigHydrated &&
     tierHydrated &&
-    isApiKeyLoaded &&
     cacheReady &&
     fontsLoaded;
 

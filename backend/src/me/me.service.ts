@@ -4,9 +4,7 @@ import type { Preference } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 import type { AuthenticatedUser } from '../common/auth/types';
-import { KeyCryptoService } from '../common/crypto/key-crypto.service';
 import type { UpdatePreferencesDto } from './dto/update-preferences.dto';
-import { AuditService } from '../common/audit/audit.service';
 
 @Injectable()
 export class MeService {
@@ -14,8 +12,6 @@ export class MeService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly keyCrypto: KeyCryptoService,
-    private readonly audit: AuditService,
   ) {}
 
   async getOrCreateCurrentUser(authUser: AuthenticatedUser) {
@@ -111,99 +107,6 @@ export class MeService {
       data: updateData,
     });
     return this.toPreferenceResponse(preference);
-  }
-
-  async getAnthropicKeyStatus(authUser: AuthenticatedUser) {
-    const user = await upsertUserFromAuth(this.prisma, authUser);
-    const key = await this.prisma.providerKey.findUnique({
-      where: {
-        userId_provider: {
-          userId: user.id,
-          provider: 'anthropic',
-        },
-      },
-      select: {
-        tokenHint: true,
-        updatedAt: true,
-        keySource: true,
-        kekVersion: true,
-      },
-    });
-
-    return {
-      configured: !!key,
-      tokenHint: key?.tokenHint ?? null,
-      updatedAt: key?.updatedAt ?? null,
-      keySource: key?.keySource ?? null,
-      keyVersion: key?.kekVersion ?? null,
-    };
-  }
-
-  async upsertAnthropicKey(authUser: AuthenticatedUser, apiKey: string) {
-    const user = await upsertUserFromAuth(this.prisma, authUser);
-    const encrypted = await this.keyCrypto.encryptSecret(apiKey.trim());
-
-    await this.prisma.providerKey.upsert({
-      where: {
-        userId_provider: {
-          userId: user.id,
-          provider: 'anthropic',
-        },
-      },
-      create: {
-        userId: user.id,
-        provider: 'anthropic',
-        keySource: 'byok',
-        kekVersion: encrypted.keyVersion,
-        kmsKeyId: encrypted.kmsKeyId,
-        tokenHint: encrypted.tokenHint,
-        encryptedDek: encrypted.encryptedDek,
-        ciphertext: encrypted.ciphertext,
-        iv: encrypted.iv,
-        authTag: encrypted.authTag,
-        lastRotatedAt: new Date(),
-      },
-      update: {
-        keySource: 'byok',
-        kekVersion: encrypted.keyVersion,
-        kmsKeyId: encrypted.kmsKeyId,
-        tokenHint: encrypted.tokenHint,
-        encryptedDek: encrypted.encryptedDek,
-        ciphertext: encrypted.ciphertext,
-        iv: encrypted.iv,
-        authTag: encrypted.authTag,
-        lastRotatedAt: new Date(),
-      },
-    });
-    await this.audit.write({
-      userId: user.id,
-      eventType: 'provider_key_upserted',
-      eventScope: 'security.keys',
-      details: {
-        provider: 'anthropic',
-        keySource: 'byok',
-        kekVersion: encrypted.keyVersion,
-      },
-    });
-  }
-
-  async deleteAnthropicKey(authUser: AuthenticatedUser) {
-    const user = await upsertUserFromAuth(this.prisma, authUser);
-    await this.prisma.providerKey.deleteMany({
-      where: {
-        userId: user.id,
-        provider: 'anthropic',
-      },
-    });
-    await this.audit.write({
-      userId: user.id,
-      eventType: 'provider_key_deleted',
-      eventScope: 'security.keys',
-      severity: 'warn',
-      details: {
-        provider: 'anthropic',
-      },
-    });
   }
 
   private toPreferenceResponse(preference: Preference) {

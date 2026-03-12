@@ -40,8 +40,6 @@ export default function CommentDrafterScreen() {
     [allSessions, decodedSessionId],
   );
   const setItemResponse = useSessionStore((s) => s.setItemResponse);
-  const hasApiKey = usePreferencesStore((s) => s.hasApiKey);
-  const resolveApiKey = usePreferencesStore((s) => s.resolveApiKey);
   const aiModel = usePreferencesStore((s) => s.aiModel);
   const recordUsage = useUsageStore((s) => s.recordUsage);
 
@@ -79,9 +77,7 @@ export default function CommentDrafterScreen() {
     ];
 
     try {
-      const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
-        apiKey,
         model: aiModel,
         feature: 'comment-drafter',
         itemId,
@@ -118,7 +114,6 @@ export default function CommentDrafterScreen() {
     aiModel,
     confidence,
     recordUsage,
-    resolveApiKey,
     decodedSessionId,
   ]);
 
@@ -148,9 +143,7 @@ export default function CommentDrafterScreen() {
       ];
 
       try {
-        const apiKey = await resolveApiKey();
       const response = await sendTutorMessage({
-        apiKey,
         model: aiModel,
         feature: 'comment-drafter',
         itemId,
@@ -185,7 +178,6 @@ export default function CommentDrafterScreen() {
       aiModel,
       confidence,
       recordUsage,
-      resolveApiKey,
       decodedSessionId,
     ],
   );
@@ -248,12 +240,12 @@ export default function CommentDrafterScreen() {
 
         {!draftedComment && (
           <Pressable
-            style={[styles.generateButton, (!hasApiKey || isLoading) && styles.buttonDisabled]}
+            style={[styles.generateButton, isLoading && styles.buttonDisabled]}
             onPress={generateDraft}
-            disabled={!hasApiKey || isLoading}
+            disabled={isLoading}
             accessibilityRole="button"
             accessibilityLabel={`Generate draft with ${CLAUDE_MODEL_LABELS[aiModel]}`}
-            accessibilityState={{ disabled: !hasApiKey || isLoading }}
+            accessibilityState={{ disabled: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
@@ -263,12 +255,6 @@ export default function CommentDrafterScreen() {
               </Text>
             )}
           </Pressable>
-        )}
-
-        {!hasApiKey && !draftedComment && (
-          <Text style={styles.noKeyHint}>
-            Add your Claude API key in Settings first
-          </Text>
         )}
 
         {error && (

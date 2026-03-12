@@ -36,7 +36,6 @@ interface AnthropicMessage {
 }
 
 export interface AiRequestOptions {
-  apiKey?: string;
   sessionId?: string | null;
   feature: AiFeature;
   itemId: string;
@@ -213,7 +212,6 @@ function makeRequestBody(options: AiRequestOptions): Record<string, unknown> {
 
 export async function sendTutorMessage(options: AiRequestOptions): Promise<AiResponse> {
   const {
-    apiKey,
     model,
     role,
     itemId,
@@ -266,9 +264,6 @@ export async function sendTutorMessage(options: AiRequestOptions): Promise<AiRes
     ...options,
     model: resolvedModel,
   });
-  if (apiKey) {
-    body.apiKey = apiKey;
-  }
 
   const modelUsedForBudget = resolvedModel;
   runBudgetGuard({

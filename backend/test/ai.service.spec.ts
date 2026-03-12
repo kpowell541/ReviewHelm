@@ -29,20 +29,6 @@ index 1111111..2222222 100644
   function createService() {
     const prisma = {
       user: { upsert: jest.fn().mockResolvedValue({ id: 'u1', email: 'user@example.com' }) },
-      providerKey: {
-        findUnique: jest.fn().mockResolvedValue({
-          kmsKeyId: null,
-          kekVersion: 1,
-          encryptedDek: 'dek',
-          ciphertext: 'cipher',
-          iv: 'iv',
-          authTag: 'tag',
-        }),
-      },
-    } as any;
-
-    const keyCrypto = {
-      decryptSecret: jest.fn().mockResolvedValue('anthropic_test_key'),
     } as any;
 
     const redis = {
@@ -98,7 +84,6 @@ index 1111111..2222222 100644
 
     const service = new AiService(
       prisma,
-      keyCrypto,
       redis,
       usage,
       diffs,
@@ -176,20 +161,6 @@ index 1111111..2222222 100644
   it('returns cached tutor response without calling Anthropic again', async () => {
     const prisma = {
       user: { upsert: jest.fn().mockResolvedValue({ id: 'u1', email: 'user@example.com' }) },
-      providerKey: {
-        findUnique: jest.fn().mockResolvedValue({
-          kmsKeyId: null,
-          kekVersion: 1,
-          encryptedDek: 'dek',
-          ciphertext: 'cipher',
-          iv: 'iv',
-          authTag: 'tag',
-        }),
-      },
-    } as any;
-
-    const keyCrypto = {
-      decryptSecret: jest.fn().mockResolvedValue('anthropic_test_key'),
     } as any;
 
     const redis = {
@@ -211,7 +182,6 @@ index 1111111..2222222 100644
 
     const service = new AiService(
       prisma,
-      keyCrypto,
       redis,
       usage,
       { buildGroundingContext: jest.fn().mockResolvedValue(null) } as any,
