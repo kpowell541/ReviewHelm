@@ -10,7 +10,7 @@ import type {
   ConfidenceLevel,
 } from '../data/types';
 import { getEffectiveStackIds } from '../data/types';
-import { secureStoreAsyncStorage } from '../storage/secureStorage';
+import { secureStoreAsyncStorage, persistStorage } from '../storage/secureStorage';
 
 interface SessionState {
   sessions: Record<string, Session>;
@@ -40,6 +40,32 @@ interface SessionState {
   getSessionsByMode: (mode: ChecklistMode, stackId?: StackId) => Session[];
   getRecentSessions: (limit: number) => Session[];
 }
+
+/**
+ * One-time migration: reads from old SecureStore if AsyncStorage is empty,
+ * writes to AsyncStorage going forward. SecureStore is too constrained
+ * for bulky session data on native.
+ */
+const migratingSessionStorage = {
+  getItem: async (key: string) => {
+    const value = await persistStorage.getItem(key);
+    if (value) return value;
+    // Try migrating from old SecureStore location
+    try {
+      const old = await secureStoreAsyncStorage.getItem(key);
+      if (old) {
+        await persistStorage.setItem(key, old);
+        await secureStoreAsyncStorage.removeItem(key);
+        return old;
+      }
+    } catch {
+      // Migration failed — start fresh
+    }
+    return null;
+  },
+  setItem: (key: string, value: string) => persistStorage.setItem(key, value),
+  removeItem: (key: string) => persistStorage.removeItem(key),
+};
 
 export const useSessionStore = create<SessionState>()(
   persist(
@@ -225,7 +251,7 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'session-storage',
-      storage: createJSONStorage(() => secureStoreAsyncStorage),
+      storage: createJSONStorage(() => migratingSessionStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
