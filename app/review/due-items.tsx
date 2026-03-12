@@ -56,6 +56,7 @@ export default function DueItemsScreen() {
           confidence,
           verdict: 'looks-good' as const,
           date: now,
+          source: 'due-review' as const,
         };
         const ratings = [...existing.ratings, newRating];
         const avgConfidence =

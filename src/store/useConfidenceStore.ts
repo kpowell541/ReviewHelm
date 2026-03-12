@@ -6,8 +6,11 @@ import type {
   ConfidenceLevel,
   ConfidenceTrend,
   ConfidenceRating,
+  ConfidenceSource,
+  LearningFeedback,
   Severity,
   Session,
+  Verdict,
 } from '../data/types';
 import { SEVERITY_WEIGHTS } from '../data/types';
 import { computeNextReview, isDueForReview } from '../utils/spacedRepetition';
@@ -24,6 +27,11 @@ interface ConfidenceState {
   replaceHistories: (
     histories: Record<string, ItemConfidenceHistory>
   ) => void;
+  recordLearningFeedback: (
+    itemId: string,
+    source: Extract<ConfidenceSource, 'learn-ai' | 'learn-self-guided'>,
+    feedback: LearningFeedback
+  ) => ConfidenceLevel | undefined;
   getItemHistory: (itemId: string) => ItemConfidenceHistory | undefined;
   getWeakestItems: (limit: number, stackId?: string) => ItemConfidenceHistory[];
   getDueItems: (stackId?: string) => ItemConfidenceHistory[];
@@ -61,6 +69,23 @@ function computeLearningPriority(
   const recencyFactor =
     daysSince <= 7 ? 1.0 : daysSince <= 30 ? 0.7 : 0.4;
   return (6 - confidence) * severityWeight * recencyFactor;
+}
+
+function applyLearningFeedback(
+  currentConfidence: ConfidenceLevel,
+  feedback: LearningFeedback,
+): ConfidenceLevel {
+  if (feedback === 'still-stuck') {
+    return Math.max(1, currentConfidence - 1) as ConfidenceLevel;
+  }
+  if (feedback === 'ready-to-apply') {
+    return Math.min(5, Math.max(currentConfidence + 1, 4)) as ConfidenceLevel;
+  }
+  return Math.min(5, currentConfidence + 1) as ConfidenceLevel;
+}
+
+function verdictForFeedback(feedback: LearningFeedback): Verdict {
+  return feedback === 'still-stuck' ? 'needs-attention' : 'looks-good';
 }
 
 export const useConfidenceStore = create<ConfidenceState>()(
@@ -106,6 +131,7 @@ export const useConfidenceStore = create<ConfidenceState>()(
               confidence: response.confidence,
               verdict: response.verdict,
               date: now,
+              source: 'review',
             };
 
             const ratings = [...existing.ratings, newRating];
@@ -136,6 +162,59 @@ export const useConfidenceStore = create<ConfidenceState>()(
       },
 
       replaceHistories: (histories) => set({ histories }),
+
+      recordLearningFeedback: (itemId, source, feedback) => {
+        let confidenceAfter: ConfidenceLevel | undefined;
+
+        set((state) => {
+          const existing = state.histories[itemId];
+          if (!existing) return state;
+
+          const now = new Date().toISOString();
+          confidenceAfter = applyLearningFeedback(
+            existing.currentConfidence,
+            feedback,
+          );
+
+          const newRating: ConfidenceRating = {
+            sessionId: `learn-${source}-${Date.now()}`,
+            confidence: confidenceAfter,
+            verdict: verdictForFeedback(feedback),
+            date: now,
+            source,
+            feedback,
+          };
+
+          const ratings = [...existing.ratings, newRating];
+          const avgConfidence =
+            ratings.reduce((sum, rating) => sum + rating.confidence, 0) /
+            ratings.length;
+
+          return {
+            histories: {
+              ...state.histories,
+              [itemId]: {
+                ...existing,
+                ratings,
+                currentConfidence: confidenceAfter,
+                averageConfidence: Math.round(avgConfidence * 10) / 10,
+                trend: computeTrend(ratings),
+                learningPriority: computeLearningPriority(
+                  confidenceAfter,
+                  existing.severity,
+                  now,
+                ),
+                repetitionState: computeNextReview(
+                  existing.repetitionState ?? null,
+                  confidenceAfter,
+                ),
+              },
+            },
+          };
+        });
+
+        return confidenceAfter;
+      },
 
       getItemHistory: (itemId) => {
         return get().histories[itemId];
