@@ -40,7 +40,10 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
       >
         {request && (
           <Pressable style={styles.overlay} onPress={() => dismiss()}>
-            <Pressable style={styles.dialog} onPress={(e) => e.stopPropagation()}>
+            <View
+              style={styles.dialog}
+              onStartShouldSetResponder={() => true}
+            >
               <Text style={styles.title}>{request.title}</Text>
               {request.message ? (
                 <Text style={styles.message}>{request.message}</Text>
@@ -74,7 +77,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
                   );
                 })}
               </View>
-            </Pressable>
+            </View>
           </Pressable>
         )}
       </Modal>
