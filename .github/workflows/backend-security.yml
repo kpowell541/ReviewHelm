@@ -11,6 +11,7 @@ on:
       - 'assets/data/checklists/**'
       - 'scripts/sync-backend-checklists.mjs'
       - 'scripts/check-backend-checklists-sync.mjs'
+      - 'docs/openapi.yaml'
       - '.github/workflows/backend-security.yml'
   push:
     branches: [main]
@@ -23,6 +24,7 @@ on:
       - 'assets/data/checklists/**'
       - 'scripts/sync-backend-checklists.mjs'
       - 'scripts/check-backend-checklists-sync.mjs'
+      - 'docs/openapi.yaml'
       - '.github/workflows/backend-security.yml'
 
 jobs:
@@ -87,6 +89,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: OpenAPI type drift check
+        run: npx openapi-typescript docs/openapi.yaml -o /tmp/generated.ts && diff src/api/generated.ts /tmp/generated.ts
 
       - name: Typecheck
         run: npm run typecheck

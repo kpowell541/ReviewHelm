@@ -5,7 +5,7 @@ import { useBookmarkStore } from '../store/useBookmarkStore';
 import { useTemplateStore } from '../store/useTemplateStore';
 import { useRepoConfigStore } from '../store/useRepoConfigStore';
 import { useConfidenceStore } from '../store/useConfidenceStore';
-import type { ClaudeModel, Severity } from '../data/types';
+import type { ApiPreferences, ApiUsageSummary, ApiConfidenceHistories } from '../api/schema';
 import type { AdapterResult } from './types';
 
 export async function syncPreferences(): Promise<AdapterResult> {
@@ -33,20 +33,7 @@ export async function syncPreferences(): Promise<AdapterResult> {
     });
     pushed = 1;
 
-    const remote = await api.get<{
-      aiModel: ClaudeModel;
-      defaultSeverityFilter: Severity[];
-      antiBiasMode: boolean;
-      fontSize: 'small' | 'medium' | 'large';
-      codeBlockTheme: 'dark' | 'light';
-      autoExportPdf: boolean;
-      monthlyBudgetUsd: number;
-      alertThresholds: number[];
-      hardStopAtBudget: boolean;
-      autoDowngradeNearBudget: boolean;
-      autoDowngradeThresholdPct: number;
-      cooldownSeconds: number;
-    }>('/me/preferences');
+    const remote = await api.get<ApiPreferences>('/me/preferences');
 
     usePreferencesStore.getState().replacePreferences({
       aiModel: remote.aiModel,
@@ -79,7 +66,7 @@ export async function syncConfidence(): Promise<AdapterResult> {
   let pulled = 0;
 
   try {
-    const remote = await api.get<{ histories: Record<string, any> }>('/gaps/confidence');
+    const remote = await api.get<ApiConfidenceHistories>('/gaps/confidence');
     const remoteHistories: Record<string, any> = remote.histories ?? {};
     const localHistories = useConfidenceStore.getState().histories;
     const merged: Record<string, any> = {};
@@ -122,14 +109,7 @@ export async function syncUsage(): Promise<AdapterResult> {
   let pulled = 0;
 
   try {
-    const summary = await api.get<{
-      month: string;
-      calls: number;
-      inputTokens: number;
-      outputTokens: number;
-      estimatedCostUsd: number;
-      todayCalls: number;
-    }>('/usage/summary');
+    const summary = await api.get<ApiUsageSummary>('/usage/summary');
 
     useUsageStore.getState().setExternalMonthlyCost(summary.estimatedCostUsd);
     pulled = 1;
@@ -143,11 +123,7 @@ export async function syncUsage(): Promise<AdapterResult> {
 export async function syncBookmarksTemplatesRepoConfigs(): Promise<AdapterResult> {
   const errors: string[] = [];
   try {
-    const remote = await api.get<{
-      bookmarks: string[];
-      templates: Record<string, unknown>;
-      repoConfigs: Record<string, unknown>;
-    }>('/me/preferences');
+    const remote = await api.get<ApiPreferences>('/me/preferences');
 
     let pulled = 0;
 

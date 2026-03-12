@@ -1,12 +1,8 @@
 import { api, ApiError } from '../api/client';
 import { useSessionStore } from '../store/useSessionStore';
 import type { Session } from '../data/types';
+import type { ApiSessionListResponse } from '../api/schema';
 import type { AdapterResult } from './types';
-
-interface SessionListResponse {
-  items: Session[];
-  nextCursor: string | null;
-}
 
 async function pushSessionSnapshot(session: Session): Promise<void> {
   await api.patch(`/sessions/${session.id}`, {
@@ -103,10 +99,10 @@ export async function syncSessions(): Promise<AdapterResult> {
       const requestPath: string = cursor
         ? `/sessions?limit=100&cursor=${encodeURIComponent(cursor)}`
         : '/sessions?limit=100';
-      const response: SessionListResponse = await api.get<SessionListResponse>(
+      const response = await api.get<ApiSessionListResponse>(
         requestPath,
       );
-      remoteSessions.push(...response.items);
+      remoteSessions.push(...response.items as unknown as Session[]);
       cursor = response.nextCursor;
     } while (cursor);
 

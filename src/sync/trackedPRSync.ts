@@ -1,6 +1,7 @@
 import { api, ApiError } from '../api/client';
 import { usePRTrackerStore } from '../store/usePRTrackerStore';
 import type { TrackedPR } from '../data/types';
+import type { ApiTrackedPR } from '../api/schema';
 import type { AdapterResult } from './types';
 
 export async function syncTrackedPRs(): Promise<AdapterResult> {
@@ -10,7 +11,7 @@ export async function syncTrackedPRs(): Promise<AdapterResult> {
 
   try {
     // Pull remote PRs
-    const remotePRs = await api.get<TrackedPR[]>('/tracked-prs');
+    const remotePRs = await api.get<ApiTrackedPR[]>('/tracked-prs');
     const prState = usePRTrackerStore.getState();
     const localPRs = prState.prs;
     const deletedPRIdSet = new Set(prState.deletedPRIds ?? []);
@@ -21,7 +22,7 @@ export async function syncTrackedPRs(): Promise<AdapterResult> {
       if (deletedPRIdSet.has(remote.id)) continue;
       const local = mergedPRs[remote.id];
       if (!local || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
-        mergedPRs[remote.id] = remote;
+        mergedPRs[remote.id] = remote as unknown as TrackedPR;
         pulled++;
       }
     }
