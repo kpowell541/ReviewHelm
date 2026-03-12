@@ -454,8 +454,25 @@ export default function PRTrackerScreen() {
 
     return (
       <View key={pr.id} style={styles.prCard}>
-        {/* Top: title row */}
-        <View style={styles.prCardTop}>
+        {/* Top-right action button */}
+        <Pressable
+          onPress={() => handleCardPress(pr)}
+          hitSlop={8}
+          style={styles.prActionBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Actions for ${pr.title}`}
+        >
+          <Text style={styles.prActionBtnText}>...</Text>
+        </Pressable>
+        {/* Title section */}
+        <Pressable
+          style={styles.prCardCenter}
+          onPress={() => handleCardPress(pr)}
+          onLongPress={() => handleDelete(pr)}
+          accessibilityRole="button"
+          accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
+          accessibilityHint="Tap for actions, long press to delete"
+        >
           <Pressable
             onPress={() => cycleStatus(pr)}
             hitSlop={8}
@@ -465,53 +482,35 @@ export default function PRTrackerScreen() {
           >
             <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
           </Pressable>
-          <Pressable
-            style={styles.prCardCenter}
-            onPress={() => handleCardPress(pr)}
-            onLongPress={() => handleDelete(pr)}
-            accessibilityRole="button"
-            accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
-            accessibilityHint="Tap for actions, long press to delete"
-          >
-            <Text style={styles.prTitle}>
-              {pr.title}
+          <Text style={styles.prTitle}>
+            {pr.title}
+          </Text>
+          {subtitle && (
+            <Text style={styles.prSubtitle} numberOfLines={1}>
+              {subtitle}
             </Text>
-            {subtitle && (
-              <Text style={styles.prSubtitle} numberOfLines={1}>
-                {subtitle}
+          )}
+          <View style={styles.prBadges}>
+            <Text style={[styles.badge, { backgroundColor: statusColor + '25', color: statusColor }]}>
+              {displayStatus.label}
+            </Text>
+            {pr.size && (
+              <Text style={[styles.badge, styles.sizeBadge]}>
+                {PR_SIZE_LABELS[pr.size]}
               </Text>
             )}
-            <View style={styles.prBadges}>
-              <Text style={[styles.badge, { backgroundColor: statusColor + '25', color: statusColor }]}>
-                {displayStatus.label}
+            {pr.priority !== 'medium' && (
+              <Text style={[styles.badge, { backgroundColor: PRIORITY_COLORS[pr.priority] + '25', color: PRIORITY_COLORS[pr.priority] }]}>
+                {PR_PRIORITY_LABELS[pr.priority]}
               </Text>
-              {pr.size && (
-                <Text style={[styles.badge, styles.sizeBadge]}>
-                  {PR_SIZE_LABELS[pr.size]}
-                </Text>
-              )}
-              {pr.priority !== 'medium' && (
-                <Text style={[styles.badge, { backgroundColor: PRIORITY_COLORS[pr.priority] + '25', color: PRIORITY_COLORS[pr.priority] }]}>
-                  {PR_PRIORITY_LABELS[pr.priority]}
-                </Text>
-              )}
-              {pr.isEmergency && (
-                <Text style={[styles.badge, styles.emergencyBadge]}>
-                  HOTFIX
-                </Text>
-              )}
-            </View>
-          </Pressable>
-          <Pressable
-            onPress={() => handleCardPress(pr)}
-            hitSlop={8}
-            style={styles.prActionBtn}
-            accessibilityRole="button"
-            accessibilityLabel={`Actions for ${pr.title}`}
-          >
-            <Text style={styles.prActionBtnText}>...</Text>
-          </Pressable>
-        </View>
+            )}
+            {pr.isEmergency && (
+              <Text style={[styles.badge, styles.emergencyBadge]}>
+                HOTFIX
+              </Text>
+            )}
+          </View>
+        </Pressable>
         {/* Bottom: controls grid */}
         <View style={styles.prCardBottom}>
           {/* Row 1: Changes + Reviewed (+ Re-review if applicable) */}
@@ -1063,19 +1062,18 @@ const styles = StyleSheet.create({
   prCard: {
     backgroundColor: colors.bgCard,
     borderRadius: radius.md,
-    padding: spacing.md,
+    padding: spacing.lg,
     marginBottom: spacing.sm,
     overflow: 'hidden' as const,
-  },
-  prCardTop: {
-    flexDirection: 'row' as const,
-    alignItems: 'flex-start' as const,
+    alignItems: 'center' as const,
   },
   statusDotWrap: {
-    marginRight: spacing.sm,
-    paddingTop: 4,
+    marginBottom: spacing.xs,
   },
   prActionBtn: {
+    position: 'absolute' as const,
+    top: spacing.md,
+    right: spacing.md,
     width: 32,
     height: 32,
     alignItems: 'center',
@@ -1093,22 +1091,27 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
   },
-  prCardCenter: { flex: 1 },
+  prCardCenter: {
+    alignItems: 'center' as const,
+  },
   prTitle: {
     fontSize: fontSizes.md,
     fontWeight: '600',
     color: colors.textPrimary,
+    textAlign: 'center' as const,
   },
   prSubtitle: {
     fontSize: fontSizes.sm,
     color: colors.textMuted,
     marginTop: 2,
+    textAlign: 'center' as const,
   },
   prBadges: {
     flexDirection: 'row',
     gap: spacing.xs,
     marginTop: spacing.xs,
     flexWrap: 'wrap',
+    justifyContent: 'center' as const,
   },
   badge: {
     fontSize: fontSizes.xs,
@@ -1129,16 +1132,18 @@ const styles = StyleSheet.create({
 
   // Bottom controls
   prCardBottom: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border + '40',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   controlsRow: {
     flexDirection: 'row' as const,
     flexWrap: 'wrap' as const,
-    gap: spacing.md,
+    justifyContent: 'center' as const,
+    gap: spacing.xl,
+    rowGap: spacing.md,
   },
   controlGroup: {
     alignItems: 'center' as const,
@@ -1149,12 +1154,12 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   controlOptions: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   radioGroupLocked: {
     opacity: 0.5,
@@ -1162,9 +1167,10 @@ const styles = StyleSheet.create({
   radioItem: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: 5,
-    paddingVertical: 4,
-    minHeight: 32,
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    minHeight: 34,
   },
   radioCircle: {
     width: 20,
