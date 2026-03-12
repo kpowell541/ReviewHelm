@@ -54,9 +54,13 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         const { data, error } = await supabase.auth.refreshSession();
         if (error || !data.session) {
           // If the error is transient (429/network), keep the current session
-          // intact — the tokens may still be usable or will recover on retry
+          // only if its access token hasn't expired yet
           if (isTransientError(error)) {
-            return get().session;
+            const existing = get().session;
+            if (existing && (existing.expires_at ?? 0) > Date.now() / 1000) {
+              return existing;
+            }
+            return null;
           }
           try {
             await supabase.auth.signOut();
@@ -70,9 +74,13 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         set({ session: data.session, user: data.session.user ?? null });
         return data.session;
       } catch (err) {
-        // Network/transient errors: keep existing session
+        // Network/transient errors: keep existing session if token is still valid
         if (isTransientError(err)) {
-          return get().session;
+          const existing = get().session;
+          if (existing && (existing.expires_at ?? 0) > Date.now() / 1000) {
+            return existing;
+          }
+          return null;
         }
         set({ session: null, user: null });
         return null;
@@ -116,7 +124,11 @@ export const useAuthStore = create<AuthState>()((set, get) => {
           });
 
           resetAuthSubscription();
-          const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+          const { data } = supabase.auth.onAuthStateChange((event, session) => {
+            // Skip INITIAL_SESSION — initialize() already determined the
+            // correct session state. Letting INITIAL_SESSION through would
+            // resurrect expired cached sessions after a failed refresh.
+            if (event === 'INITIAL_SESSION') return;
             set({ session, user: session?.user ?? null });
           });
           authSubscription = data.subscription;
