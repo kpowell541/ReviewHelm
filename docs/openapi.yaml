@@ -1938,6 +1938,18 @@ components:
           type: string
           enum: [requested-changes, no-changes-requested]
           nullable: true
+        selfReviewed:
+          type: boolean
+          nullable: true
+        reviewRoundCount:
+          type: integer
+          default: 0
+        changesEverNeeded:
+          type: boolean
+          nullable: true
+        reReviewed:
+          type: boolean
+          nullable: true
         resolvedAt:
           type: string
           format: date-time

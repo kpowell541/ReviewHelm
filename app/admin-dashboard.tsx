@@ -55,12 +55,16 @@ interface DashboardPayload {
       acceptedClean: number;
       acceptedWithChanges: number;
       cleanAcceptancePct: number;
+      selfReviewedCount: number;
+      selfReviewPct: number;
+      avgReviewRounds: number;
     };
     reviewedPRs: {
       total: number;
       requestedChanges: number;
       noChangesRequested: number;
       changesRequestedPct: number;
+      avgReviewRounds: number;
     };
   };
   checklistJob: {
@@ -374,6 +378,12 @@ export default function AdminDashboardScreen() {
                 />
                 <StatCard label="No Changes" value={data.prAcceptance.selfPRs.acceptedClean} tone="good" />
                 <StatCard label="With Changes" value={data.prAcceptance.selfPRs.acceptedWithChanges} tone="warn" />
+                <StatCard
+                  label="Self-review %"
+                  value={`${data.prAcceptance.selfPRs.selfReviewPct}%`}
+                  tone={data.prAcceptance.selfPRs.selfReviewPct >= 80 ? 'good' : data.prAcceptance.selfPRs.selfReviewPct >= 50 ? 'warn' : 'danger'}
+                />
+                <StatCard label="Avg Rounds" value={data.prAcceptance.selfPRs.avgReviewRounds} />
               </View>
             </View>
 
@@ -390,6 +400,7 @@ export default function AdminDashboardScreen() {
                 />
                 <StatCard label="Requested Changes" value={data.prAcceptance.reviewedPRs.requestedChanges} />
                 <StatCard label="No Changes" value={data.prAcceptance.reviewedPRs.noChangesRequested} tone="good" />
+                <StatCard label="Avg Rounds" value={data.prAcceptance.reviewedPRs.avgReviewRounds} />
               </View>
             </View>
           </>

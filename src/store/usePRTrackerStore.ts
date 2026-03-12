@@ -64,6 +64,8 @@ interface PRTrackerState {
   setReviewOutcome: (id: string, outcome: ReviewOutcome) => void;
   setReReviewed: (id: string, reReviewed: boolean) => void;
   setChangesEverNeeded: (id: string, changesEverNeeded: boolean) => void;
+  setSelfReviewed: (id: string, selfReviewed: boolean) => void;
+  setReviewRoundCount: (id: string, count: number) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
 
@@ -156,6 +158,7 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           dependencies: input.dependencies,
           ciPassing: input.ciPassing,
           notes: input.notes,
+          reviewRoundCount: 0,
           createdAt: now,
           updatedAt: now,
         };
@@ -241,7 +244,15 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const changesEverNeeded = (reviewOutcome === 'requested-changes')
             ? true
             : pr.changesEverNeeded;
-          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, changesEverNeeded, updatedAt: new Date().toISOString() } } };
+          // Reset self-review when changes are requested on author PRs
+          const selfReviewed = (reviewOutcome === 'requested-changes' && pr.role === 'author')
+            ? undefined
+            : pr.selfReviewed;
+          // Auto-increment review round count when changes are requested
+          const reviewRoundCount = (reviewOutcome === 'requested-changes')
+            ? (pr.reviewRoundCount ?? 0) + 1
+            : pr.reviewRoundCount;
+          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, changesEverNeeded, selfReviewed, reviewRoundCount, updatedAt: new Date().toISOString() } } };
         });
       },
 
@@ -250,6 +261,23 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const pr = state.prs[id];
           if (!pr) return state;
           return { prs: { ...state.prs, [id]: { ...pr, reReviewed: reReviewed || undefined, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      setSelfReviewed: (id, selfReviewed) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          return { prs: { ...state.prs, [id]: { ...pr, selfReviewed: selfReviewed || undefined, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      setReviewRoundCount: (id, count) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          const reviewRoundCount = Math.max(0, count);
+          return { prs: { ...state.prs, [id]: { ...pr, reviewRoundCount, updatedAt: new Date().toISOString() } } };
         });
       },
 

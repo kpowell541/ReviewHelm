@@ -394,6 +394,10 @@ export interface TrackedPR {
   reReviewed?: boolean;
   /** Whether changes were ever requested at any point (historical tracker, auto-set, user can uncheck) */
   changesEverNeeded?: boolean;
+  /** For author PRs: whether the author has self-reviewed before requesting review */
+  selfReviewed?: boolean;
+  /** Number of review rounds before acceptance or abandonment */
+  reviewRoundCount?: number;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
@@ -480,6 +484,22 @@ export function getPRDisplayStatus(pr: TrackedPR): { label: string; color: strin
   }
   if (pr.acceptanceOutcome === 'accepted-clean' || pr.acceptanceOutcome === 'accepted-with-changes') {
     return { label: 'Accepted', color: colors.looksGood };
+  }
+  // Author-specific state machine
+  if (pr.role === 'author') {
+    // Not yet self-reviewed → needs self-review
+    if (!pr.selfReviewed) {
+      return { label: 'Needs Self-review', color: colors.warning };
+    }
+    // Self-reviewed, changes were needed, waiting for re-review
+    if (pr.changesEverNeeded && !pr.reReviewed) {
+      return { label: 'Needs Review', color: colors.warning };
+    }
+    // Self-reviewed, no review outcome yet, no changes ever → waiting for first review
+    if (!pr.reviewOutcome && !pr.changesEverNeeded) {
+      return { label: 'In Review', color: colors.reviewMode };
+    }
+    // Fall through to generic logic for remaining cases
   }
   // Re-review mode: changes were needed at some point
   if (pr.changesEverNeeded) {

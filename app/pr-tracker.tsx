@@ -57,6 +57,8 @@ export default function PRTrackerScreen() {
   const setReviewOutcome = usePRTrackerStore((s) => s.setReviewOutcome);
   const setReReviewed = usePRTrackerStore((s) => s.setReReviewed);
   const setChangesEverNeeded = usePRTrackerStore((s) => s.setChangesEverNeeded);
+  const setSelfReviewed = usePRTrackerStore((s) => s.setSelfReviewed);
+  const setReviewRoundCount = usePRTrackerStore((s) => s.setReviewRoundCount);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -464,6 +466,16 @@ export default function PRTrackerScreen() {
         >
           <Text style={styles.prActionBtnText}>...</Text>
         </Pressable>
+        {/* Status dot (separate from card body to avoid nested Pressable) */}
+        <Pressable
+          onPress={() => cycleStatus(pr)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`Cycle status, currently ${PR_STATUS_LABELS[pr.status]}`}
+          style={[styles.statusDotWrap, { alignSelf: 'center' as const }]}
+        >
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+        </Pressable>
         {/* Title section */}
         <Pressable
           style={styles.prCardCenter}
@@ -473,15 +485,6 @@ export default function PRTrackerScreen() {
           accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
           accessibilityHint="Tap for actions, long press to delete"
         >
-          <Pressable
-            onPress={() => cycleStatus(pr)}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={`Cycle status, currently ${PR_STATUS_LABELS[pr.status]}`}
-            style={styles.statusDotWrap}
-          >
-            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-          </Pressable>
           <Text style={styles.prTitle}>
             {pr.title}
           </Text>
@@ -513,6 +516,60 @@ export default function PRTrackerScreen() {
         </Pressable>
         {/* Bottom: controls grid */}
         <View style={styles.prCardBottom}>
+          {/* Self-review for author PRs */}
+          {pr.role === 'author' && (
+            <View style={styles.controlsRow}>
+              <View style={styles.controlGroup}>
+                <Text style={styles.controlLabel}>Self-review</Text>
+                <View style={styles.controlOptions}>
+                  <Pressable
+                    style={styles.radioItem}
+                    hitSlop={8}
+                    onPress={() => {
+                      void Haptics.selectionAsync();
+                      if (pr.selfReviewed) setSelfReviewed(pr.id, false);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: !pr.selfReviewed }}
+                    accessibilityLabel="Not self-reviewed"
+                  >
+                    <View style={[
+                      styles.radioCircle,
+                      !pr.selfReviewed && styles.radioCircleDim,
+                    ]}>
+                      {!pr.selfReviewed && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                    </View>
+                    <Text style={[
+                      styles.radioLabel,
+                      !pr.selfReviewed && styles.radioLabelDim,
+                    ]}>No</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.radioItem}
+                    hitSlop={8}
+                    onPress={() => {
+                      void Haptics.selectionAsync();
+                      if (!pr.selfReviewed) setSelfReviewed(pr.id, true);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: !!pr.selfReviewed }}
+                    accessibilityLabel="Self-reviewed"
+                  >
+                    <View style={[
+                      styles.radioCircle,
+                      pr.selfReviewed && styles.radioCircleGood,
+                    ]}>
+                      {pr.selfReviewed && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                    </View>
+                    <Text style={[
+                      styles.radioLabel,
+                      pr.selfReviewed && styles.radioLabelGood,
+                    ]}>Yes</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          )}
           {/* Row 1: Changes + Reviewed (+ Re-review if applicable) */}
           <View style={styles.controlsRow}>
             {/* Changes? */}
@@ -624,7 +681,7 @@ export default function PRTrackerScreen() {
               </View>
             </View>
             {/* Re-review: shown when changes were ever needed */}
-            {pr.changesEverNeeded && (
+            {(pr.changesEverNeeded || pr.reviewOutcome === 'requested-changes') && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Re-review</Text>
                 <View style={styles.controlOptions}>
@@ -676,8 +733,42 @@ export default function PRTrackerScreen() {
               </View>
             )}
           </View>
-          {/* Row 2: History checkbox + Outcome checkboxes */}
+          {/* Row 2: Round + History + Outcome */}
           <View style={styles.controlsRow}>
+            {/* Review round counter */}
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlLabel}>Number Reviews</Text>
+              <View style={styles.stepperRow}>
+                <Pressable
+                  style={styles.stepperBtn}
+                  hitSlop={6}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    setReviewRoundCount(pr.id, (pr.reviewRoundCount ?? 0) - 1);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease review round"
+                >
+                  <Text style={styles.stepperBtnText}>-</Text>
+                </Pressable>
+                <Text style={[
+                  styles.stepperValue,
+                  (pr.reviewRoundCount ?? 0) > 0 && styles.stepperValueActive,
+                ]}>{pr.reviewRoundCount ?? 0}</Text>
+                <Pressable
+                  style={styles.stepperBtn}
+                  hitSlop={6}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    setReviewRoundCount(pr.id, (pr.reviewRoundCount ?? 0) + 1);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase review round"
+                >
+                  <Text style={styles.stepperBtnText}>+</Text>
+                </Pressable>
+              </View>
+            </View>
             <View style={styles.controlGroup}>
               <Text style={styles.controlLabel}>History</Text>
               <View style={styles.controlOptions}>
@@ -703,7 +794,7 @@ export default function PRTrackerScreen() {
                   <Text style={[
                     styles.radioLabel,
                     pr.changesEverNeeded && styles.radioLabelWarn,
-                  ]}>Requested</Text>
+                  ]}>Changes Requested</Text>
                 </Pressable>
               </View>
             </View>
@@ -1255,6 +1346,38 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: '700' as const,
     marginTop: -1,
+  },
+
+  // Stepper
+  stepperRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  },
+  stepperBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  stepperBtnText: {
+    fontSize: fontSizes.md,
+    fontWeight: '700' as const,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  stepperValue: {
+    fontSize: fontSizes.md,
+    fontWeight: '600' as const,
+    color: colors.textMuted,
+    minWidth: 20,
+    textAlign: 'center' as const,
+  },
+  stepperValueActive: {
+    color: colors.textPrimary,
   },
 
   // Empty
