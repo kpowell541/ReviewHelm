@@ -24,7 +24,7 @@ import type {
   PRStatus,
   TrackedPR,
 } from '../src/data/types';
-import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS } from '../src/data/types';
+import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS, getPRDisplayStatus } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { AddPRModal } from '../src/components/AddPRModal';
 import { FilterChips } from '../src/components/FilterChips';
@@ -440,7 +440,8 @@ export default function PRTrackerScreen() {
   };
 
   const renderPRCard = (pr: TrackedPR) => {
-    const statusColor = STATUS_COLORS[pr.status];
+    const displayStatus = getPRDisplayStatus(pr);
+    const statusColor = displayStatus.color;
     const subtitleParts = [
       pr.repo,
       pr.prNumber ? `#${pr.prNumber}` : null,
@@ -466,7 +467,7 @@ export default function PRTrackerScreen() {
           onPress={() => handleCardPress(pr)}
           onLongPress={() => handleDelete(pr)}
           accessibilityRole="button"
-          accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${PR_STATUS_LABELS[pr.status]}`}
+          accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
           accessibilityHint="Tap for actions, long press to delete"
         >
           <Text style={styles.prTitle} numberOfLines={1}>
@@ -479,7 +480,7 @@ export default function PRTrackerScreen() {
           )}
           <View style={styles.prBadges}>
             <Text style={[styles.badge, { backgroundColor: statusColor + '25', color: statusColor }]}>
-              {PR_STATUS_LABELS[pr.status]}
+              {displayStatus.label}
             </Text>
             {pr.size && (
               <Text style={[styles.badge, styles.sizeBadge]}>
