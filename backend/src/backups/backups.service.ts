@@ -179,6 +179,8 @@ export class BackupsService {
             userId: user.id,
             mode: this.asMode(session.mode),
             stackId: this.asOptionalString(session.stackId),
+            stackIds: this.asStringArray(session.stackIds, []),
+            selectedSections: this.asStringArray(session.selectedSections, []),
             title: this.asString(session.title, 'Imported session'),
             itemResponses: (session.itemResponses ?? {}) as Prisma.JsonObject,
             sessionNotes: this.asString(session.sessionNotes, ''),
