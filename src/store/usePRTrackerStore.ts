@@ -281,7 +281,8 @@ export const usePRTrackerStore = create<PRTrackerState>()(
             if (pr.archivedAt) continue;
             if (!PR_ACTIVE_STATUSES.includes(pr.status) && pr.resolvedAt) {
               if (new Date(pr.resolvedAt).getTime() < cutoff) {
-                updated[pr.id] = { ...pr, archivedAt: new Date().toISOString() };
+                const now = new Date().toISOString();
+                updated[pr.id] = { ...pr, archivedAt: now, updatedAt: now };
                 count++;
               }
             }

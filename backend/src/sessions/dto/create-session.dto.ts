@@ -34,4 +34,8 @@ export class CreateSessionDto {
   @IsString()
   @MaxLength(200)
   title?: string;
+
+  @IsOptional()
+  @IsString()
+  linkedPRId?: string;
 }

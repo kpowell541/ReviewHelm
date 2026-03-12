@@ -7,6 +7,7 @@ import type { AdapterResult } from './types';
 async function pushSessionSnapshot(session: Session): Promise<void> {
   await api.patch(`/sessions/${session.id}`, {
     title: session.title,
+    linkedPRId: session.linkedPRId ?? null,
   });
 
   for (const [itemId, itemResponse] of Object.entries(session.itemResponses)) {
@@ -55,6 +56,7 @@ export async function syncSessions(): Promise<AdapterResult> {
             stackIds: isPolish ? [] : session.stackIds,
             selectedSections: session.selectedSections,
             title: session.title,
+            linkedPRId: session.linkedPRId,
           });
           await pushSessionSnapshot(session);
           pushed++;
