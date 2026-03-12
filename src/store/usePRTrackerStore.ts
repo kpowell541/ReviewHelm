@@ -63,6 +63,7 @@ interface PRTrackerState {
   markAccepted: (id: string, outcome: AcceptanceOutcome) => void;
   setReviewOutcome: (id: string, outcome: ReviewOutcome) => void;
   setReReviewed: (id: string, reReviewed: boolean) => void;
+  setChangesEverNeeded: (id: string, changesEverNeeded: boolean) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
 
@@ -198,13 +199,12 @@ export const usePRTrackerStore = create<PRTrackerState>()(
         set((state) => {
           const pr = state.prs[id];
           if (!pr) return state;
+          // Lock reviewed state once in re-review mode
+          if (pr.changesEverNeeded) return state;
           const now = new Date().toISOString();
           const wasReviewed = pr.lastReviewedAt && isToday(pr.lastReviewedAt);
           const lastReviewedAt = wasReviewed ? undefined : now;
-          // Clear review outcome and re-review state when un-reviewing
-          const reviewOutcome = wasReviewed ? undefined : pr.reviewOutcome;
-          const reReviewed = wasReviewed ? undefined : pr.reReviewed;
-          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt, reviewOutcome, reReviewed, updatedAt: now } } };
+          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt, updatedAt: now } } };
         });
       },
 
@@ -237,8 +237,11 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const pr = state.prs[id];
           if (!pr) return state;
           const reviewOutcome = pr.reviewOutcome === outcome ? undefined : outcome;
-          // Clear reReviewed when changing review outcome
-          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, reReviewed: undefined, updatedAt: new Date().toISOString() } } };
+          // Auto-set changesEverNeeded when selecting 'requested-changes'
+          const changesEverNeeded = (reviewOutcome === 'requested-changes')
+            ? true
+            : pr.changesEverNeeded;
+          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, changesEverNeeded, updatedAt: new Date().toISOString() } } };
         });
       },
 
@@ -247,6 +250,16 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const pr = state.prs[id];
           if (!pr) return state;
           return { prs: { ...state.prs, [id]: { ...pr, reReviewed: reReviewed || undefined, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      setChangesEverNeeded: (id, changesEverNeeded) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          // When unchecking, also clear re-review state
+          const reReviewed = changesEverNeeded ? pr.reReviewed : undefined;
+          return { prs: { ...state.prs, [id]: { ...pr, changesEverNeeded: changesEverNeeded || undefined, reReviewed, updatedAt: new Date().toISOString() } } };
         });
       },
 

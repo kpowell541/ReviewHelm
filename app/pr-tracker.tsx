@@ -56,6 +56,7 @@ export default function PRTrackerScreen() {
   const markAccepted = usePRTrackerStore((s) => s.markAccepted);
   const setReviewOutcome = usePRTrackerStore((s) => s.setReviewOutcome);
   const setReReviewed = usePRTrackerStore((s) => s.setReReviewed);
+  const setChangesEverNeeded = usePRTrackerStore((s) => s.setChangesEverNeeded);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -561,13 +562,14 @@ export default function PRTrackerScreen() {
               </Pressable>
             </View>
           </View>
-          {/* Reviewed: No / Yes */}
-          <View style={styles.radioGroup}>
+          {/* Reviewed: No / Yes — locked once in re-review mode */}
+          <View style={[styles.radioGroup, pr.changesEverNeeded && styles.radioGroupLocked]}>
             <Text style={styles.radioGroupLabel}>Reviewed:</Text>
             <View style={styles.radioOptions}>
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
+                disabled={!!pr.changesEverNeeded}
                 onPress={() => {
                   void Haptics.selectionAsync();
                   if (isReviewedToday) {
@@ -576,7 +578,7 @@ export default function PRTrackerScreen() {
                   }
                 }}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: !isReviewedToday }}
+                accessibilityState={{ selected: !isReviewedToday, disabled: !!pr.changesEverNeeded }}
                 accessibilityLabel="Not reviewed today"
               >
                 <View style={[
@@ -593,6 +595,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
+                disabled={!!pr.changesEverNeeded}
                 onPress={() => {
                   void Haptics.selectionAsync();
                   if (!isReviewedToday) {
@@ -601,7 +604,7 @@ export default function PRTrackerScreen() {
                   }
                 }}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: isReviewedToday }}
+                accessibilityState={{ selected: isReviewedToday, disabled: !!pr.changesEverNeeded }}
                 accessibilityLabel="Reviewed today"
               >
                 <View style={[
@@ -617,8 +620,8 @@ export default function PRTrackerScreen() {
               </Pressable>
             </View>
           </View>
-          {/* Re-review: shown when changes were requested */}
-          {pr.reviewOutcome === 'requested-changes' && (
+          {/* Re-review: shown when changes were ever needed */}
+          {pr.changesEverNeeded && (
             <View style={styles.radioGroup}>
               <Text style={styles.radioGroupLabel}>Re-review:</Text>
               <View style={styles.radioOptions}>
@@ -669,6 +672,36 @@ export default function PRTrackerScreen() {
               </View>
             </View>
           )}
+          {/* Changes were needed at some point (historical tracker) */}
+          <View style={styles.radioGroup}>
+            <Text style={styles.radioGroupLabel}>History:</Text>
+            <View style={styles.radioOptions}>
+              <Pressable
+                style={styles.radioItem}
+                hitSlop={12}
+                onPress={() => {
+                  void Haptics.selectionAsync();
+                  setChangesEverNeeded(pr.id, !pr.changesEverNeeded);
+                }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: !!pr.changesEverNeeded }}
+                accessibilityLabel="Changes were needed at some point"
+              >
+                <View style={[
+                  styles.checkbox,
+                  pr.changesEverNeeded && styles.checkboxCheckedWarn,
+                ]}>
+                  {pr.changesEverNeeded && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  pr.changesEverNeeded && styles.radioLabelWarn,
+                ]}>Changes needed</Text>
+              </Pressable>
+            </View>
+          </View>
           {/* Outcome: Accepted / Abandoned checkboxes */}
           <View style={styles.radioGroup}>
             <Text style={styles.radioGroupLabel}>Outcome:</Text>
@@ -1094,6 +1127,9 @@ const styles = StyleSheet.create({
     alignItems: 'center' as const,
     gap: 6,
   },
+  radioGroupLocked: {
+    opacity: 0.5,
+  },
   radioGroupLabel: {
     fontSize: fontSizes.xs,
     color: colors.textSecondary,
@@ -1181,6 +1217,10 @@ const styles = StyleSheet.create({
   checkboxCheckedGood: {
     backgroundColor: colors.looksGood + '25',
     borderColor: colors.looksGood,
+  },
+  checkboxCheckedWarn: {
+    backgroundColor: colors.warning + '25',
+    borderColor: colors.warning,
   },
   checkboxCheckedMuted: {
     backgroundColor: colors.textMuted + '25',
