@@ -57,6 +57,7 @@ export default function PRTrackerScreen() {
   const setReviewOutcome = usePRTrackerStore((s) => s.setReviewOutcome);
   const setReReviewed = usePRTrackerStore((s) => s.setReReviewed);
   const setChangesEverNeeded = usePRTrackerStore((s) => s.setChangesEverNeeded);
+  const setSelfReviewed = usePRTrackerStore((s) => s.setSelfReviewed);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -514,6 +515,60 @@ export default function PRTrackerScreen() {
         </Pressable>
         {/* Bottom: controls grid */}
         <View style={styles.prCardBottom}>
+          {/* Self-review for author PRs */}
+          {pr.role === 'author' && (
+            <View style={styles.controlsRow}>
+              <View style={styles.controlGroup}>
+                <Text style={styles.controlLabel}>Self-review</Text>
+                <View style={styles.controlOptions}>
+                  <Pressable
+                    style={styles.radioItem}
+                    hitSlop={8}
+                    onPress={() => {
+                      void Haptics.selectionAsync();
+                      if (pr.selfReviewed) setSelfReviewed(pr.id, false);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: !pr.selfReviewed }}
+                    accessibilityLabel="Not self-reviewed"
+                  >
+                    <View style={[
+                      styles.radioCircle,
+                      !pr.selfReviewed && styles.radioCircleDim,
+                    ]}>
+                      {!pr.selfReviewed && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                    </View>
+                    <Text style={[
+                      styles.radioLabel,
+                      !pr.selfReviewed && styles.radioLabelDim,
+                    ]}>No</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.radioItem}
+                    hitSlop={8}
+                    onPress={() => {
+                      void Haptics.selectionAsync();
+                      if (!pr.selfReviewed) setSelfReviewed(pr.id, true);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: !!pr.selfReviewed }}
+                    accessibilityLabel="Self-reviewed"
+                  >
+                    <View style={[
+                      styles.radioCircle,
+                      pr.selfReviewed && styles.radioCircleGood,
+                    ]}>
+                      {pr.selfReviewed && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                    </View>
+                    <Text style={[
+                      styles.radioLabel,
+                      pr.selfReviewed && styles.radioLabelGood,
+                    ]}>Yes</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          )}
           {/* Row 1: Changes + Reviewed (+ Re-review if applicable) */}
           <View style={styles.controlsRow}>
             {/* Changes? */}

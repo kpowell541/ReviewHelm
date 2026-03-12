@@ -64,6 +64,7 @@ interface PRTrackerState {
   setReviewOutcome: (id: string, outcome: ReviewOutcome) => void;
   setReReviewed: (id: string, reReviewed: boolean) => void;
   setChangesEverNeeded: (id: string, changesEverNeeded: boolean) => void;
+  setSelfReviewed: (id: string, selfReviewed: boolean) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
 
@@ -250,6 +251,14 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const pr = state.prs[id];
           if (!pr) return state;
           return { prs: { ...state.prs, [id]: { ...pr, reReviewed: reReviewed || undefined, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      setSelfReviewed: (id, selfReviewed) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          return { prs: { ...state.prs, [id]: { ...pr, selfReviewed: selfReviewed || undefined, updatedAt: new Date().toISOString() } } };
         });
       },
 

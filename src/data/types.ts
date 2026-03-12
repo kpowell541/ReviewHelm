@@ -363,6 +363,8 @@ export interface TrackedPR {
   reReviewed?: boolean;
   /** Whether changes were ever requested at any point (historical tracker, auto-set, user can uncheck) */
   changesEverNeeded?: boolean;
+  /** For author PRs: whether the author has self-reviewed before requesting review */
+  selfReviewed?: boolean;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
