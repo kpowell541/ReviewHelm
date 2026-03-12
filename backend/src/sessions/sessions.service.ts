@@ -83,6 +83,7 @@ export class SessionsService {
         stackIds,
         selectedSections: input.selectedSections ?? [],
         title,
+        linkedPRId: input.linkedPRId ?? null,
         itemResponses: {},
       },
     });
@@ -145,6 +146,7 @@ export class SessionsService {
       where: { id: sessionId },
       data: {
         title: input.title.trim(),
+        ...(input.linkedPRId !== undefined && { linkedPRId: input.linkedPRId }),
       },
     });
     return this.toSessionResponse(updated);
@@ -371,6 +373,7 @@ export class SessionsService {
       title: session.title,
       itemResponses: parseSessionItemResponses(session.itemResponses),
       sessionNotes: session.sessionNotes,
+      linkedPRId: session.linkedPRId ?? null,
       createdAt: session.createdAt.toISOString(),
       updatedAt: session.updatedAt.toISOString(),
       completedAt: session.completedAt?.toISOString() ?? null,

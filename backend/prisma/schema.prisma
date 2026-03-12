@@ -230,6 +230,7 @@ model Session {
   title            String
   itemResponses    Json          @default("{}")
   sessionNotes     String        @default("")
+  linkedPRId       String?
   completedAt      DateTime?
   isComplete       Boolean       @default(false)
   createdAt        DateTime      @default(now())

@@ -3196,9 +3196,11 @@ export interface components {
             stackIds?: components["schemas"]["StackId"][];
             selectedSections?: string[];
             title?: string;
+            linkedPRId?: string | null;
         };
         UpdateSessionRequest: {
             title: string;
+            linkedPRId?: string | null;
         };
         ItemResponse: {
             verdict: components["schemas"]["Verdict"];
