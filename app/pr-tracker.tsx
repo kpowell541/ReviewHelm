@@ -55,6 +55,7 @@ export default function PRTrackerScreen() {
   const markReviewed = usePRTrackerStore((s) => s.markReviewed);
   const markAccepted = usePRTrackerStore((s) => s.markAccepted);
   const setReviewOutcome = usePRTrackerStore((s) => s.setReviewOutcome);
+  const setReReviewed = usePRTrackerStore((s) => s.setReReviewed);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -510,9 +511,9 @@ export default function PRTrackerScreen() {
         </Pressable>
         {/* Right side: radio buttons */}
         <View style={styles.prCardRight}>
-          {/* Changes: Needed / Not Needed */}
+          {/* Changes ever requested? (tracks review effectiveness) */}
           <View style={styles.radioGroup}>
-            <Text style={styles.radioGroupLabel}>Changes:</Text>
+            <Text style={styles.radioGroupLabel}>Changes?</Text>
             <View style={styles.radioOptions}>
               <Pressable
                 style={styles.radioItem}
@@ -616,6 +617,58 @@ export default function PRTrackerScreen() {
               </Pressable>
             </View>
           </View>
+          {/* Re-review: shown when changes were requested */}
+          {pr.reviewOutcome === 'requested-changes' && (
+            <View style={styles.radioGroup}>
+              <Text style={styles.radioGroupLabel}>Re-review:</Text>
+              <View style={styles.radioOptions}>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={12}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    if (pr.reReviewed) setReReviewed(pr.id, false);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: !pr.reReviewed }}
+                  accessibilityLabel="Not re-reviewed"
+                >
+                  <View style={[
+                    styles.radioCircle,
+                    !pr.reReviewed && styles.radioCircleDim,
+                  ]}>
+                    {!pr.reReviewed && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    !pr.reReviewed && styles.radioLabelDim,
+                  ]}>No</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={12}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    if (!pr.reReviewed) setReReviewed(pr.id, true);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: !!pr.reReviewed }}
+                  accessibilityLabel="Re-reviewed after changes"
+                >
+                  <View style={[
+                    styles.radioCircle,
+                    pr.reReviewed && styles.radioCircleGood,
+                  ]}>
+                    {pr.reReviewed && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    pr.reReviewed && styles.radioLabelGood,
+                  ]}>Yes</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
           {/* Outcome: Accepted / Abandoned checkboxes */}
           <View style={styles.radioGroup}>
             <Text style={styles.radioGroupLabel}>Outcome:</Text>

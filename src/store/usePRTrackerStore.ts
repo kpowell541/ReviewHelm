@@ -62,6 +62,7 @@ interface PRTrackerState {
   markReviewed: (id: string) => void;
   markAccepted: (id: string, outcome: AcceptanceOutcome) => void;
   setReviewOutcome: (id: string, outcome: ReviewOutcome) => void;
+  setReReviewed: (id: string, reReviewed: boolean) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
 
@@ -200,9 +201,10 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const now = new Date().toISOString();
           const wasReviewed = pr.lastReviewedAt && isToday(pr.lastReviewedAt);
           const lastReviewedAt = wasReviewed ? undefined : now;
-          // Clear review outcome when un-reviewing
+          // Clear review outcome and re-review state when un-reviewing
           const reviewOutcome = wasReviewed ? undefined : pr.reviewOutcome;
-          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt, reviewOutcome, updatedAt: now } } };
+          const reReviewed = wasReviewed ? undefined : pr.reReviewed;
+          return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt, reviewOutcome, reReviewed, updatedAt: now } } };
         });
       },
 
@@ -235,7 +237,16 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const pr = state.prs[id];
           if (!pr) return state;
           const reviewOutcome = pr.reviewOutcome === outcome ? undefined : outcome;
-          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, updatedAt: new Date().toISOString() } } };
+          // Clear reReviewed when changing review outcome
+          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, reReviewed: undefined, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      setReReviewed: (id, reReviewed) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          return { prs: { ...state.prs, [id]: { ...pr, reReviewed: reReviewed || undefined, updatedAt: new Date().toISOString() } } };
         });
       },
 
