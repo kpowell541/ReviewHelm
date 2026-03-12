@@ -3,6 +3,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import type { Session } from '../data/types';
 import type { ApiSessionListResponse } from '../api/schema';
 import type { AdapterResult } from './types';
+import { mergeSession, serializeSession } from '../utils/sessionMerge';
 
 async function pushSessionSnapshot(session: Session): Promise<void> {
   await api.patch(`/sessions/${session.id}`, {
@@ -28,48 +29,88 @@ async function pushSessionSnapshot(session: Session): Promise<void> {
   }
 }
 
+async function fetchRemoteSessions(): Promise<Session[]> {
+  const remoteSessions: Session[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const requestPath: string = cursor
+      ? `/sessions?limit=100&cursor=${encodeURIComponent(cursor)}`
+      : '/sessions?limit=100';
+    const response: ApiSessionListResponse = await api.get<ApiSessionListResponse>(
+      requestPath,
+    );
+    remoteSessions.push(...(response.items as unknown as Session[]));
+    cursor = response.nextCursor;
+  } while (cursor);
+
+  return remoteSessions;
+}
+
 export async function syncSessions(): Promise<AdapterResult> {
   let pushed = 0;
   let pulled = 0;
   const errors: string[] = [];
 
-  // --- Push ---
-  const localSessions = Object.values(useSessionStore.getState().sessions);
+  const sessionState = useSessionStore.getState();
+  const localSessionMap = sessionState.sessions;
+  const deletedIds = new Set(sessionState.deletedSessionIds ?? []);
 
-  for (const session of localSessions) {
+  let remoteSessions: Session[] = [];
+  try {
+    remoteSessions = await fetchRemoteSessions();
+  } catch (err: unknown) {
+    errors.push(`Pull sessions: ${err instanceof Error ? err.message : String(err)}`);
+    return { pushed, pulled, errors, label: 'Sessions' };
+  }
+
+  const remoteById = new Map(remoteSessions.map((session) => [session.id, session]));
+  const mergedSessions = { ...localSessionMap };
+
+  for (const remote of remoteSessions) {
+    if (deletedIds.has(remote.id)) continue;
+    const local = localSessionMap[remote.id];
+    const merged = mergeSession(local, remote);
+    if (!merged) continue;
+
+    mergedSessions[remote.id] = merged;
+    if (!local || serializeSession(local) !== serializeSession(merged)) {
+      pulled++;
+    }
+  }
+
+  useSessionStore.getState().replaceSessions(mergedSessions);
+
+  for (const session of Object.values(mergedSessions)) {
+    if (deletedIds.has(session.id)) continue;
+
+    const remote = remoteById.get(session.id);
     try {
-      try {
-        const remote = await api.get<{ updatedAt: string }>(
-          `/sessions/${session.id}`,
-        );
-        if (new Date(session.updatedAt) > new Date(remote.updatedAt)) {
-          await pushSessionSnapshot(session);
-          pushed++;
-        }
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
-          const isPolish = session.mode === 'polish';
-          await api.post('/sessions', {
-            id: session.id,
-            mode: session.mode,
-            stackId: isPolish ? undefined : session.stackId,
-            stackIds: isPolish ? [] : session.stackIds,
-            selectedSections: session.selectedSections,
-            title: session.title,
-            linkedPRId: session.linkedPRId,
-          });
-          await pushSessionSnapshot(session);
-          pushed++;
-        } else {
-          throw err;
-        }
+      if (!remote) {
+        const isPolish = session.mode === 'polish';
+        await api.post('/sessions', {
+          id: session.id,
+          mode: session.mode,
+          stackId: isPolish ? undefined : session.stackId,
+          stackIds: isPolish ? [] : session.stackIds,
+          selectedSections: session.selectedSections,
+          title: session.title,
+          linkedPRId: session.linkedPRId,
+        });
+        await pushSessionSnapshot(session);
+        pushed++;
+        continue;
+      }
+
+      if (serializeSession(session) !== serializeSession(remote)) {
+        await pushSessionSnapshot(session);
+        pushed++;
       }
     } catch (err: unknown) {
       errors.push(`Session ${session.id}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
-  // --- Delete ---
   const deletedSessionIds = useSessionStore.getState().deletedSessionIds ?? [];
   const successfulDeletes: string[] = [];
   for (const deletedId of deletedSessionIds) {
@@ -90,40 +131,6 @@ export async function syncSessions(): Promise<AdapterResult> {
         (id) => !successfulDeletes.includes(id),
       ),
     }));
-  }
-
-  // --- Pull ---
-  try {
-    const remoteSessions: Session[] = [];
-    let cursor: string | null = null;
-
-    do {
-      const requestPath: string = cursor
-        ? `/sessions?limit=100&cursor=${encodeURIComponent(cursor)}`
-        : '/sessions?limit=100';
-      const response = await api.get<ApiSessionListResponse>(
-        requestPath,
-      );
-      remoteSessions.push(...response.items as unknown as Session[]);
-      cursor = response.nextCursor;
-    } while (cursor);
-
-    const sessionState = useSessionStore.getState();
-    const localSessionMap = sessionState.sessions;
-    const deletedIds = new Set(sessionState.deletedSessionIds ?? []);
-
-    for (const remote of remoteSessions) {
-      if (deletedIds.has(remote.id)) continue;
-      const local = localSessionMap[remote.id];
-      if (!local || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
-        useSessionStore.setState((state) => ({
-          sessions: { ...state.sessions, [remote.id]: remote },
-        }));
-        pulled++;
-      }
-    }
-  } catch (err: unknown) {
-    errors.push(`Pull sessions: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   return { pushed, pulled, errors, label: 'Sessions' };

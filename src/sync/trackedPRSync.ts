@@ -3,6 +3,7 @@ import { usePRTrackerStore } from '../store/usePRTrackerStore';
 import type { TrackedPR } from '../data/types';
 import type { ApiTrackedPR } from '../api/schema';
 import type { AdapterResult } from './types';
+import { mergeTrackedPR, serializeTrackedPR } from '../utils/trackedPRMerge';
 
 export async function syncTrackedPRs(): Promise<AdapterResult> {
   const errors: string[] = [];
@@ -10,65 +11,71 @@ export async function syncTrackedPRs(): Promise<AdapterResult> {
   let pulled = 0;
 
   try {
-    // Pull remote PRs
     const remotePRs = await api.get<ApiTrackedPR[]>('/tracked-prs');
     const prState = usePRTrackerStore.getState();
     const localPRs = prState.prs;
     const deletedPRIdSet = new Set(prState.deletedPRIds ?? []);
-    const mergedPRs = { ...localPRs };
+    const remoteById = new Map(
+      remotePRs.map((pr) => [pr.id, pr as unknown as TrackedPR]),
+    );
 
-    // Merge remote into local (last-write-wins), skip locally-deleted PRs
-    for (const remote of remotePRs) {
-      if (deletedPRIdSet.has(remote.id)) continue;
-      const local = mergedPRs[remote.id];
-      if (!local || new Date(remote.updatedAt) > new Date(local.updatedAt)) {
-        mergedPRs[remote.id] = remote as unknown as TrackedPR;
+    const mergedPRs = { ...localPRs };
+    const allIds = new Set([
+      ...Object.keys(localPRs),
+      ...remotePRs.map((pr) => pr.id),
+    ]);
+
+    for (const id of allIds) {
+      if (deletedPRIdSet.has(id)) continue;
+      const local = localPRs[id];
+      const remote = remoteById.get(id);
+      const merged = mergeTrackedPR(local, remote);
+      if (!merged) continue;
+
+      mergedPRs[id] = merged;
+      if (!local || serializeTrackedPR(local) !== serializeTrackedPR(merged)) {
         pulled++;
       }
     }
 
-    // Push local PRs that are newer or don't exist remotely
-    const remoteById = new Map(remotePRs.map((pr) => [pr.id, pr]));
-    for (const local of Object.values(localPRs)) {
-      const remote = remoteById.get(local.id);
-      if (!remote || new Date(local.updatedAt) > new Date(remote.updatedAt)) {
-        try {
-          await api.put(`/tracked-prs/${local.id}`, {
-            id: local.id,
-            title: local.title,
-            url: local.url,
-            status: local.status,
-            role: local.role,
-            priority: local.priority,
-            isEmergency: local.isEmergency ?? false,
-            size: local.size,
-            repo: local.repo,
-            prNumber: local.prNumber,
-            prAuthor: local.prAuthor,
-            dependencies: local.dependencies,
-            ciPassing: local.ciPassing,
-            linkedSessionId: local.linkedSessionId,
-            notes: local.notes,
-            reviewOutcome: local.reviewOutcome,
-            acceptanceOutcome: local.acceptanceOutcome,
-            selfReviewed: local.selfReviewed,
-            reviewRoundCount: local.reviewRoundCount,
-            changesEverNeeded: local.changesEverNeeded,
-            reReviewed: local.reReviewed,
-            resolvedAt: local.resolvedAt,
-            lastReviewedAt: local.lastReviewedAt,
-            archivedAt: local.archivedAt,
-            createdAt: local.createdAt,
-            updatedAt: local.updatedAt,
-          });
-          pushed++;
-        } catch (err: unknown) {
-          errors.push(`PR ${local.id}: ${err instanceof Error ? err.message : String(err)}`);
-        }
+    for (const pr of Object.values(mergedPRs)) {
+      if (deletedPRIdSet.has(pr.id)) continue;
+      const remote = remoteById.get(pr.id);
+      if (remote && serializeTrackedPR(pr) === serializeTrackedPR(remote)) {
+        continue;
+      }
+
+      try {
+        await api.put(`/tracked-prs/${pr.id}`, {
+          id: pr.id,
+          title: pr.title,
+          url: pr.url,
+          status: pr.status,
+          role: pr.role,
+          priority: pr.priority,
+          isEmergency: pr.isEmergency ?? false,
+          size: pr.size,
+          repo: pr.repo,
+          prNumber: pr.prNumber,
+          prAuthor: pr.prAuthor,
+          dependencies: pr.dependencies,
+          ciPassing: pr.ciPassing,
+          linkedSessionId: pr.linkedSessionId,
+          notes: pr.notes,
+          reviewOutcome: pr.reviewOutcome,
+          acceptanceOutcome: pr.acceptanceOutcome,
+          resolvedAt: pr.resolvedAt,
+          lastReviewedAt: pr.lastReviewedAt,
+          archivedAt: pr.archivedAt,
+          createdAt: pr.createdAt,
+          updatedAt: pr.updatedAt,
+        });
+        pushed++;
+      } catch (err: unknown) {
+        errors.push(`PR ${pr.id}: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
 
-    // Delete remote PRs that were explicitly deleted locally
     const deletedPRIds = usePRTrackerStore.getState().deletedPRIds ?? [];
     const successfulPRDeletes: string[] = [];
     for (const deletedId of deletedPRIds) {
@@ -82,7 +89,6 @@ export async function syncTrackedPRs(): Promise<AdapterResult> {
           delete mergedPRs[deletedId];
         } else {
           errors.push(`Delete PR ${deletedId}: ${err instanceof Error ? err.message : String(err)}`);
-          delete mergedPRs[deletedId];
         }
       }
     }
