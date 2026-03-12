@@ -35,6 +35,14 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => {
+  const isTransientError = (error: unknown): boolean => {
+    if (!error || typeof error !== 'object') return false;
+    const status = (error as { status?: number }).status;
+    if (status && status >= 429) return true;
+    const msg = ((error as { message?: string }).message ?? '').toLowerCase();
+    return msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('fetch failed') || msg.includes('network');
+  };
+
   const refreshSessionSingleFlight = async (): Promise<Session | null> => {
     if (refreshInFlight) {
       return refreshInFlight;
@@ -45,6 +53,11 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.refreshSession();
         if (error || !data.session) {
+          // If the error is transient (429/network), keep the current session
+          // intact — the tokens may still be usable or will recover on retry
+          if (isTransientError(error)) {
+            return get().session;
+          }
           try {
             await supabase.auth.signOut();
           } catch {
@@ -56,7 +69,11 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
         set({ session: data.session, user: data.session.user ?? null });
         return data.session;
-      } catch {
+      } catch (err) {
+        // Network/transient errors: keep existing session
+        if (isTransientError(err)) {
+          return get().session;
+        }
         set({ session: null, user: null });
         return null;
       }

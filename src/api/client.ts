@@ -103,6 +103,8 @@ export async function apiRequest<T>(
     const token = await useAuthStore.getState().getAccessToken();
     if (token) {
       requestHeaders['Authorization'] = `Bearer ${token}`;
+    } else {
+      throw new ApiError('No auth token available', 401, 'NO_AUTH_TOKEN');
     }
   }
 
