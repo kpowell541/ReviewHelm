@@ -36,14 +36,6 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => {
-  const isTransientError = (error: unknown): boolean => {
-    if (!error || typeof error !== 'object') return false;
-    const status = (error as { status?: number }).status;
-    if (status && status >= 429) return true;
-    const msg = ((error as { message?: string }).message ?? '').toLowerCase();
-    return msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('fetch failed') || msg.includes('network');
-  };
-
   const refreshSessionSingleFlight = async (): Promise<Session | null> => {
     if (refreshInFlight) {
       return refreshInFlight;
@@ -54,15 +46,6 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase.auth.refreshSession();
         if (error || !data.session) {
-          // If the error is transient (429/network), keep the current session
-          // only if its access token hasn't expired yet
-          if (isTransientError(error)) {
-            const existing = get().session;
-            if (existing && (existing.expires_at ?? 0) > Date.now() / 1000) {
-              return existing;
-            }
-            return null;
-          }
           try {
             await supabase.auth.signOut();
           } catch {
@@ -74,15 +57,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
         set({ session: data.session, user: data.session.user ?? null });
         return data.session;
-      } catch (err) {
-        // Network/transient errors: keep existing session if token is still valid
-        if (isTransientError(err)) {
-          const existing = get().session;
-          if (existing && (existing.expires_at ?? 0) > Date.now() / 1000) {
-            return existing;
-          }
-          return null;
-        }
+      } catch {
         set({ session: null, user: null });
         return null;
       }
@@ -154,12 +129,6 @@ export const useAuthStore = create<AuthState>()((set, get) => {
         });
         if (error) throw error;
         resetAuthRefreshCooldown();
-        console.log('[Auth] signIn success', {
-          hasSession: !!data.session,
-          expiresAt: data.session?.expires_at,
-          expiresIn: data.session?.expires_in,
-          hasAccessToken: !!data.session?.access_token,
-        });
         set({
           session: data.session,
           user: data.user,
@@ -269,24 +238,12 @@ export const useAuthStore = create<AuthState>()((set, get) => {
 
     getAccessToken: async () => {
       const { session } = get();
-      if (!session) {
-        console.warn('[Auth] getAccessToken: no session');
-        return null;
-      }
+      if (!session) return null;
 
       // Check if token is expired (with 60s buffer)
       const expiresAt = session.expires_at ?? 0;
-      const nowSec = Date.now() / 1000;
-      if (nowSec > expiresAt - 60) {
-        console.warn('[Auth] getAccessToken: token expired or expiring', {
-          expiresAt,
-          nowSec: Math.round(nowSec),
-          expiresIn: Math.round(expiresAt - nowSec),
-        });
+      if (Date.now() / 1000 > expiresAt - 60) {
         const refreshed = await refreshSessionSingleFlight();
-        if (!refreshed) {
-          console.warn('[Auth] getAccessToken: refresh failed, no token');
-        }
         return refreshed?.access_token ?? null;
       }
 
