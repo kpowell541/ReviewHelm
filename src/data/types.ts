@@ -357,8 +357,10 @@ export interface TrackedPR {
   notes?: string;
   /** For author PRs: whether it was accepted clean or with changes requested */
   acceptanceOutcome?: AcceptanceOutcome;
-  /** For reviewer PRs: whether changes were requested */
+  /** Whether changes were ever requested on this PR (tracks review effectiveness) */
   reviewOutcome?: ReviewOutcome;
+  /** Whether the PR was re-reviewed after changes were requested */
+  reReviewed?: boolean;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
@@ -446,6 +448,9 @@ export function getPRDisplayStatus(pr: TrackedPR): { label: string; color: strin
     return { label: 'Accepted', color: colors.looksGood };
   }
   if (pr.reviewOutcome === 'requested-changes') {
+    if (pr.reReviewed) {
+      return { label: 'Ready for Merge', color: colors.looksGood };
+    }
     return { label: 'Needs Changes', color: colors.needsAttention };
   }
   if (pr.reviewOutcome === 'no-changes-requested') {
