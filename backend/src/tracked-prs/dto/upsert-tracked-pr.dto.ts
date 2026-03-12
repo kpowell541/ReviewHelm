@@ -94,6 +94,22 @@ export class UpsertTrackedPRDto {
   reviewOutcome?: string;
 
   @IsOptional()
+  @IsBoolean()
+  selfReviewed?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  reviewRoundCount?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  changesEverNeeded?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  reReviewed?: boolean;
+
+  @IsOptional()
   @IsDateString()
   resolvedAt?: string;
 

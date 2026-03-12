@@ -137,14 +137,14 @@ export class AdminDashboardService {
           role: 'author',
           acceptanceOutcome: { not: null },
         },
-        select: { acceptanceOutcome: true },
+        select: { acceptanceOutcome: true, reviewRoundCount: true, selfReviewed: true },
       }),
       this.prisma.trackedPR.findMany({
         where: {
           role: 'reviewer',
           reviewOutcome: { not: null },
         },
-        select: { reviewOutcome: true },
+        select: { reviewOutcome: true, reviewRoundCount: true },
       }),
     ]);
 
@@ -155,6 +155,12 @@ export class AdminDashboardService {
     const selfAcceptedWithChanges = authorPRs.filter(
       (pr) => pr.acceptanceOutcome === 'accepted-with-changes',
     ).length;
+    const selfReviewedCount = authorPRs.filter(
+      (pr) => pr.selfReviewed,
+    ).length;
+    const avgAuthorReviewRounds = selfTotal > 0
+      ? Number((authorPRs.reduce((sum, pr) => sum + (pr.reviewRoundCount ?? 0), 0) / selfTotal).toFixed(1))
+      : 0;
 
     const reviewTotal = reviewerPRs.length;
     const reviewRequestedChanges = reviewerPRs.filter(
@@ -163,6 +169,9 @@ export class AdminDashboardService {
     const reviewNoChanges = reviewerPRs.filter(
       (pr) => pr.reviewOutcome === 'no-changes-requested',
     ).length;
+    const avgReviewerReviewRounds = reviewTotal > 0
+      ? Number((reviewerPRs.reduce((sum, pr) => sum + (pr.reviewRoundCount ?? 0), 0) / reviewTotal).toFixed(1))
+      : 0;
 
     return {
       selfPRs: {
@@ -173,6 +182,12 @@ export class AdminDashboardService {
           selfTotal > 0
             ? Number(((selfAcceptedClean / selfTotal) * 100).toFixed(1))
             : 0,
+        selfReviewedCount,
+        selfReviewPct:
+          selfTotal > 0
+            ? Number(((selfReviewedCount / selfTotal) * 100).toFixed(1))
+            : 0,
+        avgReviewRounds: avgAuthorReviewRounds,
       },
       reviewedPRs: {
         total: reviewTotal,
@@ -182,6 +197,7 @@ export class AdminDashboardService {
           reviewTotal > 0
             ? Number(((reviewRequestedChanges / reviewTotal) * 100).toFixed(1))
             : 0,
+        avgReviewRounds: avgReviewerReviewRounds,
       },
     };
   }

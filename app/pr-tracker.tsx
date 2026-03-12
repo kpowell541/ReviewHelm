@@ -58,6 +58,7 @@ export default function PRTrackerScreen() {
   const setReReviewed = usePRTrackerStore((s) => s.setReReviewed);
   const setChangesEverNeeded = usePRTrackerStore((s) => s.setChangesEverNeeded);
   const setSelfReviewed = usePRTrackerStore((s) => s.setSelfReviewed);
+  const setReviewRoundCount = usePRTrackerStore((s) => s.setReviewRoundCount);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -732,8 +733,42 @@ export default function PRTrackerScreen() {
               </View>
             )}
           </View>
-          {/* Row 2: History checkbox + Outcome checkboxes */}
+          {/* Row 2: Round + History + Outcome */}
           <View style={styles.controlsRow}>
+            {/* Review round counter */}
+            <View style={styles.controlGroup}>
+              <Text style={styles.controlLabel}>Round</Text>
+              <View style={styles.stepperRow}>
+                <Pressable
+                  style={styles.stepperBtn}
+                  hitSlop={6}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    setReviewRoundCount(pr.id, (pr.reviewRoundCount ?? 0) - 1);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease review round"
+                >
+                  <Text style={styles.stepperBtnText}>-</Text>
+                </Pressable>
+                <Text style={[
+                  styles.stepperValue,
+                  (pr.reviewRoundCount ?? 0) > 0 && styles.stepperValueActive,
+                ]}>{pr.reviewRoundCount ?? 0}</Text>
+                <Pressable
+                  style={styles.stepperBtn}
+                  hitSlop={6}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    setReviewRoundCount(pr.id, (pr.reviewRoundCount ?? 0) + 1);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase review round"
+                >
+                  <Text style={styles.stepperBtnText}>+</Text>
+                </Pressable>
+              </View>
+            </View>
             <View style={styles.controlGroup}>
               <Text style={styles.controlLabel}>History</Text>
               <View style={styles.controlOptions}>
@@ -1311,6 +1346,38 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: '700' as const,
     marginTop: -1,
+  },
+
+  // Stepper
+  stepperRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  },
+  stepperBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  stepperBtnText: {
+    fontSize: fontSizes.md,
+    fontWeight: '700' as const,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  stepperValue: {
+    fontSize: fontSizes.md,
+    fontWeight: '600' as const,
+    color: colors.textMuted,
+    minWidth: 20,
+    textAlign: 'center' as const,
+  },
+  stepperValueActive: {
+    color: colors.textPrimary,
   },
 
   // Empty

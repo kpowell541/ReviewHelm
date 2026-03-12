@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
+import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
+import { PR_ACTIVE_STATUSES } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useResponsive } from '../src/hooks/useResponsive';
@@ -62,6 +64,7 @@ export default function DashboardScreen() {
   const { isDesktop } = useResponsive();
   const sessions = useSessionStore((s) => s.sessions);
   const histories = useConfidenceStore((s) => s.histories);
+  const prs = usePRTrackerStore((s) => s.prs);
 
   const stats = useMemo(() => {
     const all = Object.values(sessions);
@@ -160,6 +163,28 @@ export default function DashboardScreen() {
       streak,
     };
   }, [sessions, histories]);
+
+  const prStats = useMemo(() => {
+    const allPRs = Object.values(prs);
+    const activePRs = allPRs.filter((pr) => PR_ACTIVE_STATUSES.includes(pr.status));
+    const authored = activePRs.filter((pr) => pr.role === 'author');
+    const reviewing = activePRs.filter((pr) => pr.role === 'reviewer');
+    const resolvedAuthored = allPRs.filter((pr) => pr.role === 'author' && pr.acceptanceOutcome);
+    const selfReviewedCount = resolvedAuthored.filter((pr) => pr.selfReviewed).length;
+    const cleanCount = resolvedAuthored.filter((pr) => pr.acceptanceOutcome === 'accepted-clean').length;
+    const avgRounds = resolvedAuthored.length > 0
+      ? Math.round(resolvedAuthored.reduce((sum, pr) => sum + (pr.reviewRoundCount ?? 0), 0) / resolvedAuthored.length * 10) / 10
+      : 0;
+    return {
+      active: activePRs.length,
+      authored: authored.length,
+      reviewing: reviewing.length,
+      selfReviewPct: resolvedAuthored.length > 0 ? Math.round((selfReviewedCount / resolvedAuthored.length) * 100) : 0,
+      cleanPct: resolvedAuthored.length > 0 ? Math.round((cleanCount / resolvedAuthored.length) * 100) : 0,
+      avgRounds,
+      hasResolved: resolvedAuthored.length > 0,
+    };
+  }, [prs]);
 
   const isEmpty = stats.totalSessions === 0 && stats.totalTracked === 0;
 
@@ -270,6 +295,25 @@ export default function DashboardScreen() {
             </View>
           )}
         </>
+      )}
+
+      {/* PR Tracker stats */}
+      {(prStats.active > 0 || prStats.hasResolved) && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle} accessibilityRole="header">PR Tracker</Text>
+          <View style={styles.statsRow}>
+            <StatBlock label="Active" value={prStats.active} color={colors.primary} />
+            <StatBlock label="Authored" value={prStats.authored} color={colors.info} />
+            <StatBlock label="Reviewing" value={prStats.reviewing} color={colors.success} />
+          </View>
+          {prStats.hasResolved && (
+            <View style={styles.statsRow}>
+              <StatBlock label="Self-review %" value={`${prStats.selfReviewPct}%`} color={prStats.selfReviewPct >= 80 ? colors.success : colors.warning} />
+              <StatBlock label="Clean Accept %" value={`${prStats.cleanPct}%`} color={prStats.cleanPct >= 70 ? colors.success : colors.warning} />
+              <StatBlock label="Avg Rounds" value={prStats.avgRounds} />
+            </View>
+          )}
+        </View>
       )}
       <AppFooter />
     </ScrollView>

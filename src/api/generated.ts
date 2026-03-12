@@ -2884,6 +2884,11 @@ export interface components {
             acceptanceOutcome?: "accepted-clean" | "accepted-with-changes" | "abandoned" | null;
             /** @enum {string|null} */
             reviewOutcome?: "requested-changes" | "no-changes-requested" | null;
+            selfReviewed?: boolean | null;
+            /** @default 0 */
+            reviewRoundCount: number;
+            changesEverNeeded?: boolean | null;
+            reReviewed?: boolean | null;
             /** Format: date-time */
             resolvedAt?: string | null;
             /** Format: date-time */

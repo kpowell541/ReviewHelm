@@ -270,6 +270,10 @@ model TrackedPR {
   notes             String?   @db.Text
   acceptanceOutcome String?
   reviewOutcome     String?
+  selfReviewed      Boolean?
+  reviewRoundCount  Int       @default(0)
+  changesEverNeeded Boolean?
+  reReviewed        Boolean?
   resolvedAt        DateTime?
   lastReviewedAt    DateTime?
   archivedAt        DateTime?
