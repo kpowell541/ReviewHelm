@@ -98,24 +98,26 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
   return (
     <View style={styles.container}>
       {/* Item text + severity badge */}
-      <Pressable
-        onPress={() => setExpanded(!expanded)}
-        style={styles.textRow}
-        accessibilityRole="button"
-        accessibilityState={{ expanded }}
-        accessibilityLabel={`${item.severity} severity: ${item.text}`}
-      >
-        <View style={[styles.severityBadge, { backgroundColor: sevColor + '20' }]}>
-          <Text style={[styles.severityText, { color: sevColor }]}>
-            {SEVERITY_SHORT[item.severity]}
-          </Text>
-        </View>
-        <Text
-          style={[styles.itemText, itemTextSize]}
-          numberOfLines={expanded ? undefined : 2}
+      <View style={styles.textRow}>
+        <Pressable
+          onPress={() => setExpanded(!expanded)}
+          style={styles.textRowBody}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          accessibilityLabel={`${item.severity} severity: ${item.text}`}
         >
-          {item.text}
-        </Text>
+          <View style={[styles.severityBadge, { backgroundColor: sevColor + '20' }]}>
+            <Text style={[styles.severityText, { color: sevColor }]}>
+              {SEVERITY_SHORT[item.severity]}
+            </Text>
+          </View>
+          <Text
+            style={[styles.itemText, itemTextSize]}
+            numberOfLines={expanded ? undefined : 2}
+          >
+            {item.text}
+          </Text>
+        </Pressable>
         <Pressable
           onPress={() => {
             void Haptics.selectionAsync();
@@ -146,7 +148,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
         >
           <Text style={styles.deepDiveIcon}>📚</Text>
         </Pressable>
-      </Pressable>
+      </View>
 
       {/* Verdict selector */}
       <View style={styles.verdictRow}>
@@ -290,6 +292,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: spacing.sm,
+  },
+  textRowBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   severityBadge: {
     paddingHorizontal: spacing.xs,

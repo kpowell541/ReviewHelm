@@ -82,35 +82,34 @@ function RecentSessionCard({
     : `/review/${session.id}` as const;
 
   return (
-    <Pressable
-      onPress={() => router.push(route)}
-      onLongPress={() => onDelete(session.id, session.title)}
-      style={({ pressed }) => [
-        styles.recentCard,
-        { opacity: pressed ? 0.85 : 1 },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={`${session.title}${prTitle ? `, ${prTitle}` : ''}, ${session.isComplete ? 'complete' : 'in progress'}`}
-      accessibilityHint="Tap to open, or use the actions button"
-    >
-      <View style={styles.recentCardInfo}>
-        <Text style={styles.recentTitle} numberOfLines={1}>
-          {session.title}
-        </Text>
-        {prTitle && (
-          <Text style={styles.recentPR} numberOfLines={1}>
-            {prTitle}
-          </Text>
-        )}
-      </View>
-      <Text style={styles.recentMeta}>
-        {session.isComplete ? '✅ Complete' : '🔄 In progress'}
-      </Text>
+    <View style={styles.recentCard}>
       <Pressable
-        onPress={(e) => {
-          e.stopPropagation();
-          onDelete(session.id, session.title);
-        }}
+        onPress={() => router.push(route)}
+        onLongPress={() => onDelete(session.id, session.title)}
+        style={({ pressed }) => [
+          styles.recentCardBody,
+          { opacity: pressed ? 0.85 : 1 },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={`${session.title}${prTitle ? `, ${prTitle}` : ''}, ${session.isComplete ? 'complete' : 'in progress'}`}
+        accessibilityHint="Tap to open, or use the actions button"
+      >
+        <View style={styles.recentCardInfo}>
+          <Text style={styles.recentTitle} numberOfLines={1}>
+            {session.title}
+          </Text>
+          {prTitle && (
+            <Text style={styles.recentPR} numberOfLines={1}>
+              {prTitle}
+            </Text>
+          )}
+        </View>
+        <Text style={styles.recentMeta}>
+          {session.isComplete ? '✅ Complete' : '🔄 In progress'}
+        </Text>
+      </Pressable>
+      <Pressable
+        onPress={() => onDelete(session.id, session.title)}
         hitSlop={8}
         style={styles.recentActionBtn}
         accessibilityRole="button"
@@ -118,7 +117,7 @@ function RecentSessionCard({
       >
         <Text style={styles.recentActionBtnText}>...</Text>
       </Pressable>
-    </Pressable>
+    </View>
   );
 }
 
@@ -540,6 +539,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  recentCardBody: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
   },
   recentCardInfo: {

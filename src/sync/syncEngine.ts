@@ -19,13 +19,33 @@ import type { AdapterResult } from './types';
  *
  * Each domain has its own adapter (sessionSync, trackedPRSync, etc.)
  * with explicit push, pull, delete, and merge responsibilities.
+ *
+ * Circuit breaker: if any adapter fails with a 401/auth error, remaining
+ * adapters are skipped to prevent a cascade of failed requests (e.g. when
+ * Supabase rate-limits the refresh token).
  */
+
+const AUTH_ERROR_PATTERNS = [
+  'unauthorized',
+  '401',
+  'invalid or expired token',
+  'missing bearer token',
+  'jwt expired',
+  'invalid refresh token',
+];
 
 interface SyncResult {
   pushed: number;
   pulled: number;
   errors: string[];
   details?: string;
+}
+
+function isAuthFailure(result: AdapterResult): boolean {
+  return result.errors.some((err) => {
+    const lower = err.toLowerCase();
+    return AUTH_ERROR_PATTERNS.some((p) => lower.includes(p));
+  });
 }
 
 async function isOnlineAndAuthenticated(): Promise<boolean> {
@@ -51,21 +71,35 @@ export async function runSync(): Promise<SyncResult> {
 
   try {
     const results: AdapterResult[] = [];
+    let authFailed = false;
 
-    // Run adapters sequentially — order matters for consistency
-    results.push(await syncSessions());
-    results.push(await syncTrackedPRs());
-    results.push(await syncTutorConversations());
-    results.push(await syncPreferences());
-    results.push(await syncConfidence());
-    results.push(await syncUsage());
-    results.push(await syncBookmarksTemplatesRepoConfigs());
+    const adapters = [
+      syncSessions,
+      syncTrackedPRs,
+      syncTutorConversations,
+      syncPreferences,
+      syncConfidence,
+      syncUsage,
+      syncBookmarksTemplatesRepoConfigs,
+    ];
 
-    // Sync subscription tier & credit balance (pull-only)
-    try {
-      await useTierStore.getState().syncTier();
-    } catch {
-      // Non-critical — tier info stays cached
+    for (const adapter of adapters) {
+      const result = await adapter();
+      results.push(result);
+
+      if (isAuthFailure(result)) {
+        authFailed = true;
+        break;
+      }
+    }
+
+    // Skip tier sync if auth already failed
+    if (!authFailed) {
+      try {
+        await useTierStore.getState().syncTier();
+      } catch {
+        // Non-critical — tier info stays cached
+      }
     }
 
     // Aggregate results
@@ -77,6 +111,10 @@ export async function runSync(): Promise<SyncResult> {
       if (r.pushed || r.pulled) {
         detailParts.push(`${r.label}: ${r.pushed}↑ ${r.pulled}↓`);
       }
+    }
+
+    if (authFailed) {
+      allErrors.push('Auth failure — skipped remaining sync adapters');
     }
 
     if (allErrors.length > 0) {

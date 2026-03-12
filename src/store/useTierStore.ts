@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import { persistStorage } from '../storage/secureStorage';
 import { api } from '../api/client';
+import { useAuthStore } from './useAuthStore';
 
 type SubscriptionTier = 'free' | 'starter' | 'pro' | 'premium' | 'sponsored';
 type EffectiveTier = SubscriptionTier | 'admin';
@@ -92,6 +93,8 @@ export const useTierStore = create<TierState>()(
       },
 
       syncTier: async () => {
+        const token = await useAuthStore.getState().getAccessToken();
+        if (!token) return;
         await get().fetchTierInfo();
         await get().fetchCreditBalance();
       },

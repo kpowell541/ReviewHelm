@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabaseClient } from '../auth/supabase';
 import { clearLocalUserData } from '../auth/clearLocalUserData';
+import { resetAuthRefreshCooldown } from '../api/client';
 
 const AUTH_REDIRECT_URI = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI?.trim() ?? '';
 type AuthSubscription = { unsubscribe: () => void };
@@ -99,7 +100,11 @@ export const useAuthStore = create<AuthState>()((set, get) => {
           });
 
           resetAuthSubscription();
-          const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+          const { data } = supabase.auth.onAuthStateChange((event, session) => {
+            // Skip INITIAL_SESSION — initialize() already determined the
+            // correct session state. Letting INITIAL_SESSION through would
+            // resurrect expired cached sessions after a failed refresh.
+            if (event === 'INITIAL_SESSION') return;
             set({ session, user: session?.user ?? null });
           });
           authSubscription = data.subscription;
@@ -123,6 +128,7 @@ export const useAuthStore = create<AuthState>()((set, get) => {
           password,
         });
         if (error) throw error;
+        resetAuthRefreshCooldown();
         set({
           session: data.session,
           user: data.user,
