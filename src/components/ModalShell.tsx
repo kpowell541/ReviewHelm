@@ -1,5 +1,5 @@
-import React from 'react';
-import { Modal, Pressable, Text, View, StyleSheet } from 'react-native';
+import React, { useCallback } from 'react';
+import { Modal, Pressable, Text, View, StyleSheet, type GestureResponderEvent } from 'react-native';
 import { colors, spacing, fontSizes, radius } from '../theme';
 import { useResponsive } from '../hooks/useResponsive';
 
@@ -21,6 +21,16 @@ export function ModalShell({
   const responsive = useResponsive();
   const isDesktop = isDesktopProp ?? responsive.isDesktop;
 
+  // Only close when tapping the overlay itself, not the card content
+  const handleOverlayPress = useCallback(
+    (e: GestureResponderEvent) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    },
+    [onClose],
+  );
+
   return (
     <Modal
       visible={visible}
@@ -29,7 +39,7 @@ export function ModalShell({
       onRequestClose={onClose}
     >
       <Pressable
-        onPress={onClose}
+        onPress={handleOverlayPress}
         style={[styles.overlay, isDesktop && styles.overlayDesktop]}
         accessible={false}
       >
@@ -37,7 +47,6 @@ export function ModalShell({
           style={[styles.card, isDesktop && styles.cardDesktop]}
           accessibilityViewIsModal={true}
           accessibilityRole="none"
-          onStartShouldSetResponder={() => true}
         >
           <Text style={styles.title} accessibilityRole="header">{title}</Text>
           {children}
