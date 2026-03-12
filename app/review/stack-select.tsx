@@ -5,6 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { STACKS, getStackInfo } from '../../src/data/checklistRegistry';
 import type { StackInfo } from '../../src/data/checklistRegistry';
 import type { StackId } from '../../src/data/types';
+import { getRelevantSecuritySections } from '../../src/data/checklistLoader';
 import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { useTemplateStore } from '../../src/store/useTemplateStore';
 import { useRepoConfigStore } from '../../src/store/useRepoConfigStore';
@@ -133,6 +134,12 @@ export default function StackSelectScreen() {
     () => new Set(repoConfig?.stackIds ?? []),
     [repoConfig],
   );
+
+  const hasSecurityStack = selectedStacks.includes('security' as StackId);
+  const relevantSecuritySections = useMemo(() => {
+    if (hasSecurityStack || selectedStacks.length === 0) return [];
+    return getRelevantSecuritySections(selectedStacks);
+  }, [hasSecurityStack, selectedStacks]);
 
   const toggleStack = (stackId: StackId) => {
     setSelectedStacks((prev) =>
@@ -331,6 +338,26 @@ export default function StackSelectScreen() {
           accessibilityLabel="Search stacks"
           accessibilityRole="search"
         />
+
+        {relevantSecuritySections.length > 0 && (
+          <View style={styles.securityBanner}>
+            <Text style={styles.securityBannerTitle}>Security Reminder</Text>
+            <Text style={styles.securityBannerText}>
+              The stacks you selected have security-relevant sections. Consider adding the Security stack:
+            </Text>
+            <Text style={styles.securityBannerSections}>
+              {relevantSecuritySections.join(' · ')}
+            </Text>
+            <Pressable
+              onPress={() => toggleStack('security' as StackId)}
+              style={styles.securityBannerAction}
+              accessibilityRole="button"
+              accessibilityLabel="Add Security stack"
+            >
+              <Text style={styles.securityBannerActionText}>+ Add Security</Text>
+            </Pressable>
+          </View>
+        )}
 
         {isSearching ? (
           // Flat search results
@@ -558,5 +585,42 @@ const styles = StyleSheet.create({
     color: colors.reviewMode,
     fontWeight: '600',
     marginTop: 4,
+  },
+  securityBanner: {
+    backgroundColor: '#f59e0b18',
+    borderWidth: 1,
+    borderColor: '#f59e0b40',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  securityBannerTitle: {
+    fontSize: fontSizes.md,
+    fontWeight: '700',
+    color: '#f59e0b',
+    marginBottom: spacing.xs,
+  },
+  securityBannerText: {
+    fontSize: fontSizes.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  securityBannerSections: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  securityBannerAction: {
+    backgroundColor: '#f59e0b25',
+    borderRadius: radius.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  securityBannerActionText: {
+    fontSize: fontSizes.sm,
+    fontWeight: '600',
+    color: '#f59e0b',
   },
 });

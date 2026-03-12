@@ -24,7 +24,7 @@ import type {
   PRStatus,
   TrackedPR,
 } from '../src/data/types';
-import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS } from '../src/data/types';
+import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS, getPRDisplayStatus } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { AddPRModal } from '../src/components/AddPRModal';
 import { FilterChips } from '../src/components/FilterChips';
@@ -55,6 +55,8 @@ export default function PRTrackerScreen() {
   const markReviewed = usePRTrackerStore((s) => s.markReviewed);
   const markAccepted = usePRTrackerStore((s) => s.markAccepted);
   const setReviewOutcome = usePRTrackerStore((s) => s.setReviewOutcome);
+  const setReReviewed = usePRTrackerStore((s) => s.setReReviewed);
+  const setChangesEverNeeded = usePRTrackerStore((s) => s.setChangesEverNeeded);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -440,7 +442,8 @@ export default function PRTrackerScreen() {
   };
 
   const renderPRCard = (pr: TrackedPR) => {
-    const statusColor = STATUS_COLORS[pr.status];
+    const displayStatus = getPRDisplayStatus(pr);
+    const statusColor = displayStatus.color;
     const subtitleParts = [
       pr.repo,
       pr.prNumber ? `#${pr.prNumber}` : null,
@@ -451,15 +454,6 @@ export default function PRTrackerScreen() {
 
     return (
       <View key={pr.id} style={styles.prCard}>
-        <Pressable
-          onPress={() => handleCardPress(pr)}
-          hitSlop={8}
-          style={styles.prActionBtn}
-          accessibilityRole="button"
-          accessibilityLabel={`Actions for ${pr.title}`}
-        >
-          <Text style={styles.prActionBtnText}>...</Text>
-        </Pressable>
         <View style={styles.prCardLeft}>
           <Pressable
             onPress={() => cycleStatus(pr)}
@@ -475,7 +469,7 @@ export default function PRTrackerScreen() {
           onPress={() => handleCardPress(pr)}
           onLongPress={() => handleDelete(pr)}
           accessibilityRole="button"
-          accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${PR_STATUS_LABELS[pr.status]}`}
+          accessibilityLabel={`${pr.title}${subtitle ? ', ' + subtitle : ''}, ${displayStatus.label}`}
           accessibilityHint="Tap for actions, long press to delete"
         >
           <Text style={styles.prTitle} numberOfLines={1}>
@@ -488,7 +482,7 @@ export default function PRTrackerScreen() {
           )}
           <View style={styles.prBadges}>
             <Text style={[styles.badge, { backgroundColor: statusColor + '25', color: statusColor }]}>
-              {PR_STATUS_LABELS[pr.status]}
+              {displayStatus.label}
             </Text>
             {pr.size && (
               <Text style={[styles.badge, styles.sizeBadge]}>
@@ -507,11 +501,20 @@ export default function PRTrackerScreen() {
             )}
           </View>
         </Pressable>
+        <Pressable
+          onPress={() => handleCardPress(pr)}
+          hitSlop={8}
+          style={styles.prActionBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Actions for ${pr.title}`}
+        >
+          <Text style={styles.prActionBtnText}>...</Text>
+        </Pressable>
         {/* Right side: radio buttons */}
         <View style={styles.prCardRight}>
-          {/* Changes: Needed / Not Needed */}
+          {/* Changes ever requested? (tracks review effectiveness) */}
           <View style={styles.radioGroup}>
-            <Text style={styles.radioGroupLabel}>Changes:</Text>
+            <Text style={styles.radioGroupLabel}>Changes?</Text>
             <View style={styles.radioOptions}>
               <Pressable
                 style={styles.radioItem}
@@ -559,13 +562,14 @@ export default function PRTrackerScreen() {
               </Pressable>
             </View>
           </View>
-          {/* Reviewed: No / Yes */}
-          <View style={styles.radioGroup}>
+          {/* Reviewed: No / Yes — locked once in re-review mode */}
+          <View style={[styles.radioGroup, pr.changesEverNeeded && styles.radioGroupLocked]}>
             <Text style={styles.radioGroupLabel}>Reviewed:</Text>
             <View style={styles.radioOptions}>
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
+                disabled={!!pr.changesEverNeeded}
                 onPress={() => {
                   void Haptics.selectionAsync();
                   if (isReviewedToday) {
@@ -574,7 +578,7 @@ export default function PRTrackerScreen() {
                   }
                 }}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: !isReviewedToday }}
+                accessibilityState={{ selected: !isReviewedToday, disabled: !!pr.changesEverNeeded }}
                 accessibilityLabel="Not reviewed today"
               >
                 <View style={[
@@ -591,6 +595,7 @@ export default function PRTrackerScreen() {
               <Pressable
                 style={styles.radioItem}
                 hitSlop={12}
+                disabled={!!pr.changesEverNeeded}
                 onPress={() => {
                   void Haptics.selectionAsync();
                   if (!isReviewedToday) {
@@ -599,7 +604,7 @@ export default function PRTrackerScreen() {
                   }
                 }}
                 accessibilityRole="radio"
-                accessibilityState={{ selected: isReviewedToday }}
+                accessibilityState={{ selected: isReviewedToday, disabled: !!pr.changesEverNeeded }}
                 accessibilityLabel="Reviewed today"
               >
                 <View style={[
@@ -612,6 +617,88 @@ export default function PRTrackerScreen() {
                   styles.radioLabel,
                   isReviewedToday && styles.radioLabelGood,
                 ]}>Yes</Text>
+              </Pressable>
+            </View>
+          </View>
+          {/* Re-review: shown when changes were ever needed */}
+          {pr.changesEverNeeded && (
+            <View style={styles.radioGroup}>
+              <Text style={styles.radioGroupLabel}>Re-review:</Text>
+              <View style={styles.radioOptions}>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={12}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    if (pr.reReviewed) setReReviewed(pr.id, false);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: !pr.reReviewed }}
+                  accessibilityLabel="Not re-reviewed"
+                >
+                  <View style={[
+                    styles.radioCircle,
+                    !pr.reReviewed && styles.radioCircleDim,
+                  ]}>
+                    {!pr.reReviewed && <View style={[styles.radioDot, styles.radioDotDim]} />}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    !pr.reReviewed && styles.radioLabelDim,
+                  ]}>No</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.radioItem}
+                  hitSlop={12}
+                  onPress={() => {
+                    void Haptics.selectionAsync();
+                    if (!pr.reReviewed) setReReviewed(pr.id, true);
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: !!pr.reReviewed }}
+                  accessibilityLabel="Re-reviewed after changes"
+                >
+                  <View style={[
+                    styles.radioCircle,
+                    pr.reReviewed && styles.radioCircleGood,
+                  ]}>
+                    {pr.reReviewed && <View style={[styles.radioDot, styles.radioDotGood]} />}
+                  </View>
+                  <Text style={[
+                    styles.radioLabel,
+                    pr.reReviewed && styles.radioLabelGood,
+                  ]}>Yes</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+          {/* Changes were needed at some point (historical tracker) */}
+          <View style={styles.radioGroup}>
+            <Text style={styles.radioGroupLabel}>History:</Text>
+            <View style={styles.radioOptions}>
+              <Pressable
+                style={styles.radioItem}
+                hitSlop={12}
+                onPress={() => {
+                  void Haptics.selectionAsync();
+                  setChangesEverNeeded(pr.id, !pr.changesEverNeeded);
+                }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: !!pr.changesEverNeeded }}
+                accessibilityLabel="Changes were needed at some point"
+              >
+                <View style={[
+                  styles.checkbox,
+                  pr.changesEverNeeded && styles.checkboxCheckedWarn,
+                ]}>
+                  {pr.changesEverNeeded && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
+                </View>
+                <Text style={[
+                  styles.radioLabel,
+                  pr.changesEverNeeded && styles.radioLabelWarn,
+                ]}>Changes needed</Text>
               </Pressable>
             </View>
           </View>
@@ -977,15 +1064,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden' as const,
   },
   prActionBtn: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
     width: 32,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.sm,
-    zIndex: 1,
+    alignSelf: 'flex-start',
   },
   prActionBtnText: {
     fontSize: fontSizes.lg,
@@ -1042,6 +1126,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: 6,
+  },
+  radioGroupLocked: {
+    opacity: 0.5,
   },
   radioGroupLabel: {
     fontSize: fontSizes.xs,
@@ -1130,6 +1217,10 @@ const styles = StyleSheet.create({
   checkboxCheckedGood: {
     backgroundColor: colors.looksGood + '25',
     borderColor: colors.looksGood,
+  },
+  checkboxCheckedWarn: {
+    backgroundColor: colors.warning + '25',
+    borderColor: colors.warning,
   },
   checkboxCheckedMuted: {
     backgroundColor: colors.textMuted + '25',

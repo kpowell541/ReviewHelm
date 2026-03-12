@@ -427,15 +427,21 @@ export function getRelevantSecuritySections(stackIds?: StackId[]): string[] {
 /**
  * Append code review meta checklist sections to any checklist if not already present.
  * Code review meta is auto-included in every review and polish session.
+ * When isSelfReview is true, the "Review Process" section is excluded since
+ * it covers reviewer responsibilities that don't apply to self-reviews.
  */
-export function withCodeReviewMeta(checklist: Checklist): Checklist {
+export function withCodeReviewMeta(checklist: Checklist, isSelfReview = false): Checklist {
   const metaChecklist = getChecklist('code-review-meta');
   const hasMetaSections = checklist.sections.some((s) =>
     s.id.startsWith('code-review-meta.'),
   );
   if (hasMetaSections) return checklist;
 
-  const metaItems = metaChecklist.sections.reduce(
+  const metaSections = isSelfReview
+    ? metaChecklist.sections.filter((s) => s.id !== 'code-review-meta.review-process')
+    : metaChecklist.sections;
+
+  const metaItems = metaSections.reduce(
     (sum, s) => sum + getSectionItems(s).length,
     0,
   );
@@ -448,7 +454,7 @@ export function withCodeReviewMeta(checklist: Checklist): Checklist {
     },
     sections: [
       ...checklist.sections,
-      ...metaChecklist.sections.map((s) => ({
+      ...metaSections.map((s) => ({
         ...s,
         title: `[Review Meta] ${s.title}`,
       })),

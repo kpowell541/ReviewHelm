@@ -62,6 +62,8 @@ interface PRTrackerState {
   markReviewed: (id: string) => void;
   markAccepted: (id: string, outcome: AcceptanceOutcome) => void;
   setReviewOutcome: (id: string, outcome: ReviewOutcome) => void;
+  setReReviewed: (id: string, reReviewed: boolean) => void;
+  setChangesEverNeeded: (id: string, changesEverNeeded: boolean) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
 
@@ -197,10 +199,11 @@ export const usePRTrackerStore = create<PRTrackerState>()(
         set((state) => {
           const pr = state.prs[id];
           if (!pr) return state;
+          // Lock reviewed state once in re-review mode
+          if (pr.changesEverNeeded) return state;
           const now = new Date().toISOString();
-          const lastReviewedAt = pr.lastReviewedAt && isToday(pr.lastReviewedAt)
-            ? undefined
-            : now;
+          const wasReviewed = pr.lastReviewedAt && isToday(pr.lastReviewedAt);
+          const lastReviewedAt = wasReviewed ? undefined : now;
           return { prs: { ...state.prs, [id]: { ...pr, lastReviewedAt, updatedAt: now } } };
         });
       },
@@ -234,7 +237,29 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const pr = state.prs[id];
           if (!pr) return state;
           const reviewOutcome = pr.reviewOutcome === outcome ? undefined : outcome;
-          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, updatedAt: new Date().toISOString() } } };
+          // Auto-set changesEverNeeded when selecting 'requested-changes'
+          const changesEverNeeded = (reviewOutcome === 'requested-changes')
+            ? true
+            : pr.changesEverNeeded;
+          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, changesEverNeeded, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      setReReviewed: (id, reReviewed) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          return { prs: { ...state.prs, [id]: { ...pr, reReviewed: reReviewed || undefined, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      setChangesEverNeeded: (id, changesEverNeeded) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          // When unchecking, also clear re-review state
+          const reReviewed = changesEverNeeded ? pr.reReviewed : undefined;
+          return { prs: { ...state.prs, [id]: { ...pr, changesEverNeeded: changesEverNeeded || undefined, reReviewed, updatedAt: new Date().toISOString() } } };
         });
       },
 
