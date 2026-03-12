@@ -20,11 +20,11 @@ import { useConfidenceStore } from '../../src/store/useConfidenceStore';
 import { useTutorStore } from '../../src/store/useTutorStore';
 import { useUsageStore } from '../../src/store/useUsageStore';
 import { sendTutorMessage, AiClientError } from '../../src/ai';
+import { BaseContentView } from '../../src/components/BaseContentView';
 import type {
   TutorMessage,
   TutorRole,
   ConfidenceLevel,
-  BaseContent,
 } from '../../src/data/types';
 import {
   CONFIDENCE_LABELS,
@@ -445,96 +445,6 @@ export default function DeepDiveScreen() {
   );
 }
 
-function BaseContentView({ content }: { content: BaseContent }) {
-  return (
-    <View>
-      {content.whatItMeans !== '' && (
-        <ContentSection title="What It Means" body={content.whatItMeans} />
-      )}
-      {content.whyItMatters !== '' && (
-        <ContentSection title="Why It Matters" body={content.whyItMatters} />
-      )}
-      {content.howToVerify !== '' && (
-        <ContentSection title="How to Verify" body={content.howToVerify} />
-      )}
-      {content.exampleComment !== '' && (
-        <ContentSection
-          title="Example Review Comment"
-          body={content.exampleComment}
-          isCode
-        />
-      )}
-      {content.codeExamples.length > 0 &&
-        content.codeExamples.map((ex, i) => (
-          <View key={i} style={sectionStyles.codeExampleBlock}>
-            <Text style={sectionStyles.codeExampleTitle}>{ex.title}</Text>
-            {ex.bad && (
-              <View style={sectionStyles.codeBlock}>
-                <Text style={sectionStyles.codeLabel}>❌ Bad</Text>
-                <Text style={sectionStyles.codeText}>{ex.bad.code}</Text>
-                <Text style={sectionStyles.codeExplanation}>
-                  {ex.bad.explanation}
-                </Text>
-              </View>
-            )}
-            {ex.good && (
-              <View
-                style={[sectionStyles.codeBlock, sectionStyles.codeBlockGood]}
-              >
-                <Text
-                  style={[sectionStyles.codeLabel, sectionStyles.codeLabelGood]}
-                >
-                  ✅ Good
-                </Text>
-                <Text style={sectionStyles.codeText}>{ex.good.code}</Text>
-                <Text style={sectionStyles.codeExplanation}>
-                  {ex.good.explanation}
-                </Text>
-              </View>
-            )}
-          </View>
-        ))}
-      {content.keyTakeaway !== '' && (
-        <View style={sectionStyles.takeaway}>
-          <Text style={sectionStyles.takeawayLabel} accessibilityRole="header">Key Takeaway</Text>
-          <Text style={sectionStyles.takeawayText}>
-            {content.keyTakeaway}
-          </Text>
-        </View>
-      )}
-      {content.references && content.references.length > 0 && (
-        <View style={sectionStyles.section}>
-          <Text style={sectionStyles.sectionTitle} accessibilityRole="header">References</Text>
-          {content.references.map((ref, i) => (
-            <Text key={i} style={sectionStyles.reference}>
-              • {ref}
-            </Text>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
-
-function ContentSection({
-  title,
-  body,
-  isCode,
-}: {
-  title: string;
-  body: string;
-  isCode?: boolean;
-}) {
-  return (
-    <View style={sectionStyles.section}>
-      <Text style={sectionStyles.sectionTitle} accessibilityRole="header">{title}</Text>
-      <Text style={isCode ? sectionStyles.codeText : sectionStyles.bodyText}>
-        {body}
-      </Text>
-    </View>
-  );
-}
-
 function getSeverityColor(severity: string): string {
   const map: Record<string, string> = {
     blocker: colors.blocker,
@@ -544,98 +454,6 @@ function getSeverityColor(severity: string): string {
   };
   return map[severity] || colors.textMuted;
 }
-
-const sectionStyles = StyleSheet.create({
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: fontSizes.sm,
-    fontWeight: '700',
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-  },
-  bodyText: {
-    fontSize: fontSizes.md,
-    color: colors.textPrimary,
-    lineHeight: 24,
-  },
-  codeText: {
-    fontSize: fontSizes.sm,
-    color: colors.textPrimary,
-    fontFamily: 'monospace',
-    backgroundColor: colors.codeBg,
-    padding: spacing.md,
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-    lineHeight: 20,
-  },
-  codeExampleBlock: {
-    marginBottom: spacing.xl,
-  },
-  codeExampleTitle: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  codeBlock: {
-    backgroundColor: colors.codeBad,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.codeBadBorder,
-    borderRadius: radius.sm,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  codeBlockGood: {
-    backgroundColor: colors.codeGood,
-    borderLeftColor: colors.codeGoodBorder,
-  },
-  codeLabel: {
-    fontSize: fontSizes.xs,
-    fontWeight: '700',
-    color: colors.codeBadBorder,
-    marginBottom: spacing.xs,
-  },
-  codeLabelGood: {
-    color: colors.codeGoodBorder,
-  },
-  codeExplanation: {
-    fontSize: fontSizes.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-    lineHeight: 20,
-  },
-  takeaway: {
-    backgroundColor: colors.primary + '15',
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-    borderRadius: radius.sm,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  takeawayLabel: {
-    fontSize: fontSizes.xs,
-    fontWeight: '700',
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  takeawayText: {
-    fontSize: fontSizes.md,
-    color: colors.textPrimary,
-    lineHeight: 24,
-  },
-  reference: {
-    fontSize: fontSizes.sm,
-    color: colors.info,
-    marginBottom: spacing.xs,
-    lineHeight: 20,
-  },
-});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },

@@ -141,6 +141,15 @@ export interface Checklist {
 
 export type Verdict = 'looks-good' | 'needs-attention' | 'na' | 'skipped';
 export type ConfidenceLevel = 1 | 2 | 3 | 4 | 5;
+export type ConfidenceSource =
+  | 'review'
+  | 'due-review'
+  | 'learn-ai'
+  | 'learn-self-guided';
+export type LearningFeedback =
+  | 'still-stuck'
+  | 'clearer'
+  | 'ready-to-apply';
 
 export const CONFIDENCE_LABELS: Record<ConfidenceLevel, string> = {
   1: 'Lost',
@@ -207,6 +216,8 @@ export interface ConfidenceRating {
   confidence: ConfidenceLevel;
   verdict: Verdict;
   date: string;
+  source?: ConfidenceSource;
+  feedback?: LearningFeedback;
 }
 
 export interface RepetitionState {
@@ -227,6 +238,26 @@ export interface ItemConfidenceHistory {
   trend: ConfidenceTrend;
   learningPriority: number;
   repetitionState?: RepetitionState;
+}
+
+export const LEARNING_FEEDBACK_LABELS: Record<LearningFeedback, string> = {
+  'still-stuck': 'Still stuck',
+  clearer: 'Clearer now',
+  'ready-to-apply': 'Ready to apply',
+};
+
+export const LEARNING_SOURCE_LABELS: Record<
+  Extract<ConfidenceSource, 'learn-ai' | 'learn-self-guided'>,
+  string
+> = {
+  'learn-ai': 'AI lesson',
+  'learn-self-guided': 'Self-guided',
+};
+
+export function isLearningSource(
+  source?: ConfidenceSource,
+): source is 'learn-ai' | 'learn-self-guided' {
+  return source === 'learn-ai' || source === 'learn-self-guided';
 }
 
 // ============================================
