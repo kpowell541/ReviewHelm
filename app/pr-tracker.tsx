@@ -520,7 +520,7 @@ export default function PRTrackerScreen() {
           {pr.role === 'author' && (
             <View style={styles.controlsRow}>
               <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>Self-review</Text>
+                <Text style={styles.controlLabel}>Self-Reviewed</Text>
                 <View style={styles.controlOptions}>
                   <Pressable
                     style={styles.radioItem}
