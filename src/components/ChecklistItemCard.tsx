@@ -35,7 +35,7 @@ export function ChecklistItemCard({
             ]}
           />
           <View style={styles.textArea}>
-            <Text style={styles.itemText} numberOfLines={2}>
+            <Text style={styles.itemText}>
               {text}
             </Text>
             <Text style={styles.meta}>

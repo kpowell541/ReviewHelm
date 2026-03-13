@@ -113,7 +113,7 @@ export const ChecklistItemRow = memo(function ChecklistItemRow({
           </View>
           <Text
             style={[styles.itemText, itemTextSize]}
-            numberOfLines={expanded ? undefined : 2}
+            numberOfLines={undefined}
           >
             {item.text}
           </Text>
