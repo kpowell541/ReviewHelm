@@ -1,10 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Redirect } from 'expo-router';
 import { api, ApiError } from '../src/api/client';
-import { useAuthStore } from '../src/store/useAuthStore';
 import { DesktopContainer } from '../src/components/DesktopContainer';
+import {
+  launchReadinessPlan,
+  launchStatusLabels,
+  type LaunchTaskStatus,
+} from '../src/data/launchReadinessPlan';
+import { useAuthStore } from '../src/store/useAuthStore';
+import { useLaunchReadinessStore } from '../src/store/useLaunchReadinessStore';
 import { colors, fontSizes, radius, spacing } from '../src/theme';
+import { PieChart } from '../src/components/charts/PieChart';
+import { BarChart } from '../src/components/charts/BarChart';
+import { MISS_CATEGORY_LABELS, MISS_CATEGORY_COLORS } from '../src/data/types';
+import type { MissCategory } from '../src/data/types';
 
 const ALLOWED_ADMIN_EMAILS = (
   process.env.EXPO_PUBLIC_ADMIN_DASHBOARD_EMAILS ??
@@ -15,6 +32,14 @@ const ALLOWED_ADMIN_EMAILS = (
   .filter(Boolean);
 
 type StalenessState = 'fresh' | 'due' | 'stale' | 'never_published';
+type LaunchDashboardTab = 'all' | LaunchTaskStatus;
+
+const LAUNCH_TABS: Array<{ key: LaunchDashboardTab; label: string }> = [
+  { key: 'all', label: 'All' },
+  { key: 'done_in_repo', label: 'Done in Repo' },
+  { key: 'needs_verification', label: 'Needs Verification' },
+  { key: 'remaining', label: 'Remaining' },
+];
 
 interface DashboardPayload {
   generatedAt: string;
@@ -67,6 +92,14 @@ interface DashboardPayload {
       avgReviewRounds: number;
     };
   };
+  checklistGaps: {
+    total: number;
+    breakdown: Array<{
+      category: string;
+      count: number;
+      pct: number;
+    }>;
+  };
   checklistJob: {
     cadence: {
       weeklyScanCronUtc: string;
@@ -107,7 +140,11 @@ interface DashboardPayload {
   };
 }
 
-function StatCard(props: { label: string; value: string | number; tone?: 'default' | 'warn' | 'danger' | 'good' }) {
+function StatCard(props: {
+  label: string;
+  value: string | number;
+  tone?: 'default' | 'warn' | 'danger' | 'good';
+}) {
   const toneStyle =
     props.tone === 'good'
       ? { color: colors.success }
@@ -131,16 +168,29 @@ function badgeStyleForState(state: StalenessState) {
   return { bg: `${colors.textMuted}22`, fg: colors.textMuted };
 }
 
+function badgeStyleForLaunchStatus(status: LaunchTaskStatus) {
+  if (status === 'done_in_repo') return { bg: `${colors.success}22`, fg: colors.success };
+  if (status === 'needs_verification') {
+    return { bg: `${colors.warning}22`, fg: colors.warning };
+  }
+  return { bg: `${colors.error}22`, fg: colors.error };
+}
+
 export default function AdminDashboardScreen() {
   const user = useAuthStore((s) => s.user);
   const email = (user?.email ?? '').trim().toLowerCase();
   const isAllowed = ALLOWED_ADMIN_EMAILS.includes(email);
+  const checkedTaskIds = useLaunchReadinessStore((s) => s.checkedTaskIds);
+  const toggleTaskChecked = useLaunchReadinessStore((s) => s.toggleTaskChecked);
+  const resetTaskChecks = useLaunchReadinessStore((s) => s.resetTaskChecks);
 
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<string | null>(null);
+  const [selectedLaunchTab, setSelectedLaunchTab] =
+    useState<LaunchDashboardTab>('all');
 
   const fetchDashboard = useCallback(() => {
     setLoading(true);
@@ -192,6 +242,53 @@ export default function AdminDashboardScreen() {
     [data],
   );
 
+  const launchTasks = useMemo(
+    () => launchReadinessPlan.phases.flatMap((phase) => phase.tasks),
+    [],
+  );
+
+  const launchSummary = useMemo(
+    () => ({
+      total: launchTasks.length,
+      done: launchTasks.filter((task) => task.status === 'done_in_repo').length,
+      needsVerification: launchTasks.filter(
+        (task) => task.status === 'needs_verification',
+      ).length,
+      remaining: launchTasks.filter((task) => task.status === 'remaining').length,
+      checkedOpen: launchTasks.filter(
+        (task) => task.status !== 'done_in_repo' && checkedTaskIds[task.id],
+      ).length,
+      actionableTotal: launchTasks.filter((task) => task.status !== 'done_in_repo').length,
+    }),
+    [checkedTaskIds, launchTasks],
+  );
+
+  const filteredLaunchPhases = useMemo(
+    () =>
+      launchReadinessPlan.phases
+        .map((phase) => ({
+          ...phase,
+          tasks: phase.tasks.filter(
+            (task) => selectedLaunchTab === 'all' || task.status === selectedLaunchTab,
+          ),
+        }))
+        .filter((phase) => phase.tasks.length > 0),
+    [selectedLaunchTab],
+  );
+
+  const currentLaunchTasks = useMemo(
+    () => filteredLaunchPhases.flatMap((phase) => phase.tasks),
+    [filteredLaunchPhases],
+  );
+
+  const currentLaunchCheckedCount = useMemo(
+    () =>
+      currentLaunchTasks.filter(
+        (task) => task.status === 'done_in_repo' || checkedTaskIds[task.id],
+      ).length,
+    [checkedTaskIds, currentLaunchTasks],
+  );
+
   if (!isAllowed) {
     return <Redirect href="/" />;
   }
@@ -210,7 +307,13 @@ export default function AdminDashboardScreen() {
 
         {!loading && error && (
           <View style={styles.card}>
-            <Text style={styles.errorText} accessibilityRole="alert" accessibilityLiveRegion="polite">{error}</Text>
+            <Text
+              style={styles.errorText}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
+              {error}
+            </Text>
           </View>
         )}
 
@@ -225,6 +328,114 @@ export default function AdminDashboardScreen() {
               <Text style={styles.metaText}>
                 Generated: {new Date(data.generatedAt).toLocaleString()}
               </Text>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle} accessibilityRole="header">Web Launch Readiness</Text>
+              <Text style={styles.metaText}>Scope: {launchReadinessPlan.scope}</Text>
+              <Text style={styles.metaText}>
+                Updated: {new Date(launchReadinessPlan.updatedAt).toLocaleDateString()}
+              </Text>
+              <View style={styles.statsRow}>
+                <StatCard label="Total Tasks" value={launchSummary.total} />
+                <StatCard label="Done in Repo" value={launchSummary.done} tone="good" />
+                <StatCard
+                  label="Needs Verification"
+                  value={launchSummary.needsVerification}
+                  tone="warn"
+                />
+                <StatCard label="Remaining" value={launchSummary.remaining} tone="danger" />
+                <StatCard
+                  label="Open Tasks Checked"
+                  value={`${launchSummary.checkedOpen}/${launchSummary.actionableTotal}`}
+                  tone="warn"
+                />
+              </View>
+
+              <View style={styles.toolbarRow}>
+                <View style={styles.tabBar} accessibilityRole="tablist">
+                  {LAUNCH_TABS.map((tab) => (
+                    <Pressable
+                      key={tab.key}
+                      style={[
+                        styles.tab,
+                        selectedLaunchTab === tab.key && styles.tabActive,
+                      ]}
+                      onPress={() => setSelectedLaunchTab(tab.key)}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: selectedLaunchTab === tab.key }}
+                      accessibilityLabel={`${tab.label} launch-readiness tab`}
+                    >
+                      <Text
+                        style={[
+                          styles.tabText,
+                          selectedLaunchTab === tab.key && styles.tabTextActive,
+                        ]}
+                      >
+                        {tab.label}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Pressable
+                  style={styles.secondaryButton}
+                  onPress={resetTaskChecks}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reset checked launch-readiness items"
+                >
+                  <Text style={styles.secondaryButtonText}>Reset Checks</Text>
+                </Pressable>
+              </View>
+
+              <Text style={styles.metaText}>
+                Showing {currentLaunchTasks.length} items in this tab. Checked in view:{' '}
+                {currentLaunchCheckedCount}/{currentLaunchTasks.length}
+              </Text>
+
+              {filteredLaunchPhases.map((phase) => (
+                <View key={phase.id} style={styles.phaseBlock}>
+                  <Text style={styles.phaseTitle}>
+                    Phase {phase.order}: {phase.title}
+                  </Text>
+                  <Text style={styles.phaseObjective}>{phase.objective}</Text>
+                  {phase.tasks.map((task) => {
+                    const tone = badgeStyleForLaunchStatus(task.status);
+                    const isActionable = task.status !== 'done_in_repo';
+                    const isChecked = task.status === 'done_in_repo' || checkedTaskIds[task.id];
+                    return (
+                      <View key={task.id} style={styles.row}>
+                        <Pressable
+                          style={[
+                            styles.checkbox,
+                            isChecked && styles.checkboxChecked,
+                            !isActionable && styles.checkboxDisabled,
+                          ]}
+                          onPress={() => {
+                            if (isActionable) toggleTaskChecked(task.id);
+                          }}
+                          disabled={!isActionable}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: isChecked, disabled: !isActionable }}
+                          accessibilityLabel={`${task.title} checklist item`}
+                        >
+                          {isChecked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                        </Pressable>
+                        <View style={styles.rowTextWrap}>
+                          <Text style={styles.rowTitle}>{task.title}</Text>
+                          <Text style={styles.rowMeta}>Owner: {task.owner}</Text>
+                          <Text style={styles.rowMeta}>Depends on: {task.dependsOn}</Text>
+                          {task.notes ? <Text style={styles.rowMeta}>{task.notes}</Text> : null}
+                        </View>
+                        <View style={[styles.badge, { backgroundColor: tone.bg }]}>
+                          <Text style={[styles.badgeText, { color: tone.fg }]}>
+                            {launchStatusLabels[task.status]}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
             </View>
 
             <View style={styles.card}>
@@ -337,9 +548,7 @@ export default function AdminDashboardScreen() {
                   <Text style={styles.publishButtonText}>Publish All Checklists</Text>
                 )}
               </Pressable>
-              {publishResult && (
-                <Text style={styles.metaText}>{publishResult}</Text>
-              )}
+              {publishResult && <Text style={styles.metaText}>{publishResult}</Text>}
             </View>
 
             <View style={styles.card}>
@@ -374,14 +583,34 @@ export default function AdminDashboardScreen() {
                 <StatCard
                   label="Clean Accept %"
                   value={`${data.prAcceptance.selfPRs.cleanAcceptancePct}%`}
-                  tone={data.prAcceptance.selfPRs.cleanAcceptancePct >= 70 ? 'good' : data.prAcceptance.selfPRs.cleanAcceptancePct >= 40 ? 'warn' : 'danger'}
+                  tone={
+                    data.prAcceptance.selfPRs.cleanAcceptancePct >= 70
+                      ? 'good'
+                      : data.prAcceptance.selfPRs.cleanAcceptancePct >= 40
+                        ? 'warn'
+                        : 'danger'
+                  }
                 />
-                <StatCard label="No Changes" value={data.prAcceptance.selfPRs.acceptedClean} tone="good" />
-                <StatCard label="With Changes" value={data.prAcceptance.selfPRs.acceptedWithChanges} tone="warn" />
+                <StatCard
+                  label="No Changes"
+                  value={data.prAcceptance.selfPRs.acceptedClean}
+                  tone="good"
+                />
+                <StatCard
+                  label="With Changes"
+                  value={data.prAcceptance.selfPRs.acceptedWithChanges}
+                  tone="warn"
+                />
                 <StatCard
                   label="Self-review %"
                   value={`${data.prAcceptance.selfPRs.selfReviewPct}%`}
-                  tone={data.prAcceptance.selfPRs.selfReviewPct >= 80 ? 'good' : data.prAcceptance.selfPRs.selfReviewPct >= 50 ? 'warn' : 'danger'}
+                  tone={
+                    data.prAcceptance.selfPRs.selfReviewPct >= 80
+                      ? 'good'
+                      : data.prAcceptance.selfPRs.selfReviewPct >= 50
+                        ? 'warn'
+                        : 'danger'
+                  }
                 />
                 <StatCard label="Avg Rounds" value={data.prAcceptance.selfPRs.avgReviewRounds} />
               </View>
@@ -398,10 +627,64 @@ export default function AdminDashboardScreen() {
                   label="Changes Requested %"
                   value={`${data.prAcceptance.reviewedPRs.changesRequestedPct}%`}
                 />
-                <StatCard label="Requested Changes" value={data.prAcceptance.reviewedPRs.requestedChanges} />
-                <StatCard label="No Changes" value={data.prAcceptance.reviewedPRs.noChangesRequested} tone="good" />
+                <StatCard
+                  label="Requested Changes"
+                  value={data.prAcceptance.reviewedPRs.requestedChanges}
+                />
+                <StatCard
+                  label="No Changes"
+                  value={data.prAcceptance.reviewedPRs.noChangesRequested}
+                  tone="good"
+                />
                 <StatCard label="Avg Rounds" value={data.prAcceptance.reviewedPRs.avgReviewRounds} />
               </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle} accessibilityRole="header">Checklist Gaps</Text>
+              <Text style={styles.metaText}>
+                What reviewers caught that self-review missed ({data.checklistGaps.total} reports)
+              </Text>
+              {data.checklistGaps.total === 0 ? (
+                <Text style={styles.metaText}>No gap feedback submitted yet.</Text>
+              ) : (
+                <>
+                  <View style={styles.statsRow}>
+                    {data.checklistGaps.breakdown
+                      .filter((b) => b.count > 0)
+                      .map((b) => (
+                        <StatCard
+                          key={b.category}
+                          label={MISS_CATEGORY_LABELS[b.category as MissCategory] ?? b.category}
+                          value={b.count}
+                        />
+                      ))}
+                  </View>
+                  <Text style={[styles.cardTitle, { fontSize: fontSizes.md, marginTop: spacing.sm }]}>
+                    Distribution (%)
+                  </Text>
+                  <PieChart
+                    data={data.checklistGaps.breakdown
+                      .filter((b) => b.count > 0)
+                      .map((b) => ({
+                        label: MISS_CATEGORY_LABELS[b.category as MissCategory] ?? b.category,
+                        value: b.count,
+                        color: MISS_CATEGORY_COLORS[b.category as MissCategory] ?? colors.textMuted,
+                        pct: b.pct,
+                      }))}
+                  />
+                  <Text style={[styles.cardTitle, { fontSize: fontSizes.md, marginTop: spacing.sm }]}>
+                    Counts by Category
+                  </Text>
+                  <BarChart
+                    data={data.checklistGaps.breakdown.map((b) => ({
+                      label: MISS_CATEGORY_LABELS[b.category as MissCategory] ?? b.category,
+                      value: b.count,
+                      color: MISS_CATEGORY_COLORS[b.category as MissCategory] ?? colors.textMuted,
+                    }))}
+                  />
+                </>
+              )}
             </View>
           </>
         )}
@@ -473,14 +756,95 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontFamily: 'Quicksand_500Medium',
   },
+  toolbarRow: {
+    gap: spacing.sm,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  tab: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSection,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  tabActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  tabText: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_600SemiBold',
+  },
+  tabTextActive: {
+    color: colors.textPrimary,
+  },
+  secondaryButton: {
+    alignSelf: 'flex-start',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSection,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  secondaryButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_600SemiBold',
+  },
+  phaseBlock: {
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  phaseTitle: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    fontFamily: 'Quicksand_700Bold',
+  },
+  phaseObjective: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_500Medium',
+  },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: spacing.sm,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSection,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  checkboxChecked: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  checkboxDisabled: {
+    opacity: 0.7,
+  },
+  checkboxMark: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_700Bold',
   },
   rowTextWrap: {
     flex: 1,

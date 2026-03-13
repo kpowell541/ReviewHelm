@@ -1950,6 +1950,13 @@ components:
         reReviewed:
           type: boolean
           nullable: true
+        missCategory:
+          type: string
+          enum: [logic, edge-case, naming-style, performance, security, test-coverage, docs, architecture]
+          nullable: true
+        missNote:
+          type: string
+          nullable: true
         resolvedAt:
           type: string
           format: date-time

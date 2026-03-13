@@ -110,6 +110,15 @@ export class UpsertTrackedPRDto {
   reReviewed?: boolean;
 
   @IsOptional()
+  @IsIn(['logic', 'edge-case', 'naming-style', 'performance', 'security', 'test-coverage', 'docs', 'architecture'])
+  missCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  missNote?: string;
+
+  @IsOptional()
   @IsDateString()
   resolvedAt?: string;
 

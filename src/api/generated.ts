@@ -2889,6 +2889,9 @@ export interface components {
             reviewRoundCount: number;
             changesEverNeeded?: boolean | null;
             reReviewed?: boolean | null;
+            /** @enum {string|null} */
+            missCategory?: "logic" | "edge-case" | "naming-style" | "performance" | "security" | "test-coverage" | "docs" | "architecture" | null;
+            missNote?: string | null;
             /** Format: date-time */
             resolvedAt?: string | null;
             /** Format: date-time */
