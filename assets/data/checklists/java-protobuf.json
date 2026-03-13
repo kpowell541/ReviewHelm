@@ -5,9 +5,9 @@
     "title": "Java & Kotlin",
     "shortTitle": "Java/Kotlin",
     "description": "Java and Kotlin language patterns, concurrency, and best practices",
-    "icon": "☕",
+    "icon": "\u2615",
     "totalItems": 97,
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "sections": [
     {
@@ -1104,30 +1104,30 @@
         },
         {
           "id": "java-protobuf.error-handling-resilience.is-nullable-nonnull-annotated-consistently",
-          "text": "Is `@Nullable` / `@NonNull` annotated consistently?",
+          "text": "Are null checks present before accessing elements, fields, or method return values that may be null?",
           "severity": "major",
           "tags": [
             "error-handling",
             "null-safety"
           ],
           "baseContent": {
-            "whatItMeans": "Use @Nullable and @NonNull annotations to document nullability contracts. This helps static analysis tools catch null dereferences at compile time.",
-            "whyItMatters": "NullPointerException is one of the most common runtime errors in Java. Nullability annotations make the contract explicit and enable tools like NullAway, Error Prone, and IntelliJ to catch violations.",
-            "howToVerify": "Check new method parameters and return types. Are @Nullable/@NonNull annotations used consistently? Are tools like NullAway or Checker Framework enabled?",
-            "exampleComment": "This parameter can be null based on the caller, but it is not annotated. Adding @Nullable would make the contract explicit and help static analysis catch misuse.",
+            "whatItMeans": "Beyond annotations, production code must have runtime null checks before accessing potentially null values. This includes checking map.get() results before calling methods on them, verifying list elements exist before accessing by index, and guarding Optional.get() calls.",
+            "whyItMatters": "NullPointerException is one of the most common runtime errors in Java/Kotlin. Annotations help static analysis, but runtime guards are the last line of defense. Common patterns like `map.get(key).doSomething()` or `list.get(0).field` silently assume non-null returns that may not hold.",
+            "howToVerify": "Search the diff for `.get(` patterns. Is the result checked for null before use? Are proto field accessors guarded when the field is optional? Are collection accesses bounds-checked? Use @Nullable/@NonNull annotations to document intent, but also verify that guards exist at runtime.",
+            "exampleComment": "The result of `configMap.get(key)` is used directly without a null check. If the key doesn't exist, this will throw NPE. Consider using `getOrDefault()`, wrapping in `Optional.ofNullable()`, or adding an explicit null check.",
             "codeExamples": [
               {
                 "label": "Bad",
                 "language": "java",
-                "code": "public User findUser(String id) {\n    return userMap.get(id); // may return null, not documented\n}\n\npublic void process(String name) {\n    log.info(name.toLowerCase()); // NPE if name is null\n}"
+                "code": "// No null check \u2014 NPE if key not found\nString value = configMap.get(key).trim();\n\n// No bounds check \u2014 IndexOutOfBoundsException if empty\nItem first = items.get(0);\n\n// Proto field may be unset\nString name = response.getUser().getName();"
               },
               {
                 "label": "Good",
                 "language": "java",
-                "code": "import javax.annotation.Nullable;\nimport javax.annotation.Nonnull;\n\n@Nullable\npublic User findUser(@Nonnull String id) {\n    return userMap.get(id);\n}\n\npublic void process(@Nonnull String name) {\n    log.info(name.toLowerCase());\n}"
+                "code": "// Guard before access\nString raw = configMap.get(key);\nif (raw == null) {\n    throw new IllegalStateException(\"Missing config: \" + key);\n}\nString value = raw.trim();\n\n// Bounds check\nif (items.isEmpty()) {\n    return Optional.empty();\n}\nItem first = items.get(0);\n\n// Proto guard\nif (!response.hasUser()) {\n    return Status.NOT_FOUND;\n}\nString name = response.getUser().getName();"
               }
             ],
-            "keyTakeaway": "Annotate nullability explicitly. Let static analysis catch NullPointerExceptions before production does.",
+            "keyTakeaway": "Never trust that .get() returns non-null. Guard every access to maps, lists, and optional fields. Annotations document; guards protect.",
             "references": [
               "https://github.com/uber/NullAway"
             ]
@@ -1600,16 +1600,16 @@
       "items": [
         {
           "id": "java-protobuf.testing.are-there-unit-tests-for-new-logic",
-          "text": "Are there unit tests for new logic?",
+          "text": "Are there unit tests for all new and modified logic, including refactored code?",
           "severity": "major",
           "tags": [
             "testing"
           ],
           "baseContent": {
-            "whatItMeans": "New business logic, utility methods, and service classes should have corresponding unit tests that verify correct behavior.",
-            "whyItMatters": "Untested code is a liability. Tests catch regressions, document expected behavior, and give confidence to refactor. Code without tests tends to rot faster.",
-            "howToVerify": "Check the test directory for new test files matching the new source files. Are the important code paths covered? Are happy paths and error paths both tested?",
-            "exampleComment": "The new OrderValidator class has no tests. Could you add unit tests covering the validation rules, especially the edge cases around zero quantities and negative prices?",
+            "whatItMeans": "New business logic, utility methods, and service classes should have corresponding unit tests. When code is refactored or moved, existing tests must be updated and new tests added to cover any functions that were added, modified, or split out. Constants, enums, and config values that were changed or relocated need verification tests too.",
+            "whyItMatters": "Untested code is a liability. Refactors often introduce subtle regressions \u2014 a renamed constant, a split function, or a moved utility can break callers silently. Tests catch these before production does.",
+            "howToVerify": "Diff the source files and the test files side by side. For every new or modified function, is there a test? For refactored constants or config, is there a test asserting the new value/location? Are split-out helper functions tested independently?",
+            "exampleComment": "The `MAX_RETRY_COUNT` constant was moved from Config to RetryPolicy but the existing test still references Config.MAX_RETRY_COUNT. Could you add a test verifying the constant in its new location, and update the tests for any code that depends on it?",
             "codeExamples": [
               {
                 "label": "Good",
@@ -1617,7 +1617,7 @@
                 "code": "@Test\nvoid createOrder_withValidInput_returnsOrder() {\n    Order order = service.createOrder(validRequest);\n    assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);\n}\n\n@Test\nvoid createOrder_withEmptyItems_throwsInvalidArgument() {\n    CreateOrderRequest request = CreateOrderRequest.newBuilder()\n        .setCustomerId(\"cust-1\")\n        .build();\n    assertThatThrownBy(() -> service.createOrder(request))\n        .isInstanceOf(StatusRuntimeException.class)\n        .hasMessageContaining(\"at least one item\");\n}"
               }
             ],
-            "keyTakeaway": "Every new code path deserves a test. Tests are documentation that verifies itself.",
+            "keyTakeaway": "Test every new and changed function. Refactored code needs test coverage just as much as new code \u2014 the risk of silent breakage is higher.",
             "references": []
           }
         },
@@ -1651,17 +1651,17 @@
         },
         {
           "id": "java-protobuf.testing.are-edge-cases-covered-null-inputs-empty-collections-boundar",
-          "text": "Are edge cases covered (null inputs, empty collections, boundary values)?",
+          "text": "Are edge cases covered in both tests and production code (null checks, empty collections, boundary values)?",
           "severity": "major",
           "tags": [
             "testing",
             "null-safety"
           ],
           "baseContent": {
-            "whatItMeans": "Tests should cover edge cases: null inputs, empty collections, boundary values, zero, negative numbers, maximum values, and unicode characters.",
-            "whyItMatters": "Edge cases are where most bugs hide. The happy path usually works, but null inputs, empty lists, and boundary values reveal incorrect assumptions and missing validation.",
-            "howToVerify": "Check test coverage of edge cases. Are null inputs tested? Empty collections? Boundary values? What happens with very large inputs?",
-            "exampleComment": "The tests only cover the happy path. Could you add cases for empty item lists, null customer ID, and orders with zero-quantity items?",
+            "whatItMeans": "Both tests and production code should handle edge cases. Tests should verify behavior with null inputs, empty collections, and boundary values. Production code should have explicit null checks and guards before accessing elements, fields, or calling methods on potentially null references.",
+            "whyItMatters": "Edge cases are where most bugs hide. The happy path usually works, but null pointer exceptions from unguarded element access, empty list indexing, and missing boundary validation cause production incidents. Reviewers frequently catch missing null guards that self-review misses.",
+            "howToVerify": "For each new method: does it check for null parameters before using them? Does it guard against empty lists before calling .get(0) or .first()? Are these guards also tested? Check for patterns like `list.get(index)` without bounds checking, or `map.get(key).method()` without null checking the result.",
+            "exampleComment": "This method calls `items.get(0)` without checking if the list is empty first. Also, `userMap.get(userId).getName()` will NPE if the user is not found. Could you add null/empty guards and corresponding test cases?",
             "codeExamples": [
               {
                 "label": "Good",
@@ -1669,7 +1669,7 @@
                 "code": "@Test\nvoid calculateTotal_emptyItems_returnsZero() {\n    assertThat(calculator.calculateTotal(List.of())).isEqualTo(BigDecimal.ZERO);\n}\n\n@Test\nvoid calculateTotal_nullItems_throwsNPE() {\n    assertThatThrownBy(() -> calculator.calculateTotal(null))\n        .isInstanceOf(NullPointerException.class);\n}\n\n@Test\nvoid calculateTotal_singleItem_returnsItemPrice() {\n    List<Item> items = List.of(new Item(\"A\", new BigDecimal(\"9.99\")));\n    assertThat(calculator.calculateTotal(items)).isEqualByComparingTo(\"9.99\");\n}"
               }
             ],
-            "keyTakeaway": "Test the edges: null, empty, zero, one, many, boundary values. That is where the bugs are.",
+            "keyTakeaway": "Guard before you access. Check for null before dereferencing, check for empty before indexing, and test that these guards work.",
             "references": []
           }
         },
