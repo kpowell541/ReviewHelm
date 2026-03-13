@@ -8,6 +8,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  TextInput,
 } from 'react-native';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -24,7 +25,8 @@ import type {
   PRStatus,
   TrackedPR,
 } from '../src/data/types';
-import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS, getPRDisplayStatus } from '../src/data/types';
+import { PR_STATUS_LABELS, PR_SIZE_LABELS, PR_PRIORITY_LABELS, PR_PRIORITY_ORDER, PR_ACTIVE_STATUSES, STATUS_COLORS, PRIORITY_COLORS, getPRDisplayStatus, MISS_CATEGORIES, MISS_CATEGORY_LABELS, MISS_CATEGORY_COLORS } from '../src/data/types';
+import type { MissCategory } from '../src/data/types';
 import { colors, spacing, fontSizes, radius } from '../src/theme';
 import { AddPRModal } from '../src/components/AddPRModal';
 import { FilterChips } from '../src/components/FilterChips';
@@ -32,6 +34,165 @@ import { DesktopContainer } from '../src/components/DesktopContainer';
 import { useResponsive } from '../src/hooks/useResponsive';
 import { useReducedMotion } from '../src/hooks/useReducedMotion';
 import { AppFooter } from '../src/components/AppFooter';
+
+function ChecklistGapCard({
+  prId,
+  onSubmit,
+  onDismiss,
+}: {
+  prId: string;
+  onSubmit: (id: string, category: MissCategory, note?: string) => void;
+  onDismiss: (id: string) => void;
+}) {
+  const [selected, setSelected] = useState<MissCategory | null>(null);
+  const [note, setNote] = useState('');
+
+  return (
+    <View style={gapStyles.card}>
+      <View style={gapStyles.header}>
+        <Text style={gapStyles.title}>What did the reviewer catch?</Text>
+        <Pressable
+          hitSlop={12}
+          onPress={() => onDismiss(prId)}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss feedback"
+        >
+          <Text style={gapStyles.dismiss}>✕</Text>
+        </Pressable>
+      </View>
+      <Text style={gapStyles.subtitle}>
+        Help improve checklists by tagging what was missed
+      </Text>
+      <View style={gapStyles.pills}>
+        {MISS_CATEGORIES.map((cat) => (
+          <Pressable
+            key={cat}
+            style={[
+              gapStyles.pill,
+              selected === cat && { backgroundColor: MISS_CATEGORY_COLORS[cat], borderColor: MISS_CATEGORY_COLORS[cat] },
+            ]}
+            onPress={() => {
+              void Haptics.selectionAsync();
+              setSelected(cat);
+            }}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: selected === cat }}
+            accessibilityLabel={MISS_CATEGORY_LABELS[cat]}
+          >
+            <Text style={[
+              gapStyles.pillText,
+              selected === cat && gapStyles.pillTextSelected,
+            ]}>
+              {MISS_CATEGORY_LABELS[cat]}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <TextInput
+        style={gapStyles.noteInput}
+        placeholder="Any details? (optional)"
+        placeholderTextColor={colors.textMuted}
+        value={note}
+        onChangeText={setNote}
+        multiline
+        maxLength={2000}
+      />
+      <Pressable
+        style={[gapStyles.submitBtn, !selected && gapStyles.submitBtnDisabled]}
+        onPress={() => {
+          if (selected) {
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            onSubmit(prId, selected, note.trim() || undefined);
+          }
+        }}
+        disabled={!selected}
+        accessibilityRole="button"
+        accessibilityLabel="Submit checklist gap feedback"
+        accessibilityState={{ disabled: !selected }}
+      >
+        <Text style={gapStyles.submitBtnText}>Submit</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const gapStyles = StyleSheet.create({
+  card: {
+    backgroundColor: `${colors.warning}11`,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: `${colors.warning}44`,
+    padding: spacing.md,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    fontFamily: 'Quicksand_700Bold',
+  },
+  dismiss: {
+    color: colors.textMuted,
+    fontSize: fontSizes.lg,
+  },
+  subtitle: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_500Medium',
+  },
+  pills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  pill: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSection,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  pillText: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.xs,
+    fontFamily: 'Quicksand_600SemiBold',
+  },
+  pillTextSelected: {
+    color: colors.textPrimary,
+  },
+  noteInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.bgSection,
+    color: colors.textPrimary,
+    padding: spacing.sm,
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_500Medium',
+    minHeight: 48,
+    textAlignVertical: 'top',
+  },
+  submitBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center' as const,
+  },
+  submitBtnDisabled: {
+    opacity: 0.4,
+  },
+  submitBtnText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_700Bold',
+  },
+});
 
 const STATUS_FILTERS: { key: PRStatus | 'all' | 'resolved'; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -59,6 +220,8 @@ export default function PRTrackerScreen() {
   const setChangesEverNeeded = usePRTrackerStore((s) => s.setChangesEverNeeded);
   const setSelfReviewed = usePRTrackerStore((s) => s.setSelfReviewed);
   const setReviewRoundCount = usePRTrackerStore((s) => s.setReviewRoundCount);
+  const submitChecklistGap = usePRTrackerStore((s) => s.submitChecklistGap);
+  const dismissChecklistGap = usePRTrackerStore((s) => s.dismissChecklistGap);
   const setStatus = usePRTrackerStore((s) => s.setStatus);
   const [filter, setFilter] = useState<PRStatus | 'all' | 'resolved'>('all');
   const [showModal, setShowModal] = useState(false);
@@ -852,6 +1015,14 @@ export default function PRTrackerScreen() {
               </View>
             </View>
           </View>
+          {/* Checklist gap feedback card */}
+          {pr.checklistGapPending && (
+            <ChecklistGapCard
+              prId={pr.id}
+              onSubmit={submitChecklistGap}
+              onDismiss={dismissChecklistGap}
+            />
+          )}
         </View>
       </View>
     );

@@ -125,6 +125,7 @@ export class AdminDashboardService {
       },
       commentFeedback: feedbackTotals,
       prAcceptance: await this.buildPRAcceptanceMetrics(),
+      checklistGaps: await this.buildChecklistGapMetrics(),
       checklistStaleness: staleness,
       checklistJob: checklistJobStatus,
     };
@@ -200,6 +201,35 @@ export class AdminDashboardService {
         avgReviewRounds: avgReviewerReviewRounds,
       },
     };
+  }
+
+  private async buildChecklistGapMetrics() {
+    const gapPRs = await this.prisma.trackedPR.findMany({
+      where: { missCategory: { not: null } },
+      select: { missCategory: true, missNote: true, linkedSessionId: true },
+    });
+
+    const categories = [
+      'logic', 'edge-case', 'naming-style', 'performance',
+      'security', 'test-coverage', 'docs', 'architecture',
+    ];
+
+    const counts: Record<string, number> = {};
+    for (const cat of categories) counts[cat] = 0;
+    for (const pr of gapPRs) {
+      if (pr.missCategory && counts[pr.missCategory] !== undefined) {
+        counts[pr.missCategory]++;
+      }
+    }
+
+    const total = gapPRs.length;
+    const breakdown = categories.map((category) => ({
+      category,
+      count: counts[category],
+      pct: total > 0 ? Number(((counts[category] / total) * 100).toFixed(1)) : 0,
+    }));
+
+    return { total, breakdown };
   }
 
   private async fetchChecklistWorkflowStatus(): Promise<{

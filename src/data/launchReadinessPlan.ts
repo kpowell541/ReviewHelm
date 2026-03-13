@@ -1,0 +1,404 @@
+export type LaunchTaskStatus = 'done_in_repo' | 'needs_verification' | 'remaining';
+
+export interface LaunchTask {
+  id: string;
+  title: string;
+  status: LaunchTaskStatus;
+  owner: string;
+  dependsOn: string;
+  notes?: string;
+}
+
+export interface LaunchPhase {
+  id: string;
+  order: number;
+  title: string;
+  objective: string;
+  tasks: LaunchTask[];
+}
+
+export const launchStatusLabels: Record<LaunchTaskStatus, string> = {
+  done_in_repo: 'Done in repo',
+  needs_verification: 'Needs verification',
+  remaining: 'Remaining',
+};
+
+export const launchReadinessPlan: {
+  updatedAt: string;
+  scope: string;
+  phases: LaunchPhase[];
+} = {
+  updatedAt: '2026-03-13',
+  scope: 'Web-only rollout readiness (Georgia business setup)',
+  phases: [
+    {
+      id: 'repo-baseline',
+      order: 0,
+      title: 'Existing repo baseline',
+      objective: 'Track what is already implemented before doing live launch work.',
+      tasks: [
+        {
+          id: 'repo-ci-gates',
+          title: 'Frontend and backend CI gates are in place',
+          status: 'done_in_repo',
+          owner: 'Engineering',
+          dependsOn: 'None',
+          notes: 'Typecheck, tests, OpenAPI checks, and secret scanning are already wired.',
+        },
+        {
+          id: 'repo-security-hardening',
+          title: 'Auth, rate limiting, validation, and API hardening are implemented',
+          status: 'done_in_repo',
+          owner: 'Engineering',
+          dependsOn: 'None',
+          notes: 'Core backend launch hardening is already on main.',
+        },
+        {
+          id: 'repo-web-foundation',
+          title: 'Web auth/session handling, payment redirects, and CSP are implemented',
+          status: 'done_in_repo',
+          owner: 'Engineering',
+          dependsOn: 'None',
+          notes: 'Web-specific code paths exist; they still need live verification.',
+        },
+        {
+          id: 'repo-legal-pages',
+          title: 'Terms and privacy pages exist in the app',
+          status: 'done_in_repo',
+          owner: 'Product',
+          dependsOn: 'None',
+        },
+      ],
+    },
+    {
+      id: 'business-payments',
+      order: 1,
+      title: 'Business and payments foundation',
+      objective: 'Finish the legal and financial setup before wiring live money flows.',
+      tasks: [
+        {
+          id: 'business-email',
+          title: 'Create and configure support@reviewhelm.app as the primary business contact email',
+          status: 'remaining',
+          owner: 'Founder / ops',
+          dependsOn: 'Access to reviewhelm.app email hosting',
+          notes: 'Use this for filings, customer contact, and vendor accounts where a business-controlled email is appropriate.',
+        },
+        {
+          id: 'legalzoom-purchase',
+          title: 'Purchase the LegalZoom registered agent service once bonus funds are available',
+          status: 'remaining',
+          owner: 'Founder',
+          dependsOn: 'Bonus funds available for purchase',
+          notes: 'This unlocks the exact registered agent legal name and Georgia registered office address for the filing packet.',
+        },
+        {
+          id: 'legalzoom-details',
+          title: 'Capture the exact LegalZoom registered agent legal name and Georgia registered office address',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'LegalZoom registered agent purchase completed',
+        },
+        {
+          id: 'po-box-activation',
+          title: 'Activate the reserved P.O. Box and record the final box number and ZIP code',
+          status: 'remaining',
+          owner: 'Founder',
+          dependsOn: 'P.O. Box reservation ready for activation',
+        },
+        {
+          id: 'georgia-formation-state',
+          title: 'Confirm Georgia as the formation state and decide whether any foreign qualification may be needed later',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Decision on where the business will actually operate',
+        },
+        {
+          id: 'georgia-name-clearance',
+          title: 'Pick the Georgia LLC legal name, backup names, and confirm name availability before filing',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Georgia formation decision',
+          notes: 'If brand protection matters, run trademark review separately before investing heavily in the name.',
+        },
+        {
+          id: 'georgia-registered-agent',
+          title: 'Choose the Georgia registered agent and Georgia registered office address',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Georgia formation decision',
+        },
+        {
+          id: 'georgia-llc-structure',
+          title: 'Decide single-member vs multi-member and member-managed vs manager-managed structure',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Ownership and control decisions',
+        },
+        {
+          id: 'georgia-formation-inputs',
+          title: 'Prepare Georgia formation inputs: principal address, mailing address, business purpose, member or manager details, and organizer details',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Name, agent, and LLC structure decisions',
+        },
+        {
+          id: 'georgia-operating-agreement',
+          title: 'Draft and sign the operating agreement before banking and Stripe onboarding',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'LLC structure decision',
+          notes: 'Even if Georgia does not force it at filing time, it is the cleaner setup for ownership and bank review.',
+        },
+        {
+          id: 'georgia-file-articles',
+          title: 'File the Georgia Articles of Organization with the Secretary of State Corporations Division',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Name clearance, Georgia registered agent, and formation inputs',
+        },
+        {
+          id: 'georgia-annual-registration',
+          title: 'Set up the Georgia annual registration obligation and calendar the Jan 1 to Apr 1 filing window each year',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Georgia LLC approval',
+        },
+        {
+          id: 'georgia-tax-registration',
+          title: 'Register with the Georgia Department of Revenue through the Georgia Tax Center if sales tax or payroll withholding applies',
+          status: 'remaining',
+          owner: 'Founder / finance',
+          dependsOn: 'Georgia LLC approval and EIN',
+        },
+        {
+          id: 'georgia-dba-licenses',
+          title: 'Handle any Georgia trade name filing and local business licenses if operating under a DBA or regulated activity',
+          status: 'remaining',
+          owner: 'Founder / legal',
+          dependsOn: 'Georgia LLC approval',
+          notes: 'Georgia trade names are filed at the county level, not with the Secretary of State.',
+        },
+        {
+          id: 'ein-responsible-party',
+          title: 'Identify the IRS responsible party and gather their SSN or ITIN for the EIN application',
+          status: 'remaining',
+          owner: 'Founder / tax',
+          dependsOn: 'Georgia LLC registration and ownership decision',
+          notes: 'The responsible party must be a person, not a nominee or another entity.',
+        },
+        {
+          id: 'ein-application',
+          title: 'Apply for the EIN after the Georgia LLC is formed and store the IRS confirmation letter',
+          status: 'remaining',
+          owner: 'Founder / tax',
+          dependsOn: 'Georgia LLC registration and responsible party information',
+          notes: 'Keep the EIN confirmation and be ready to request Letter 147C later if a verifier cannot match IRS records.',
+        },
+        {
+          id: 'bank-doc-packet',
+          title: 'Assemble the bank onboarding packet: Georgia formation docs, EIN, operating agreement or ownership docs, and any required license',
+          status: 'remaining',
+          owner: 'Founder / finance',
+          dependsOn: 'Georgia LLC approval and EIN issuance',
+        },
+        {
+          id: 'business-checking',
+          title: 'Open the business checking account and keep business funds fully separate from personal funds',
+          status: 'remaining',
+          owner: 'Founder / finance',
+          dependsOn: 'Bank onboarding packet',
+        },
+        {
+          id: 'business-credit',
+          title: 'Optionally open a business credit card to keep spend separate and start business credit history',
+          status: 'remaining',
+          owner: 'Founder / finance',
+          dependsOn: 'Business checking account',
+        },
+        {
+          id: 'stripe-business-profile',
+          title: 'Set Stripe up under the business entity using the exact legal name, tax ID, and address that match IRS and Georgia formation records',
+          status: 'remaining',
+          owner: 'Founder / finance',
+          dependsOn: 'Business checking account and EIN',
+          notes: 'Do not mix a personal setup with the business setup if you want the cleanest long-term configuration.',
+        },
+        {
+          id: 'stripe-verification-docs',
+          title: 'Prepare Stripe verification inputs: business address, representative identity details, tax details, and any supporting documents',
+          status: 'remaining',
+          owner: 'Founder / finance',
+          dependsOn: 'Stripe business profile setup',
+          notes: 'Stripe is strict about exact business-name and tax-ID matching, and may require supporting docs.',
+        },
+        {
+          id: 'stripe-bank-connection',
+          title: 'Connect the business bank account to Stripe and complete payout, tax, and business verification settings',
+          status: 'remaining',
+          owner: 'Founder / finance',
+          dependsOn: 'Stripe business profile and business checking account',
+        },
+      ],
+    },
+    {
+      id: 'production-platform',
+      order: 2,
+      title: 'Production platform and environment wiring',
+      objective: 'Make production hosting, domains, redirects, and secrets concrete and correct.',
+      tasks: [
+        {
+          id: 'web-hosting',
+          title: 'Finalize the production web host, domain, DNS, and TLS',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Business launch timing and desired public domain',
+        },
+        {
+          id: 'deploy-process',
+          title: 'Document and validate a repeatable staging to production web deploy process',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Production web host',
+        },
+        {
+          id: 'env-wiring',
+          title: 'Populate and verify production env vars across Infisical, Railway, Supabase, and Stripe',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Production web host and Stripe business setup',
+          notes: 'Includes API URLs, Supabase URLs, auth redirect URIs, webhook secrets, and Anthropic key.',
+        },
+        {
+          id: 'cors-and-redirects',
+          title: 'Lock down ALLOWED_ORIGINS, Supabase redirect allowlists, and Stripe return URLs to the real web origin',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Production web domain',
+        },
+        {
+          id: 'staging-health',
+          title: 'Verify health checks, port alignment, and 24h staging stability',
+          status: 'needs_verification',
+          owner: 'Engineering / ops',
+          dependsOn: 'Final staging configuration',
+        },
+      ],
+    },
+    {
+      id: 'observability-ops',
+      order: 3,
+      title: 'Observability and operational safety',
+      objective: 'Make sure failures are visible and recoverable before public traffic arrives.',
+      tasks: [
+        {
+          id: 'error-monitoring',
+          title: 'Add external error monitoring for backend and web frontend',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Production environment configuration',
+        },
+        {
+          id: 'uptime-alerts',
+          title: 'Add uptime checks and alerts for web app, API, Railway, Supabase, Upstash, and Stripe webhooks',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Production host and monitoring destination',
+        },
+        {
+          id: 'log-aggregation',
+          title: 'Configure retained, searchable log aggregation',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Monitoring stack choice',
+        },
+        {
+          id: 'runbooks-rollback',
+          title: 'Write incident runbooks, deploy ownership, and rollback steps including web asset rollback',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Deploy process and alerting design',
+        },
+      ],
+    },
+    {
+      id: 'product-compliance',
+      order: 4,
+      title: 'Web product polish and compliance gaps',
+      objective: 'Close the public web launch gaps that are not pure infrastructure.',
+      tasks: [
+        {
+          id: 'seo-meta',
+          title: 'Add title, description, OG tags, favicon, and deliberate robots/indexing policy',
+          status: 'remaining',
+          owner: 'Product / engineering',
+          dependsOn: 'Launch positioning and brand assets',
+        },
+        {
+          id: 'account-export',
+          title: 'Decide and implement account data export if it is in launch scope',
+          status: 'remaining',
+          owner: 'Product / engineering',
+          dependsOn: 'Compliance decision on launch scope',
+        },
+        {
+          id: 'account-deletion',
+          title: 'Verify or implement full account deletion across stored user data',
+          status: 'remaining',
+          owner: 'Product / engineering',
+          dependsOn: 'Data inventory confirmation',
+        },
+      ],
+    },
+    {
+      id: 'verification-rollout',
+      order: 5,
+      title: 'Verification and controlled rollout',
+      objective: 'Prove the system is ready in staging, then release in a narrow funnel.',
+      tasks: [
+        {
+          id: 'auth-payment-rehearsal',
+          title: 'Run staged web rehearsals for sign up, sign in, email verification, password reset, checkout, portal, and session-expiry flows',
+          status: 'remaining',
+          owner: 'Engineering / product',
+          dependsOn: 'Production-like env wiring and Stripe configuration',
+        },
+        {
+          id: 'browser-qa',
+          title: 'Complete browser QA on Chrome, Safari, Firefox, and mobile browsers',
+          status: 'remaining',
+          owner: 'QA / product',
+          dependsOn: 'Stable staging deployment',
+        },
+        {
+          id: 'tests-gap',
+          title: 'Add integration and web e2e coverage for critical flows',
+          status: 'remaining',
+          owner: 'Engineering',
+          dependsOn: 'Finalized rollout-critical flows',
+        },
+        {
+          id: 'restore-drill',
+          title: 'Run the backup restore drill and confirm the app boots cleanly against restored data',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Staging environment and documented recovery process',
+        },
+        {
+          id: 'perf-baseline',
+          title: 'Record load, latency, error-rate, and first-load web performance baselines',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Stable staging environment',
+        },
+        {
+          id: 'private-beta',
+          title: 'Launch a web-only private beta with 5 to 10 testers before a broader release',
+          status: 'remaining',
+          owner: 'Founder / product',
+          dependsOn: 'All prior launch blockers closed or consciously deferred',
+        },
+      ],
+    },
+  ],
+};

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { persistStorage } from '../storage/secureStorage';
 import { randomUUID } from 'expo-crypto';
-import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize, PRDependency, CIPassing, AcceptanceOutcome, ReviewOutcome } from '../data/types';
+import type { TrackedPR, PRStatus, PRRole, PRPriority, PRSize, PRDependency, CIPassing, AcceptanceOutcome, ReviewOutcome, MissCategory } from '../data/types';
 import { PR_ACTIVE_STATUSES, PR_PRIORITY_ORDER } from '../data/types';
 import { useSessionStore } from './useSessionStore';
 
@@ -66,6 +66,8 @@ interface PRTrackerState {
   setChangesEverNeeded: (id: string, changesEverNeeded: boolean) => void;
   setSelfReviewed: (id: string, selfReviewed: boolean) => void;
   setReviewRoundCount: (id: string, count: number) => void;
+  submitChecklistGap: (id: string, category: MissCategory, note?: string) => void;
+  dismissChecklistGap: (id: string) => void;
   linkSession: (prId: string, sessionId: string) => void;
   unlinkSession: (prId: string) => void;
 
@@ -252,7 +254,11 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           const reviewRoundCount = (reviewOutcome === 'requested-changes')
             ? (pr.reviewRoundCount ?? 0) + 1
             : pr.reviewRoundCount;
-          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, changesEverNeeded, selfReviewed, reviewRoundCount, updatedAt: new Date().toISOString() } } };
+          // Trigger checklist gap feedback when self-reviewed author PR gets changes requested
+          const checklistGapPending = (reviewOutcome === 'requested-changes' && pr.selfReviewed && pr.role === 'author')
+            ? true
+            : pr.checklistGapPending;
+          return { prs: { ...state.prs, [id]: { ...pr, reviewOutcome, changesEverNeeded, selfReviewed, reviewRoundCount, checklistGapPending, updatedAt: new Date().toISOString() } } };
         });
       },
 
@@ -278,6 +284,22 @@ export const usePRTrackerStore = create<PRTrackerState>()(
           if (!pr) return state;
           const reviewRoundCount = Math.max(0, count);
           return { prs: { ...state.prs, [id]: { ...pr, reviewRoundCount, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      submitChecklistGap: (id, category, note) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          return { prs: { ...state.prs, [id]: { ...pr, missCategory: category, missNote: note, checklistGapPending: undefined, updatedAt: new Date().toISOString() } } };
+        });
+      },
+
+      dismissChecklistGap: (id) => {
+        set((state) => {
+          const pr = state.prs[id];
+          if (!pr) return state;
+          return { prs: { ...state.prs, [id]: { ...pr, checklistGapPending: undefined, updatedAt: new Date().toISOString() } } };
         });
       },
 

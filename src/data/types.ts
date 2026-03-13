@@ -370,6 +370,50 @@ export type AcceptanceOutcome = 'accepted-clean' | 'accepted-with-changes' | 'ab
 /** Whether the reviewer requested changes on someone else's PR */
 export type ReviewOutcome = 'requested-changes' | 'no-changes-requested';
 
+/** Category of what the external reviewer caught that was missed in self-review */
+export type MissCategory =
+  | 'logic'
+  | 'edge-case'
+  | 'naming-style'
+  | 'performance'
+  | 'security'
+  | 'test-coverage'
+  | 'docs'
+  | 'architecture';
+
+export const MISS_CATEGORIES: MissCategory[] = [
+  'logic',
+  'edge-case',
+  'naming-style',
+  'performance',
+  'security',
+  'test-coverage',
+  'docs',
+  'architecture',
+];
+
+export const MISS_CATEGORY_LABELS: Record<MissCategory, string> = {
+  'logic': 'Logic',
+  'edge-case': 'Edge Case',
+  'naming-style': 'Naming / Style',
+  'performance': 'Performance',
+  'security': 'Security',
+  'test-coverage': 'Test Coverage',
+  'docs': 'Docs',
+  'architecture': 'Architecture',
+};
+
+export const MISS_CATEGORY_COLORS: Record<MissCategory, string> = {
+  'logic': '#ff4757',
+  'edge-case': '#ff8c42',
+  'naming-style': '#ffc107',
+  'performance': '#54a0ff',
+  'security': '#ff6b81',
+  'test-coverage': '#2ecc71',
+  'docs': '#a29bfe',
+  'architecture': '#00b894',
+};
+
 export interface TrackedPR {
   id: string;
   title: string;
@@ -398,6 +442,12 @@ export interface TrackedPR {
   selfReviewed?: boolean;
   /** Number of review rounds before acceptance or abandonment */
   reviewRoundCount?: number;
+  /** Category of what the reviewer caught that self-review missed */
+  missCategory?: MissCategory;
+  /** Optional note about what the reviewer caught */
+  missNote?: string;
+  /** Transient flag: true when feedback card should be shown */
+  checklistGapPending?: boolean;
   createdAt: string;
   updatedAt: string;
   resolvedAt?: string;
