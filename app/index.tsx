@@ -332,26 +332,18 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {(advancedGate.allowed || dueCount > 0) && (
-          <>
-            <Text style={styles.tierGroupLabel}>Advanced</Text>
-            <View style={styles.quickLinksGrid}>
-              {dueCount > 0 && (
-                <Pressable
-                  style={styles.quickLink}
-                  onPress={() => advancedGate.allowed ? router.push('/review/due-items') : advancedGate.guardedNavigate('/review/due-items')}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Due items, ${dueCount}`}
-                >
-                  <Text style={styles.quickLinkText}>{advancedGate.allowed ? '🔁' : '🔒'} Due ({dueCount})</Text>
-                </Pressable>
-              )}
-            </View>
-          </>
-        )}
-
-        <Text style={styles.tierGroupLabel}>Pro</Text>
+        <Text style={styles.tierGroupLabel}>Advanced / Pro</Text>
         <View style={styles.quickLinksGrid}>
+          {dueCount > 0 && (
+            <Pressable
+              style={styles.quickLink}
+              onPress={() => advancedGate.allowed ? router.push('/review/due-items') : advancedGate.guardedNavigate('/review/due-items')}
+              accessibilityRole="button"
+              accessibilityLabel={`Due items, ${dueCount}`}
+            >
+              <Text style={styles.quickLinkText}>{advancedGate.allowed ? '🔁' : '🔒'} Due ({dueCount})</Text>
+            </Pressable>
+          )}
           <Pressable
             style={styles.quickLink}
             onPress={() => proGate.allowed ? router.push('/dashboard') : proGate.guardedNavigate('/dashboard')}
