@@ -18,7 +18,7 @@ const SECTIONS = [
     body: 'Everything in Advanced, plus analytics to measure your growth over time.\n\nIncludes:\n- Trends (compare sessions side-by-side)\n- Readiness dashboard\n- Checklist gap insights\n\n2-week free trial. Cancel anytime.',
   },
   {
-    title: 'Premium — $12/month',
+    title: 'Premium — $13/month',
     body: 'Everything in Pro, plus AI-powered features to accelerate your learning.\n\nIncludes:\n- AI tutor deep dives on any checklist item (powered by Claude)\n- AI-assisted comment drafting\n- $3/month in AI credits included\n- Choose your preferred AI model (Sonnet or Opus)\n\n2-week free trial with $1 in AI credits. Cancel anytime.',
   },
   {

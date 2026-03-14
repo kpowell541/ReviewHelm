@@ -11,7 +11,7 @@ const SECTIONS = [
   },
   {
     title: 'Need Help?',
-    body: 'If you believe this is incorrect, contact kaitlin@nesttend.app and include your approximate location and timestamp.',
+    body: 'If you believe this is incorrect, contact support@reviewhelm.app and include your approximate location and timestamp.',
   },
 ];
 

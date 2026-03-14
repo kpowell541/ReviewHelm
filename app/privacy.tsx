@@ -19,11 +19,11 @@ const SECTIONS = [
   },
   {
     title: 'Data Deletion',
-    body: 'You can delete all your local data at any time by clearing the app\'s storage. If you have a synced account, contact us at kaitlin@nesttend.app to request full deletion of your server-side data.',
+    body: 'You can delete all your local data at any time by clearing the app\'s storage. If you have a synced account, contact us at support@reviewhelm.app to request full deletion of your server-side data.',
   },
   {
     title: 'Business Information',
-    body: 'ReviewHelm is operated by ReviewHelm LLC.\n\nContact: kaitlin@nesttend.app',
+    body: 'ReviewHelm is operated by ReviewHelm LLC.\n\nContact: support@reviewhelm.app',
   },
 ];
 

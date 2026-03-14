@@ -27,7 +27,7 @@ const TIER_DETAILS = {
   },
   premium: {
     label: 'Premium',
-    price: '$12/mo',
+    price: '$13/mo',
     features: ['AI tutor & comment drafter', '$3/mo AI credits included', 'All Pro features', '14-day free trial'],
   },
 };

@@ -250,34 +250,6 @@ export default function HomeScreen() {
             badge={starterGate.allowed && activePRCount > 0 ? `${activePRCount}` : undefined}
           />
 
-          <ModeCard
-            title="My Gaps"
-            subtitle={gapsGate.allowed ? 'Track and close your knowledge gaps' : 'Upgrade to Advanced to see what you missed'}
-            icon="📊"
-            color={colors.gapsMode}
-            onPress={() => gapsGate.guardedNavigate('/gaps')}
-            isDesktop={isDesktop}
-            locked={!gapsGate.allowed}
-            badge={
-              gapsGate.allowed && (gapCount > 0 || dueCount > 0)
-                ? [
-                    gapCount > 0 ? `${gapCount} gaps` : '',
-                    dueCount > 0 ? `${dueCount} due` : '',
-                  ].filter(Boolean).join(' · ')
-                : undefined
-            }
-          />
-
-          <ModeCard
-            title="Learn"
-            subtitle={learnGate.allowed ? 'Study weak areas and track real improvement' : 'Upgrade to Advanced to learn from your gaps'}
-            icon="📚"
-            color={colors.learnMode}
-            onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
-            badge={learnGate.allowed && gapCount > 0 ? `${gapCount} gaps` : undefined}
-            isDesktop={isDesktop}
-            locked={!learnGate.allowed}
-          />
         </View>
 
         {/* Quick links grouped by tier */}
@@ -321,18 +293,36 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <Text style={styles.tierGroupLabel}>Advanced / Pro</Text>
+        <Text style={styles.tierGroupLabel}>Advanced — Growth</Text>
         <View style={styles.quickLinksGrid}>
-          {dueCount > 0 && (
-            <Pressable
-              style={styles.quickLink}
-              onPress={() => advancedGate.allowed ? router.push('/review/due-items') : advancedGate.guardedNavigate('/review/due-items')}
-              accessibilityRole="button"
-              accessibilityLabel={`Due items, ${dueCount}`}
-            >
-              <Text style={styles.quickLinkText}>{advancedGate.allowed ? '🔁' : '🔒'} Due ({dueCount})</Text>
-            </Pressable>
-          )}
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => gapsGate.guardedNavigate('/gaps')}
+            accessibilityRole="button"
+            accessibilityLabel="My Gaps"
+          >
+            <Text style={styles.quickLinkText}>{gapsGate.allowed ? '📊' : '🔒'} My Gaps{gapsGate.allowed && gapCount > 0 ? ` (${gapCount})` : ''}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
+            accessibilityRole="button"
+            accessibilityLabel="Learn"
+          >
+            <Text style={styles.quickLinkText}>{learnGate.allowed ? '📚' : '🔒'} Learn{learnGate.allowed && gapCount > 0 ? ` (${gapCount})` : ''}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => advancedGate.allowed ? router.push('/review/due-items') : advancedGate.guardedNavigate('/review/due-items')}
+            accessibilityRole="button"
+            accessibilityLabel={dueCount > 0 ? `Due items, ${dueCount}` : 'Due items, none due'}
+          >
+            <Text style={styles.quickLinkText}>{advancedGate.allowed ? '🔁' : '🔒'} {dueCount > 0 ? `Due (${dueCount})` : 'Due Items'}</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.tierGroupLabel}>Pro — Dashboards</Text>
+        <View style={styles.quickLinksGrid}>
           <Pressable
             style={styles.quickLink}
             onPress={() => proGate.allowed ? router.push('/dashboard') : proGate.guardedNavigate('/dashboard')}

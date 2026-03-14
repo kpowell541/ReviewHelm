@@ -221,10 +221,10 @@ export default function PlansScreen() {
               />
               <PlanCard
                 name="Premium"
-                price="$12"
+                price="$13"
                 period="/mo"
                 pitch="AI-powered tutoring & drafting"
-                features={['Everything in Pro', 'AI tutor (Claude)', 'AI comment drafter', '$3/mo AI credits']}
+                features={['Everything in Pro', 'AI tutor (Claude)', 'AI comment drafter', '$3/mo AI credits included']}
                 isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
                 highlighted
                 trialBadge
@@ -300,10 +300,10 @@ export default function PlansScreen() {
                 />
                 <PlanCard
                   name="Premium"
-                  price="$12"
+                  price="$13"
                   period="/mo"
                   pitch="AI-powered tutoring & drafting"
-                  features={['Everything in Pro', 'AI tutor (Claude)', 'AI comment drafter', '$3/mo AI credits']}
+                  features={['Everything in Pro', 'AI tutor (Claude)', 'AI comment drafter', '$3/mo AI credits included']}
                   isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
                   highlighted
                   trialBadge

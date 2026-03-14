@@ -11,7 +11,7 @@ const SECTIONS = [
   },
   {
     title: 'Subscriptions and Billing',
-    body: 'ReviewHelm offers five subscription tiers: Free, Starter ($3/month), Advanced ($5/month), Pro ($8/month), and Premium ($12/month). Subscriptions are billed monthly and renew automatically until cancelled. By subscribing, you authorize ReviewHelm LLC to charge your payment method on a recurring monthly basis. You can cancel at any time from Settings.',
+    body: 'ReviewHelm offers five subscription tiers: Free, Starter ($3/month), Advanced ($5/month), Pro ($8/month), and Premium ($13/month). Subscriptions are billed monthly and renew automatically until cancelled. By subscribing, you authorize ReviewHelm LLC to charge your payment method on a recurring monthly basis. You can cancel at any time from Settings.',
   },
   {
     title: 'Free Trials',
