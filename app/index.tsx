@@ -53,7 +53,7 @@ function ModeCard({ title, subtitle, icon, color, onPress, badge, isDesktop, loc
         <Text style={[styles.modeIcon, locked && { opacity: 0.4 }]}>{icon}</Text>
         <View style={styles.modeCardText}>
           <Text style={[styles.modeTitle, locked && { color: colors.textMuted }]}>{title}</Text>
-          <Text style={styles.modeSubtitle}>{locked ? 'Upgrade to unlock' : subtitle}</Text>
+          <Text style={styles.modeSubtitle}>{subtitle}</Text>
         </View>
         {locked ? (
           <Text style={styles.lockIcon}>🔒</Text>
@@ -178,8 +178,10 @@ export default function HomeScreen() {
   };
 
   const starterGate = useFeatureGate('starter');
-  const learnGate = useFeatureGate('pro');
-  const gapsGate = useFeatureGate('pro');
+  const advancedGate = useFeatureGate('advanced');
+  const proGate = useFeatureGate('pro');
+  const learnGate = useFeatureGate('advanced');
+  const gapsGate = useFeatureGate('advanced');
 
   const recentSessions = useMemo(() => {
     return Object.values(sessions)
@@ -232,7 +234,7 @@ export default function HomeScreen() {
         <View style={[styles.modeCards, isDesktop && styles.modeCardsDesktop]}>
           <ModeCard
             title="Review a PR"
-            subtitle="Checklist for reviewing teammate PRs"
+            subtitle="Start here — guided checklists for 45+ stacks"
             icon="🔍"
             color={colors.reviewMode}
             onPress={() => router.push('/review/stack-select')}
@@ -241,7 +243,7 @@ export default function HomeScreen() {
 
           <ModeCard
             title="Polish My PR"
-            subtitle="Prep your PR for a smooth merge"
+            subtitle={starterGate.allowed ? 'Prep your PR for a smooth merge' : 'Upgrade to Starter to self-review your PRs'}
             icon="✨"
             color={colors.polishMode}
             onPress={() => starterGate.guardedNavigate('/polish/sessions')}
@@ -251,7 +253,7 @@ export default function HomeScreen() {
 
           <ModeCard
             title="Learn"
-            subtitle="Study weak areas and track real improvement"
+            subtitle={learnGate.allowed ? 'Study weak areas and track real improvement' : 'Upgrade to Advanced to learn from your gaps'}
             icon="📚"
             color={colors.learnMode}
             onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
@@ -262,7 +264,7 @@ export default function HomeScreen() {
 
           <ModeCard
             title="My Gaps"
-            subtitle="Track and close your knowledge gaps"
+            subtitle={gapsGate.allowed ? 'Track and close your knowledge gaps' : 'Upgrade to Advanced to see what you missed'}
             icon="📊"
             color={colors.gapsMode}
             onPress={() => gapsGate.guardedNavigate('/gaps')}
@@ -308,11 +310,11 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/dashboard') : starterGate.guardedNavigate('/dashboard')}
+            onPress={() => proGate.allowed ? router.push('/dashboard') : proGate.guardedNavigate('/dashboard')}
             accessibilityRole="button"
             accessibilityLabel="Readiness dashboard"
           >
-            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📈' : '🔒'} Readiness</Text>
+            <Text style={styles.quickLinkText}>{proGate.allowed ? '📈' : '🔒'} Readiness</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
@@ -324,11 +326,11 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/trends') : starterGate.guardedNavigate('/trends')}
+            onPress={() => proGate.allowed ? router.push('/trends') : proGate.guardedNavigate('/trends')}
             accessibilityRole="button"
             accessibilityLabel="Trends"
           >
-            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📊' : '🔒'} Trends</Text>
+            <Text style={styles.quickLinkText}>{proGate.allowed ? '📊' : '🔒'} Trends</Text>
           </Pressable>
           {dueCount > 0 && (
             <Pressable

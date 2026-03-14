@@ -11,7 +11,7 @@ import { colors, spacing, fontSizes, radius } from '../theme';
 import { useResponsive } from '../hooks/useResponsive';
 import { hasAccess } from '../store/useTierStore';
 
-type EffectiveTier = 'free' | 'starter' | 'pro' | 'premium' | 'sponsored' | 'admin';
+type EffectiveTier = 'free' | 'starter' | 'advanced' | 'pro' | 'premium' | 'sponsored' | 'admin';
 
 interface TourSlide {
   icon: string;
@@ -19,13 +19,15 @@ interface TourSlide {
   description: string;
   howTo: string;
   color: string;
-  requiredTier: 'free' | 'starter' | 'pro' | 'premium';
+  requiredTier: 'free' | 'starter' | 'advanced' | 'pro' | 'premium';
   /** Optional section label shown above the title */
   section?: string;
+  /** Tier label shown at top of slide */
+  tierLabel?: string;
 }
 
 const ALL_SLIDES: TourSlide[] = [
-  // ── Features ──
+  // ── Free tier ──
   {
     icon: '🔍',
     title: 'Review a PR',
@@ -34,198 +36,85 @@ const ALL_SLIDES: TourSlide[] = [
     howTo: 'Tap "Review a PR" on the home screen, pick your stack, and start reviewing.',
     color: colors.reviewMode,
     requiredTier: 'free',
+    tierLabel: 'Included in Free',
   },
-
-  // ── Checklist Guide (always shown, part of free tier) ──
   {
     icon: '📊',
-    title: 'Score Header',
-    section: 'Using the Checklist',
+    title: 'Using the Checklist',
     description:
-      'At the top of every session you\'ll see three scores: Coverage (% of items reviewed), Confidence (your average self-rated understanding), and Issues (items marked "Needs Attention"). A progress bar tracks your overall coverage.',
-    howTo: 'These update live as you work through items. Aim for high coverage before completing a session.',
+      'Each item has a severity badge (BLK, MAJ, MIN, NIT), verdict buttons (Good, Attn, N/A), and a 1–5 confidence rating. Sections are collapsible with progress counters, and Bulk Mode lets you apply verdicts to multiple items at once.',
+    howTo: 'Work through items, rate your confidence honestly, and complete the session when done. Coverage below 70% triggers a warning.',
     color: colors.reviewMode,
     requiredTier: 'free',
+    tierLabel: 'Included in Free',
   },
-  {
-    icon: '🏷️',
-    title: 'Severity Levels',
-    section: 'Using the Checklist',
-    description:
-      'Every checklist item has a severity badge: BLK (Blocker) for critical issues that must be fixed, MAJ (Major) for significant problems, MIN (Minor) for smaller improvements, and NIT for style/preference suggestions.',
-    howTo: 'Use the severity filter chips below the search bar to focus on the levels that matter most for your review.',
-    color: colors.blocker,
-    requiredTier: 'free',
-  },
-  {
-    icon: '✅',
-    title: 'Verdict Buttons',
-    section: 'Using the Checklist',
-    description:
-      'For each item, choose a verdict: "Good" means the code passes this check, "Attn" (Needs Attention) flags an issue you found, and "N/A" means this check doesn\'t apply to the current PR. Unreviewed items count as "skipped".',
-    howTo: 'Tap the verdict button for each item. Marking "Attn" will prompt you to draft a review comment.',
-    color: colors.looksGood,
-    requiredTier: 'free',
-  },
-  {
-    icon: '🎯',
-    title: 'Confidence Rating',
-    section: 'Using the Checklist',
-    description:
-      'Rate your confidence from 1 to 5 on each item. 1 = "I have no idea what this means" and 5 = "I could teach this." Low confidence items (1-2) will trigger an AI tutor suggestion to help you learn.',
-    howTo: 'Be honest! Low ratings help ReviewHelm identify your knowledge gaps for targeted learning later.',
-    color: colors.learnMode,
-    requiredTier: 'free',
-  },
-  {
-    icon: '📝',
-    title: 'Notes & Actions',
-    section: 'Using the Checklist',
-    description:
-      'Each item has action icons: star (bookmark for later), arrow (share the item), and book (deep-dive with AI tutor). You can also add per-item notes to capture specifics, and session-wide notes at the top for general context.',
-    howTo: 'Tap an item\'s text to expand/collapse it. Tap "Add per-item notes" to attach notes that appear in your session summary.',
-    color: colors.info,
-    requiredTier: 'free',
-  },
-  {
-    icon: '📑',
-    title: 'Sections & Navigation',
-    section: 'Using the Checklist',
-    description:
-      'Items are grouped into collapsible sections (e.g., Security, Performance, Error Handling). Each section header shows a progress counter like "3/8" — items reviewed out of total.',
-    howTo: 'Tap a section header to collapse/expand it. Use the floating "§" button to jump directly to any section.',
-    color: colors.primary,
-    requiredTier: 'free',
-  },
-  {
-    icon: '⚡',
-    title: 'Bulk Mode',
-    section: 'Using the Checklist',
-    description:
-      'When you have many items that share the same verdict (e.g., all look good), Bulk Mode lets you select multiple items and apply a verdict or confidence rating to all of them at once.',
-    howTo: 'Tap "Bulk" in the header, check the items you want, then use the floating action bar to apply "Good", "N/A", or a confidence level.',
-    color: colors.primaryLight,
-    requiredTier: 'free',
-  },
-  {
-    icon: '🏁',
-    title: 'Completing a Session',
-    section: 'Using the Checklist',
-    description:
-      'When you\'re done reviewing, tap "Complete Session" at the bottom. This locks in your scores, records confidence data for gap tracking, and generates a session summary. You\'ll be warned if coverage is below 70%.',
-    howTo: 'You can re-open and re-complete a session later to update your scores. Your summary and PDF export will reflect the latest answers.',
-    color: colors.success,
-    requiredTier: 'free',
-  },
-
-  // ── More features ──
   {
     icon: '🔎',
-    title: 'Search',
+    title: 'Search & Bookmarks',
     description:
-      'Search across all checklist items to quickly find guidance on any topic.',
-    howTo: 'Tap "Search" on the home screen and type a keyword.',
+      'Search across all checklist items to find guidance on any topic. Bookmark important items for quick reference later.',
+    howTo: 'Tap "Search" or the star icon on any item during a review.',
     color: colors.info,
     requiredTier: 'free',
+    tierLabel: 'Included in Free',
   },
-  {
-    icon: '⭐',
-    title: 'Bookmarks',
-    description:
-      'Save important checklist items for quick reference later.',
-    howTo: 'Tap the star icon on any checklist item during a review to bookmark it.',
-    color: colors.warning,
-    requiredTier: 'free',
-  },
+
+  // ── Starter tier ──
   {
     icon: '✨',
-    title: 'Polish My PR',
+    title: 'Polish My PR & PR Tracker',
     description:
-      'Run through a self-review checklist before requesting reviews. Catch issues early and get smoother merges.',
-    howTo: 'Tap "Polish My PR" on the home screen and select a PR to polish.',
+      'Self-review your own PRs before requesting reviews. Track all your active PRs in one place with status, linked sessions, and review history.',
+    howTo: 'Tap "Polish My PR" to self-review, or "Add PR" / "PRs" to start tracking.',
     color: colors.polishMode,
     requiredTier: 'starter',
-  },
-  {
-    icon: '🔀',
-    title: 'PR Tracker',
-    description:
-      'Track all your active PRs in one place. See status, link sessions, and manage your review workflow.',
-    howTo: 'Tap "PRs" on the home screen or "Add a PR" to start tracking.',
-    color: colors.prTrackerMode,
-    requiredTier: 'starter',
-  },
-  {
-    icon: '📈',
-    title: 'Readiness Dashboard',
-    description:
-      'See your overall review readiness score and track progress across all your stacks.',
-    howTo: 'Tap "Readiness" on the home screen to view your dashboard.',
-    color: colors.success,
-    requiredTier: 'starter',
-  },
-  {
-    icon: '📊',
-    title: 'Trends',
-    description:
-      'Visualize your review activity over time — sessions completed, items reviewed, and more.',
-    howTo: 'Tap "Trends" on the home screen to see your stats.',
-    color: colors.gapsMode,
-    requiredTier: 'starter',
+    tierLabel: 'Starter',
   },
   {
     icon: '📋',
-    title: 'Past Reviews',
+    title: 'Deep Dives & Past Reviews',
     description:
-      'Access completed sessions to reference past decisions and learn from previous reviews.',
-    howTo: 'Tap "Past PRs" on the home screen to browse your history.',
+      'Explore authored content for any checklist item — what it means, why it matters, how to verify, with code examples. Access completed sessions to reference past decisions.',
+    howTo: 'Tap the book icon on any item, or "Past Reviews" on the home screen.',
     color: colors.textSecondary,
     requiredTier: 'starter',
+    tierLabel: 'Starter',
   },
+
+  // ── Advanced tier ──
   {
     icon: '📚',
-    title: 'Learn Mode',
+    title: 'Learn Mode & My Gaps',
     description:
-      'Study your weak areas with AI-powered tutoring. ReviewHelm uses spaced repetition to help you close knowledge gaps.',
-    howTo: 'Tap "Learn" on the home screen, pick a stack, and start studying.',
+      'Study your weak areas with targeted lessons. ReviewHelm uses spaced repetition to surface items you need to practice, and tracks your knowledge gaps over time.',
+    howTo: 'Tap "Learn" to study a queue of your weakest items, or "My Gaps" to see where you need work.',
     color: colors.learnMode,
-    requiredTier: 'pro',
+    requiredTier: 'advanced',
+    tierLabel: 'Advanced — 14-day free trial',
   },
+
+  // ── Pro tier ──
   {
-    icon: '📊',
-    title: 'My Gaps',
+    icon: '📈',
+    title: 'Trends, Readiness & Analytics',
     description:
-      'See exactly where your knowledge gaps are and get targeted recommendations to improve.',
-    howTo: 'Tap "My Gaps" on the home screen to see your weak areas and due items.',
-    color: colors.gapsMode,
+      'Compare sessions side-by-side to see how you\'re improving. Track your readiness score across stacks. View checklist gap insights to understand what reviewers catch.',
+    howTo: 'Tap "Trends" or "Readiness" on the home screen to explore your analytics.',
+    color: colors.success,
     requiredTier: 'pro',
+    tierLabel: 'Pro — 14-day free trial',
   },
+
+  // ── Premium tier ──
   {
     icon: '🤖',
-    title: 'AI Tutor',
+    title: 'AI Tutor & Comment Drafter',
     description:
-      'Deep-dive into any review topic with an AI tutor powered by Claude. Ask follow-ups, get examples, and build understanding.',
-    howTo: 'During Learn mode or from a checklist item, tap the book icon to start a conversation.',
+      'Deep-dive into any review topic with an AI tutor powered by Claude. Get review comments drafted in your preferred tone. $3/mo in AI credits included.',
+    howTo: 'Tap the book icon during Learn mode or a review, or mark an item as "Attn" to draft a comment.',
     color: colors.primary,
     requiredTier: 'premium',
-  },
-  {
-    icon: '💬',
-    title: 'AI Comment Drafter',
-    description:
-      'Get review comments drafted for you in your preferred tone and style using AI.',
-    howTo: 'During a review session, mark an item as "Attn" and tap the prompt to draft a comment.',
-    color: colors.primaryLight,
-    requiredTier: 'premium',
-  },
-  {
-    icon: '💰',
-    title: 'AI Credits',
-    description:
-      'Your plan includes $10/month in AI credits. Use them for tutoring, comment drafting, and more.',
-    howTo: 'Credits are used automatically. Check your balance in Settings or the Plans page.',
-    color: colors.success,
-    requiredTier: 'premium',
+    tierLabel: 'Premium — 14-day free trial',
   },
 ];
 
@@ -242,6 +131,8 @@ function getTierLabel(tier: EffectiveTier): string {
       return 'Premium';
     case 'pro':
       return 'Pro';
+    case 'advanced':
+      return 'Advanced';
     case 'starter':
       return 'Starter';
     default:
@@ -311,12 +202,17 @@ export function FeatureTourModal({ visible, onClose, effectiveTier }: FeatureTou
               accessibilityRole="button"
               accessibilityLabel="Skip feature tour"
             >
-              <Text style={styles.closeText}>Skip</Text>
+              <Text style={styles.closeText}>Skip tour</Text>
             </Pressable>
           </View>
 
           {/* Slide content */}
           <View style={styles.slideContent}>
+            {slide.tierLabel && (
+              <View style={styles.tierBadge}>
+                <Text style={styles.tierBadgeText}>{slide.tierLabel}</Text>
+              </View>
+            )}
             <View style={[styles.iconCircle, { backgroundColor: slide.color + '20' }]}>
               <Text style={styles.slideIcon}>{slide.icon}</Text>
             </View>
@@ -415,6 +311,20 @@ const styles = StyleSheet.create({
   slideContent: {
     alignItems: 'center',
     paddingVertical: spacing.lg,
+  },
+  tierBadge: {
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    marginBottom: spacing.md,
+  },
+  tierBadgeText: {
+    fontSize: fontSizes.xs,
+    fontFamily: 'Quicksand_600SemiBold',
+    color: colors.primary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   iconCircle: {
     width: 80,

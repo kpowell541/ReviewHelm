@@ -7,7 +7,7 @@ const SECTIONS = [
   },
   {
     title: 'Prorated Refund Calculation',
-    body: 'Your refund is calculated based on the percentage of time remaining in your current billing period. All purchased items — including subscription fees and AI credits — are prorated based on time remaining, not refunded in full.\n\nFor Starter subscriptions ($3/month): you receive back the prorated percentage of $3.\n\nFor Pro subscriptions ($7/month): you receive back the prorated percentage of $7.\n\nFor Premium subscriptions ($15/month): you receive back the prorated percentage of the total $15, which includes the $5 base fee and $7.50 in AI credits. Remaining unused credits are prorated based on time remaining in the billing period.\n\nExample: if you cancel a Pro subscription with 25% of your billing period remaining, you receive 25% of $7 = $1.75 back.',
+    body: 'Your refund is calculated based on the percentage of time remaining in your current billing period. All purchased items — including subscription fees and AI credits — are prorated based on time remaining, not refunded in full.\n\nFor Starter subscriptions ($3/month): you receive back the prorated percentage of $3.\n\nFor Advanced subscriptions ($5/month): you receive back the prorated percentage of $5.\n\nFor Pro subscriptions ($8/month): you receive back the prorated percentage of $8.\n\nFor Premium subscriptions ($12/month): you receive back the prorated percentage of the total $12, which includes the $9 base fee and $3 in AI credits. Remaining unused credits are prorated based on time remaining in the billing period.\n\nExample: if you cancel a Pro subscription with 25% of your billing period remaining, you receive 25% of $8 = $2.00 back.',
   },
   {
     title: 'AI Credit Top-Ups',
@@ -19,11 +19,11 @@ const SECTIONS = [
   },
   {
     title: 'Free Trial',
-    body: 'If you cancel during your free trial period, you will not be charged. Pro trials do not include AI credits. Premium trials include $2 in AI credits — any unused trial credits are forfeited upon cancellation.',
+    body: 'If you cancel during your free trial period, you will not be charged. Advanced and Pro trials do not include AI credits. Premium trials include $1 in AI credits — any unused trial credits are forfeited upon cancellation.',
   },
   {
     title: 'Contact',
-    body: 'If you have questions about refunds or billing, contact us at kaitlin@nesttend.app.',
+    body: 'If you have questions about refunds or billing, contact us at support@reviewhelm.app.',
   },
 ];
 

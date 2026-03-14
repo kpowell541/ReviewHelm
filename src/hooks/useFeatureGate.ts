@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { useTierStore, hasAccess } from '../store/useTierStore';
 import { crossAlert } from '../utils/alert';
 
-type SubscriptionTier = 'free' | 'starter' | 'pro' | 'premium' | 'sponsored';
+type SubscriptionTier = 'free' | 'starter' | 'advanced' | 'pro' | 'premium' | 'sponsored';
 
 interface FeatureGateResult {
   /** Whether the user's effective tier meets the requirement */

@@ -6,7 +6,7 @@ import { persistStorage } from '../storage/secureStorage';
 import { api } from '../api/client';
 import { useAuthStore } from './useAuthStore';
 
-type SubscriptionTier = 'free' | 'starter' | 'pro' | 'premium' | 'sponsored';
+type SubscriptionTier = 'free' | 'starter' | 'advanced' | 'pro' | 'premium' | 'sponsored';
 type EffectiveTier = SubscriptionTier | 'admin';
 
 interface TierState {
@@ -24,7 +24,7 @@ interface TierState {
   fetchTierInfo: () => Promise<void>;
   fetchCreditBalance: () => Promise<void>;
   syncTier: () => Promise<void>;
-  startCheckout: (plan: 'starter' | 'pro' | 'premium', options?: { trial?: boolean }) => Promise<string>;
+  startCheckout: (plan: 'starter' | 'advanced' | 'pro' | 'premium', options?: { trial?: boolean }) => Promise<string>;
   startTopUp: (amountUsd: 1 | 5 | 10 | 20) => Promise<string>;
   openPortal: () => Promise<string>;
 }
@@ -32,10 +32,11 @@ interface TierState {
 const TIER_RANK: Record<EffectiveTier, number> = {
   free: 0,
   starter: 1,
-  pro: 2,
-  premium: 3,
-  sponsored: 4,
-  admin: 5,
+  advanced: 2,
+  pro: 3,
+  premium: 4,
+  sponsored: 5,
+  admin: 6,
 };
 
 export const useTierStore = create<TierState>()(
