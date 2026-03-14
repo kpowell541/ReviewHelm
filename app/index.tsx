@@ -251,17 +251,6 @@ export default function HomeScreen() {
           />
 
           <ModeCard
-            title="Learn"
-            subtitle={learnGate.allowed ? 'Study weak areas and track real improvement' : 'Upgrade to Advanced to learn from your gaps'}
-            icon="📚"
-            color={colors.learnMode}
-            onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
-            badge={learnGate.allowed && gapCount > 0 ? `${gapCount} gaps` : undefined}
-            isDesktop={isDesktop}
-            locked={!learnGate.allowed}
-          />
-
-          <ModeCard
             title="My Gaps"
             subtitle={gapsGate.allowed ? 'Track and close your knowledge gaps' : 'Upgrade to Advanced to see what you missed'}
             icon="📊"
@@ -277,6 +266,17 @@ export default function HomeScreen() {
                   ].filter(Boolean).join(' · ')
                 : undefined
             }
+          />
+
+          <ModeCard
+            title="Learn"
+            subtitle={learnGate.allowed ? 'Study weak areas and track real improvement' : 'Upgrade to Advanced to learn from your gaps'}
+            icon="📚"
+            color={colors.learnMode}
+            onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
+            badge={learnGate.allowed && gapCount > 0 ? `${gapCount} gaps` : undefined}
+            isDesktop={isDesktop}
+            locked={!learnGate.allowed}
           />
         </View>
 
