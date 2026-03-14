@@ -54,7 +54,7 @@ const SLIDES: OnboardingSlide[] = [
     icon: '📋',
     title: 'A Learning Tool, Not a Guarantee',
     description:
-      'ReviewHelm\'s checklists and guides are designed to help you build better code review habits and improve over time. They are not a substitute for thorough human review and do not guarantee code quality, security, or correctness.',
+      'ReviewHelm helps you build better code review habits over time — it\'s not a substitute for thorough human review. Ready to review PRs better? Next: Sign in.',
     color: colors.textSecondary,
   },
 ];

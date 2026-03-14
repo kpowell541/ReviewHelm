@@ -65,7 +65,7 @@ export default function LoginScreen() {
           <View style={styles.content}>
             <Text style={styles.title} accessibilityRole="header">Welcome Back</Text>
             <Text style={styles.subtitle}>
-              Sign in to sync your data across devices
+              Sign in to start reviewing PRs with guided checklists
             </Text>
 
             {stagingBlocked && (
