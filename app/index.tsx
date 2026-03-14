@@ -11,7 +11,7 @@ import { useAuthStore } from '../src/store/useAuthStore';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
-import { AddPRModal } from '../src/components/AddPRModal';
+
 import { useFeatureGate } from '../src/hooks/useFeatureGate';
 import { useTierStore } from '../src/store/useTierStore';
 import { FeatureTourModal } from '../src/components/FeatureTourModal';
@@ -143,11 +143,9 @@ export default function HomeScreen() {
   const deleteSession = useSessionStore((s) => s.deleteSession);
   const histories = useConfidenceStore((s) => s.histories);
   const prs = usePRTrackerStore((s) => s.prs);
-  const addPR = usePRTrackerStore((s) => s.addPR);
+
   const adminEmail = (authUser?.email ?? '').trim().toLowerCase();
   const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
-
-  const [showAddPR, setShowAddPR] = useState(false);
 
   const effectiveTier = useTierStore((s) => s.effectiveTier);
   const hasSeenTourForTier = usePreferencesStore((s) => s.hasSeenTourForTier);
@@ -233,7 +231,7 @@ export default function HomeScreen() {
 
         <View style={[styles.modeCards, isDesktop && styles.modeCardsDesktop]}>
           <ModeCard
-            title="Review a PR"
+            title="Review / Polish a PR"
             subtitle="Start here — guided checklists for 45+ stacks"
             icon="🔍"
             color={colors.reviewMode}
@@ -242,13 +240,14 @@ export default function HomeScreen() {
           />
 
           <ModeCard
-            title="Polish My PR"
-            subtitle={starterGate.allowed ? 'Prep your PR for a smooth merge' : 'Upgrade to Starter to self-review your PRs'}
-            icon="✨"
+            title="PR Tracker"
+            subtitle={starterGate.allowed ? `Track PRs across your workflow${activePRCount > 0 ? ` (${activePRCount} active)` : ''}` : 'Upgrade to Starter to track your PRs'}
+            icon="🔀"
             color={colors.polishMode}
-            onPress={() => starterGate.guardedNavigate('/polish/sessions')}
+            onPress={() => starterGate.guardedNavigate('/pr-tracker')}
             isDesktop={isDesktop}
             locked={!starterGate.allowed}
+            badge={starterGate.allowed && activePRCount > 0 ? `${activePRCount}` : undefined}
           />
 
           <ModeCard
@@ -306,21 +305,11 @@ export default function HomeScreen() {
         <View style={styles.quickLinksGrid}>
           <Pressable
             style={styles.quickLink}
-            onPress={() => starterGate.allowed ? setShowAddPR(true) : starterGate.guardedNavigate('/pr-tracker')}
+            onPress={() => starterGate.allowed ? router.push('/polish/sessions') : starterGate.guardedNavigate('/polish/sessions')}
             accessibilityRole="button"
-            accessibilityLabel="Add PR"
+            accessibilityLabel="Polish my PR"
           >
-            <Text style={styles.quickLinkText}>{starterGate.allowed ? '＋' : '🔒'} Add PR</Text>
-          </Pressable>
-          <Pressable
-            style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/pr-tracker') : starterGate.guardedNavigate('/pr-tracker')}
-            accessibilityRole="button"
-            accessibilityLabel={`PRs${starterGate.allowed && activePRCount > 0 ? `, ${activePRCount} active` : ''}`}
-          >
-            <Text style={styles.quickLinkText}>
-              {starterGate.allowed ? '🔀' : '🔒'} PRs{starterGate.allowed && activePRCount > 0 ? ` (${activePRCount})` : ''}
-            </Text>
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '✨' : '🔒'} Polish My PR</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
@@ -392,14 +381,6 @@ export default function HomeScreen() {
         <AppFooter />
       </ScrollView>
       </DesktopContainer>
-
-      <AddPRModal
-        visible={showAddPR}
-        onClose={() => setShowAddPR(false)}
-        onSave={(data) => {
-          addPR(data);
-        }}
-      />
 
       <FeatureTourModal
         visible={showTour}
