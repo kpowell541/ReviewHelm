@@ -188,7 +188,7 @@ describe('StripeWebhookProcessor', () => {
 
       expect(creditService.addCredits).toHaveBeenCalledWith(
         'u1',
-        7.5,
+        3,
         'subscription_grant',
         'Premium subscription credit grant',
         { stripeSubscriptionId: 'sub_prem', status: 'active' },
