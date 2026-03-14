@@ -281,6 +281,28 @@ export default function HomeScreen() {
           />
         </View>
 
+        {/* Quick links grouped by tier */}
+        <Text style={styles.tierGroupLabel}>Free</Text>
+        <View style={styles.quickLinksGrid}>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/search')}
+            accessibilityRole="button"
+            accessibilityLabel="Search"
+          >
+            <Text style={styles.quickLinkText}>🔎 Search</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => router.push('/bookmarks')}
+            accessibilityRole="button"
+            accessibilityLabel="Bookmarks"
+          >
+            <Text style={styles.quickLinkText}>⭐ Bookmarks</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.tierGroupLabel}>Starter</Text>
         <View style={styles.quickLinksGrid}>
           <Pressable
             style={styles.quickLink}
@@ -289,14 +311,6 @@ export default function HomeScreen() {
             accessibilityLabel="Add PR"
           >
             <Text style={styles.quickLinkText}>{starterGate.allowed ? '＋' : '🔒'} Add PR</Text>
-          </Pressable>
-          <Pressable
-            style={styles.quickLink}
-            onPress={() => router.push('/search')}
-            accessibilityRole="button"
-            accessibilityLabel="Search"
-          >
-            <Text style={styles.quickLinkText}>🔎 Search</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
@@ -310,19 +324,41 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={styles.quickLink}
+            onPress={() => starterGate.allowed ? router.push('/past-reviews') : starterGate.guardedNavigate('/past-reviews')}
+            accessibilityRole="button"
+            accessibilityLabel="Past reviews"
+          >
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📋' : '🔒'} Past Reviews</Text>
+          </Pressable>
+        </View>
+
+        {(advancedGate.allowed || dueCount > 0) && (
+          <>
+            <Text style={styles.tierGroupLabel}>Advanced</Text>
+            <View style={styles.quickLinksGrid}>
+              {dueCount > 0 && (
+                <Pressable
+                  style={styles.quickLink}
+                  onPress={() => advancedGate.allowed ? router.push('/review/due-items') : advancedGate.guardedNavigate('/review/due-items')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Due items, ${dueCount}`}
+                >
+                  <Text style={styles.quickLinkText}>{advancedGate.allowed ? '🔁' : '🔒'} Due ({dueCount})</Text>
+                </Pressable>
+              )}
+            </View>
+          </>
+        )}
+
+        <Text style={styles.tierGroupLabel}>Pro</Text>
+        <View style={styles.quickLinksGrid}>
+          <Pressable
+            style={styles.quickLink}
             onPress={() => proGate.allowed ? router.push('/dashboard') : proGate.guardedNavigate('/dashboard')}
             accessibilityRole="button"
             accessibilityLabel="Readiness dashboard"
           >
             <Text style={styles.quickLinkText}>{proGate.allowed ? '📈' : '🔒'} Readiness</Text>
-          </Pressable>
-          <Pressable
-            style={styles.quickLink}
-            onPress={() => router.push('/bookmarks')}
-            accessibilityRole="button"
-            accessibilityLabel="Bookmarks"
-          >
-            <Text style={styles.quickLinkText}>⭐ Bookmarks</Text>
           </Pressable>
           <Pressable
             style={styles.quickLink}
@@ -332,17 +368,10 @@ export default function HomeScreen() {
           >
             <Text style={styles.quickLinkText}>{proGate.allowed ? '📊' : '🔒'} Trends</Text>
           </Pressable>
-          {dueCount > 0 && (
-            <Pressable
-              style={styles.quickLink}
-              onPress={() => router.push('/review/due-items')}
-              accessibilityRole="button"
-              accessibilityLabel={`Due items, ${dueCount}`}
-            >
-              <Text style={styles.quickLinkText}>🔁 Due ({dueCount})</Text>
-            </Pressable>
-          )}
-          {isAdminDashboardUser && (
+        </View>
+
+        {isAdminDashboardUser && (
+          <View style={[styles.quickLinksGrid, { marginTop: spacing.sm }]}>
             <Pressable
               style={styles.quickLink}
               onPress={() => router.push('/admin-dashboard')}
@@ -351,8 +380,8 @@ export default function HomeScreen() {
             >
               <Text style={styles.quickLinkText}>🛡 Admin</Text>
             </Pressable>
-          )}
-        </View>
+          </View>
+        )}
 
         {recentSessions.length > 0 && (
           <View style={styles.recentSection}>
@@ -506,11 +535,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     opacity: 0.5,
   },
+  tierGroupLabel: {
+    fontSize: fontSizes.xs,
+    fontFamily: 'Quicksand_600SemiBold',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+  },
   quickLinksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginTop: spacing.xl,
   },
   quickLink: {
     flexBasis: '31%',
