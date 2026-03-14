@@ -1,8 +1,8 @@
 import { IsBoolean, IsIn, IsOptional, IsUrl, MaxLength } from 'class-validator';
 
 export class SubscriptionSubscribeDto {
-  @IsIn(['starter', 'pro', 'premium'])
-  plan!: 'starter' | 'pro' | 'premium';
+  @IsIn(['starter', 'advanced', 'pro', 'premium'])
+  plan!: 'starter' | 'advanced' | 'pro' | 'premium';
 
   @IsUrl(
     {

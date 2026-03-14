@@ -10,11 +10,12 @@ import { upsertUserFromAuth } from '../common/users/upsert-user-from-auth';
 /** Maps our plan names to Stripe price lookup keys. */
 const PLAN_LOOKUP_KEYS: Record<string, string> = {
   starter: 'reviewhelm_starter_monthly',
+  advanced: 'reviewhelm_advanced_monthly',
   pro: 'reviewhelm_pro_monthly',
   premium: 'reviewhelm_premium_monthly',
 };
 
-type SubscriptionPlan = 'starter' | 'pro' | 'premium';
+type SubscriptionPlan = 'starter' | 'advanced' | 'pro' | 'premium';
 
 const TOPUP_AMOUNTS = [1, 5, 10, 20] as const;
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
@@ -95,7 +96,7 @@ export class StripeService {
       metadata: { userId: user.id, plan },
     };
 
-    // Add trial period if requested (Pro and Premium only, not Starter)
+    // Add trial period if requested (Advanced, Pro, and Premium — not Starter)
     if (options?.trial && plan !== 'starter') {
       subscriptionData.trial_period_days = 14;
     }

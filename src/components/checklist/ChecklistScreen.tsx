@@ -29,6 +29,7 @@ import { computeSessionScores } from '../../utils/scoring';
 import { colors, spacing, fontSizes, radius } from '../../theme';
 import { DesktopContainer } from '../DesktopContainer';
 import { ChecklistItemRow } from './ChecklistItemRow';
+import { useTierStore, hasAccess } from '../../store/useTierStore';
 
 interface Props {
   sessionId: string;
@@ -89,6 +90,8 @@ export function ChecklistScreen({ sessionId }: Props) {
   const updateSessionNotes = useSessionStore((s) => s.updateSessionNotes);
   const updateSelectedSections = useSessionStore((s) => s.updateSelectedSections);
   const recordSessionResults = useConfidenceStore((s) => s.recordSessionResults);
+
+  const effectiveTier = useTierStore((s) => s.effectiveTier);
 
   const antiBiasMode = usePreferencesStore((s) => s.antiBiasMode);
   const defaultSeverityFilter = usePreferencesStore((s) => s.defaultSeverityFilter);
@@ -301,11 +304,18 @@ export function ChecklistScreen({ sessionId }: Props) {
 
   const handleDeepDive = useCallback(
     (itemId: string) => {
+      if (!hasAccess(effectiveTier, 'starter')) {
+        crossAlert(
+          'Starter Feature',
+          'Detailed checklist explanations are available on the Starter plan and above. The checklist titles are designed to guide your review on their own — upgrade when you want deeper context.',
+        );
+        return;
+      }
       router.push(
         `/deep-dive/${encodeURIComponent(itemId)}?sessionId=${encodeURIComponent(sessionId)}`,
       );
     },
-    [router, sessionId],
+    [router, sessionId, effectiveTier],
   );
 
   const handleDraftComment = useCallback(

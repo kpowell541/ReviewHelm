@@ -6,7 +6,7 @@ import { GapsQueryDto } from './dto/gaps-query.dto';
 import { PutConfidenceDto } from './dto/put-confidence.dto';
 import { GapsService, type GapBuckets } from './gaps.service';
 
-@RequiresTier('pro')
+@RequiresTier('advanced')
 @Controller('gaps')
 export class GapsController {
   constructor(private readonly gapsService: GapsService) {}

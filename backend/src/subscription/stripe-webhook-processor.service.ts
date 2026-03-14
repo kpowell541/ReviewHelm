@@ -6,13 +6,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreditService } from './credit.service';
 import { RedisService } from '../common/redis/redis.service';
 
-type SubscriptionPlan = 'starter' | 'pro' | 'premium';
+type SubscriptionPlan = 'starter' | 'advanced' | 'pro' | 'premium';
 
 const WEBHOOK_INFLIGHT_TTL_SECONDS = 30;
 
 /** Credit grant amounts by plan and subscription status */
 const CREDIT_GRANTS: Record<string, { active: number; trialing: number }> = {
-  premium: { active: 7.5, trialing: 2 },
+  premium: { active: 3, trialing: 1 },
 };
 
 /**
@@ -120,12 +120,13 @@ export class StripeWebhookProcessor {
     const plan = subscription.metadata?.plan as SubscriptionPlan | undefined;
     if (!plan) return;
 
-    const tierMap: Record<SubscriptionPlan, 'starter' | 'pro' | 'premium'> = {
+    const tierMap: Record<SubscriptionPlan, 'starter' | 'advanced' | 'pro' | 'premium'> = {
       starter: 'starter',
+      advanced: 'advanced',
       pro: 'pro',
       premium: 'premium',
     };
-    const tier = tierMap[plan] ?? 'pro';
+    const tier = tierMap[plan] ?? 'advanced';
     const now = new Date();
 
     await this.prisma.user.update({

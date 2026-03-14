@@ -12,34 +12,32 @@ interface PlanFeature {
   label: string;
   free: boolean | string;
   starter: boolean | string;
+  advanced: boolean | string;
   pro: boolean | string;
   premium: boolean | string;
 }
 
 const FEATURES: PlanFeature[] = [
-  { label: 'PR review checklists', free: true, starter: true, pro: true, premium: true },
-  { label: 'Search & bookmarks', free: true, starter: true, pro: true, premium: true },
-  { label: 'Active sessions', free: '5 max', starter: 'Unlimited', pro: 'Unlimited', premium: 'Unlimited' },
-  { label: 'Polish My PR mode', free: false, starter: true, pro: true, premium: true },
-  { label: 'PR tracker', free: false, starter: true, pro: true, premium: true },
-  { label: 'Readiness dashboard', free: false, starter: true, pro: true, premium: true },
-  { label: 'Trends & past reviews', free: false, starter: true, pro: true, premium: true },
-  { label: 'Comment profiles', free: false, starter: true, pro: true, premium: true },
-  { label: 'Diff artifacts', free: false, starter: true, pro: true, premium: true },
-  { label: 'Calibration & risk', free: false, starter: true, pro: true, premium: true },
-  { label: 'Learn mode', free: false, starter: false, pro: true, premium: true },
-  { label: 'Knowledge gaps', free: false, starter: false, pro: true, premium: true },
-  { label: 'Spaced repetition', free: false, starter: false, pro: true, premium: true },
-  { label: 'AI tutor (Premium only)', free: false, starter: false, pro: false, premium: true },
-  { label: 'Comment drafter (AI)', free: false, starter: false, pro: false, premium: true },
-  { label: 'Deep dive (AI)', free: false, starter: false, pro: false, premium: true },
-  { label: 'AI credits ($7.50/mo)', free: '-', starter: '-', pro: '-', premium: 'Included' },
-  { label: 'Tutor conversations sync', free: false, starter: false, pro: false, premium: true },
-  { label: '2-week free trial', free: '-', starter: '-', pro: 'Available', premium: 'Available' },
+  { label: 'PR review checklists', free: true, starter: true, advanced: true, pro: true, premium: true },
+  { label: 'Search & bookmarks', free: true, starter: true, advanced: true, pro: true, premium: true },
+  { label: 'Active sessions', free: '5 max', starter: 'Unlimited', advanced: 'Unlimited', pro: 'Unlimited', premium: 'Unlimited' },
+  { label: 'Deep dive content', free: false, starter: true, advanced: true, pro: true, premium: true },
+  { label: 'Polish My PR mode', free: false, starter: true, advanced: true, pro: true, premium: true },
+  { label: 'PR tracker', free: false, starter: true, advanced: true, pro: true, premium: true },
+  { label: 'Past reviews', free: false, starter: true, advanced: true, pro: true, premium: true },
+  { label: 'Learn mode', free: false, starter: false, advanced: true, pro: true, premium: true },
+  { label: 'Knowledge gaps', free: false, starter: false, advanced: true, pro: true, premium: true },
+  { label: 'Spaced repetition', free: false, starter: false, advanced: true, pro: true, premium: true },
+  { label: 'Trends', free: false, starter: false, advanced: false, pro: true, premium: true },
+  { label: 'Readiness dashboard', free: false, starter: false, advanced: false, pro: true, premium: true },
+  { label: 'Checklist gap insights', free: false, starter: false, advanced: false, pro: true, premium: true },
+  { label: 'AI tutor', free: false, starter: false, advanced: false, pro: false, premium: true },
+  { label: 'AI comment drafter', free: false, starter: false, advanced: false, pro: false, premium: true },
+  { label: 'AI credits ($3/mo)', free: '-', starter: '-', advanced: '-', pro: '-', premium: 'Included' },
+  { label: 'Free trial', free: '-', starter: '-', advanced: '14 days', pro: '14 days', premium: '14 days' },
 ];
 
 const MODEL_COSTS = [
-  { model: 'Haiku', input: '$1', output: '$5', note: 'Comment drafter default' },
   { model: 'Sonnet', input: '$3', output: '$15', note: 'Tutor default' },
   { model: 'Opus', input: '$15', output: '$75', note: 'Highest quality' },
 ];
@@ -50,7 +48,7 @@ function CheckMark({ value }: { value: boolean | string }) {
   }
   return (
     <Text style={[styles.featureCheck, !value && styles.featureMissing]}>
-      {value ? '✓' : '-'}
+      {value ? '\u2713' : '-'}
     </Text>
   );
 }
@@ -73,7 +71,7 @@ export default function PlansScreen() {
   const openPortal = useTierStore((s) => s.openPortal);
   const { isDesktop } = useResponsive();
   const { width: screenWidth } = useWindowDimensions();
-  const cardWidth = Math.min(screenWidth * 0.8, 300);
+  const cardWidth = Math.min(screenWidth * 0.8, 260);
   const [loading, setLoading] = useState<string | null>(null);
   const [isRegionAllowed, setIsRegionAllowed] = useState(true);
   const [activePlanIndex, setActivePlanIndex] = useState(0);
@@ -101,7 +99,7 @@ export default function PlansScreen() {
     return d;
   }, [billingCycleStart]);
 
-  const handleSubscribe = async (plan: 'starter' | 'pro' | 'premium', trial?: boolean) => {
+  const handleSubscribe = async (plan: 'starter' | 'advanced' | 'pro' | 'premium', trial?: boolean) => {
     if (!isRegionAllowed) {
       crossAlert('Unavailable', 'Purchases are currently available only in the United States.');
       return;
@@ -154,6 +152,14 @@ export default function PlansScreen() {
 
   const isPaid = effectiveTier !== 'free';
 
+  const tierRank = { free: 0, starter: 1, advanced: 2, pro: 3, premium: 4, sponsored: 5, admin: 6 };
+  const userRank = tierRank[effectiveTier] ?? 0;
+
+  function canUpgradeTo(plan: string): boolean {
+    const planRank = tierRank[plan as keyof typeof tierRank] ?? 0;
+    return userRank < planRank;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <DesktopContainer>
@@ -171,49 +177,58 @@ export default function PlansScreen() {
                 name="Free"
                 price="$0"
                 period=""
-                features={['PR checklists', 'Search & bookmarks', '5 active sessions']}
+                pitch="Review PRs with guided checklists"
+                features={['45+ tech stack checklists', 'Search & bookmarks', '5 active sessions']}
                 isCurrent={effectiveTier === 'free'}
               />
               <PlanCard
                 name="Starter"
                 price="$3"
                 period="/mo"
-                features={['Everything in Free', 'Unlimited sessions', 'Polish mode', 'PR tracker & analytics']}
+                pitch="Self-review and track your PRs"
+                features={['Everything in Free', 'Polish My PR', 'PR tracker & past reviews', 'Deep dive content', 'Unlimited sessions']}
                 isCurrent={effectiveTier === 'starter'}
-                actionLabel={effectiveTier === 'free' ? 'Upgrade to Starter' : undefined}
+                actionLabel={canUpgradeTo('starter') ? 'Upgrade to Starter' : undefined}
                 onAction={() => handleSubscribe('starter')}
                 loading={loading === 'starter'}
                 disabled={!isRegionAllowed}
               />
               <PlanCard
-                name="Pro"
-                price="$7"
+                name="Advanced"
+                price="$5"
                 period="/mo"
-                features={['Everything in Starter', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
+                pitch="Learn from your gaps"
+                features={['Everything in Starter', 'Learn mode', 'Knowledge gap tracking', 'Spaced repetition']}
+                isCurrent={effectiveTier === 'advanced'}
+                trialBadge
+                actionLabel={canUpgradeTo('advanced') ? 'Upgrade to Advanced' : undefined}
+                onAction={() => handleSubscribe('advanced')}
+                loading={loading === 'advanced'}
+                disabled={!isRegionAllowed}
+              />
+              <PlanCard
+                name="Pro"
+                price="$8"
+                period="/mo"
+                pitch="Measure your growth"
+                features={['Everything in Advanced', 'Trends & comparisons', 'Readiness dashboard', 'Checklist gap insights']}
                 isCurrent={effectiveTier === 'pro'}
                 trialBadge
-                actionLabel={
-                  effectiveTier === 'free' || effectiveTier === 'starter'
-                    ? 'Upgrade to Pro'
-                    : undefined
-                }
+                actionLabel={canUpgradeTo('pro') ? 'Upgrade to Pro' : undefined}
                 onAction={() => handleSubscribe('pro')}
                 loading={loading === 'pro'}
                 disabled={!isRegionAllowed}
               />
               <PlanCard
                 name="Premium"
-                price="$15"
+                price="$13"
                 period="/mo"
-                features={['Everything in Pro', 'AI tutor & drafter', '$7.50/mo AI credits included', 'Tutor sync']}
+                pitch="AI-powered tutoring & drafting"
+                features={['Everything in Pro', 'AI tutor (Claude)', 'AI comment drafter', '$3/mo AI credits included']}
                 isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
                 highlighted
                 trialBadge
-                actionLabel={
-                  effectiveTier === 'free' || effectiveTier === 'starter' || effectiveTier === 'pro'
-                    ? 'Upgrade to Premium'
-                    : undefined
-                }
+                actionLabel={canUpgradeTo('premium') ? 'Upgrade to Premium' : undefined}
                 onAction={() => handleSubscribe('premium')}
                 loading={loading === 'premium'}
                 disabled={!isRegionAllowed}
@@ -237,7 +252,8 @@ export default function PlansScreen() {
                   name="Free"
                   price="$0"
                   period=""
-                  features={['PR checklists', 'Search & bookmarks', '5 active sessions']}
+                  pitch="Review PRs with guided checklists"
+                  features={['45+ tech stack checklists', 'Search & bookmarks', '5 active sessions']}
                   isCurrent={effectiveTier === 'free'}
                   width={cardWidth}
                 />
@@ -245,26 +261,38 @@ export default function PlansScreen() {
                   name="Starter"
                   price="$3"
                   period="/mo"
-                  features={['Everything in Free', 'Unlimited sessions', 'Polish mode', 'PR tracker & analytics']}
+                  pitch="Self-review and track your PRs"
+                  features={['Everything in Free', 'Polish My PR', 'PR tracker & past reviews', 'Deep dive content']}
                   isCurrent={effectiveTier === 'starter'}
-                  actionLabel={effectiveTier === 'free' ? 'Upgrade to Starter' : undefined}
+                  actionLabel={canUpgradeTo('starter') ? 'Upgrade to Starter' : undefined}
                   onAction={() => handleSubscribe('starter')}
                   loading={loading === 'starter'}
                   disabled={!isRegionAllowed}
                   width={cardWidth}
                 />
                 <PlanCard
-                  name="Pro"
-                  price="$7"
+                  name="Advanced"
+                  price="$5"
                   period="/mo"
+                  pitch="Learn from your gaps"
                   features={['Everything in Starter', 'Learn mode', 'Knowledge gaps', 'Spaced repetition']}
+                  isCurrent={effectiveTier === 'advanced'}
+                  trialBadge
+                  actionLabel={canUpgradeTo('advanced') ? 'Upgrade to Advanced' : undefined}
+                  onAction={() => handleSubscribe('advanced')}
+                  loading={loading === 'advanced'}
+                  disabled={!isRegionAllowed}
+                  width={cardWidth}
+                />
+                <PlanCard
+                  name="Pro"
+                  price="$8"
+                  period="/mo"
+                  pitch="Measure your growth"
+                  features={['Everything in Advanced', 'Trends & comparisons', 'Readiness dashboard', 'Gap insights']}
                   isCurrent={effectiveTier === 'pro'}
                   trialBadge
-                  actionLabel={
-                    effectiveTier === 'free' || effectiveTier === 'starter'
-                      ? 'Upgrade to Pro'
-                      : undefined
-                  }
+                  actionLabel={canUpgradeTo('pro') ? 'Upgrade to Pro' : undefined}
                   onAction={() => handleSubscribe('pro')}
                   loading={loading === 'pro'}
                   disabled={!isRegionAllowed}
@@ -272,17 +300,14 @@ export default function PlansScreen() {
                 />
                 <PlanCard
                   name="Premium"
-                  price="$15"
+                  price="$13"
                   period="/mo"
-                  features={['Everything in Pro', 'AI tutor & drafter', '$7.50/mo AI credits included', 'Tutor sync']}
+                  pitch="AI-powered tutoring & drafting"
+                  features={['Everything in Pro', 'AI tutor (Claude)', 'AI comment drafter', '$3/mo AI credits included']}
                   isCurrent={effectiveTier === 'premium' || effectiveTier === 'sponsored' || effectiveTier === 'admin'}
                   highlighted
                   trialBadge
-                  actionLabel={
-                    effectiveTier === 'free' || effectiveTier === 'starter' || effectiveTier === 'pro'
-                      ? 'Upgrade to Premium'
-                      : undefined
-                  }
+                  actionLabel={canUpgradeTo('premium') ? 'Upgrade to Premium' : undefined}
                   onAction={() => handleSubscribe('premium')}
                   loading={loading === 'premium'}
                   disabled={!isRegionAllowed}
@@ -290,7 +315,7 @@ export default function PlansScreen() {
                 />
               </ScrollView>
               <View style={styles.dotsRow}>
-                {[0, 1, 2, 3].map((i) => (
+                {[0, 1, 2, 3, 4].map((i) => (
                   <View key={i} style={[styles.dot, i === activePlanIndex && styles.dotActive]} />
                 ))}
               </View>
@@ -316,9 +341,10 @@ export default function PlansScreen() {
             <View style={styles.comparisonHeader}>
               <Text style={[styles.comparisonHeaderCell, styles.featureNameCell]}>Feature</Text>
               <Text style={styles.comparisonHeaderCell}>Free</Text>
-              <Text style={styles.comparisonHeaderCell}>Starter</Text>
+              <Text style={styles.comparisonHeaderCell}>Start</Text>
+              <Text style={styles.comparisonHeaderCell}>Adv</Text>
               <Text style={styles.comparisonHeaderCell}>Pro</Text>
-              <Text style={styles.comparisonHeaderCell}>Premium</Text>
+              <Text style={styles.comparisonHeaderCell}>Prem</Text>
             </View>
             {FEATURES.map((f) => (
               <View key={f.label} style={styles.comparisonRow}>
@@ -327,6 +353,7 @@ export default function PlansScreen() {
                 </Text>
                 <View style={styles.comparisonCell}><CheckMark value={f.free} /></View>
                 <View style={styles.comparisonCell}><CheckMark value={f.starter} /></View>
+                <View style={styles.comparisonCell}><CheckMark value={f.advanced} /></View>
                 <View style={styles.comparisonCell}><CheckMark value={f.pro} /></View>
                 <View style={styles.comparisonCell}><CheckMark value={f.premium} /></View>
               </View>
@@ -405,6 +432,7 @@ function PlanCard({
   name,
   price,
   period,
+  pitch,
   features,
   isCurrent,
   highlighted,
@@ -418,6 +446,7 @@ function PlanCard({
   name: string;
   price: string;
   period: string;
+  pitch: string;
   features: string[];
   isCurrent: boolean;
   highlighted?: boolean;
@@ -434,7 +463,7 @@ function PlanCard({
         styles.planCard,
         highlighted && styles.planCardHighlighted,
         isCurrent && styles.planCardCurrent,
-        width != null ? { width } : { flex: 1, minWidth: 220 },
+        width != null ? { width } : { flex: 1, minWidth: 180 },
       ]}
     >
       {isCurrent && (
@@ -444,7 +473,7 @@ function PlanCard({
       )}
       {trialBadge && !isCurrent && (
         <View style={styles.trialBadge}>
-          <Text style={styles.trialBadgeText}>2-week free trial</Text>
+          <Text style={styles.trialBadgeText}>14-day free trial</Text>
         </View>
       )}
       <Text style={styles.planName}>{name}</Text>
@@ -454,6 +483,7 @@ function PlanCard({
         </Text>
         {period ? <Text style={styles.planPeriod}>{period}</Text> : null}
       </View>
+      <Text style={styles.planPitch}>{pitch}</Text>
       <View style={styles.planFeatures}>
         {features.map((f) => (
           <Text key={f} style={styles.planFeature}>
@@ -585,7 +615,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     marginTop: spacing.xs,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
   },
   planPrice: {
     fontSize: fontSizes['2xl'],
@@ -599,6 +629,12 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     color: colors.textMuted,
     marginLeft: 2,
+  },
+  planPitch: {
+    fontSize: fontSizes.sm,
+    fontFamily: 'Quicksand_500Medium',
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   planFeatures: {
     gap: spacing.xs,

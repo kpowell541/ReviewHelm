@@ -16,7 +16,7 @@ export function AppFooter() {
     { label: 'Terms', onPress: () => router.push('/terms') },
     { label: 'Refunds', onPress: () => router.push('/refund-policy') },
     { label: 'Disclaimer', onPress: () => router.push('/disclaimer') },
-    { label: 'Contact', onPress: () => void Linking.openURL('mailto:kaitlin@nesttend.app') },
+    { label: 'Contact', onPress: () => void Linking.openURL('mailto:support@reviewhelm.app') },
   ];
 
   return (

@@ -21,10 +21,11 @@ export interface TierInfo {
 const TIER_RANK: Record<EffectiveTier, number> = {
   free: 0,
   starter: 1,
-  pro: 2,
-  premium: 3,
-  sponsored: 4,
-  admin: 5,
+  advanced: 2,
+  pro: 3,
+  premium: 4,
+  sponsored: 5,
+  admin: 6,
 };
 
 @Injectable()

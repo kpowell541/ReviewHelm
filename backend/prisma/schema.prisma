@@ -53,6 +53,7 @@ enum FeedbackOutcome {
 enum SubscriptionTier {
   free
   starter
+  advanced
   pro
   premium
   sponsored

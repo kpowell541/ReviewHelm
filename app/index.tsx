@@ -11,7 +11,7 @@ import { useAuthStore } from '../src/store/useAuthStore';
 import { useSessionStore } from '../src/store/useSessionStore';
 import { useConfidenceStore } from '../src/store/useConfidenceStore';
 import { usePRTrackerStore } from '../src/store/usePRTrackerStore';
-import { AddPRModal } from '../src/components/AddPRModal';
+
 import { useFeatureGate } from '../src/hooks/useFeatureGate';
 import { useTierStore } from '../src/store/useTierStore';
 import { FeatureTourModal } from '../src/components/FeatureTourModal';
@@ -53,7 +53,7 @@ function ModeCard({ title, subtitle, icon, color, onPress, badge, isDesktop, loc
         <Text style={[styles.modeIcon, locked && { opacity: 0.4 }]}>{icon}</Text>
         <View style={styles.modeCardText}>
           <Text style={[styles.modeTitle, locked && { color: colors.textMuted }]}>{title}</Text>
-          <Text style={styles.modeSubtitle}>{locked ? 'Upgrade to unlock' : subtitle}</Text>
+          <Text style={styles.modeSubtitle}>{subtitle}</Text>
         </View>
         {locked ? (
           <Text style={styles.lockIcon}>🔒</Text>
@@ -143,11 +143,9 @@ export default function HomeScreen() {
   const deleteSession = useSessionStore((s) => s.deleteSession);
   const histories = useConfidenceStore((s) => s.histories);
   const prs = usePRTrackerStore((s) => s.prs);
-  const addPR = usePRTrackerStore((s) => s.addPR);
+
   const adminEmail = (authUser?.email ?? '').trim().toLowerCase();
   const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
-
-  const [showAddPR, setShowAddPR] = useState(false);
 
   const effectiveTier = useTierStore((s) => s.effectiveTier);
   const hasSeenTourForTier = usePreferencesStore((s) => s.hasSeenTourForTier);
@@ -178,8 +176,10 @@ export default function HomeScreen() {
   };
 
   const starterGate = useFeatureGate('starter');
-  const learnGate = useFeatureGate('pro');
-  const gapsGate = useFeatureGate('pro');
+  const advancedGate = useFeatureGate('advanced');
+  const proGate = useFeatureGate('pro');
+  const learnGate = useFeatureGate('advanced');
+  const gapsGate = useFeatureGate('advanced');
 
   const recentSessions = useMemo(() => {
     return Object.values(sessions)
@@ -231,8 +231,8 @@ export default function HomeScreen() {
 
         <View style={[styles.modeCards, isDesktop && styles.modeCardsDesktop]}>
           <ModeCard
-            title="Review a PR"
-            subtitle="Checklist for reviewing teammate PRs"
+            title="Review / Polish a PR"
+            subtitle="Start here — guided checklists for 45+ stacks"
             icon="🔍"
             color={colors.reviewMode}
             onPress={() => router.push('/review/stack-select')}
@@ -240,54 +240,21 @@ export default function HomeScreen() {
           />
 
           <ModeCard
-            title="Polish My PR"
-            subtitle="Prep your PR for a smooth merge"
-            icon="✨"
+            title="PR Tracker"
+            subtitle={starterGate.allowed ? `Track PRs across your workflow${activePRCount > 0 ? ` (${activePRCount} active)` : ''}` : 'Upgrade to Starter to track your PRs'}
+            icon="🔀"
             color={colors.polishMode}
-            onPress={() => starterGate.guardedNavigate('/polish/sessions')}
+            onPress={() => starterGate.guardedNavigate('/pr-tracker')}
             isDesktop={isDesktop}
             locked={!starterGate.allowed}
+            badge={starterGate.allowed && activePRCount > 0 ? `${activePRCount}` : undefined}
           />
 
-          <ModeCard
-            title="Learn"
-            subtitle="Study weak areas and track real improvement"
-            icon="📚"
-            color={colors.learnMode}
-            onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
-            badge={learnGate.allowed && gapCount > 0 ? `${gapCount} gaps` : undefined}
-            isDesktop={isDesktop}
-            locked={!learnGate.allowed}
-          />
-
-          <ModeCard
-            title="My Gaps"
-            subtitle="Track and close your knowledge gaps"
-            icon="📊"
-            color={colors.gapsMode}
-            onPress={() => gapsGate.guardedNavigate('/gaps')}
-            isDesktop={isDesktop}
-            locked={!gapsGate.allowed}
-            badge={
-              gapsGate.allowed && (gapCount > 0 || dueCount > 0)
-                ? [
-                    gapCount > 0 ? `${gapCount} gaps` : '',
-                    dueCount > 0 ? `${dueCount} due` : '',
-                  ].filter(Boolean).join(' · ')
-                : undefined
-            }
-          />
         </View>
 
+        {/* Quick links grouped by tier */}
+        <Text style={styles.tierGroupLabel}>Free</Text>
         <View style={styles.quickLinksGrid}>
-          <Pressable
-            style={styles.quickLink}
-            onPress={() => starterGate.allowed ? setShowAddPR(true) : starterGate.guardedNavigate('/pr-tracker')}
-            accessibilityRole="button"
-            accessibilityLabel="Add PR"
-          >
-            <Text style={styles.quickLinkText}>{starterGate.allowed ? '＋' : '🔒'} Add PR</Text>
-          </Pressable>
           <Pressable
             style={styles.quickLink}
             onPress={() => router.push('/search')}
@@ -298,49 +265,84 @@ export default function HomeScreen() {
           </Pressable>
           <Pressable
             style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/pr-tracker') : starterGate.guardedNavigate('/pr-tracker')}
-            accessibilityRole="button"
-            accessibilityLabel={`PRs${starterGate.allowed && activePRCount > 0 ? `, ${activePRCount} active` : ''}`}
-          >
-            <Text style={styles.quickLinkText}>
-              {starterGate.allowed ? '🔀' : '🔒'} PRs{starterGate.allowed && activePRCount > 0 ? ` (${activePRCount})` : ''}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/dashboard') : starterGate.guardedNavigate('/dashboard')}
-            accessibilityRole="button"
-            accessibilityLabel="Readiness dashboard"
-          >
-            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📈' : '🔒'} Readiness</Text>
-          </Pressable>
-          <Pressable
-            style={styles.quickLink}
             onPress={() => router.push('/bookmarks')}
             accessibilityRole="button"
             accessibilityLabel="Bookmarks"
           >
             <Text style={styles.quickLinkText}>⭐ Bookmarks</Text>
           </Pressable>
+        </View>
+
+        <Text style={styles.tierGroupLabel}>Starter</Text>
+        <View style={styles.quickLinksGrid}>
           <Pressable
             style={styles.quickLink}
-            onPress={() => starterGate.allowed ? router.push('/trends') : starterGate.guardedNavigate('/trends')}
+            onPress={() => starterGate.allowed ? router.push('/polish/sessions') : starterGate.guardedNavigate('/polish/sessions')}
+            accessibilityRole="button"
+            accessibilityLabel="Polish my PR"
+          >
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '✨' : '🔒'} Polish My PR</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => starterGate.allowed ? router.push('/past-reviews') : starterGate.guardedNavigate('/past-reviews')}
+            accessibilityRole="button"
+            accessibilityLabel="Past reviews"
+          >
+            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📋' : '🔒'} Past Reviews</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.tierGroupLabel}>Advanced — Growth</Text>
+        <View style={styles.quickLinksGrid}>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => gapsGate.guardedNavigate('/gaps')}
+            accessibilityRole="button"
+            accessibilityLabel="My Gaps"
+          >
+            <Text style={styles.quickLinkText}>{gapsGate.allowed ? '📊' : '🔒'} My Gaps{gapsGate.allowed && gapCount > 0 ? ` (${gapCount})` : ''}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => learnGate.guardedNavigate('/learn/stack-select')}
+            accessibilityRole="button"
+            accessibilityLabel="Learn"
+          >
+            <Text style={styles.quickLinkText}>{learnGate.allowed ? '📚' : '🔒'} Learn{learnGate.allowed && gapCount > 0 ? ` (${gapCount})` : ''}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => advancedGate.allowed ? router.push('/review/due-items') : advancedGate.guardedNavigate('/review/due-items')}
+            accessibilityRole="button"
+            accessibilityLabel={dueCount > 0 ? `Due items, ${dueCount}` : 'Due items, none due'}
+          >
+            <Text style={styles.quickLinkText}>{advancedGate.allowed ? '🔁' : '🔒'} {dueCount > 0 ? `Due (${dueCount})` : 'Due Items'}</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.tierGroupLabel}>Pro — Dashboards</Text>
+        <View style={styles.quickLinksGrid}>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => proGate.allowed ? router.push('/dashboard') : proGate.guardedNavigate('/dashboard')}
+            accessibilityRole="button"
+            accessibilityLabel="Readiness dashboard"
+          >
+            <Text style={styles.quickLinkText}>{proGate.allowed ? '📈' : '🔒'} Readiness</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quickLink}
+            onPress={() => proGate.allowed ? router.push('/trends') : proGate.guardedNavigate('/trends')}
             accessibilityRole="button"
             accessibilityLabel="Trends"
           >
-            <Text style={styles.quickLinkText}>{starterGate.allowed ? '📊' : '🔒'} Trends</Text>
+            <Text style={styles.quickLinkText}>{proGate.allowed ? '📊' : '🔒'} Trends</Text>
           </Pressable>
-          {dueCount > 0 && (
-            <Pressable
-              style={styles.quickLink}
-              onPress={() => router.push('/review/due-items')}
-              accessibilityRole="button"
-              accessibilityLabel={`Due items, ${dueCount}`}
-            >
-              <Text style={styles.quickLinkText}>🔁 Due ({dueCount})</Text>
-            </Pressable>
-          )}
-          {isAdminDashboardUser && (
+        </View>
+
+        {isAdminDashboardUser && (
+          <View style={[styles.quickLinksGrid, { marginTop: spacing.sm }]}>
             <Pressable
               style={styles.quickLink}
               onPress={() => router.push('/admin-dashboard')}
@@ -349,8 +351,8 @@ export default function HomeScreen() {
             >
               <Text style={styles.quickLinkText}>🛡 Admin</Text>
             </Pressable>
-          )}
-        </View>
+          </View>
+        )}
 
         {recentSessions.length > 0 && (
           <View style={styles.recentSection}>
@@ -369,14 +371,6 @@ export default function HomeScreen() {
         <AppFooter />
       </ScrollView>
       </DesktopContainer>
-
-      <AddPRModal
-        visible={showAddPR}
-        onClose={() => setShowAddPR(false)}
-        onSave={(data) => {
-          addPR(data);
-        }}
-      />
 
       <FeatureTourModal
         visible={showTour}
@@ -504,11 +498,19 @@ const styles = StyleSheet.create({
     fontSize: 18,
     opacity: 0.5,
   },
+  tierGroupLabel: {
+    fontSize: fontSizes.xs,
+    fontFamily: 'Quicksand_600SemiBold',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
+  },
   quickLinksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    marginTop: spacing.xl,
   },
   quickLink: {
     flexBasis: '31%',

@@ -5,20 +5,30 @@ import { colors, spacing, fontSizes, radius } from '../theme';
 interface UpgradePromptProps {
   visible: boolean;
   onClose: () => void;
-  requiredTier: 'pro' | 'premium';
+  requiredTier: 'starter' | 'advanced' | 'pro' | 'premium';
   featureName?: string;
 }
 
 const TIER_DETAILS = {
+  starter: {
+    label: 'Starter',
+    price: '$3/mo',
+    features: ['Polish My PR (self-review)', 'PR tracker', 'Deep dive content', 'Past reviews'],
+  },
+  advanced: {
+    label: 'Advanced',
+    price: '$5/mo',
+    features: ['Learn mode', 'Knowledge gap tracking', 'Spaced repetition', '14-day free trial'],
+  },
   pro: {
     label: 'Pro',
-    price: '$5/mo',
-    features: ['Learning mode', 'Knowledge gaps tracker', 'Spaced repetition'],
+    price: '$8/mo',
+    features: ['Trends & session comparison', 'Readiness dashboard', 'Checklist gap insights', '14-day free trial'],
   },
   premium: {
     label: 'Premium',
-    price: '$15/mo',
-    features: ['AI tutor & comment drafter', 'AI credits included', 'All Pro features'],
+    price: '$13/mo',
+    features: ['AI tutor & comment drafter', '$3/mo AI credits included', 'All Pro features', '14-day free trial'],
   },
 };
 
