@@ -12,12 +12,19 @@ interface BarChartProps {
   data: BarDatum[];
   width?: number;
   barHeight?: number;
+  labelWidth?: number;
+  valueFormatter?: (value: number) => string;
 }
 
-export function BarChart({ data, width = 320, barHeight = 24 }: BarChartProps) {
+export function BarChart({
+  data,
+  width = 320,
+  barHeight = 24,
+  labelWidth = 100,
+  valueFormatter,
+}: BarChartProps) {
   const maxValue = Math.max(...data.map((d) => d.value), 1);
-  const labelWidth = 100;
-  const countWidth = 36;
+  const countWidth = 64;
   const barAreaWidth = width - labelWidth - countWidth - 8;
   const rowGap = 6;
   const svgHeight = data.length * (barHeight + rowGap);
@@ -56,7 +63,7 @@ export function BarChart({ data, width = 320, barHeight = 24 }: BarChartProps) {
                 fontSize={12}
                 fontWeight="600"
               >
-                {d.value}
+                {valueFormatter ? valueFormatter(d.value) : d.value}
               </SvgText>
             </Svg>
           </View>

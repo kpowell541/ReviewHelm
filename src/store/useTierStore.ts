@@ -4,10 +4,14 @@ import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
 import { persistStorage } from '../storage/secureStorage';
 import { api } from '../api/client';
+import { createLogger } from '../observability/logger';
+
+const log = createLogger('tier');
+import type { ApiSubscriptionTier, ApiSubscriptionCredits, ApiStripeCheckout } from '../api/schema';
 import { useAuthStore } from './useAuthStore';
 
-type SubscriptionTier = 'free' | 'starter' | 'advanced' | 'pro' | 'premium' | 'sponsored';
-type EffectiveTier = SubscriptionTier | 'admin';
+export type SubscriptionTier = 'free' | 'starter' | 'advanced' | 'pro' | 'premium' | 'sponsored';
+export type EffectiveTier = SubscriptionTier | 'admin';
 
 interface TierState {
   hasHydrated: boolean;
@@ -55,15 +59,7 @@ export const useTierStore = create<TierState>()(
 
       fetchTierInfo: async () => {
         try {
-          const info = await api.get<{
-            tier: SubscriptionTier;
-            effectiveTier: EffectiveTier;
-            isAdmin: boolean;
-            isSponsored: boolean;
-            isTrial: boolean;
-            trialEndsAt: string | null;
-            billingCycleStart: string | null;
-          }>('/subscription/tier');
+          const info = await api.get<ApiSubscriptionTier>('/subscription/tier');
           set({
             tier: info.tier,
             effectiveTier: info.effectiveTier,
@@ -74,22 +70,19 @@ export const useTierStore = create<TierState>()(
             billingCycleStart: info.billingCycleStart,
           });
         } catch (err: unknown) {
-          console.warn('[TierStore] fetchTierInfo failed:', err instanceof Error ? err.message : String(err));
+          log.warn('fetchTierInfo failed', { error: err instanceof Error ? err.message : String(err) });
         }
       },
 
       fetchCreditBalance: async () => {
         try {
-          const credits = await api.get<{
-            balanceUsd: number;
-            unlimited: boolean;
-          }>('/subscription/credits');
+          const credits = await api.get<ApiSubscriptionCredits>('/subscription/credits');
           set({
             creditBalanceUsd: credits.balanceUsd,
             unlimited: credits.unlimited,
           });
         } catch (err: unknown) {
-          console.warn('[TierStore] fetchCreditBalance failed:', err instanceof Error ? err.message : String(err));
+          log.warn('fetchCreditBalance failed', { error: err instanceof Error ? err.message : String(err) });
         }
       },
 
@@ -102,7 +95,7 @@ export const useTierStore = create<TierState>()(
 
       startCheckout: async (plan, options) => {
         const baseUrl = getBaseUrl();
-        const result = await api.post<{ url: string }>('/subscription/subscribe', {
+        const result = await api.post<ApiStripeCheckout>('/subscription/subscribe', {
           plan,
           trial: options?.trial,
           successUrl: `${baseUrl}/plans?checkout=success`,
@@ -115,7 +108,7 @@ export const useTierStore = create<TierState>()(
 
       startTopUp: async (amountUsd) => {
         const baseUrl = getBaseUrl();
-        const result = await api.post<{ url: string }>('/subscription/credits/topup', {
+        const result = await api.post<ApiStripeCheckout>('/subscription/credits/topup', {
           amountUsd,
           successUrl: `${baseUrl}/plans?topup=success`,
           cancelUrl: `${baseUrl}/plans?topup=cancelled`,
@@ -127,7 +120,7 @@ export const useTierStore = create<TierState>()(
 
       openPortal: async () => {
         const baseUrl = getBaseUrl();
-        const result = await api.post<{ url: string }>('/subscription/portal', {
+        const result = await api.post<ApiStripeCheckout>('/subscription/portal', {
           returnUrl: `${baseUrl}/settings`,
         }, {
           idempotencyKey: generateIdempotencyKey(),

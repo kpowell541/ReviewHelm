@@ -1,17 +1,12 @@
 import { api } from '../api/client';
-
-interface OfficialCostResponse {
-  officialCostUsd: number;
-  startDate: string;
-  endDate: string;
-}
+import type { ApiOfficialCost } from '../api/schema';
 
 export async function fetchMonthlyCostFromAdminApi(options: {
   adminApiKey: string;
   startDate: string;
   endDate: string;
 }): Promise<number> {
-  const response = await api.post<OfficialCostResponse>('/usage/official-cost', {
+  const response = await api.post<ApiOfficialCost>('/usage/official-cost', {
     adminApiKey: options.adminApiKey,
     startDate: options.startDate,
     endDate: options.endDate,

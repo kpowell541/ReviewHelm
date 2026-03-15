@@ -1,6 +1,8 @@
 import type { PropsWithChildren } from 'react';
 import { ScrollViewStyleReset } from 'expo-router/html';
 
+const IS_DEV = process.env.NODE_ENV === 'development';
+
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -8,7 +10,8 @@ const CONTENT_SECURITY_POLICY = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https:",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  // unsafe-eval is required for Metro dev server hot reload only
+  `script-src 'self' 'unsafe-inline'${IS_DEV ? " 'unsafe-eval'" : ''}`,
   "connect-src 'self' https: wss:",
   "frame-src https://checkout.stripe.com https://js.stripe.com",
   "form-action 'self' https://checkout.stripe.com",

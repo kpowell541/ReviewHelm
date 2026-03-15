@@ -6,8 +6,10 @@ info:
     REST API contract for ReviewHelm backend.
     Base path is /api/v1.
 servers:
-  - url: https://api.reviewhelm.com/api/v1
+  - url: https://api.reviewhelm.app/api/v1
     description: Production
+  - url: https://api-staging.reviewhelm.app/api/v1
+    description: Staging
   - url: http://localhost:3000/api/v1
     description: Local development
 tags:
@@ -1578,28 +1580,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  tier:
-                    type: string
-                    enum: [free, pro, premium, sponsored]
-                  effectiveTier:
-                    type: string
-                    enum: [free, pro, premium, sponsored, admin]
-                  isAdmin:
-                    type: boolean
-                  isSponsored:
-                    type: boolean
-                  isTrial:
-                    type: boolean
-                  trialEndsAt:
-                    type: string
-                    format: date-time
-                    nullable: true
-                  billingCycleStart:
-                    type: string
-                    format: date-time
-                    nullable: true
+                $ref: '#/components/schemas/SubscriptionTierResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -1613,12 +1594,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  balanceUsd:
-                    type: number
-                  unlimited:
-                    type: boolean
+                $ref: '#/components/schemas/SubscriptionCreditsResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -1684,10 +1660,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
+                $ref: '#/components/schemas/StripeCheckoutResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -1708,7 +1681,7 @@ paths:
               properties:
                 plan:
                   type: string
-                  enum: [starter, pro, premium]
+                  enum: [starter, advanced, pro, premium]
                 successUrl:
                   type: string
                 cancelUrl:
@@ -1723,10 +1696,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
+                $ref: '#/components/schemas/StripeCheckoutResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '501':
@@ -1752,10 +1722,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
+                $ref: '#/components/schemas/StripeCheckoutResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '501':
@@ -2935,7 +2902,7 @@ components:
         sessionId:
           type: string
           format: uuid
-        userSupabaseUserId:
+        userId:
           type: string
         minCoverage:
           type: integer
@@ -2945,7 +2912,7 @@ components:
           type: integer
         maxMajors:
           type: integer
-      required: [sessionId, userSupabaseUserId]
+      required: [sessionId, userId]
       additionalProperties: false
 
     CiPolicyCheckResponse:
@@ -3167,6 +3134,58 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    SubscriptionTierResponse:
+      type: object
+      properties:
+        tier:
+          type: string
+          enum: [free, starter, advanced, pro, premium, sponsored]
+        effectiveTier:
+          type: string
+          enum: [free, starter, advanced, pro, premium, sponsored, admin]
+        isAdmin:
+          type: boolean
+        isSponsored:
+          type: boolean
+        isTrial:
+          type: boolean
+        trialEndsAt:
+          type: string
+          format: date-time
+          nullable: true
+        billingCycleStart:
+          type: string
+          format: date-time
+          nullable: true
+
+    SubscriptionCreditsResponse:
+      type: object
+      properties:
+        balanceUsd:
+          type: number
+        unlimited:
+          type: boolean
+
+    StripeCheckoutResponse:
+      type: object
+      properties:
+        url:
+          type: string
+      required: [url]
+
+    OfficialCostResponse:
+      type: object
+      properties:
+        officialCostUsd:
+          type: number
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+      required: [officialCostUsd, startDate, endDate]
 
     SessionListResponse:
       type: object

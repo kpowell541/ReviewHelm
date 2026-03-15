@@ -2517,19 +2517,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            tier?: "free" | "pro" | "premium" | "sponsored";
-                            /** @enum {string} */
-                            effectiveTier?: "free" | "pro" | "premium" | "sponsored" | "admin";
-                            isAdmin?: boolean;
-                            isSponsored?: boolean;
-                            isTrial?: boolean;
-                            /** Format: date-time */
-                            trialEndsAt?: string | null;
-                            /** Format: date-time */
-                            billingCycleStart?: string | null;
-                        };
+                        "application/json": components["schemas"]["SubscriptionTierResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2566,10 +2554,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            balanceUsd?: number;
-                            unlimited?: boolean;
-                        };
+                        "application/json": components["schemas"]["SubscriptionCreditsResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2664,9 +2649,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            url?: string;
-                        };
+                        "application/json": components["schemas"]["StripeCheckoutResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2713,7 +2696,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        plan: "starter" | "pro" | "premium";
+                        plan: "starter" | "advanced" | "pro" | "premium";
                         successUrl: string;
                         cancelUrl: string;
                         /** @description Request a 2-week free trial (Pro and Premium only) */
@@ -2728,9 +2711,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            url?: string;
-                        };
+                        "application/json": components["schemas"]["StripeCheckoutResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2780,9 +2761,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            url?: string;
-                        };
+                        "application/json": components["schemas"]["StripeCheckoutResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -3300,7 +3279,7 @@ export interface components {
         CiPolicyCheckRequest: {
             /** Format: uuid */
             sessionId: string;
-            userSupabaseUserId: string;
+            userId: string;
             minCoverage?: number;
             minConfidence?: number;
             maxBlockers?: number;
@@ -3407,6 +3386,33 @@ export interface components {
             lastAccessed: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        SubscriptionTierResponse: {
+            /** @enum {string} */
+            tier?: "free" | "starter" | "advanced" | "pro" | "premium" | "sponsored";
+            /** @enum {string} */
+            effectiveTier?: "free" | "starter" | "advanced" | "pro" | "premium" | "sponsored" | "admin";
+            isAdmin?: boolean;
+            isSponsored?: boolean;
+            isTrial?: boolean;
+            /** Format: date-time */
+            trialEndsAt?: string | null;
+            /** Format: date-time */
+            billingCycleStart?: string | null;
+        };
+        SubscriptionCreditsResponse: {
+            balanceUsd?: number;
+            unlimited?: boolean;
+        };
+        StripeCheckoutResponse: {
+            url: string;
+        };
+        OfficialCostResponse: {
+            officialCostUsd: number;
+            /** Format: date-time */
+            startDate: string;
+            /** Format: date-time */
+            endDate: string;
         };
         SessionListResponse: {
             items: components["schemas"]["Session"][];

@@ -1,62 +1,64 @@
 import { create } from 'zustand';
-import type { Session, User } from '@supabase/supabase-js';
-import { getSupabaseClient } from '../auth/supabase';
+import {
+  type AuthSession,
+  type AuthUser,
+  type OAuthProvider,
+  signInWithPassword,
+  signUp as cognitoSignUp,
+  confirmSignUp as cognitoConfirmSignUp,
+  resendConfirmationCode as cognitoResendCode,
+  forgotPassword as cognitoForgotPassword,
+  confirmPassword as cognitoConfirmPassword,
+  refreshSession as cognitoRefreshSession,
+  signOut as cognitoSignOut,
+  startOAuthFlow,
+  handleOAuthCallback as cognitoHandleOAuthCallback,
+  loadPersistedSession,
+  parseSession,
+  isCognitoConfigured,
+} from '../auth/cognito';
 import { clearLocalUserData } from '../auth/clearLocalUserData';
 import { resetAuthRefreshCooldown } from '../api/client';
 
-const AUTH_REDIRECT_URI = process.env.EXPO_PUBLIC_AUTH_REDIRECT_URI?.trim() ?? '';
-type AuthSubscription = { unsubscribe: () => void };
-
-let authSubscription: AuthSubscription | null = null;
+const AUTH_REFRESH_COOLDOWN_MS = 30_000;
+let lastAuthRefreshFailure = 0;
 let initializeInFlight: Promise<void> | null = null;
-let refreshInFlight: Promise<Session | null> | null = null;
-
-function resetAuthSubscription(): void {
-  if (authSubscription) {
-    authSubscription.unsubscribe();
-    authSubscription = null;
-  }
-}
+let refreshInFlight: Promise<AuthSession | null> | null = null;
 
 interface AuthState {
-  session: Session | null;
-  user: User | null;
+  session: AuthSession | null;
+  user: AuthUser | null;
   isLoading: boolean;
   isConfigured: boolean;
   error: string | null;
 
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ userConfirmed: boolean }>;
+  confirmSignUp: (email: string, code: string) => Promise<void>;
+  resendConfirmationCode: (email: string) => Promise<void>;
   signOut: (options?: { clearLocalData?: boolean }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  updatePassword: (password: string) => Promise<void>;
+  confirmPasswordReset: (email: string, code: string, newPassword: string) => Promise<void>;
   getAccessToken: () => Promise<string | null>;
   refreshSession: () => Promise<boolean>;
+  signInWithProvider: (provider: OAuthProvider) => Promise<void>;
+  handleAuthCallback: (code: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => {
-  const refreshSessionSingleFlight = async (): Promise<Session | null> => {
-    if (refreshInFlight) {
-      return refreshInFlight;
-    }
+  const refreshSessionSingleFlight = async (): Promise<AuthSession | null> => {
+    if (refreshInFlight) return refreshInFlight;
 
     refreshInFlight = (async () => {
       try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.refreshSession();
-        if (error || !data.session) {
-          try {
-            await supabase.auth.signOut();
-          } catch {
-            // Best effort only.
-          }
-          set({ session: null, user: null });
-          return null;
-        }
+        const { session } = get();
+        if (!session) return null;
 
-        set({ session: data.session, user: data.session.user ?? null });
-        return data.session;
+        const newSession = await cognitoRefreshSession(session);
+        const { user } = parseSession(newSession);
+        set({ session: newSession, user });
+        return newSession;
       } catch {
         set({ session: null, user: null });
         return null;
@@ -76,40 +78,37 @@ export const useAuthStore = create<AuthState>()((set, get) => {
     error: null,
 
     initialize: async () => {
-      if (initializeInFlight) {
-        return initializeInFlight;
-      }
+      if (initializeInFlight) return initializeInFlight;
 
       initializeInFlight = (async () => {
         try {
-          const supabase = getSupabaseClient();
+          if (!isCognitoConfigured()) {
+            set({ isLoading: false, isConfigured: false });
+            return;
+          }
+
           set({ isConfigured: true, error: null });
 
-          // getSession returns the cached session which may have expired tokens.
-          // Always attempt a refresh to ensure the session is valid.
-          const {
-            data: { session: cached },
-          } = await supabase.auth.getSession();
+          const persisted = await loadPersistedSession();
+          if (!persisted) {
+            set({ session: null, user: null, isLoading: false });
+            return;
+          }
 
-          const validSession = cached ? await refreshSessionSingleFlight() : null;
+          // Try to refresh if token is expired or close to expiring
+          const now = Math.floor(Date.now() / 1000);
+          if (persisted.expiresAt - now < 300) {
+            const refreshed = await refreshSessionSingleFlight();
+            if (!refreshed) {
+              set({ session: null, user: null, isLoading: false });
+              return;
+            }
+          }
 
-          set({
-            session: validSession,
-            user: validSession?.user ?? null,
-            isLoading: false,
-          });
-
-          resetAuthSubscription();
-          const { data } = supabase.auth.onAuthStateChange((event, session) => {
-            // Skip INITIAL_SESSION — initialize() already determined the
-            // correct session state. Letting INITIAL_SESSION through would
-            // resurrect expired cached sessions after a failed refresh.
-            if (event === 'INITIAL_SESSION') return;
-            set({ session, user: session?.user ?? null });
-          });
-          authSubscription = data.subscription;
+          const validSession = get().session ?? persisted;
+          const { user } = parseSession(validSession);
+          set({ session: validSession, user, isLoading: false });
         } catch {
-          // Supabase not configured — offline-only mode
           set({ isLoading: false, isConfigured: false });
         } finally {
           initializeInFlight = null;
@@ -122,18 +121,10 @@ export const useAuthStore = create<AuthState>()((set, get) => {
     signIn: async (email, password) => {
       set({ isLoading: true, error: null });
       try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        const session = await signInWithPassword(email, password);
+        const { user } = parseSession(session);
         resetAuthRefreshCooldown();
-        set({
-          session: data.session,
-          user: data.user,
-          isLoading: false,
-        });
+        set({ session, user, isLoading: false });
       } catch (err: any) {
         set({
           isLoading: false,
@@ -146,17 +137,9 @@ export const useAuthStore = create<AuthState>()((set, get) => {
     signUp: async (email, password) => {
       set({ isLoading: true, error: null });
       try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        if (error) throw error;
-        set({
-          session: data.session,
-          user: data.user,
-          isLoading: false,
-        });
+        const result = await cognitoSignUp(email, password);
+        set({ isLoading: false });
+        return result;
       } catch (err: any) {
         set({
           isLoading: false,
@@ -166,36 +149,57 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       }
     },
 
-    resetPassword: async (email) => {
+    confirmSignUp: async (email, code) => {
       set({ isLoading: true, error: null });
       try {
-        const supabase = getSupabaseClient();
-        const { error } = await supabase.auth.resetPasswordForEmail(
-          email,
-          AUTH_REDIRECT_URI ? { redirectTo: AUTH_REDIRECT_URI } : undefined,
-        );
-        if (error) throw error;
+        await cognitoConfirmSignUp(email, code);
         set({ isLoading: false });
       } catch (err: any) {
         set({
           isLoading: false,
-          error: err.message || 'Failed to send reset email',
+          error: err.message || 'Confirmation failed',
         });
         throw err;
       }
     },
 
-    updatePassword: async (password) => {
+    resendConfirmationCode: async (email) => {
       set({ isLoading: true, error: null });
       try {
-        const supabase = getSupabaseClient();
-        const { error } = await supabase.auth.updateUser({ password });
-        if (error) throw error;
+        await cognitoResendCode(email);
         set({ isLoading: false });
       } catch (err: any) {
         set({
           isLoading: false,
-          error: err.message || 'Failed to update password',
+          error: err.message || 'Failed to resend code',
+        });
+        throw err;
+      }
+    },
+
+    resetPassword: async (email) => {
+      set({ isLoading: true, error: null });
+      try {
+        await cognitoForgotPassword(email);
+        set({ isLoading: false });
+      } catch (err: any) {
+        set({
+          isLoading: false,
+          error: err.message || 'Failed to send reset code',
+        });
+        throw err;
+      }
+    },
+
+    confirmPasswordReset: async (email, code, newPassword) => {
+      set({ isLoading: true, error: null });
+      try {
+        await cognitoConfirmPassword(email, code, newPassword);
+        set({ isLoading: false });
+      } catch (err: any) {
+        set({
+          isLoading: false,
+          error: err.message || 'Failed to reset password',
         });
         throw err;
       }
@@ -207,9 +211,8 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       let signOutError: unknown = null;
 
       try {
-        const supabase = getSupabaseClient();
-        await supabase.auth.signOut();
-      } catch (err: any) {
+        await cognitoSignOut();
+      } catch (err) {
         signOutError = err;
       }
 
@@ -241,13 +244,20 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       if (!session) return null;
 
       // Check if token is expired (with 60s buffer)
-      const expiresAt = session.expires_at ?? 0;
-      if (Date.now() / 1000 > expiresAt - 60) {
+      const now = Math.floor(Date.now() / 1000);
+      if (now > session.expiresAt - 60) {
+        if (Date.now() - lastAuthRefreshFailure < AUTH_REFRESH_COOLDOWN_MS) {
+          return null;
+        }
         const refreshed = await refreshSessionSingleFlight();
-        return refreshed?.access_token ?? null;
+        if (!refreshed) {
+          lastAuthRefreshFailure = Date.now();
+          return null;
+        }
+        return refreshed.accessToken;
       }
 
-      return session.access_token;
+      return session.accessToken;
     },
 
     refreshSession: async () => {
@@ -255,6 +265,36 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       if (!session) return false;
       const refreshed = await refreshSessionSingleFlight();
       return !!refreshed;
+    },
+
+    signInWithProvider: async (provider) => {
+      set({ isLoading: true, error: null });
+      try {
+        await startOAuthFlow(provider);
+        // Browser will redirect — loading state persists until redirect
+      } catch (err: any) {
+        set({
+          isLoading: false,
+          error: err.message || 'OAuth sign in failed',
+        });
+        throw err;
+      }
+    },
+
+    handleAuthCallback: async (code) => {
+      set({ isLoading: true, error: null });
+      try {
+        const session = await cognitoHandleOAuthCallback(code);
+        const { user } = parseSession(session);
+        resetAuthRefreshCooldown();
+        set({ session, user, isLoading: false });
+      } catch (err: any) {
+        set({
+          isLoading: false,
+          error: err.message || 'Auth callback failed',
+        });
+        throw err;
+      }
     },
   };
 });

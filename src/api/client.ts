@@ -24,7 +24,7 @@ function getBaseUrl(): string {
 function assertBaseUrl(baseUrl: string): void {
   if (!baseUrl) {
     throw new ApiError(
-      'API base URL is not configured. Ensure Infisical secrets are loaded.',
+      'API base URL is not configured. Ensure EXPO_PUBLIC_API_BASE_URL is set.',
       0,
       'MISSING_CONFIG',
     );
@@ -155,7 +155,7 @@ export async function apiRequest<T>(
         }
 
         // On 401, attempt a single token refresh and retry (with cooldown
-        // to prevent cascade when Supabase rate-limits the refresh token)
+        // to prevent cascade when auth provider rate-limits the refresh token)
         if (response.status === 401 && !options.public && attempt < maxAttempts - 1) {
           if (Date.now() - lastAuthRefreshFailure < AUTH_REFRESH_COOLDOWN_MS) {
             throw new ApiError('Auth refresh recently failed', 401, 'AUTH_REFRESH_COOLDOWN');
