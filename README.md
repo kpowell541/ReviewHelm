@@ -62,7 +62,8 @@ npm run openapi:check-security
 
 ## Operational Docs
 
-- Provisioning: [`docs/provisioning-checklist-railway-supabase-upstash.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/provisioning-checklist-railway-supabase-upstash.md)
+- AWS backend scaffold: [`backend-aws/`](/Users/kaitlinpowell/conductor/workspaces/reviewhelm/denpasar/backend-aws) and [`infra/terraform/`](/Users/kaitlinpowell/conductor/workspaces/reviewhelm/denpasar/infra/terraform)
+- Backend accounts and keys: [`docs/backend-account-setup.md`](/Users/kaitlinpowell/conductor/workspaces/reviewhelm/denpasar/docs/backend-account-setup.md)
 - Security baseline: [`docs/security-operations.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/security-operations.md)
 - Release gate: [`docs/release-readiness-checklist.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/release-readiness-checklist.md)
 - Frontend kickoff: [`docs/frontend-kickoff-checklist.md`](/Users/kaitlinpowell/conductor/workspaces/Home-Hub/bangalore/pr-review-center/docs/frontend-kickoff-checklist.md)

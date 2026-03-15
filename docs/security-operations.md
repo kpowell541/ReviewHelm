@@ -22,7 +22,7 @@
 - Run backend preflight (`npm run preflight`) before production cutovers.
 
 ## Backup and Downtime Safeguards
-- Enable Supabase PITR backups and verify restore ability monthly.
+- Enable environment-appropriate Aurora backup and restore verification.
 - Monitor `health` and `health/ready` endpoints via uptime checks.
 - Alert on repeated `auth_failed`, `rate_limited`, and `budget_blocked_request` audit events.
-- Keep Railway deployment on zero-downtime rollout and set process-level restart policy.
+- Keep AWS staging and production rollback paths documented and tested before cutover.
