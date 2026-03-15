@@ -18,7 +18,7 @@ export interface LaunchPhase {
 }
 
 export const launchStatusLabels: Record<LaunchTaskStatus, string> = {
-  done_in_repo: 'Done in repo',
+  done_in_repo: 'Done',
   needs_verification: 'Needs verification',
   remaining: 'Remaining',
 };
@@ -28,8 +28,8 @@ export const launchReadinessPlan: {
   scope: string;
   phases: LaunchPhase[];
 } = {
-  updatedAt: '2026-03-13',
-  scope: 'Web-only rollout readiness (Georgia business setup)',
+  updatedAt: '2026-03-14',
+  scope: 'Staging-first AWS web readiness (Georgia business setup, production deferred)',
   phases: [
     {
       id: 'repo-baseline',
@@ -79,7 +79,7 @@ export const launchReadinessPlan: {
         {
           id: 'business-email',
           title: 'Create and configure support@reviewhelm.app as the primary business contact email',
-          status: 'remaining',
+          status: 'needs_verification',
           owner: 'Founder / ops',
           dependsOn: 'Access to reviewhelm.app email hosting',
           notes: 'Use this for filings, customer contact, and vendor accounts where a business-controlled email is appropriate.',
@@ -109,7 +109,7 @@ export const launchReadinessPlan: {
         {
           id: 'georgia-formation-state',
           title: 'Confirm Georgia as the formation state and decide whether any foreign qualification may be needed later',
-          status: 'remaining',
+          status: 'needs_verification',
           owner: 'Founder / legal',
           dependsOn: 'Decision on where the business will actually operate',
         },
@@ -131,7 +131,7 @@ export const launchReadinessPlan: {
         {
           id: 'georgia-llc-structure',
           title: 'Decide single-member vs multi-member and member-managed vs manager-managed structure',
-          status: 'remaining',
+          status: 'needs_verification',
           owner: 'Founder / legal',
           dependsOn: 'Ownership and control decisions',
         },
@@ -242,43 +242,121 @@ export const launchReadinessPlan: {
       ],
     },
     {
-      id: 'production-platform',
+      id: 'aws-migration',
       order: 2,
-      title: 'Production platform and environment wiring',
-      objective: 'Make production hosting, domains, redirects, and secrets concrete and correct.',
+      title: 'AWS-native platform migration',
+      objective: 'Replace the current hosted stack with the AWS-first serverless stack before any production rollout.',
+      tasks: [
+        {
+          id: 'aws-stack-freeze',
+          title: 'Freeze the target stack: static web frontend, Hono REST API, Cognito, Aurora Postgres, ElastiCache, EventBridge, Infisical',
+          status: 'needs_verification',
+          owner: 'Founder / engineering',
+          dependsOn: 'Architecture decision review',
+        },
+        {
+          id: 'aws-account-foundation',
+          title: 'Set up the shared AWS account structure, IAM, base networking, and staging environment boundaries',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'AWS account ownership and access plan',
+        },
+        {
+          id: 'aws-static-web',
+          title: 'Create the AWS static web hosting path for the Expo web build and wire the staging web domain',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'AWS account foundation and staging domain plan',
+        },
+        {
+          id: 'aws-api-skeleton',
+          title: 'Create the Lambda-native Hono API skeleton with health endpoints, logging, and REST routing',
+          status: 'remaining',
+          owner: 'Engineering',
+          dependsOn: 'AWS account foundation and target API conventions',
+        },
+        {
+          id: 'aws-cognito',
+          title: 'Replace Supabase Auth with Cognito for staged auth flows and JWT validation',
+          status: 'remaining',
+          owner: 'Engineering',
+          dependsOn: 'AWS account foundation and auth migration design',
+        },
+        {
+          id: 'aws-aurora-drizzle',
+          title: 'Replace Supabase Postgres and Prisma with Aurora-compatible Postgres and Drizzle',
+          status: 'remaining',
+          owner: 'Engineering',
+          dependsOn: 'AWS account foundation and data migration plan',
+        },
+        {
+          id: 'aws-elasticache',
+          title: 'Replace Upstash with AWS-managed Redis or Valkey for rate limits, replay guards, and ephemeral state',
+          status: 'remaining',
+          owner: 'Engineering',
+          dependsOn: 'AWS account foundation and cache design',
+        },
+        {
+          id: 'aws-scheduler',
+          title: 'Move in-process scheduled work to EventBridge-triggered Lambda jobs',
+          status: 'remaining',
+          owner: 'Engineering',
+          dependsOn: 'AWS API and runtime shape',
+        },
+        {
+          id: 'aws-observability-chaos',
+          title: 'Stand up AWS-native logging, alarms, synthetic checks, and scheduled performance or chaos testing hooks',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'AWS account foundation and service topology',
+        },
+        {
+          id: 'aws-staging-cutover',
+          title: 'Cut staging over to AWS and retire Railway, Supabase, and Upstash from the staging hot path',
+          status: 'remaining',
+          owner: 'Engineering / ops',
+          dependsOn: 'Web hosting, API, auth, data, cache, and scheduler migration completed in staging',
+        },
+      ],
+    },
+    {
+      id: 'staging-platform',
+      order: 3,
+      title: 'Staging platform and environment wiring',
+      objective: 'Make staging hosting, domains, redirects, and secrets concrete and correct on the AWS target path.',
       tasks: [
         {
           id: 'web-hosting',
-          title: 'Finalize the production web host, domain, DNS, and TLS',
+          title: 'Finalize the AWS staging web host, domain, DNS, and TLS',
           status: 'remaining',
           owner: 'Engineering / ops',
-          dependsOn: 'Business launch timing and desired public domain',
+          dependsOn: 'Desired staging hosting setup',
         },
         {
           id: 'deploy-process',
-          title: 'Document and validate a repeatable staging to production web deploy process',
+          title: 'Document and validate a repeatable AWS staging deploy process',
           status: 'remaining',
           owner: 'Engineering / ops',
-          dependsOn: 'Production web host',
+          dependsOn: 'Staging web host',
         },
         {
           id: 'env-wiring',
-          title: 'Populate and verify production env vars across Infisical, Railway, Supabase, and Stripe',
+          title: 'Populate and verify staging env vars across Infisical, AWS services, and Stripe',
           status: 'remaining',
           owner: 'Engineering / ops',
-          dependsOn: 'Production web host and Stripe business setup',
-          notes: 'Includes API URLs, Supabase URLs, auth redirect URIs, webhook secrets, and Anthropic key.',
+          dependsOn: 'Staging web host and Stripe test-mode setup',
+          notes: 'Includes app URLs, auth redirect URIs, webhook secrets, and Anthropic key for staging only.',
         },
         {
           id: 'cors-and-redirects',
-          title: 'Lock down ALLOWED_ORIGINS, Supabase redirect allowlists, and Stripe return URLs to the real web origin',
+          title: 'Lock down CORS, auth redirect allowlists, and Stripe return URLs to the staging web origin',
           status: 'remaining',
           owner: 'Engineering / ops',
-          dependsOn: 'Production web domain',
+          dependsOn: 'Staging web domain',
         },
         {
           id: 'staging-health',
-          title: 'Verify health checks, port alignment, and 24h staging stability',
+          title: 'Verify health checks, runtime configuration, and 24h staging stability after AWS cutover',
           status: 'needs_verification',
           owner: 'Engineering / ops',
           dependsOn: 'Final staging configuration',
@@ -287,23 +365,23 @@ export const launchReadinessPlan: {
     },
     {
       id: 'observability-ops',
-      order: 3,
+      order: 4,
       title: 'Observability and operational safety',
       objective: 'Make sure failures are visible and recoverable before public traffic arrives.',
       tasks: [
         {
           id: 'error-monitoring',
-          title: 'Add external error monitoring for backend and web frontend',
+          title: 'Add external error monitoring for backend and web frontend in staging',
           status: 'remaining',
           owner: 'Engineering / ops',
-          dependsOn: 'Production environment configuration',
+          dependsOn: 'Staging environment configuration',
         },
         {
           id: 'uptime-alerts',
-          title: 'Add uptime checks and alerts for web app, API, Railway, Supabase, Upstash, and Stripe webhooks',
+          title: 'Add uptime checks and alerts for web app, API, AWS runtime, database or cache dependencies, and Stripe webhooks in staging',
           status: 'remaining',
           owner: 'Engineering / ops',
-          dependsOn: 'Production host and monitoring destination',
+          dependsOn: 'Staging host and monitoring destination',
         },
         {
           id: 'log-aggregation',
@@ -323,7 +401,7 @@ export const launchReadinessPlan: {
     },
     {
       id: 'product-compliance',
-      order: 4,
+      order: 5,
       title: 'Web product polish and compliance gaps',
       objective: 'Close the public web launch gaps that are not pure infrastructure.',
       tasks: [
@@ -348,20 +426,27 @@ export const launchReadinessPlan: {
           owner: 'Product / engineering',
           dependsOn: 'Data inventory confirmation',
         },
+        {
+          id: 'privacy-audit',
+          title: 'Run a post-migration privacy audit against applicable U.S. and California privacy law requirements',
+          status: 'remaining',
+          owner: 'Founder / legal / product',
+          dependsOn: 'AWS migration complete enough to review real data flows and retention behavior',
+        },
       ],
     },
     {
       id: 'verification-rollout',
-      order: 5,
+      order: 6,
       title: 'Verification and controlled rollout',
       objective: 'Prove the system is ready in staging, then release in a narrow funnel.',
       tasks: [
         {
           id: 'auth-payment-rehearsal',
-          title: 'Run staged web rehearsals for sign up, sign in, email verification, password reset, checkout, portal, and session-expiry flows',
+          title: 'Run staging web rehearsals for sign up, sign in, email verification, password reset, checkout, portal, and session-expiry flows',
           status: 'remaining',
           owner: 'Engineering / product',
-          dependsOn: 'Production-like env wiring and Stripe configuration',
+          dependsOn: 'Staging env wiring and Stripe test-mode configuration',
         },
         {
           id: 'browser-qa',
@@ -393,10 +478,49 @@ export const launchReadinessPlan: {
         },
         {
           id: 'private-beta',
-          title: 'Launch a web-only private beta with 5 to 10 testers before a broader release',
+          title: 'Open a web-only invite-only staging pilot with 5 to 10 testers before any production rollout decision',
           status: 'remaining',
           owner: 'Founder / product',
-          dependsOn: 'All prior launch blockers closed or consciously deferred',
+          dependsOn: 'All prior staging blockers closed or consciously deferred',
+        },
+      ],
+    },
+    {
+      id: 'post-migration-product',
+      order: 7,
+      title: 'Post-migration product extensions',
+      objective: 'Add the next layer of product capability after the AWS migration is stable.',
+      tasks: [
+        {
+          id: 'github-native-integration',
+          title: 'Add native GitHub integration so users can connect GitHub and import PRs directly',
+          status: 'remaining',
+          owner: 'Product / engineering',
+          dependsOn: 'AWS staging migration stable and new auth or data model settled',
+          notes: 'Keep this separate from Cognito GitHub sign-in. This is product-level GitHub data access.',
+        },
+        {
+          id: 'github-integration-rollout',
+          title: 'Roll GitHub integration out in phases: manual connect and import first, webhook-driven sync later',
+          status: 'remaining',
+          owner: 'Product / engineering',
+          dependsOn: 'Native GitHub integration design approved',
+        },
+        {
+          id: 'self-pr-reporting',
+          title: 'Add half-year Self-PR performance review reports with tier decision, settings opt-in, and privacy-default-off behavior',
+          status: 'remaining',
+          owner: 'Product / engineering',
+          dependsOn: 'GitHub integration or equivalent PR data foundation exists',
+          notes: 'Evaluate which paid tier should unlock it. Offer opt-in in settings and default it off for privacy.',
+        },
+        {
+          id: 'self-pr-report-delivery',
+          title: 'Generate exportable PDF performance review reports for May and November and surface them through the app',
+          status: 'remaining',
+          owner: 'Product / engineering',
+          dependsOn: 'Self-PR reporting feature and archived/report storage path exist',
+          notes: 'Initial delivery can be in-app download from S3. Add scheduling only after the report content is stable.',
         },
       ],
     },

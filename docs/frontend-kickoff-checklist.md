@@ -15,10 +15,10 @@ This maps to the six setup items requested before frontend implementation.
 - [ ] 4) Run one authenticated smoke request against staging with real token.
   - Command:
     ```bash
-    cd backend
-    API_PUBLIC_URL=https://reviewhelm-staging.up.railway.app \
+    cd backend-aws
+    API_PUBLIC_URL=https://api-staging.reviewhelm.app \
     API_BASE_PATH=api/v1 \
-    SMOKE_BEARER_TOKEN=<supabase_access_token> \
+    SMOKE_BEARER_TOKEN=<cognito_access_token> \
     npm run smoke:health
     ```
 - [x] 5) Keep backend branch stable during frontend build.

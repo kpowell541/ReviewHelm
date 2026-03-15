@@ -1,67 +1,76 @@
 # ReviewHelm Backend Accounts and Keys
 
-This is the full backend account/key checklist to prepare before turning on production resources.
+This is the AWS-native backend account and secret checklist. Railway, Supabase, and Upstash are no longer part of the target path.
 
 ## Required Accounts
 
-1. Supabase
-- Purpose: Postgres database + OAuth2 auth (PKCE) + JWKS for JWT verification
+1. AWS account per environment
+- Purpose: API Gateway, Lambda, Cognito, Aurora, ElastiCache, SQS, EventBridge, S3, SES, CloudWatch
 - Needed values:
-  - `SUPABASE_URL`
-  - `SUPABASE_JWKS_URL`
-  - `SUPABASE_JWT_ISSUER`
-  - `SUPABASE_JWT_AUDIENCE`
-  - `SUPABASE_SERVICE_ROLE_KEY` (backend only)
-  - `DATABASE_URL`
-  - `DIRECT_URL`
+  - AWS account ID
+  - target region
+  - GitHub OIDC role assumption setup
+  - DNS and certificate ownership for:
+    - `staging.reviewhelm.app`
+    - `admin-staging.reviewhelm.app`
+    - `api-staging.reviewhelm.app`
 
-2. Railway
-- Purpose: host NestJS backend API
+2. Cognito
+- Purpose: user auth, admin auth, hosted UI, JWT verification
 - Needed values:
-  - `API_PUBLIC_URL`
-  - all backend env vars from `.env.example`
+  - User Pool ID
+  - App Client ID(s)
+  - Hosted UI domain
+  - callback/logout URLs
+  - admin group/claim mapping
 
-3. Upstash Redis
-- Purpose: AI cooldown, API/AI rate limiting, AI response caching
+3. Anthropic
+- Purpose: tutor, learn, comment drafting, and environment-level cost reporting
 - Needed values:
-  - `UPSTASH_REDIS_REST_URL`
-  - `UPSTASH_REDIS_REST_TOKEN`
+  - `PLATFORM_ANTHROPIC_KEY`
+  - `ANTHROPIC_ADMIN_API_KEY`
 
-4. Anthropic (for BYOK users)
-- Purpose: model inference for tutor/learn/comment drafting
+4. Stripe
+- Purpose: subscriptions, checkout, credits/billing
 - Needed values:
-  - user-managed Anthropic API key (stored encrypted via `/me/api-keys/anthropic`)
+  - `STRIPE_SECRET_KEY`
+  - `STRIPE_WEBHOOK_SECRET`
 
-## Secrets Custody (Required)
-
-You need one of these options for key encryption master material:
-
-1. Vault-managed secret (recommended baseline)
-- HCP Vault or Infisical
-- Needed value:
-  - `KEY_ENCRYPTION_MASTER_KEY` (32+ chars)
-
-2. AWS KMS envelope mode (recommended when ready)
-- Keep vault secret flow for fallback and rotations
+5. Sentry
+- Purpose: runtime exception tracking
 - Needed values:
-  - `KEY_ENCRYPTION_PROVIDER=aws_kms`
-  - `AWS_REGION`
-  - `AWS_KMS_KEY_ID`
+  - `SENTRY_DSN`
 
-## Optional but Recommended
+6. Infisical
+- Purpose: secret custody for backend runtime and CI
+- Needed values:
+  - database connection secrets
+  - cache connection secrets
+  - provider keys and webhook secrets
 
-1. Uptime monitor
-- Monitor:
-  - `GET /`
-  - `GET /api/v1/health`
-  - `GET /api/v1/health/ready`
+## Secrets Custody
 
-2. Error monitoring (Sentry)
-- For backend runtime exception tracking and alerting.
+- Preferred deploy auth: GitHub Actions OIDC into AWS
+- Preferred secret source: Infisical
+- Do not depend on long-lived AWS access keys unless temporarily bootstrapping
+
+## Runtime Config That Is Not Secret
+
+- `DEPLOY_ENVIRONMENT`
+- `API_PUBLIC_URL`
+- `COGNITO_JWKS_URL`
+- `COGNITO_JWT_ISSUER`
+- `COGNITO_JWT_AUDIENCE`
+- `COGNITO_ADMIN_GROUPS`
+- `AWS_COST_EXPLORER_REGION`
+- optional:
+  - `AWS_COST_EXPLORER_TAG_KEY`
+  - `AWS_COST_EXPLORER_TAG_VALUE`
+  - `AWS_COST_EXPLORER_LINKED_ACCOUNT`
 
 ## Private-Only API Posture
 
-- All business/data routes are auth-protected (OAuth2 JWT required).
-- Public liveness/readiness routes exist for platform probes only.
-- Swagger should remain disabled in production (`ENABLE_SWAGGER_DOCS=false`).
-- For stricter app-only access, add app attestation at the edge (Play Integrity/App Check) in front of OAuth2.
+- All business routes remain auth-protected.
+- Public endpoints stay limited to liveness/readiness and explicit auth flow needs.
+- Admin authorization is backend-enforced via Cognito claims/groups.
+- OpenAPI remains the contract source of truth.

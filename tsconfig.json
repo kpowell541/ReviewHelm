@@ -17,6 +17,7 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "backend/**"
+    "backend/**",
+    "backend-aws/**"
   ]
 }

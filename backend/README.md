@@ -112,8 +112,8 @@ The backend tests are intended to catch real regressions in critical paths:
 
 ## Deployment
 
-Configured for Railway with `railway.json`.
-Set all required environment variables from `.env.example` in Railway.
+This legacy Nest backend deployment path is retired for staging migration purposes.
+Do not treat Railway configuration as active infrastructure.
 
 Production notes:
 - `STRICT_STARTUP_CHECKS=true` is the secure default.
