@@ -8,7 +8,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config.extra,
     apiBaseUrl: process.env.EXPO_PUBLIC_API_BASE_URL ?? '',
     apiBasePath: process.env.EXPO_PUBLIC_API_BASE_PATH ?? '',
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+    cognitoRegion: process.env.EXPO_PUBLIC_COGNITO_REGION ?? '',
+    cognitoUserPoolId: process.env.EXPO_PUBLIC_COGNITO_USER_POOL_ID ?? '',
+    cognitoClientId: process.env.EXPO_PUBLIC_COGNITO_CLIENT_ID ?? '',
+    cognitoDomain: process.env.EXPO_PUBLIC_COGNITO_DOMAIN ?? '',
   },
 });

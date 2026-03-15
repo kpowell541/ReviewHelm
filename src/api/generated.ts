@@ -2171,6 +2171,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/costs/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get environment-scoped AWS and Anthropic cost overview
+         * @description Returns month-to-date pay-as-you-go costs for the environment the
+         *     admin panel is attached to. AWS cost data is filtered by the backend's
+         *     configured environment filter, and Anthropic cost data comes from the
+         *     environment's configured admin cost-reporting key.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cost overview */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: date-time */
+                            generatedAt?: string;
+                            environment?: string;
+                            month?: string;
+                            window?: {
+                                /** Format: date */
+                                startDate?: string;
+                                /** Format: date */
+                                endDateExclusive?: string;
+                                inclusiveDays?: number;
+                            };
+                            totals?: {
+                                awsUsd?: number;
+                                anthropicUsd?: number;
+                                combinedUsd?: number;
+                            };
+                            combinedByDay?: {
+                                /** Format: date */
+                                date?: string;
+                                awsUsd?: number;
+                                anthropicUsd?: number;
+                                totalUsd?: number;
+                            }[];
+                            aws?: {
+                                /** @enum {string} */
+                                status?: "configured" | "unconfigured" | "error";
+                                totalUsd?: number;
+                                currency?: string;
+                                message?: string | null;
+                                filter?: {
+                                    /** @enum {string} */
+                                    mode?: "tag" | "linked_account" | "tag_and_linked_account" | "none";
+                                    tagKey?: string | null;
+                                    tagValue?: string | null;
+                                    linkedAccount?: string | null;
+                                };
+                                byDay?: {
+                                    /** Format: date */
+                                    date?: string;
+                                    costUsd?: number;
+                                }[];
+                                byService?: {
+                                    service?: string;
+                                    costUsd?: number;
+                                    pct?: number;
+                                }[];
+                            };
+                            anthropic?: {
+                                /** @enum {string} */
+                                status?: "configured" | "unconfigured" | "error";
+                                totalUsd?: number;
+                                message?: string | null;
+                                byDay?: {
+                                    /** Format: date */
+                                    date?: string;
+                                    costUsd?: number;
+                                }[];
+                            };
+                        };
+                    };
+                };
+                401: components["responses"]["UnauthorizedError"];
+                403: components["responses"]["ForbiddenError"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/credits/users": {
         parameters: {
             query?: never;
@@ -2517,19 +2620,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            /** @enum {string} */
-                            tier?: "free" | "pro" | "premium" | "sponsored";
-                            /** @enum {string} */
-                            effectiveTier?: "free" | "pro" | "premium" | "sponsored" | "admin";
-                            isAdmin?: boolean;
-                            isSponsored?: boolean;
-                            isTrial?: boolean;
-                            /** Format: date-time */
-                            trialEndsAt?: string | null;
-                            /** Format: date-time */
-                            billingCycleStart?: string | null;
-                        };
+                        "application/json": components["schemas"]["SubscriptionTierResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2566,10 +2657,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            balanceUsd?: number;
-                            unlimited?: boolean;
-                        };
+                        "application/json": components["schemas"]["SubscriptionCreditsResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2664,9 +2752,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            url?: string;
-                        };
+                        "application/json": components["schemas"]["StripeCheckoutResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2713,7 +2799,7 @@ export interface paths {
                 content: {
                     "application/json": {
                         /** @enum {string} */
-                        plan: "starter" | "pro" | "premium";
+                        plan: "starter" | "advanced" | "pro" | "premium";
                         successUrl: string;
                         cancelUrl: string;
                         /** @description Request a 2-week free trial (Pro and Premium only) */
@@ -2728,9 +2814,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            url?: string;
-                        };
+                        "application/json": components["schemas"]["StripeCheckoutResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -2780,9 +2864,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": {
-                            url?: string;
-                        };
+                        "application/json": components["schemas"]["StripeCheckoutResponse"];
                     };
                 };
                 401: components["responses"]["UnauthorizedError"];
@@ -3300,7 +3382,7 @@ export interface components {
         CiPolicyCheckRequest: {
             /** Format: uuid */
             sessionId: string;
-            userSupabaseUserId: string;
+            userId: string;
             minCoverage?: number;
             minConfidence?: number;
             maxBlockers?: number;
@@ -3407,6 +3489,33 @@ export interface components {
             lastAccessed: string;
             /** Format: date-time */
             updatedAt?: string;
+        };
+        SubscriptionTierResponse: {
+            /** @enum {string} */
+            tier?: "free" | "starter" | "advanced" | "pro" | "premium" | "sponsored";
+            /** @enum {string} */
+            effectiveTier?: "free" | "starter" | "advanced" | "pro" | "premium" | "sponsored" | "admin";
+            isAdmin?: boolean;
+            isSponsored?: boolean;
+            isTrial?: boolean;
+            /** Format: date-time */
+            trialEndsAt?: string | null;
+            /** Format: date-time */
+            billingCycleStart?: string | null;
+        };
+        SubscriptionCreditsResponse: {
+            balanceUsd?: number;
+            unlimited?: boolean;
+        };
+        StripeCheckoutResponse: {
+            url: string;
+        };
+        OfficialCostResponse: {
+            officialCostUsd: number;
+            /** Format: date-time */
+            startDate: string;
+            /** Format: date-time */
+            endDate: string;
         };
         SessionListResponse: {
             items: components["schemas"]["Session"][];

@@ -12,6 +12,7 @@ export interface PieSlice {
 interface PieChartProps {
   data: PieSlice[];
   size?: number;
+  centerLabel?: string;
 }
 
 function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
@@ -26,7 +27,7 @@ function arcPath(cx: number, cy: number, r: number, startAngle: number, endAngle
   return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
 }
 
-export function PieChart({ data, size = 180 }: PieChartProps) {
+export function PieChart({ data, size = 180, centerLabel }: PieChartProps) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) {
     return (
@@ -67,7 +68,7 @@ export function PieChart({ data, size = 180 }: PieChartProps) {
           fontSize={18}
           fontWeight="bold"
         >
-          {total}
+          {centerLabel ?? total}
         </SvgText>
       </Svg>
       <View style={styles.legend}>

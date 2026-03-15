@@ -15,28 +15,21 @@ import {
   launchStatusLabels,
   type LaunchTaskStatus,
 } from '../src/data/launchReadinessPlan';
-import { useAuthStore } from '../src/store/useAuthStore';
 import { useLaunchReadinessStore } from '../src/store/useLaunchReadinessStore';
+import { useIsAdmin } from '../src/auth/adminAccess';
 import { colors, fontSizes, radius, spacing } from '../src/theme';
 import { PieChart } from '../src/components/charts/PieChart';
 import { BarChart } from '../src/components/charts/BarChart';
 import { MISS_CATEGORY_LABELS, MISS_CATEGORY_COLORS } from '../src/data/types';
 import type { MissCategory } from '../src/data/types';
 
-const ALLOWED_ADMIN_EMAILS = (
-  process.env.EXPO_PUBLIC_ADMIN_DASHBOARD_EMAILS ??
-  'kaitlin.e.powell@gmail.com'
-)
-  .split(',')
-  .map((email: string) => email.trim().toLowerCase())
-  .filter(Boolean);
-
 type StalenessState = 'fresh' | 'due' | 'stale' | 'never_published';
 type LaunchDashboardTab = 'all' | LaunchTaskStatus;
+type CostProviderStatus = 'configured' | 'unconfigured' | 'error';
 
 const LAUNCH_TABS: Array<{ key: LaunchDashboardTab; label: string }> = [
   { key: 'all', label: 'All' },
-  { key: 'done_in_repo', label: 'Done in Repo' },
+  { key: 'done_in_repo', label: 'Done' },
   { key: 'needs_verification', label: 'Needs Verification' },
   { key: 'remaining', label: 'Remaining' },
 ];
@@ -140,6 +133,75 @@ interface DashboardPayload {
   };
 }
 
+interface AdminCostOverviewPayload {
+  generatedAt: string;
+  environment: string;
+  month: string;
+  window: {
+    startDate: string;
+    endDateExclusive: string;
+    inclusiveDays: number;
+  };
+  totals: {
+    awsUsd: number;
+    anthropicUsd: number;
+    combinedUsd: number;
+  };
+  combinedByDay: Array<{
+    date: string;
+    awsUsd: number;
+    anthropicUsd: number;
+    totalUsd: number;
+  }>;
+  aws: {
+    status: CostProviderStatus;
+    totalUsd: number;
+    currency: string;
+    message: string | null;
+    byDay: Array<{
+      date: string;
+      costUsd: number;
+    }>;
+    byService: Array<{
+      service: string;
+      costUsd: number;
+      pct: number;
+    }>;
+    filter: {
+      mode: 'tag' | 'linked_account' | 'tag_and_linked_account' | 'none';
+      tagKey: string | null;
+      tagValue: string | null;
+      linkedAccount: string | null;
+    };
+  };
+  anthropic: {
+    status: CostProviderStatus;
+    totalUsd: number;
+    message: string | null;
+    byDay: Array<{
+      date: string;
+      costUsd: number;
+    }>;
+  };
+}
+
+function formatUsd(value: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: value < 100 ? 2 : 0,
+  }).format(value);
+}
+
+function formatCostDateLabel(value: string) {
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 function StatCard(props: {
   label: string;
   value: string | number;
@@ -176,10 +238,16 @@ function badgeStyleForLaunchStatus(status: LaunchTaskStatus) {
   return { bg: `${colors.error}22`, fg: colors.error };
 }
 
+function getEffectiveLaunchStatus(
+  status: LaunchTaskStatus,
+  checked: boolean,
+): LaunchTaskStatus {
+  if (status === 'done_in_repo' || checked) return 'done_in_repo';
+  return status;
+}
+
 export default function AdminDashboardScreen() {
-  const user = useAuthStore((s) => s.user);
-  const email = (user?.email ?? '').trim().toLowerCase();
-  const isAllowed = ALLOWED_ADMIN_EMAILS.includes(email);
+  const isAllowed = useIsAdmin();
   const checkedTaskIds = useLaunchReadinessStore((s) => s.checkedTaskIds);
   const toggleTaskChecked = useLaunchReadinessStore((s) => s.toggleTaskChecked);
   const resetTaskChecks = useLaunchReadinessStore((s) => s.resetTaskChecks);
@@ -187,6 +255,9 @@ export default function AdminDashboardScreen() {
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [costData, setCostData] = useState<AdminCostOverviewPayload | null>(null);
+  const [costLoading, setCostLoading] = useState(true);
+  const [costError, setCostError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publishResult, setPublishResult] = useState<string | null>(null);
   const [selectedLaunchTab, setSelectedLaunchTab] =
@@ -208,10 +279,33 @@ export default function AdminDashboardScreen() {
       .finally(() => setLoading(false));
   }, []);
 
+  const fetchCosts = useCallback(() => {
+    setCostLoading(true);
+    setCostError(null);
+    api
+      .get<AdminCostOverviewPayload>('/admin/costs/overview')
+      .then((payload) => setCostData(payload))
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 404) {
+          setCostError(
+            'Environment cost tracking will appear when the migrated admin cost endpoint is live.',
+          );
+          return;
+        }
+        if (err instanceof ApiError) {
+          setCostError(err.message);
+          return;
+        }
+        setCostError('Failed to load environment cost metrics.');
+      })
+      .finally(() => setCostLoading(false));
+  }, []);
+
   useEffect(() => {
     if (!isAllowed) return;
     fetchDashboard();
-  }, [isAllowed, fetchDashboard]);
+    fetchCosts();
+  }, [isAllowed, fetchCosts, fetchDashboard]);
 
   const handlePublishAll = useCallback(async () => {
     if (!data) return;
@@ -242,19 +336,74 @@ export default function AdminDashboardScreen() {
     [data],
   );
 
+  const costSplitData = useMemo(() => {
+    if (!costData) return [];
+    return [
+      {
+        label: 'AWS',
+        value: costData.totals.awsUsd,
+        color: '#1D4ED8',
+        pct:
+          costData.totals.combinedUsd > 0
+            ? Number(((costData.totals.awsUsd / costData.totals.combinedUsd) * 100).toFixed(1))
+            : 0,
+      },
+      {
+        label: 'Anthropic',
+        value: costData.totals.anthropicUsd,
+        color: '#D97706',
+        pct:
+          costData.totals.combinedUsd > 0
+            ? Number(
+                ((costData.totals.anthropicUsd / costData.totals.combinedUsd) * 100).toFixed(1),
+              )
+            : 0,
+      },
+    ].filter((item) => item.value > 0);
+  }, [costData]);
+
+  const dailyCostBars = useMemo(
+    () =>
+      (costData?.combinedByDay ?? []).slice(-14).map((item) => ({
+        label: formatCostDateLabel(item.date),
+        value: item.totalUsd,
+        color: colors.primary,
+      })),
+    [costData],
+  );
+
+  const awsServiceBars = useMemo(
+    () =>
+      (costData?.aws.byService ?? []).map((item) => ({
+        label: item.service.replace(/^Amazon /, ''),
+        value: item.costUsd,
+        color: '#1D4ED8',
+      })),
+    [costData],
+  );
+
   const launchTasks = useMemo(
-    () => launchReadinessPlan.phases.flatMap((phase) => phase.tasks),
-    [],
+    () =>
+      launchReadinessPlan.phases.flatMap((phase) =>
+        phase.tasks.map((task) => ({
+          ...task,
+          effectiveStatus: getEffectiveLaunchStatus(
+            task.status,
+            Boolean(checkedTaskIds[task.id]),
+          ),
+        })),
+      ),
+    [checkedTaskIds],
   );
 
   const launchSummary = useMemo(
     () => ({
       total: launchTasks.length,
-      done: launchTasks.filter((task) => task.status === 'done_in_repo').length,
+      done: launchTasks.filter((task) => task.effectiveStatus === 'done_in_repo').length,
       needsVerification: launchTasks.filter(
-        (task) => task.status === 'needs_verification',
+        (task) => task.effectiveStatus === 'needs_verification',
       ).length,
-      remaining: launchTasks.filter((task) => task.status === 'remaining').length,
+      remaining: launchTasks.filter((task) => task.effectiveStatus === 'remaining').length,
       checkedOpen: launchTasks.filter(
         (task) => task.status !== 'done_in_repo' && checkedTaskIds[task.id],
       ).length,
@@ -269,11 +418,14 @@ export default function AdminDashboardScreen() {
         .map((phase) => ({
           ...phase,
           tasks: phase.tasks.filter(
-            (task) => selectedLaunchTab === 'all' || task.status === selectedLaunchTab,
+            (task) =>
+              selectedLaunchTab === 'all' ||
+              getEffectiveLaunchStatus(task.status, Boolean(checkedTaskIds[task.id])) ===
+                selectedLaunchTab,
           ),
         }))
         .filter((phase) => phase.tasks.length > 0),
-    [selectedLaunchTab],
+    [checkedTaskIds, selectedLaunchTab],
   );
 
   const currentLaunchTasks = useMemo(
@@ -284,7 +436,9 @@ export default function AdminDashboardScreen() {
   const currentLaunchCheckedCount = useMemo(
     () =>
       currentLaunchTasks.filter(
-        (task) => task.status === 'done_in_repo' || checkedTaskIds[task.id],
+        (task) =>
+          getEffectiveLaunchStatus(task.status, Boolean(checkedTaskIds[task.id])) ===
+          'done_in_repo',
       ).length,
     [checkedTaskIds, currentLaunchTasks],
   );
@@ -338,7 +492,7 @@ export default function AdminDashboardScreen() {
               </Text>
               <View style={styles.statsRow}>
                 <StatCard label="Total Tasks" value={launchSummary.total} />
-                <StatCard label="Done in Repo" value={launchSummary.done} tone="good" />
+                <StatCard label="Done" value={launchSummary.done} tone="good" />
                 <StatCard
                   label="Needs Verification"
                   value={launchSummary.needsVerification}
@@ -399,9 +553,13 @@ export default function AdminDashboardScreen() {
                   </Text>
                   <Text style={styles.phaseObjective}>{phase.objective}</Text>
                   {phase.tasks.map((task) => {
-                    const tone = badgeStyleForLaunchStatus(task.status);
+                    const effectiveStatus = getEffectiveLaunchStatus(
+                      task.status,
+                      Boolean(checkedTaskIds[task.id]),
+                    );
+                    const tone = badgeStyleForLaunchStatus(effectiveStatus);
                     const isActionable = task.status !== 'done_in_repo';
-                    const isChecked = task.status === 'done_in_repo' || checkedTaskIds[task.id];
+                    const isChecked = effectiveStatus === 'done_in_repo';
                     return (
                       <View key={task.id} style={styles.row}>
                         <Pressable
@@ -428,7 +586,7 @@ export default function AdminDashboardScreen() {
                         </View>
                         <View style={[styles.badge, { backgroundColor: tone.bg }]}>
                           <Text style={[styles.badgeText, { color: tone.fg }]}>
-                            {launchStatusLabels[task.status]}
+                            {launchStatusLabels[effectiveStatus]}
                           </Text>
                         </View>
                       </View>
@@ -494,6 +652,98 @@ export default function AdminDashboardScreen() {
                 <StatCard label="Input Tokens" value={data.ai.inputTokens30d} />
                 <StatCard label="Output Tokens" value={data.ai.outputTokens30d} />
               </View>
+            </View>
+
+            <View style={styles.card}>
+              <Text style={styles.cardTitle} accessibilityRole="header">Environment Costs</Text>
+              <Text style={styles.metaText}>
+                Pay-as-you-go spend for the environment this admin panel is attached to.
+              </Text>
+              {costLoading ? (
+                <View style={styles.loadingWrap}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : costError ? (
+                <Text style={styles.errorText}>{costError}</Text>
+              ) : costData ? (
+                <>
+                  <Text style={styles.metaText}>
+                    Environment: {costData.environment} · Month: {costData.month} · Generated:{' '}
+                    {new Date(costData.generatedAt).toLocaleString()}
+                  </Text>
+                  <Text style={styles.metaText}>
+                    Window: {costData.window.startDate} through{' '}
+                    {costData.combinedByDay[costData.combinedByDay.length - 1]
+                      ? formatCostDateLabel(
+                          costData.combinedByDay[costData.combinedByDay.length - 1].date,
+                        )
+                      : costData.window.startDate}{' '}
+                    ({costData.window.inclusiveDays} days)
+                  </Text>
+                  <View style={styles.statsRow}>
+                    <StatCard label="AWS MTD" value={formatUsd(costData.totals.awsUsd)} />
+                    <StatCard
+                      label="Anthropic MTD"
+                      value={formatUsd(costData.totals.anthropicUsd)}
+                    />
+                    <StatCard
+                      label="Combined MTD"
+                      value={formatUsd(costData.totals.combinedUsd)}
+                      tone="warn"
+                    />
+                  </View>
+                  {costData.aws.filter.mode !== 'none' ? (
+                    <Text style={styles.metaText}>
+                      AWS filter:{' '}
+                      {costData.aws.filter.tagKey && costData.aws.filter.tagValue
+                        ? `${costData.aws.filter.tagKey}=${costData.aws.filter.tagValue}`
+                        : null}
+                      {costData.aws.filter.tagKey &&
+                      costData.aws.filter.tagValue &&
+                      costData.aws.filter.linkedAccount
+                        ? ' · '
+                        : null}
+                      {costData.aws.filter.linkedAccount
+                        ? `linked account ${costData.aws.filter.linkedAccount}`
+                        : null}
+                    </Text>
+                  ) : null}
+                  {costData.aws.message ? (
+                    <Text style={styles.metaText}>AWS: {costData.aws.message}</Text>
+                  ) : null}
+                  {costData.anthropic.message ? (
+                    <Text style={styles.metaText}>Anthropic: {costData.anthropic.message}</Text>
+                  ) : null}
+
+                  {costSplitData.length > 0 ? (
+                    <>
+                      <Text style={[styles.cardTitle, styles.subsectionTitle]}>Spend Split</Text>
+                      <PieChart
+                        data={costSplitData}
+                        centerLabel={formatUsd(costData.totals.combinedUsd)}
+                      />
+                    </>
+                  ) : null}
+
+                  <Text style={[styles.cardTitle, styles.subsectionTitle]}>Daily Spend</Text>
+                  <BarChart
+                    data={dailyCostBars}
+                    width={360}
+                    labelWidth={72}
+                    valueFormatter={formatUsd}
+                  />
+
+                  <Text style={[styles.cardTitle, styles.subsectionTitle]}>AWS Service Breakdown</Text>
+                  <BarChart
+                    data={awsServiceBars}
+                    width={360}
+                    labelWidth={120}
+                    valueFormatter={formatUsd}
+                  />
+                </>
+              ) : (
+                <Text style={styles.metaText}>Cost data is not available yet.</Text>
+              )}
             </View>
 
             <View style={styles.card}>
@@ -727,6 +977,10 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     color: colors.textPrimary,
     fontFamily: 'Quicksand_700Bold',
+  },
+  subsectionTitle: {
+    fontSize: fontSizes.md,
+    marginTop: spacing.sm,
   },
   metaText: {
     fontSize: fontSizes.sm,

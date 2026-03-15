@@ -20,13 +20,17 @@ const STAGING_GATE = process.env.EXPO_PUBLIC_STAGING_ACCESS_GATE === 'true';
 export default function SignupScreen() {
   const router = useRouter();
   const signUp = useAuthStore((s) => s.signUp);
+  const confirmSignUp = useAuthStore((s) => s.confirmSignUp);
+  const resendConfirmationCode = useAuthStore((s) => s.resendConfirmationCode);
   const isLoading = useAuthStore((s) => s.isLoading);
   const error = useAuthStore((s) => s.error);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState<'form' | 'verify'>('form');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [resent, setResent] = useState(false);
 
   const passwordMismatch =
     confirmPassword.length > 0 && password !== confirmPassword;
@@ -37,8 +41,32 @@ export default function SignupScreen() {
 
   const handleSignUp = async () => {
     try {
-      await signUp(email.trim(), password);
-      setSuccess(true);
+      const result = await signUp(email.trim(), password);
+      if (result.userConfirmed) {
+        // Auto-confirmed (unlikely but possible with pre-signup trigger)
+        router.replace('/auth/login');
+      } else {
+        setStep('verify');
+      }
+    } catch {
+      // Error is captured in store
+    }
+  };
+
+  const handleConfirm = async () => {
+    try {
+      await confirmSignUp(email.trim(), verificationCode.trim());
+      router.replace('/auth/login');
+    } catch {
+      // Error is captured in store
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      await resendConfirmationCode(email.trim());
+      setResent(true);
+      setTimeout(() => setResent(false), 5000);
     } catch {
       // Error is captured in store
     }
@@ -65,24 +93,72 @@ export default function SignupScreen() {
     );
   }
 
-  if (success) {
+  if (step === 'verify') {
     return (
       <SafeAreaView style={styles.container}>
         <DesktopContainer>
-          <View style={styles.content}>
-            <Text style={styles.successIcon}>✅</Text>
-            <Text style={styles.title}>Check Your Email</Text>
-            <Text style={styles.subtitle}>
-              We sent a confirmation link to {email}. Click it to activate
-              your account, then sign in.
-            </Text>
-            <Pressable
-              style={styles.primaryButton}
-              onPress={() => router.replace('/auth/login')}
-            >
-              <Text style={styles.primaryButtonText}>Go to Sign In</Text>
-            </Pressable>
-          </View>
+          <KeyboardAvoidingView
+            style={styles.keyboardView}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <View style={styles.content}>
+              <Text style={styles.title} accessibilityRole="header">Verify Your Email</Text>
+              <Text style={styles.subtitle}>
+                We sent a verification code to {email}. Enter it below to
+                activate your account.
+              </Text>
+
+              {error && (
+                <View style={styles.errorBox} accessibilityRole="alert" accessibilityLiveRegion="polite">
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
+
+              <TextInput
+                style={styles.input}
+                placeholder="Verification Code"
+                placeholderTextColor={colors.textMuted}
+                value={verificationCode}
+                onChangeText={setVerificationCode}
+                keyboardType="number-pad"
+                autoComplete="one-time-code"
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  if (verificationCode.trim().length > 0 && !isLoading) handleConfirm();
+                }}
+                accessibilityLabel="Verification code"
+              />
+
+              <Pressable
+                style={[
+                  styles.primaryButton,
+                  (!verificationCode.trim() || isLoading) && styles.buttonDisabled,
+                ]}
+                onPress={handleConfirm}
+                disabled={!verificationCode.trim() || isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm"
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Confirm</Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={handleResend}
+                disabled={isLoading}
+                accessibilityRole="button"
+                accessibilityLabel="Resend verification code"
+              >
+                <Text style={styles.secondaryButtonText}>
+                  {resent ? 'Code resent!' : 'Resend Code'}
+                </Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
         </DesktopContainer>
       </SafeAreaView>
     );
@@ -195,11 +271,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: spacing['3xl'],
-  },
-  successIcon: {
-    fontSize: 48,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
   },
   title: {
     fontSize: fontSizes['2xl'],

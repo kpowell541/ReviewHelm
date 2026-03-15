@@ -1,6 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { colors, spacing, fontSizes, radius } from '../theme';
+import { captureError } from '../observability/sentry';
+import { createLogger } from '../observability/logger';
+
+const log = createLogger('error-boundary');
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -22,8 +26,13 @@ export class ErrorBoundary extends React.Component<
     return { hasError: true, errorMessage: error.message };
   }
 
-  componentDidCatch(error: Error): void {
-    console.error('[ErrorBoundary]', error);
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    log.error('unhandled render error', {
+      errorMessage: error.message,
+      errorName: error.name,
+      componentStack: errorInfo.componentStack,
+    });
+    captureError(error, { componentStack: errorInfo.componentStack });
   }
 
   handleRetry = () => {

@@ -22,6 +22,7 @@ import { initializeChecklistCache } from '../src/data/checklistLoader';
 import { initDeviceId } from '../src/utils/deviceId';
 import { runSync } from '../src/sync/syncEngine';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { initSentry } from '../src/observability/sentry';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -69,6 +70,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    initSentry();
     void initAuth();
   }, [initAuth]);
 
@@ -255,6 +257,10 @@ export default function RootLayout() {
           options={{ title: 'New Password' }}
         />
         <Stack.Screen
+          name="auth/callback"
+          options={{ title: 'Signing In...', headerShown: false }}
+        />
+        <Stack.Screen
           name="review/stack-select"
           options={{ title: 'Select Stack' }}
         />
@@ -379,6 +385,10 @@ export default function RootLayout() {
         <Stack.Screen
           name="region-unavailable"
           options={{ title: 'Region Unavailable' }}
+        />
+        <Stack.Screen
+          name="download/[token]"
+          options={{ title: 'Download', headerShown: false }}
         />
       </Stack>
       </SafeAreaView>

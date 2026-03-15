@@ -53,15 +53,17 @@ async function clearTokenizedKey(indexKey: string): Promise<void> {
   await secureStoreAsyncStorage.removeItem(indexKey);
 }
 
-function clearBrowserSupabaseKeys(): void {
+function clearBrowserAuthKeys(): void {
   if (typeof window === 'undefined') return;
+
+  const prefixes = ['reviewhelm-cognito-', 'sb-'];
 
   const clearFrom = (storage: Storage) => {
     const keysToDelete: string[] = [];
     for (let i = 0; i < storage.length; i += 1) {
       const key = storage.key(i);
       if (!key) continue;
-      if (key.startsWith('sb-')) {
+      if (prefixes.some((p) => key.startsWith(p))) {
         keysToDelete.push(key);
       }
     }
@@ -81,7 +83,7 @@ export async function clearLocalUserData(): Promise<void> {
     clearTokenizedKey(ADMIN_KEY_INDEX),
   ]);
 
-  clearBrowserSupabaseKeys();
+  clearBrowserAuthKeys();
 
   resetStoreToInitial(useSessionStore);
   resetStoreToInitial(useConfidenceStore);

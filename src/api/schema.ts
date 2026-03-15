@@ -26,3 +26,7 @@ export type ApiConfidenceHistories = ApiSchemas['ConfidenceHistoriesResponse'];
 export type ApiAiTutorRequest = ApiSchemas['AiTutorRequest'];
 export type ApiAiTutorResponse = ApiSchemas['AiTutorResponse'];
 export type ApiCreateSessionRequest = ApiSchemas['CreateSessionRequest'];
+export type ApiSubscriptionTier = ApiSchemas['SubscriptionTierResponse'];
+export type ApiSubscriptionCredits = ApiSchemas['SubscriptionCreditsResponse'];
+export type ApiStripeCheckout = ApiSchemas['StripeCheckoutResponse'];
+export type ApiOfficialCost = ApiSchemas['OfficialCostResponse'];

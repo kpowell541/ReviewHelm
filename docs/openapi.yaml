@@ -6,8 +6,10 @@ info:
     REST API contract for ReviewHelm backend.
     Base path is /api/v1.
 servers:
-  - url: https://api.reviewhelm.com/api/v1
+  - url: https://api.reviewhelm.app/api/v1
     description: Production
+  - url: https://api-staging.reviewhelm.app/api/v1
+    description: Staging
   - url: http://localhost:3000/api/v1
     description: Local development
 tags:
@@ -1330,6 +1332,139 @@ paths:
         '403':
           $ref: '#/components/responses/ForbiddenError'
 
+  /admin/costs/overview:
+    get:
+      tags: [Admin]
+      summary: Get environment-scoped AWS and Anthropic cost overview
+      description: |
+        Returns month-to-date pay-as-you-go costs for the environment the
+        admin panel is attached to. AWS cost data is filtered by the backend's
+        configured environment filter, and Anthropic cost data comes from the
+        environment's configured admin cost-reporting key.
+      responses:
+        '200':
+          description: Cost overview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  generatedAt:
+                    type: string
+                    format: date-time
+                  environment:
+                    type: string
+                  month:
+                    type: string
+                  window:
+                    type: object
+                    properties:
+                      startDate:
+                        type: string
+                        format: date
+                      endDateExclusive:
+                        type: string
+                        format: date
+                      inclusiveDays:
+                        type: integer
+                  totals:
+                    type: object
+                    properties:
+                      awsUsd:
+                        type: number
+                      anthropicUsd:
+                        type: number
+                      combinedUsd:
+                        type: number
+                  combinedByDay:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        awsUsd:
+                          type: number
+                        anthropicUsd:
+                          type: number
+                        totalUsd:
+                          type: number
+                  aws:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [configured, unconfigured, error]
+                      totalUsd:
+                        type: number
+                      currency:
+                        type: string
+                      message:
+                        type: string
+                        nullable: true
+                      filter:
+                        type: object
+                        properties:
+                          mode:
+                            type: string
+                            enum: [tag, linked_account, tag_and_linked_account, none]
+                          tagKey:
+                            type: string
+                            nullable: true
+                          tagValue:
+                            type: string
+                            nullable: true
+                          linkedAccount:
+                            type: string
+                            nullable: true
+                      byDay:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            costUsd:
+                              type: number
+                      byService:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            service:
+                              type: string
+                            costUsd:
+                              type: number
+                            pct:
+                              type: number
+                  anthropic:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        enum: [configured, unconfigured, error]
+                      totalUsd:
+                        type: number
+                      message:
+                        type: string
+                        nullable: true
+                      byDay:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            costUsd:
+                              type: number
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
   /admin/credits/users:
     get:
       tags: [Admin]
@@ -1578,28 +1713,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  tier:
-                    type: string
-                    enum: [free, pro, premium, sponsored]
-                  effectiveTier:
-                    type: string
-                    enum: [free, pro, premium, sponsored, admin]
-                  isAdmin:
-                    type: boolean
-                  isSponsored:
-                    type: boolean
-                  isTrial:
-                    type: boolean
-                  trialEndsAt:
-                    type: string
-                    format: date-time
-                    nullable: true
-                  billingCycleStart:
-                    type: string
-                    format: date-time
-                    nullable: true
+                $ref: '#/components/schemas/SubscriptionTierResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -1613,12 +1727,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  balanceUsd:
-                    type: number
-                  unlimited:
-                    type: boolean
+                $ref: '#/components/schemas/SubscriptionCreditsResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
@@ -1684,10 +1793,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
+                $ref: '#/components/schemas/StripeCheckoutResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -1708,7 +1814,7 @@ paths:
               properties:
                 plan:
                   type: string
-                  enum: [starter, pro, premium]
+                  enum: [starter, advanced, pro, premium]
                 successUrl:
                   type: string
                 cancelUrl:
@@ -1723,10 +1829,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
+                $ref: '#/components/schemas/StripeCheckoutResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '501':
@@ -1752,10 +1855,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  url:
-                    type: string
+                $ref: '#/components/schemas/StripeCheckoutResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '501':
@@ -2935,7 +3035,7 @@ components:
         sessionId:
           type: string
           format: uuid
-        userSupabaseUserId:
+        userId:
           type: string
         minCoverage:
           type: integer
@@ -2945,7 +3045,7 @@ components:
           type: integer
         maxMajors:
           type: integer
-      required: [sessionId, userSupabaseUserId]
+      required: [sessionId, userId]
       additionalProperties: false
 
     CiPolicyCheckResponse:
@@ -3167,6 +3267,58 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    SubscriptionTierResponse:
+      type: object
+      properties:
+        tier:
+          type: string
+          enum: [free, starter, advanced, pro, premium, sponsored]
+        effectiveTier:
+          type: string
+          enum: [free, starter, advanced, pro, premium, sponsored, admin]
+        isAdmin:
+          type: boolean
+        isSponsored:
+          type: boolean
+        isTrial:
+          type: boolean
+        trialEndsAt:
+          type: string
+          format: date-time
+          nullable: true
+        billingCycleStart:
+          type: string
+          format: date-time
+          nullable: true
+
+    SubscriptionCreditsResponse:
+      type: object
+      properties:
+        balanceUsd:
+          type: number
+        unlimited:
+          type: boolean
+
+    StripeCheckoutResponse:
+      type: object
+      properties:
+        url:
+          type: string
+      required: [url]
+
+    OfficialCostResponse:
+      type: object
+      properties:
+        officialCostUsd:
+          type: number
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+      required: [officialCostUsd, startDate, endDate]
 
     SessionListResponse:
       type: object

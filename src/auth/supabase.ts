@@ -16,7 +16,7 @@ export function getSupabaseClient(): SupabaseClient {
 
   if (!url || !anonKey) {
     throw new Error(
-      'Supabase URL and Anon Key must be configured. Ensure Infisical secrets are loaded.',
+      'Supabase URL and Anon Key must be configured via EXPO_PUBLIC_* env vars.',
     );
   }
   if (Platform.OS === 'web' && !isSecureWebUrl(url)) {

@@ -16,14 +16,7 @@ import { useFeatureGate } from '../src/hooks/useFeatureGate';
 import { useTierStore } from '../src/store/useTierStore';
 import { FeatureTourModal } from '../src/components/FeatureTourModal';
 import { crossAlert } from '../src/utils/alert';
-
-const ADMIN_DASHBOARD_EMAILS = (
-  process.env.EXPO_PUBLIC_ADMIN_DASHBOARD_EMAILS ??
-  'kaitlin.e.powell@gmail.com'
-)
-  .split(',')
-  .map((email: string) => email.trim().toLowerCase())
-  .filter(Boolean);
+import { useIsAdmin, isAdminDomain } from '../src/auth/adminAccess';
 
 interface ModeCardProps {
   title: string;
@@ -144,8 +137,12 @@ export default function HomeScreen() {
   const histories = useConfidenceStore((s) => s.histories);
   const prs = usePRTrackerStore((s) => s.prs);
 
-  const adminEmail = (authUser?.email ?? '').trim().toLowerCase();
-  const isAdminDashboardUser = ADMIN_DASHBOARD_EMAILS.includes(adminEmail);
+  const isAdminDashboardUser = useIsAdmin();
+
+  // On the admin domain, redirect to admin dashboard
+  if (isAdminDomain() && authUser) {
+    return <Redirect href="/admin-dashboard" />;
+  }
 
   const effectiveTier = useTierStore((s) => s.effectiveTier);
   const hasSeenTourForTier = usePreferencesStore((s) => s.hasSeenTourForTier);

@@ -1072,6 +1072,58 @@ export default function SettingsScreen() {
         )}
       </View>
 
+      <Text style={styles.sectionTitle} accessibilityRole="header">Integrations</Text>
+      <View style={styles.card}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.label}>GitHub</Text>
+            <Text style={styles.hint}>
+              Connect your GitHub account to import PRs and enable automated review tracking.
+            </Text>
+          </View>
+        </View>
+        <View style={styles.integrationPlaceholder}>
+          <Text style={styles.integrationPlaceholderText}>Coming soon</Text>
+        </View>
+      </View>
+
+      <Text style={styles.sectionTitle} accessibilityRole="header">Reports</Text>
+      <View style={styles.card}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.label}>Performance Review Reports</Text>
+            <Text style={styles.hint}>
+              Generate periodic reports summarizing your code review activity, trends, and areas of growth.
+              Reports are private to you unless you choose to share them.
+            </Text>
+          </View>
+          <Switch
+            value={false}
+            disabled
+            trackColor={{ false: colors.border, true: colors.primary }}
+            accessibilityLabel="Performance review reports"
+          />
+        </View>
+        <Text style={styles.subtle}>
+          This feature is not yet available. When enabled, report generation will be opt-in and data stays private by default.
+        </Text>
+      </View>
+
+      <Text style={styles.sectionTitle} accessibilityRole="header">Privacy</Text>
+      <View style={styles.card}>
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.label}>Data Collection</Text>
+            <Text style={styles.hint}>
+              ReviewHelm collects only the minimum data needed to provide the service.
+              No review content is shared with third parties. AI-assisted features
+              send prompts to the configured AI provider only when you explicitly
+              trigger them.
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <Text style={styles.sectionTitle} accessibilityRole="header">Connected Features</Text>
       <View style={styles.card}>
         <Pressable
@@ -1398,6 +1450,19 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: '#f59e0b',
     fontFamily: 'Quicksand_500Medium',
+  },
+  integrationPlaceholder: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: `${colors.primary}10`,
+    borderRadius: radius.sm,
+    alignSelf: 'flex-start',
+  },
+  integrationPlaceholderText: {
+    fontSize: fontSizes.sm,
+    color: colors.textMuted,
+    fontStyle: 'italic',
   },
   connectedLink: {
     flexDirection: 'row',

@@ -13,14 +13,18 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../src/store/useAuthStore';
 import { api, ApiError } from '../../src/api/client';
+import { isOAuthConfigured } from '../../src/auth/cognito';
 import { colors, spacing, fontSizes, radius } from '../../src/theme';
 import { DesktopContainer } from '../../src/components/DesktopContainer';
+
+const OAUTH_AVAILABLE = isOAuthConfigured();
 
 const STAGING_GATE = process.env.EXPO_PUBLIC_STAGING_ACCESS_GATE === 'true';
 
 export default function LoginScreen() {
   const router = useRouter();
   const signIn = useAuthStore((s) => s.signIn);
+  const signInWithProvider = useAuthStore((s) => s.signInWithProvider);
   const isLoading = useAuthStore((s) => s.isLoading);
   const error = useAuthStore((s) => s.error);
 
@@ -138,6 +142,36 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
+            {OAUTH_AVAILABLE && (
+              <>
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <Pressable
+                  style={[styles.oauthButton, isLoading && styles.buttonDisabled]}
+                  onPress={() => signInWithProvider('Google')}
+                  disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign in with Google"
+                >
+                  <Text style={styles.oauthButtonText}>Sign in with Google</Text>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.oauthButton, isLoading && styles.buttonDisabled]}
+                  onPress={() => signInWithProvider('GitHub')}
+                  disabled={isLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sign in with GitHub"
+                >
+                  <Text style={styles.oauthButtonText}>Sign in with GitHub</Text>
+                </Pressable>
+              </>
+            )}
+
             {!STAGING_GATE && (
               <Pressable
                 style={styles.secondaryButton}
@@ -250,6 +284,35 @@ const styles = StyleSheet.create({
   forgotButtonText: {
     color: colors.textSecondary,
     fontSize: fontSizes.sm,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    color: colors.textMuted,
+    fontSize: fontSizes.sm,
+    marginHorizontal: spacing.md,
+  },
+  oauthButton: {
+    backgroundColor: colors.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  oauthButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.md,
+    fontWeight: '600',
   },
   secondaryButtonText: {
     color: colors.primary,
